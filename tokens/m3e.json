@@ -1,0 +1,422 @@
+{
+  "_meta": {
+    "fetched": "2026-10-07",
+    "generator": "tools/gen_tokens.py",
+    "note": "Generated from androidx Compose Material3 token sources (Apache-2.0), not from m3.material.io pages. Do not edit by hand.",
+    "ref": "androidx-main",
+    "sources": {
+      "elevation": {
+        "sha256": "b0613cc2c1e30fb62da126f82f5870f7231e3cf4117f36132e466e1827de0a3c",
+        "url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ElevationTokens.kt"
+      },
+      "expressive_motion": {
+        "sha256": "deefcefc93405c69445071b40e4d9894458bb20cff18b805192c90aea5ba6c73",
+        "url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExpressiveMotionTokens.kt"
+      },
+      "motion": {
+        "sha256": "58bf152e5f81d8bcb80f1475a2e3c54535873245f41d005ab5c797cdd5dc6ebc",
+        "url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MotionTokens.kt"
+      },
+      "shape": {
+        "sha256": "02178111f81c7f03135cc7157040fa903180e212fd52b8f686b4304080efb5a3",
+        "url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ShapeTokens.kt"
+      },
+      "standard_motion": {
+        "sha256": "4b36c30679dcc0b1ec6010e4e40c070901151b59252d9a21d0e4348511370592",
+        "url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StandardMotionTokens.kt"
+      },
+      "type": {
+        "sha256": "7ca6378374d78da8a1091d2ee4a4c228f70d0daef65dfd51c18b58f7d9679ba4",
+        "url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt"
+      }
+    }
+  },
+  "elevation": {
+    "dp": {
+      "level0": 0,
+      "level1": 1,
+      "level2": 3,
+      "level3": 6,
+      "level4": 8,
+      "level5": 12
+    },
+    "src": "elevation"
+  },
+  "motion": {
+    "duration_ms": {
+      "extra_long1": 700,
+      "extra_long2": 800,
+      "extra_long3": 900,
+      "extra_long4": 1000,
+      "long1": 450,
+      "long2": 500,
+      "long3": 550,
+      "long4": 600,
+      "medium1": 250,
+      "medium2": 300,
+      "medium3": 350,
+      "medium4": 400,
+      "short1": 50,
+      "short2": 100,
+      "short3": 150,
+      "short4": 200
+    },
+    "easing_cubic_bezier": {
+      "emphasized": [
+        0.2,
+        0,
+        0,
+        1
+      ],
+      "emphasized_accelerate": [
+        0.3,
+        0,
+        0.8,
+        0.15
+      ],
+      "emphasized_decelerate": [
+        0.05,
+        0.7,
+        0.1,
+        1
+      ],
+      "legacy": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "legacy_accelerate": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "legacy_decelerate": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "standard": [
+        0.2,
+        0,
+        0,
+        1
+      ],
+      "standard_accelerate": [
+        0.3,
+        0,
+        1,
+        1
+      ],
+      "standard_decelerate": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "expressive": {
+      "effects": {
+        "default": {
+          "damping_ratio": 1,
+          "stiffness": 1600
+        },
+        "fast": {
+          "damping_ratio": 1,
+          "stiffness": 3800
+        },
+        "slow": {
+          "damping_ratio": 1,
+          "stiffness": 800
+        }
+      },
+      "spatial": {
+        "default": {
+          "damping_ratio": 0.8,
+          "stiffness": 380
+        },
+        "fast": {
+          "damping_ratio": 0.6,
+          "stiffness": 800
+        },
+        "slow": {
+          "damping_ratio": 0.8,
+          "stiffness": 200
+        }
+      }
+    },
+    "src": [
+      "expressive_motion",
+      "standard_motion",
+      "motion"
+    ],
+    "standard": {
+      "effects": {
+        "default": {
+          "damping_ratio": 1,
+          "stiffness": 1600
+        },
+        "fast": {
+          "damping_ratio": 1,
+          "stiffness": 3800
+        },
+        "slow": {
+          "damping_ratio": 1,
+          "stiffness": 800
+        }
+      },
+      "spatial": {
+        "default": {
+          "damping_ratio": 0.9,
+          "stiffness": 700
+        },
+        "fast": {
+          "damping_ratio": 0.9,
+          "stiffness": 1400
+        },
+        "slow": {
+          "damping_ratio": 0.9,
+          "stiffness": 300
+        }
+      }
+    }
+  },
+  "shape": {
+    "corner_dp": {
+      "extra_extra_large": 48,
+      "extra_large": 28,
+      "extra_large_increased": 32,
+      "extra_small": 4,
+      "full": "full",
+      "large": 16,
+      "large_increased": 20,
+      "medium": 12,
+      "none": 0,
+      "small": 8
+    },
+    "src": "shape"
+  },
+  "type": {
+    "src": "type",
+    "styles": {
+      "body_large": {
+        "font": "plain",
+        "line_height_sp": 24,
+        "size_sp": 16,
+        "tracking_sp": 0.5,
+        "weight": 400
+      },
+      "body_large_emphasized": {
+        "font": "plain",
+        "line_height_sp": 24,
+        "size_sp": 16,
+        "tracking_sp": 0.15,
+        "weight": 500
+      },
+      "body_medium": {
+        "font": "plain",
+        "line_height_sp": 20,
+        "size_sp": 14,
+        "tracking_sp": 0.2,
+        "weight": 400
+      },
+      "body_medium_emphasized": {
+        "font": "plain",
+        "line_height_sp": 20,
+        "size_sp": 14,
+        "tracking_sp": 0.25,
+        "weight": 500
+      },
+      "body_small": {
+        "font": "plain",
+        "line_height_sp": 16,
+        "size_sp": 12,
+        "tracking_sp": 0.4,
+        "weight": 400
+      },
+      "body_small_emphasized": {
+        "font": "plain",
+        "line_height_sp": 16,
+        "size_sp": 12,
+        "tracking_sp": 0.4,
+        "weight": 500
+      },
+      "display_large": {
+        "font": "brand",
+        "line_height_sp": 64,
+        "size_sp": 57,
+        "tracking_sp": -0.2,
+        "weight": 400
+      },
+      "display_large_emphasized": {
+        "font": "brand",
+        "line_height_sp": 64,
+        "size_sp": 57,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "display_medium": {
+        "font": "brand",
+        "line_height_sp": 52,
+        "size_sp": 45,
+        "tracking_sp": 0,
+        "weight": 400
+      },
+      "display_medium_emphasized": {
+        "font": "brand",
+        "line_height_sp": 52,
+        "size_sp": 45,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "display_small": {
+        "font": "brand",
+        "line_height_sp": 44,
+        "size_sp": 36,
+        "tracking_sp": 0,
+        "weight": 400
+      },
+      "display_small_emphasized": {
+        "font": "brand",
+        "line_height_sp": 44,
+        "size_sp": 36,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "headline_large": {
+        "font": "brand",
+        "line_height_sp": 40,
+        "size_sp": 32,
+        "tracking_sp": 0,
+        "weight": 400
+      },
+      "headline_large_emphasized": {
+        "font": "brand",
+        "line_height_sp": 40,
+        "size_sp": 32,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "headline_medium": {
+        "font": "brand",
+        "line_height_sp": 36,
+        "size_sp": 28,
+        "tracking_sp": 0,
+        "weight": 400
+      },
+      "headline_medium_emphasized": {
+        "font": "brand",
+        "line_height_sp": 36,
+        "size_sp": 28,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "headline_small": {
+        "font": "brand",
+        "line_height_sp": 32,
+        "size_sp": 24,
+        "tracking_sp": 0,
+        "weight": 400
+      },
+      "headline_small_emphasized": {
+        "font": "brand",
+        "line_height_sp": 32,
+        "size_sp": 24,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "label_large": {
+        "font": "plain",
+        "line_height_sp": 20,
+        "size_sp": 14,
+        "tracking_sp": 0.1,
+        "weight": 500
+      },
+      "label_large_emphasized": {
+        "font": "plain",
+        "line_height_sp": 20,
+        "size_sp": 14,
+        "tracking_sp": 0.1,
+        "weight": 700
+      },
+      "label_medium": {
+        "font": "plain",
+        "line_height_sp": 16,
+        "size_sp": 12,
+        "tracking_sp": 0.5,
+        "weight": 500
+      },
+      "label_medium_emphasized": {
+        "font": "plain",
+        "line_height_sp": 16,
+        "size_sp": 12,
+        "tracking_sp": 0.5,
+        "weight": 700
+      },
+      "label_small": {
+        "font": "plain",
+        "line_height_sp": 16,
+        "size_sp": 11,
+        "tracking_sp": 0.5,
+        "weight": 500
+      },
+      "label_small_emphasized": {
+        "font": "plain",
+        "line_height_sp": 16,
+        "size_sp": 11,
+        "tracking_sp": 0.5,
+        "weight": 700
+      },
+      "title_large": {
+        "font": "brand",
+        "line_height_sp": 28,
+        "size_sp": 22,
+        "tracking_sp": 0,
+        "weight": 400
+      },
+      "title_large_emphasized": {
+        "font": "brand",
+        "line_height_sp": 28,
+        "size_sp": 22,
+        "tracking_sp": 0,
+        "weight": 500
+      },
+      "title_medium": {
+        "font": "plain",
+        "line_height_sp": 24,
+        "size_sp": 16,
+        "tracking_sp": 0.2,
+        "weight": 500
+      },
+      "title_medium_emphasized": {
+        "font": "plain",
+        "line_height_sp": 24,
+        "size_sp": 16,
+        "tracking_sp": 0.15,
+        "weight": 700
+      },
+      "title_small": {
+        "font": "plain",
+        "line_height_sp": 20,
+        "size_sp": 14,
+        "tracking_sp": 0.1,
+        "weight": 500
+      },
+      "title_small_emphasized": {
+        "font": "plain",
+        "line_height_sp": 20,
+        "size_sp": 14,
+        "tracking_sp": 0.1,
+        "weight": 700
+      }
+    }
+  }
+}

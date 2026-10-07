@@ -1,0 +1,17 @@
+Rutile Shell third-party notices
+================================
+
+Material 3 token sources (tokens/sources/*.kt)
+  From androidx Compose Material3, Copyright The Android Open Source Project,
+  licensed under the Apache License 2.0 (tokens/sources/LICENSE-APACHE-2.0.txt).
+  The files are vendored unmodified (checksums in tokens/sources/manifest.json);
+  tokens/m3e.json is generated from them.
+
+Ported code (none yet)
+  Code ported from DankMaterialShell (MIT, Avenge Media LLC) and Noctalia
+  (MIT, noctalia-dev) will be listed here with file paths and the original
+  copyright notices when it lands.
+
+Reference only, no code copied
+  Caelestia shell (GPL-3.0) is studied as a design reference and must not be
+  copied into this repository.

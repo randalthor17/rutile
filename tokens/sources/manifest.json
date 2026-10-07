@@ -1,0 +1,13 @@
+{
+  "base_url": "https://raw.githubusercontent.com/androidx/androidx/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/",
+  "fetched": "2026-10-07",
+  "files": {
+    "ElevationTokens.kt": "b0613cc2c1e30fb62da126f82f5870f7231e3cf4117f36132e466e1827de0a3c",
+    "ExpressiveMotionTokens.kt": "deefcefc93405c69445071b40e4d9894458bb20cff18b805192c90aea5ba6c73",
+    "MotionTokens.kt": "58bf152e5f81d8bcb80f1475a2e3c54535873245f41d005ab5c797cdd5dc6ebc",
+    "ShapeTokens.kt": "02178111f81c7f03135cc7157040fa903180e212fd52b8f686b4304080efb5a3",
+    "StandardMotionTokens.kt": "4b36c30679dcc0b1ec6010e4e40c070901151b59252d9a21d0e4348511370592",
+    "TypeScaleTokens.kt": "7ca6378374d78da8a1091d2ee4a4c228f70d0daef65dfd51c18b58f7d9679ba4"
+  },
+  "ref": "androidx-main"
+}
