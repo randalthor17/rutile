@@ -1,0 +1,7 @@
+[config]
+version_check = false
+caching = false
+
+[templates.rutile-palette]
+input_path = "./templates/palette.json"
+output_path = "./out/palette.json"
