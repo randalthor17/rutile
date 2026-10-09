@@ -59,6 +59,25 @@ def qml_import_dirs(tool):
     return out
 
 
+def qml_env(dirs, base):
+    """Copy of base env with dirs merged (first) into QML_IMPORT_PATH and QML2_IMPORT_PATH.
+
+    Existing values of either variable are kept, so a devshell's own setup is never lost.
+    """
+    parts = list(dirs)
+    for var in ("QML_IMPORT_PATH", "QML2_IMPORT_PATH"):
+        parts += [p for p in base.get(var, "").split(os.pathsep) if p]
+    seen, merged = set(), []
+    for p in parts:
+        if p not in seen:
+            seen.add(p)
+            merged.append(p)
+    env = dict(base)
+    if merged:
+        env["QML_IMPORT_PATH"] = env["QML2_IMPORT_PATH"] = os.pathsep.join(merged)
+    return env
+
+
 def hint(output):
     """Extra advice appended to Qt failures that are environment problems, not test failures."""
     if "is not installed" in output or "Type TestCase unavailable" in output:
@@ -102,11 +121,7 @@ def run_tests(verbose=False):
     ws = workspace()
     try:
         dirs = qml_import_dirs(runner)
-        env = dict(os.environ, QT_QPA_PLATFORM="offscreen", QML_XHR_ALLOW_FILE_READ="1")
-        if dirs:
-            joined = os.pathsep.join(dirs + [p for p in os.environ.get("QML_IMPORT_PATH", "").split(os.pathsep) if p])
-            env["QML_IMPORT_PATH"] = joined
-            env["QML2_IMPORT_PATH"] = joined
+        env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QML_XHR_ALLOW_FILE_READ="1"))
         cmd = [runner, "-input", str(ws / "tests")]
         for d in dirs:
             cmd += ["-import", d]
@@ -131,7 +146,8 @@ def run_lint():
         incs = ["-I", str(ws)]
         for d in qml_import_dirs(linter):
             incs += ["-I", d]
-        proc = subprocess.run([linter, *incs, *files], capture_output=True, text=True)
+        proc = subprocess.run([linter, *incs, *files], capture_output=True, text=True,
+                              env=qml_env(qml_import_dirs(linter), dict(os.environ)))
         out = (proc.stdout + proc.stderr).replace(str(ws) + "/", "")
         return proc.returncode, out + (hint(out) if proc.returncode else "")
     finally:

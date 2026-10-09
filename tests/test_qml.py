@@ -97,6 +97,19 @@ class ImportDiscovery(unittest.TestCase):
         os.environ["RUTILE_QML_IMPORT"] = os.pathsep.join(["/custom/a", found, "/custom/a"])
         self.assertEqual(qtws.qml_import_dirs(str(tool)), ["/custom/a", found])
 
+    def test_qml_env_merges_and_keeps_existing_values(self):
+        import os
+        base = {"A": "1", "QML_IMPORT_PATH": os.pathsep.join(["/x", "/y"]), "QML2_IMPORT_PATH": "/z:/x".replace(":", os.pathsep)}
+        env = qtws.qml_env(["/new", "/x"], base)
+        want = os.pathsep.join(["/new", "/x", "/y", "/z"])
+        self.assertEqual(env["QML_IMPORT_PATH"], want)
+        self.assertEqual(env["QML2_IMPORT_PATH"], want)
+        self.assertEqual(env["A"], "1")
+        self.assertEqual(base["QML_IMPORT_PATH"], os.pathsep.join(["/x", "/y"]), "input must not be mutated")
+
+    def test_qml_env_without_dirs_changes_nothing(self):
+        self.assertEqual(qtws.qml_env([], {"A": "1"}), {"A": "1"})
+
     def test_hint_only_for_environment_failures(self):
         self.assertIn("RUTILE_QML_IMPORT", qtws.hint('module "QtQuick.Window" is not installed'))
         self.assertIn("RUTILE_QML_IMPORT", qtws.hint("Type TestCase unavailable"))

@@ -1,7 +1,7 @@
 # Every commit must pass `make check`.
 PY ?= python3
 
-.PHONY: check tokens tokens-check generate generate-check test lint qmllint
+.PHONY: check tokens tokens-check generate generate-check test lint qmllint flake-check
 
 check: tokens-check generate-check test lint qmllint
 
@@ -27,3 +27,7 @@ lint:
 # Lints the QML that does not need Quickshell; skips (loudly) if Qt tools are missing.
 qmllint:
 	$(PY) tools/qtws.py lint
+
+# Needs nix with flakes and network on first run; not part of `make check`.
+flake-check:
+	nix flake check --no-build

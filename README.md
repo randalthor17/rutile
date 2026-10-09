@@ -4,7 +4,7 @@ A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
 
-Status: **0.3.0, foundations only.** Design tokens, the matugen palette pipeline
+Status: **0.3.1, foundations only.** Design tokens, the matugen palette pipeline
 and the QML token singletons (Colors, Shapes, Motion, Type, Elevation, Spacing,
 Spring) with the checks every later commit has to pass. No UI yet.
 
@@ -44,3 +44,19 @@ Colors are not here: they come from matugen at runtime, see `docs/theme.md`
 ## License
 
 MIT, see `LICENSE`. Third-party notices are in `NOTICE`.
+
+## Development
+
+    nix develop      # git, make, python (+ materialyoucolor), matugen, qtdeclarative, quickshell
+    make check
+
+The dev shell exists because a bare `qtdeclarative` in a nix shell leaves Qt's
+QML modules off the import path (`module "QtQuick.Window" is not installed`).
+It exports `QML2_IMPORT_PATH` from nixpkgs' own prefix. It deliberately does not
+set `QT_QPA_PLATFORM`, so Quickshell launched from it opens real windows; the
+test tool sets offscreen itself.
+
+Flakes only see git-tracked files. The first `nix develop` writes `flake.lock`;
+commit it so everyone shares one nixpkgs. `make flake-check` evaluates the flake.
+Outside nix, `tools/qtws.py` also derives the QML import path from the Qt tool's
+install prefix; override with `RUTILE_QML_IMPORT` if your layout is unusual.
