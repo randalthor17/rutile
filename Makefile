@@ -1,9 +1,9 @@
 # Every commit must pass `make check`.
 PY ?= python3
 
-.PHONY: check tokens tokens-check test lint qmllint
+.PHONY: check tokens tokens-check generate generate-check test lint qmllint
 
-check: tokens-check test lint qmllint
+check: tokens-check generate-check test lint qmllint
 
 tokens:
 	$(PY) tools/gen_tokens.py
@@ -11,15 +11,19 @@ tokens:
 tokens-check:
 	$(PY) tools/gen_tokens.py --check
 
+# Regenerate the QML token singletons after changing tokens or roles.
+generate:
+	$(PY) tools/gen_qml.py
+
+generate-check:
+	$(PY) tools/gen_qml.py --check
+
 test:
 	$(PY) -m unittest discover -s tests -v
 
 lint:
 	$(PY) tools/lint_hardcoded.py
 
-# qmllint only runs when there is QML and the tool is installed.
+# Lints the QML that does not need Quickshell; skips (loudly) if Qt tools are missing.
 qmllint:
-	@files=$$(find shell settings -name '*.qml' 2>/dev/null); \
-	if [ -z "$$files" ]; then echo "qmllint: no QML yet"; \
-	elif command -v qmllint >/dev/null 2>&1; then qmllint $$files; \
-	else echo "qmllint: not installed, SKIPPED (run it on your machine)"; fi
+	$(PY) tools/qtws.py lint
