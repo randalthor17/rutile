@@ -38,6 +38,36 @@ def qt_tool(name):
     return None
 
 
+def qml_import_dirs(tool):
+    """Directories holding Qt's QML modules (QtQuick.Window, QtTest, ...).
+
+    Some installs (notably nix shells) leave them off the tool's default import
+    path, so derive them from where the tool really lives. RUTILE_QML_IMPORT
+    (os.pathsep separated) is added first and always wins.
+    """
+    dirs = [d for d in os.environ.get("RUTILE_QML_IMPORT", "").split(os.pathsep) if d]
+    prefix = Path(os.path.realpath(tool)).parent.parent
+    for rel in ("lib/qt-6/qml", "lib/qt6/qml", "lib/qml", "qml"):
+        d = prefix / rel
+        if (d / "QtQuick").is_dir():
+            dirs.append(str(d))
+    seen, out = set(), []
+    for d in dirs:
+        if d not in seen:
+            seen.add(d)
+            out.append(d)
+    return out
+
+
+def hint(output):
+    """Extra advice appended to Qt failures that are environment problems, not test failures."""
+    if "is not installed" in output or "Type TestCase unavailable" in output:
+        return ("\nHINT: Qt's QML modules were not found on the import path. Point RUTILE_QML_IMPORT at the "
+                "directory containing QtQuick/ and QtTest/ (nixpkgs: <qtdeclarative>/lib/qt-6/qml), e.g.\n"
+                "  RUTILE_QML_IMPORT=$(dirname $(dirname $(readlink -f $(which qmltestrunner))))/lib/qt-6/qml make check")
+    return ""
+
+
 def workspace():
     """Return a temp dir with imp/ (shell/common + qmldir), tests/, data/."""
     ws = Path(tempfile.mkdtemp(prefix="rutile-qtws-"))
@@ -71,10 +101,19 @@ def run_tests(verbose=False):
         return SKIPPED, "qmltestrunner not found (set RUTILE_QT_BIN)", None
     ws = workspace()
     try:
+        dirs = qml_import_dirs(runner)
         env = dict(os.environ, QT_QPA_PLATFORM="offscreen", QML_XHR_ALLOW_FILE_READ="1")
-        proc = subprocess.run([runner, "-input", str(ws / "tests")], capture_output=True, text=True,
-                              env=env, timeout=300)
+        if dirs:
+            joined = os.pathsep.join(dirs + [p for p in os.environ.get("QML_IMPORT_PATH", "").split(os.pathsep) if p])
+            env["QML_IMPORT_PATH"] = joined
+            env["QML2_IMPORT_PATH"] = joined
+        cmd = [runner, "-input", str(ws / "tests")]
+        for d in dirs:
+            cmd += ["-import", d]
+        proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=300)
         out = proc.stdout + proc.stderr
+        if proc.returncode != 0:
+            out += hint(out)
         m = re.search(r"Totals: (\d+) passed, (\d+) failed, (\d+) skipped", out)
         counts = tuple(map(int, m.groups())) if m else None
         return proc.returncode, out, counts
@@ -89,8 +128,12 @@ def run_lint():
     ws = workspace()
     try:
         files = sorted(str(p) for p in (ws / "imp").glob("*.qml"))
-        proc = subprocess.run([linter, "-I", str(ws), *files], capture_output=True, text=True)
-        return proc.returncode, (proc.stdout + proc.stderr).replace(str(ws) + "/", "")
+        incs = ["-I", str(ws)]
+        for d in qml_import_dirs(linter):
+            incs += ["-I", d]
+        proc = subprocess.run([linter, *incs, *files], capture_output=True, text=True)
+        out = (proc.stdout + proc.stderr).replace(str(ws) + "/", "")
+        return proc.returncode, out + (hint(out) if proc.returncode else "")
     finally:
         shutil.rmtree(ws, ignore_errors=True)
 

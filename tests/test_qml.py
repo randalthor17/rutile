@@ -40,6 +40,69 @@ class QmlLint(unittest.TestCase):
         self.assertEqual(code, 0, out)
 
 
+class ImportDiscovery(unittest.TestCase):
+    """The nix-shell failure: QML modules exist next to the tool but are not on its default path."""
+
+    def make_prefix(self, rel):
+        import tempfile
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(__import__("shutil").rmtree, root, True)
+        (root / "bin").mkdir()
+        tool = root / "bin" / "qmltestrunner"
+        tool.write_text("")
+        (root / rel / "QtQuick").mkdir(parents=True)
+        return root, tool
+
+    def setUp(self):
+        import os
+        self.old = os.environ.pop("RUTILE_QML_IMPORT", None)
+        self.addCleanup(self.restore)
+
+    def restore(self):
+        import os
+        os.environ.pop("RUTILE_QML_IMPORT", None)
+        if self.old is not None:
+            os.environ["RUTILE_QML_IMPORT"] = self.old
+
+    def test_finds_nixpkgs_layout(self):
+        root, tool = self.make_prefix("lib/qt-6/qml")
+        self.assertEqual(qtws.qml_import_dirs(str(tool)), [str(root / "lib/qt-6/qml")])
+
+    def test_finds_other_layouts(self):
+        for rel in ("lib/qt6/qml", "lib/qml", "qml"):
+            root, tool = self.make_prefix(rel)
+            self.assertEqual(qtws.qml_import_dirs(str(tool)), [str(root / rel)], rel)
+
+    def test_follows_symlinks_to_the_real_prefix(self):
+        import tempfile
+        root, tool = self.make_prefix("lib/qt-6/qml")
+        links = Path(tempfile.mkdtemp())
+        self.addCleanup(__import__("shutil").rmtree, links, True)
+        (links / "qmltestrunner").symlink_to(tool)
+        self.assertEqual(qtws.qml_import_dirs(str(links / "qmltestrunner")), [str(root / "lib/qt-6/qml")])
+
+    def test_ignores_dirs_without_qtquick(self):
+        import tempfile
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(__import__("shutil").rmtree, root, True)
+        (root / "bin").mkdir()
+        (root / "bin" / "qmltestrunner").write_text("")
+        (root / "lib/qt-6/qml").mkdir(parents=True)
+        self.assertEqual(qtws.qml_import_dirs(str(root / "bin" / "qmltestrunner")), [])
+
+    def test_env_override_comes_first_and_is_deduplicated(self):
+        import os
+        root, tool = self.make_prefix("lib/qt-6/qml")
+        found = str(root / "lib/qt-6/qml")
+        os.environ["RUTILE_QML_IMPORT"] = os.pathsep.join(["/custom/a", found, "/custom/a"])
+        self.assertEqual(qtws.qml_import_dirs(str(tool)), ["/custom/a", found])
+
+    def test_hint_only_for_environment_failures(self):
+        self.assertIn("RUTILE_QML_IMPORT", qtws.hint('module "QtQuick.Window" is not installed'))
+        self.assertIn("RUTILE_QML_IMPORT", qtws.hint("Type TestCase unavailable"))
+        self.assertEqual(qtws.hint("FAIL!  : Colors::test_known_values()"), "")
+
+
 class SkipPath(unittest.TestCase):
     """Without Qt tools the QML checks must skip loudly, never fail or pass silently."""
 

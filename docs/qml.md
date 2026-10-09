@@ -78,9 +78,20 @@ drop-in `Behavior`; a convenience wrapper can come with the component kit.
 `qmldir`, because Quickshell normally registers singletons itself), then runs
 `tests/qml/tst_*.qml` with `qmltestrunner` offscreen and lints with `qmllint`.
 Files importing Quickshell (`PaletteWatcher.qml`) are excluded, so they are only
-verified on a real Quickshell session. The Qt tools are found on PATH,
-`/usr/lib/qt6/bin` or `RUTILE_QT_BIN`; without them the Qt checks skip with a
-message. Development so far used Qt 6.4.2.
+verified on a real Quickshell session.
+
+Finding Qt: `RUTILE_QT_BIN` (if set, the only place searched), else
+`/usr/lib/qt6/bin`, else PATH. Without the tools the Qt checks skip with a message.
+
+QML modules: some installs (nix shells) leave Qt's own QML modules such as
+`QtQuick.Window` off the tool's default import path, which makes `TestCase`
+fail with `module "QtQuick.Window" is not installed`. `tools/qtws.py` derives the
+module directory from the tool's real location (`lib/qt-6/qml`, `lib/qt6/qml`,
+...) and passes it explicitly. If that guess is wrong, set `RUTILE_QML_IMPORT`
+to the directory that contains `QtQuick/` and `QtTest/`; the failure output
+prints the command to do it.
+
+Development used Qt 6.4.2 (sandbox) and Qt 6.11.2 (nix shell).
 
 The JS spring math is checked against an independent Python implementation
 (`tests/spring_ref.py`), which is itself checked against RK4 numerical
