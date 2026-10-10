@@ -16,9 +16,43 @@ class QmlSuite(unittest.TestCase):
         self.assertEqual(code, 0, out[-3000:])
         self.assertIsNotNone(counts, "could not parse qmltestrunner totals")
         passed, failed, skipped = counts
-        self.assertEqual((failed, skipped), (0, 0), out[-3000:])
+        self.assertEqual(failed, 0, out[-3000:])
+        # Only the optional font tests may skip (no icon font found, or a Qt without font.variableAxes).
+        skip_lines = [l for l in out.splitlines() if l.startswith("SKIP")]
+        self.assertEqual(len(skip_lines), skipped)
+        for line in skip_lines:
+            self.assertIn("FontFiles", line, "unexpected skip: " + line)
         # Guards against a silently empty run (wrong input dir, import problems).
         self.assertGreaterEqual(passed, 30)
+
+    def test_workspace_adds_font_test_only_when_fonts_are_found(self):
+        import json
+        import os
+        import shutil
+        import tempfile
+        fonts = json.loads((ROOT / "theme" / "fonts.json").read_text())
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        old = os.environ.get("RUTILE_FONT_DIRS")
+        self.addCleanup(lambda: os.environ.__setitem__("RUTILE_FONT_DIRS", old) if old is not None
+                        else os.environ.pop("RUTILE_FONT_DIRS", None))
+        os.environ["RUTILE_FONT_DIRS"] = str(d)
+        ws = qtws.workspace()
+        try:
+            self.assertFalse((ws / "tests" / "tst_fonts.qml").exists())
+            self.assertEqual(json.loads((ws / "data" / "fontpaths.json").read_text()), {})
+        finally:
+            shutil.rmtree(ws, ignore_errors=True)
+        (d / "x").mkdir()
+        (d / "x" / fonts["text"]["file"]).write_bytes(b"not a real font")
+        ws = qtws.workspace()
+        try:
+            self.assertTrue((ws / "tests" / "tst_fonts.qml").exists())
+            paths = json.loads((ws / "data" / "fontpaths.json").read_text())
+            self.assertEqual(list(paths), ["text"])
+            self.assertTrue(paths["text"].endswith(fonts["text"]["file"]))
+        finally:
+            shutil.rmtree(ws, ignore_errors=True)
 
     def test_workspace_excludes_quickshell_files_and_declares_singletons(self):
         ws = qtws.workspace()
@@ -26,6 +60,7 @@ class QmlSuite(unittest.TestCase):
             qmldir = (ws / "imp" / "qmldir").read_text().splitlines()
             self.assertIn("singleton Colors Colors.qml", qmldir)
             self.assertIn("singleton Motion Motion.qml", qmldir)
+            self.assertIn("singleton Fonts Fonts.qml", qmldir)
             self.assertIn("Spring Spring.qml", qmldir)
             self.assertFalse((ws / "imp" / "PaletteWatcher.qml").exists())
         finally:

@@ -1,0 +1,30 @@
+{
+  "_note": "Single source of truth for fonts. tools/gen_qml.py turns it into Fonts.qml and the Type defaults. Family names must equal what the font files report (tests check this when the fonts are available).",
+  "text": {
+    "family": "Google Sans Flex",
+    "file": "GoogleSansFlex[GRAD,ROND,opsz,slnt,wdth,wght].ttf",
+    "package": "nix/googlesans-flex.nix",
+    "version": "4.007",
+    "license": "OFL-1.1",
+    "axes": {
+      "opsz": {"min": 6, "default": 18, "max": 144},
+      "wdth": {"min": 25, "default": 100, "max": 151},
+      "wght": {"min": 1, "default": 400, "max": 1000},
+      "GRAD": {"min": 0, "default": 0, "max": 100},
+      "ROND": {"min": 0, "default": 0, "max": 100},
+      "slnt": {"min": -10, "default": 0, "max": 0}
+    }
+  },
+  "icons": {
+    "family": "Material Symbols Rounded",
+    "file": "MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf",
+    "package": "pkgs.material-symbols",
+    "license": "Apache-2.0",
+    "axes": {
+      "FILL": {"min": 0, "default": 0, "max": 1},
+      "GRAD": {"min": -50, "default": 0, "max": 200},
+      "opsz": {"min": 20, "default": 24, "max": 48},
+      "wght": {"min": 100, "default": 400, "max": 700}
+    }
+  }
+}

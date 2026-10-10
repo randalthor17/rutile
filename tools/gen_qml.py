@@ -92,12 +92,12 @@ def gen_motion(t):
     return "\n".join(out) + "\n"
 
 
-def gen_type(t):
+def gen_type(t, fonts):
     styles = t["type"]["styles"]
-    out = [header("Type scale from tokens/m3e.json (sp treated as px; tracking in px).") + "QtObject {"]
-    out.append("    // Font families are set when fonts are bundled (plan item 1.4).")
-    out.append('    property string plainFamily: "sans-serif"')
-    out.append('    property string brandFamily: "sans-serif"')
+    out = [header("Type scale from tokens/m3e.json (sp treated as px; tracking in px).", qt="QtQuick") + "QtObject {"]
+    out.append("    // Families come from theme/fonts.json; both M3 font roles use the same family.")
+    out.append(f'    property string plainFamily: "{fonts["text"]["family"]}"')
+    out.append(f'    property string brandFamily: "{fonts["text"]["family"]}"')
     out.append("")
     for name, s in styles.items():
         obj = {"font": s["font"], "size": s["size_sp"], "lineHeight": s["line_height_sp"],
@@ -107,6 +107,26 @@ def gen_type(t):
     out.append("    function family(style) {")
     out.append('        return style.font === "brand" ? brandFamily : plainFamily;')
     out.append("    }")
+    out.append("")
+    out.append("    // A QML font value for a style (family, pixel size, weight, letter spacing).")
+    out.append("    // lineHeight cannot live in a font: set Text.lineHeight and lineHeightMode yourself.")
+    out.append("    function font(style) {")
+    out.append("        return Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,")
+    out.append("                         letterSpacing: style.tracking });")
+    out.append("    }")
+    out.append("}")
+    return "\n".join(out) + "\n"
+
+
+def gen_fonts(fonts):
+    out = [header("Font families and variation axes from theme/fonts.json.") + "QtObject {"]
+    out.append("    // Family names exactly as the font files report them.")
+    out.append(f'    readonly property string textFamily: "{fonts["text"]["family"]}"')
+    out.append(f'    readonly property string iconFamily: "{fonts["icons"]["family"]}"')
+    out.append("")
+    out.append("    // Variation axes as {tag: {min, default, max}}.")
+    out.append(f'    readonly property var textAxes: ({js(fonts["text"]["axes"])})')
+    out.append(f'    readonly property var iconAxes: ({js(fonts["icons"]["axes"])})')
     out.append("}")
     return "\n".join(out) + "\n"
 
@@ -164,6 +184,10 @@ def build():
     tokens = json.loads((ROOT / "tokens" / "m3e.json").read_text())
     roles = json.loads((ROOT / "theme" / "roles.json").read_text())["roles"]
     fallback = json.loads((ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json").read_text())
+    fonts = json.loads((ROOT / "theme" / "fonts.json").read_text())
+    for kind in ("text", "icons"):
+        if not re.fullmatch(r"[A-Za-z0-9 ]+", fonts[kind]["family"]):
+            raise SystemExit(f"font family {fonts[kind]['family']!r} has characters unsafe for generated QML")
     for r in roles:
         if not re.fullmatch(r"[a-z]+(_[a-z]+)*", r):
             raise SystemExit(f"unexpected role name {r!r}")
@@ -177,7 +201,8 @@ def build():
         "Shapes.qml": gen_shapes(tokens),
         "Elevation.qml": gen_elevation(tokens),
         "Motion.qml": gen_motion(tokens),
-        "Type.qml": gen_type(tokens),
+        "Type.qml": gen_type(tokens, fonts),
+        "Fonts.qml": gen_fonts(fonts),
         "Colors.qml": gen_colors(roles, fallback),
     }
 

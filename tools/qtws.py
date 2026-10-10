@@ -105,6 +105,18 @@ def workspace():
     (imp / "qmldir").write_text("\n".join(entries) + "\n")
     for f in (ROOT / "tests" / "qml").glob("*.qml"):
         shutil.copy(f, tests / f.name)
+    # Fonts are not vendored. When the real files are found (RUTILE_FONT_DIRS) an extra QML
+    # test loads them into Qt; otherwise that test is simply not part of the run.
+    import otinfo
+    fonts = json.loads((ROOT / "theme" / "fonts.json").read_text())
+    found = {}
+    for kind in ("text", "icons"):
+        path = otinfo.find_font(fonts[kind]["file"], otinfo.font_dirs())
+        if path:
+            found[kind] = path
+    (data / "fontpaths.json").write_text(json.dumps(found))
+    if found:
+        shutil.copy(ROOT / "tests" / "qml_optional" / "tst_fonts.qml", tests / "tst_fonts.qml")
     shutil.copy(ROOT / "theme" / "roles.json", data)
     shutil.copy(ROOT / "tokens" / "m3e.json", data)
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", data / "palette.json")

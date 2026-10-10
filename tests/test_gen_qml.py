@@ -57,9 +57,39 @@ class Generated(unittest.TestCase):
                 self.assertEqual(tables[mode][role], golden["colors"][mode][role])
 
     def test_imports_match_what_each_file_needs(self):
-        self.assertIn("import QtQuick\n", self.files["Colors.qml"])  # `color` needs QtQuick
-        for name in ("Shapes.qml", "Elevation.qml", "Motion.qml", "Type.qml"):
+        # `color` and Qt.font() need QtQuick; pure data singletons only need QtQml.
+        for name in ("Colors.qml", "Type.qml"):
+            self.assertIn("import QtQuick\n", self.files[name])
+        for name in ("Shapes.qml", "Elevation.qml", "Motion.qml", "Fonts.qml"):
             self.assertIn("import QtQml\n", self.files[name])
+
+    def test_fonts_come_from_fonts_json(self):
+        fonts = json.loads((ROOT / "theme" / "fonts.json").read_text())
+        text, icons = fonts["text"]["family"], fonts["icons"]["family"]
+        self.assertIn(f'readonly property string textFamily: "{text}"', self.files["Fonts.qml"])
+        self.assertIn(f'readonly property string iconFamily: "{icons}"', self.files["Fonts.qml"])
+        self.assertIn(f'property string plainFamily: "{text}"', self.files["Type.qml"])
+        self.assertIn(f'property string brandFamily: "{text}"', self.files["Type.qml"])
+        self.assertIn("function font(style)", self.files["Type.qml"])
+        axes = re.search(r"readonly property var textAxes: \((\{.*\})\)\n", self.files["Fonts.qml"])
+        self.assertEqual(json.loads(axes.group(1)), fonts["text"]["axes"])
+
+    def test_unsafe_family_name_is_rejected(self):
+        real = g.ROOT
+        import tempfile, shutil
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            shutil.copytree(real / "theme", tmp / "theme")
+            shutil.copytree(real / "tokens", tmp / "tokens")
+            data = json.loads((tmp / "theme" / "fonts.json").read_text())
+            data["text"]["family"] = 'Evil"; import os; "'
+            (tmp / "theme" / "fonts.json").write_text(json.dumps(data))
+            g.ROOT = tmp
+            with self.assertRaises(SystemExit):
+                g.build()
+        finally:
+            g.ROOT = real
+            shutil.rmtree(tmp, ignore_errors=True)
 
     def test_shapes_pill_radius(self):
         self.assertIn("readonly property int full: 9999", self.files["Shapes.qml"])

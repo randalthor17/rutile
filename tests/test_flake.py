@@ -41,6 +41,21 @@ class FlakeShape(unittest.TestCase):
     def test_does_not_override_qt_plugin_path(self):
         self.assertIsNone(re.search(r"export\s+QT_PLUGIN_PATH", code(FLAKE)))
 
+    def test_depends_on_the_vendored_google_sans_flex_package(self):
+        body = code(FLAKE)
+        self.assertIn("./nix/googlesans-flex.nix", body)
+        self.assertIn("google-sans-flex", body)
+        self.assertTrue((ROOT / "nix" / "googlesans-flex.nix").exists())
+
+    def test_devshell_exposes_fonts_to_qt_without_losing_system_fonts(self):
+        body = code(FLAKE)
+        self.assertIn("pkgs.material-symbols", body)
+        self.assertIn("RUTILE_FONT_DIRS", body)
+        self.assertIn("FONTCONFIG_FILE", body)
+        self.assertIn("tools/fontconf.py", body)
+        # the helper includes the system config; the shell must not point FONTCONFIG_FILE elsewhere
+        self.assertEqual(body.count("export FONTCONFIG_FILE"), 1)
+
     def test_materialyoucolor_is_optional(self):
         self.assertIn("lib.optional (ps ? materialyoucolor)", FLAKE)
 

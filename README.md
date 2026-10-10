@@ -4,21 +4,23 @@ A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
 
-Status: **0.3.1, foundations only.** Design tokens, the matugen palette pipeline
-and the QML token singletons (Colors, Shapes, Motion, Type, Elevation, Spacing,
-Spring) with the checks every later commit has to pass. No UI yet.
+Status: **0.4.0, foundations only.** Design tokens, the matugen palette pipeline,
+the QML token singletons (Colors, Shapes, Motion, Type, Fonts, Elevation, Spacing,
+Spring), fonts and a nix devshell, with the checks every later commit has to
+pass. No UI yet.
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
 | `tokens/` | M3E tokens: vendored sources, checksums, generated `m3e.json` |
-| `theme/` | matugen config + template, role list, golden palette fixture |
-| `tools/` | `gen_tokens.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `lint_hardcoded.py` |
+| `theme/` | matugen config + template, role list, golden palette, `fonts.json` |
+| `tools/` | `gen_tokens.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `fontconf.py`, `otinfo.py`, `lint_hardcoded.py` |
 | `tests/` | unit tests (stdlib `unittest`) |
 | `shell/common/` | QML singletons (mostly generated), `Spring`, `PaletteWatcher` |
 | `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` |
-| `settings/` `widgets/` `nix/` | empty for now, see roadmap |
+| `nix/` | `googlesans-flex.nix`, our Google Sans Flex package |
+| `settings/` `widgets/` | empty for now, see roadmap |
 
 ## Checks
 
@@ -26,8 +28,9 @@ Spring) with the checks every later commit has to pass. No UI yet.
     make generate  # regenerate shell/common singletons after changing tokens/roles
 
 Tests that need matugen, `materialyoucolor` (optional, test-only) or the Qt tools
-(`qmltestrunner`, `qmllint`) skip with a message when they are missing, so check
-the skipped count. See `docs/qml.md`. Visual and compositor behavior can only be verified on a real
+(`qmltestrunner`, `qmllint`) skip with a message when they are missing, and the
+font checks skip unless `RUTILE_FONT_DIRS` finds the font files (the devshell
+sets it), so check the skipped count. See `docs/qml.md` and `docs/fonts.md`. Visual and compositor behavior can only be verified on a real
 niri session.
 
 ## Tokens

@@ -99,6 +99,37 @@ TestCase {
         compare(Type.family(Type.bodyLarge), Type.plainFamily);
     }
 
+    function test_fonts_singleton_and_type_defaults() {
+        compare(Fonts.textFamily, "Google Sans Flex");
+        compare(Fonts.iconFamily, "Material Symbols Rounded");
+        compare(Type.plainFamily, Fonts.textFamily);
+        compare(Type.brandFamily, Fonts.textFamily);
+        compare(Fonts.textAxes.wght.min, 1);
+        compare(Fonts.textAxes.wght.max, 1000);
+        compare(Fonts.textAxes.ROND.max, 100);
+        compare(Fonts.iconAxes.FILL.max, 1);
+        compare(Object.keys(Fonts.textAxes).length, 6);
+        compare(Object.keys(Fonts.iconAxes).length, 4);
+    }
+
+    function test_type_font_helper_matches_tokens() {
+        var styles = tokens.type.styles;
+        for (var name in styles) {
+            var want = styles[name];
+            var f = Type.font(Type[camel(name)]);
+            compare(f.family, Fonts.textFamily, name);
+            compare(f.pixelSize, want.size_sp, name);
+            compare(f.weight, want.weight, name);
+            // Qt keeps letter spacing in 1/64 px steps (0.15 reads back as 0.140625), so allow one step.
+            fuzzyCompare(f.letterSpacing, want.tracking_sp, 1 / 64 + 1e-9, name);
+        }
+    }
+
+    function test_emphasized_styles_are_heavier_through_the_helper() {
+        verify(Type.font(Type.titleMediumEmphasized).weight > Type.font(Type.titleMedium).weight);
+        verify(Type.font(Type.bodyLargeEmphasized).weight > Type.font(Type.bodyLarge).weight);
+    }
+
     function test_spacing_is_a_4px_grid() {
         var all = [Spacing.xs, Spacing.sm, Spacing.md, Spacing.lg, Spacing.xl, Spacing.xxl, Spacing.xxxl];
         for (var i = 0; i < all.length; i++) {
