@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../imp"
+import qs.common
 
 // Only part of the run when the real font files were found (see tools/qtws.py).
 TestCase {
@@ -61,6 +61,27 @@ TestCase {
                "wght 800 width " + heavy.implicitWidth + " should exceed wght 300 width " + light.implicitWidth);
         light.destroy();
         heavy.destroy();
+    }
+
+    // Type.font() sets wght/opsz through font.variableAxes where Qt has it; then the Emphasized
+    // styles (weights 500/700) must come out wider than their regular twins.
+    function test_emphasized_styles_render_heavier_when_qt_supports_variable_axes() {
+        load(paths.text);
+        var probe = textComp.createObject(root, { "font.family": Fonts.textFamily });
+        var supported = probe.font.variableAxes !== undefined;
+        probe.destroy();
+        if (!supported)
+            skip("this Qt has no font.variableAxes, so exact weights cannot be tested here");
+        var pairs = [["bodyLarge", "bodyLargeEmphasized"], ["titleMedium", "titleMediumEmphasized"],
+                     ["labelLarge", "labelLargeEmphasized"]];
+        for (var i = 0; i < pairs.length; i++) {
+            var regular = textComp.createObject(root, { "font": Type.font(Type[pairs[i][0]]) });
+            var emphasized = textComp.createObject(root, { "font": Type.font(Type[pairs[i][1]]) });
+            verify(emphasized.implicitWidth > regular.implicitWidth,
+                   pairs[i][1] + " width " + emphasized.implicitWidth + " should exceed " + regular.implicitWidth);
+            regular.destroy();
+            emphasized.destroy();
+        }
     }
 
     function test_icon_ligature_renders_a_glyph_not_the_word() {

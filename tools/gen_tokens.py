@@ -191,8 +191,10 @@ def render(tokens):
 def refresh():
     import urllib.request
     manifest = load_manifest()
+    from urllib.parse import urljoin
     for name in manifest["files"]:
-        with urllib.request.urlopen(manifest["base_url"] + name, timeout=30) as r:
+        url = urljoin(manifest["base_url"], manifest.get("paths", {}).get(name, name))
+        with urllib.request.urlopen(url, timeout=30) as r:
             (SRC / name).write_bytes(r.read())
         manifest["files"][name] = sha256(SRC / name)
     (SRC / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")

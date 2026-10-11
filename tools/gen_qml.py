@@ -104,6 +104,9 @@ def gen_type(t, fonts):
                "tracking": s["tracking_sp"], "weight": s["weight"]}
         out.append(f"    readonly property var {camel(name)}: ({js(obj)})")
     out.append("")
+    out.append("    // camelCase names of every style above, in token order (for galleries and tests).")
+    out.append(f"    readonly property var styleNames: {js([camel(n) for n in styles])}")
+    out.append("")
     out.append("    function family(style) {")
     out.append('        return style.font === "brand" ? brandFamily : plainFamily;')
     out.append("    }")
@@ -111,8 +114,19 @@ def gen_type(t, fonts):
     out.append("    // A QML font value for a style (family, pixel size, weight, letter spacing).")
     out.append("    // lineHeight cannot live in a font: set Text.lineHeight and lineHeightMode yourself.")
     out.append("    function font(style) {")
-    out.append("        return Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,")
-    out.append("                         letterSpacing: style.tracking });")
+    out.append("        const f = Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,")
+    out.append("                           letterSpacing: style.tracking });")
+    out.append("        // Exact weight and optical size when this Qt has font.variableAxes (recent Qt). Without it")
+    out.append("        // only the font's named instances are reachable (Regular and Bold, not Medium, in Qt 6.4).")
+    out.append("        // The access is feature-detected, so the linter's \"not found\" warning is suppressed here.")
+    out.append("        // qmllint disable type")
+    out.append("        if (f[\"variableAxes\"] !== undefined) {")
+    out.append("            const opsz = Fonts.textAxes.opsz;")
+    out.append("            f[\"variableAxes\"] = ({ \"wght\": style.weight,")
+    out.append("                                   \"opsz\": Math.max(opsz.min, Math.min(opsz.max, style.size)) });")
+    out.append("        }")
+    out.append("        // qmllint enable type")
+    out.append("        return f;")
     out.append("    }")
     out.append("}")
     return "\n".join(out) + "\n"
@@ -127,6 +141,41 @@ def gen_fonts(fonts):
     out.append("    // Variation axes as {tag: {min, default, max}}.")
     out.append(f'    readonly property var textAxes: ({js(fonts["text"]["axes"])})')
     out.append(f'    readonly property var iconAxes: ({js(fonts["icons"]["axes"])})')
+    out.append("}")
+    return "\n".join(out) + "\n"
+
+
+def camel_keys(value):
+    """Recursively camelCase dict keys (snake_case -> snakeCase); other values pass through."""
+    if isinstance(value, dict):
+        return {camel(k): camel_keys(v) for k, v in value.items()}
+    return value
+
+
+def role_names(table):
+    """Replace snake_case color role values with their QML property names."""
+    return {k: (None if v is None else qml_name(v)) for k, v in table.items()}
+
+
+def gen_control_spec(c):
+    def sizes(table):
+        out = {}
+        for key, spec in table.items():
+            spec = dict(spec)
+            if "label_style" in spec:
+                spec["label_style"] = camel(spec["label_style"])
+            out[key] = camel_keys(spec)
+        return out
+
+    out = [header("Button and icon button specs from tokens/components.json (sizes in px, colors as "
+                  "Colors property names, shapes in px or \"full\").") + "QtObject {"]
+    out.append(f"    readonly property var stateOpacity: ({js(camel_keys(c['state_opacity']))})")
+    out.append(f"    readonly property var buttonSizes: ({js(sizes(c['button']['sizes']))})")
+    out.append(f"    readonly property var buttonTypes: "
+               f"({js({k: camel_keys(role_names(v)) for k, v in c['button']['types'].items()})})")
+    out.append(f"    readonly property var iconButtonSizes: ({js(sizes(c['icon_button']['sizes']))})")
+    out.append(f"    readonly property var iconButtonTypes: "
+               f"({js({k: camel_keys(role_names(v)) for k, v in c['icon_button']['types'].items()})})")
     out.append("}")
     return "\n".join(out) + "\n"
 
@@ -185,6 +234,7 @@ def build():
     roles = json.loads((ROOT / "theme" / "roles.json").read_text())["roles"]
     fallback = json.loads((ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json").read_text())
     fonts = json.loads((ROOT / "theme" / "fonts.json").read_text())
+    components = json.loads((ROOT / "tokens" / "components.json").read_text())
     for kind in ("text", "icons"):
         if not re.fullmatch(r"[A-Za-z0-9 ]+", fonts[kind]["family"]):
             raise SystemExit(f"font family {fonts[kind]['family']!r} has characters unsafe for generated QML")
@@ -203,6 +253,7 @@ def build():
         "Motion.qml": gen_motion(tokens),
         "Type.qml": gen_type(tokens, fonts),
         "Fonts.qml": gen_fonts(fonts),
+        "ControlSpec.qml": gen_control_spec(components),
         "Colors.qml": gen_colors(roles, fallback),
     }
 

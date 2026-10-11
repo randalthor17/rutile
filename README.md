@@ -4,10 +4,9 @@ A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
 
-Status: **0.4.0, foundations only.** Design tokens, the matugen palette pipeline,
-the QML token singletons (Colors, Shapes, Motion, Type, Fonts, Elevation, Spacing,
-Spring), fonts and a nix devshell, with the checks every later commit has to
-pass. No UI yet.
+Status: **0.5.0.** Design tokens, the matugen palette pipeline, the QML singletons, fonts,
+a nix devshell, the first M3E components (Surface, StateLayer, Icon, Button, IconButton)
+and a component gallery, with the checks every later commit has to pass. No shell UI yet.
 
 ## Layout
 
@@ -15,10 +14,12 @@ pass. No UI yet.
 |---|---|
 | `tokens/` | M3E tokens: vendored sources, checksums, generated `m3e.json` |
 | `theme/` | matugen config + template, role list, golden palette, `fonts.json` |
-| `tools/` | `gen_tokens.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `fontconf.py`, `otinfo.py`, `lint_hardcoded.py` |
+| `tools/` | `gen_tokens.py`, `gen_components.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `fontconf.py`, `otinfo.py`, `lint_hardcoded.py` |
 | `tests/` | unit tests (stdlib `unittest`) |
-| `shell/common/` | QML singletons (mostly generated), `Spring`, `PaletteWatcher` |
-| `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` |
+| `shell/common/` | QML singletons (mostly generated), `Spring`, `SpringColor`, `PaletteWatcher` |
+| `shell/components/` | M3E components: Surface, StateLayer, Icon, Button, IconButton |
+| `shell/gallery.qml`, `shell/gallery/` | component gallery (window + content) |
+| `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` (`qml_optional/`: need real fonts; `qml_render/`: gallery renderer) |
 | `nix/` | `googlesans-flex.nix`, our Google Sans Flex package |
 | `settings/` `widgets/` | empty for now, see roadmap |
 
@@ -63,3 +64,11 @@ Flakes only see git-tracked files. The first `nix develop` writes `flake.lock`;
 commit it so everyone shares one nixpkgs. `make flake-check` evaluates the flake.
 Outside nix, `tools/qtws.py` also derives the QML import path from the Qt tool's
 install prefix; override with `RUTILE_QML_IMPORT` if your layout is unusual.
+
+## Try it
+
+    nix develop
+    quickshell -p shell/gallery.qml                            # the gallery window
+    python3 tools/qtws.py render --out render --mode light     # or render PNGs offscreen
+
+See `docs/components.md`.

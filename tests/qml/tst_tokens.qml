@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../imp"
+import qs.common
 
 TestCase {
     name: "Tokens"
@@ -123,6 +123,13 @@ TestCase {
             // Qt keeps letter spacing in 1/64 px steps (0.15 reads back as 0.140625), so allow one step.
             fuzzyCompare(f.letterSpacing, want.tracking_sp, 1 / 64 + 1e-9, name);
         }
+    }
+
+    function test_style_names_list_every_token_style_in_order() {
+        var want = Object.keys(tokens.type.styles).map(camel);
+        compare(JSON.stringify(Type.styleNames), JSON.stringify(want));
+        for (var i = 0; i < Type.styleNames.length; i++)
+            verify(Type[Type.styleNames[i]].size > 0, Type.styleNames[i]);
     }
 
     function test_emphasized_styles_are_heavier_through_the_helper() {

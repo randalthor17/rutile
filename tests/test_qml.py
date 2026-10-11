@@ -57,12 +57,16 @@ class QmlSuite(unittest.TestCase):
     def test_workspace_excludes_quickshell_files_and_declares_singletons(self):
         ws = qtws.workspace()
         try:
-            qmldir = (ws / "imp" / "qmldir").read_text().splitlines()
+            qmldir = (ws / "qs" / "common" / "qmldir").read_text().splitlines()
+            self.assertEqual(qmldir[0], "module qs.common")
+            comps = (ws / "qs" / "components" / "qmldir").read_text().splitlines()
+            self.assertEqual(comps[0], "module qs.components")
             self.assertIn("singleton Colors Colors.qml", qmldir)
             self.assertIn("singleton Motion Motion.qml", qmldir)
             self.assertIn("singleton Fonts Fonts.qml", qmldir)
             self.assertIn("Spring Spring.qml", qmldir)
-            self.assertFalse((ws / "imp" / "PaletteWatcher.qml").exists())
+            self.assertIn("module qs.gallery", (ws / "qs" / "gallery" / "qmldir").read_text().splitlines()[0])
+            self.assertFalse((ws / "qs" / "common" / "PaletteWatcher.qml").exists())
         finally:
             import shutil
             shutil.rmtree(ws, ignore_errors=True)
@@ -73,6 +77,52 @@ class QmlLint(unittest.TestCase):
     def test_qmllint_is_clean(self):
         code, out = qtws.run_lint()
         self.assertEqual(code, 0, out)
+
+
+@unittest.skipUnless(HAVE_QT, "qmltestrunner not found (set RUTILE_QT_BIN); render tool test SKIPPED")
+class RenderTool(unittest.TestCase):
+    def png_size(self, path):
+        import struct
+        data = Path(path).read_bytes()
+        self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n", path)
+        return struct.unpack(">II", data[16:24])
+
+    def test_render_produces_full_size_slices_in_both_modes(self):
+        import shutil
+        import tempfile
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        sizes = {}
+        for mode in ("dark", "light"):
+            code, out, slices = qtws.render_gallery(d, mode)
+            self.assertEqual(code, 0, out[-2000:])
+            self.assertIsNotNone(slices, out[-2000:])
+            self.assertGreaterEqual(len(slices), 4)
+            for p in slices:
+                self.assertEqual(self.png_size(p), (1180, 900))
+                self.assertGreater(Path(p).stat().st_size, 4000, f"{p} looks blank")
+            sizes[mode] = [Path(p).read_bytes() for p in slices]
+        # the two modes must actually look different
+        self.assertNotEqual(sizes["dark"][0], sizes["light"][0])
+
+    def test_render_cli_reports_skipped_without_qt_tools(self):
+        import contextlib
+        import io
+        import os
+        import tempfile
+        old = os.environ.get("RUTILE_QT_BIN")
+        os.environ["RUTILE_QT_BIN"] = tempfile.mkdtemp()
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                code = qtws.main(["render", "--out", tempfile.mkdtemp()])
+            self.assertEqual(code, 0)
+            self.assertIn("render: SKIPPED", buf.getvalue())
+        finally:
+            if old is None:
+                os.environ.pop("RUTILE_QT_BIN")
+            else:
+                os.environ["RUTILE_QT_BIN"] = old
 
 
 class ImportDiscovery(unittest.TestCase):
@@ -149,6 +199,8 @@ class ImportDiscovery(unittest.TestCase):
         self.assertIn("RUTILE_QML_IMPORT", qtws.hint('module "QtQuick.Window" is not installed'))
         self.assertIn("RUTILE_QML_IMPORT", qtws.hint("Type TestCase unavailable"))
         self.assertEqual(qtws.hint("FAIL!  : Colors::test_known_values()"), "")
+        # a missing qs.* module is our problem, not Qt's: no Qt-path advice
+        self.assertEqual(qtws.hint('module "qs.common" is not installed'), "")
 
 
 class SkipPath(unittest.TestCase):

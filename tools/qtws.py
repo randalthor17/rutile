@@ -7,6 +7,8 @@ normally registers them itself.
 
     qtws.py lint     qmllint the QML that can be checked without Quickshell
     qtws.py test     run tests/qml/tst_*.qml with qmltestrunner
+    qtws.py render [--mode dark|light] [--out DIR]
+                     render the gallery offscreen to a PNG (to look at the result)
 
 Exit code 3 means Qt tools were not found (callers treat that as "skipped").
 """
@@ -21,6 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIPPED = 3
+MODULES = ("common", "components", "gallery")
 
 
 def qt_tool(name):
@@ -80,7 +83,8 @@ def qml_env(dirs, base):
 
 def hint(output):
     """Extra advice appended to Qt failures that are environment problems, not test failures."""
-    if "is not installed" in output or "Type TestCase unavailable" in output:
+    # Only when a Qt module itself is missing; a missing qs.* module is a different problem.
+    if re.search(r'module "Qt[\w.]*" is not installed', output) or "Type TestCase unavailable" in output:
         return ("\nHINT: Qt's QML modules were not found on the import path. Point RUTILE_QML_IMPORT at the "
                 "directory containing QtQuick/ and QtTest/ (nixpkgs: <qtdeclarative>/lib/qt-6/qml), e.g.\n"
                 "  RUTILE_QML_IMPORT=$(dirname $(dirname $(readlink -f $(which qmltestrunner))))/lib/qt-6/qml make check")
@@ -88,21 +92,31 @@ def hint(output):
 
 
 def workspace():
-    """Return a temp dir with imp/ (shell/common + qmldir), tests/, data/."""
+    """Return a temp dir laid out like Quickshell's import root.
+
+    qs/common and qs/components hold copies of shell/common and shell/components with
+    generated qmldir files, so tests and lint use `import qs.common` exactly as the shell
+    does (Quickshell registers singletons itself; plain Qt needs a qmldir). tests/ and
+    data/ sit beside qs/. Files importing Quickshell are left out.
+    """
     ws = Path(tempfile.mkdtemp(prefix="rutile-qtws-"))
-    imp, tests, data = ws / "imp", ws / "tests", ws / "data"
-    for d in (imp, tests, data):
+    tests, data = ws / "tests", ws / "data"
+    for d in (tests, data):
         d.mkdir()
-    entries = []
-    for f in sorted((ROOT / "shell" / "common").iterdir()):
-        text = f.read_text()
-        if "import Quickshell" in text:
-            continue
-        shutil.copy(f, imp / f.name)
-        if f.suffix == ".qml":
-            kind = "singleton " if re.search(r"^pragma Singleton", text, re.M) else ""
-            entries.append(f"{kind}{f.stem} {f.name}")
-    (imp / "qmldir").write_text("\n".join(entries) + "\n")
+    for module in MODULES:
+        src = ROOT / "shell" / module
+        dst = ws / "qs" / module
+        dst.mkdir(parents=True)
+        entries = [f"module qs.{module}"]
+        for f in sorted(src.iterdir()) if src.is_dir() else []:
+            text = f.read_text()
+            if "import Quickshell" in text:
+                continue
+            shutil.copy(f, dst / f.name)
+            if f.suffix == ".qml":
+                kind = "singleton " if re.search(r"^pragma Singleton", text, re.M) else ""
+                entries.append(f"{kind}{f.stem} {f.name}")
+        (dst / "qmldir").write_text("\n".join(entries) + "\n")
     for f in (ROOT / "tests" / "qml").glob("*.qml"):
         shutil.copy(f, tests / f.name)
     # Fonts are not vendored. When the real files are found (RUTILE_FONT_DIRS) an extra QML
@@ -132,8 +146,9 @@ def run_tests(verbose=False):
         return SKIPPED, "qmltestrunner not found (set RUTILE_QT_BIN)", None
     ws = workspace()
     try:
-        dirs = qml_import_dirs(runner)
-        env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QML_XHR_ALLOW_FILE_READ="1"))
+        dirs = [str(ws)] + qml_import_dirs(runner)
+        env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
+                                 QML_XHR_ALLOW_FILE_READ="1"))
         cmd = [runner, "-input", str(ws / "tests")]
         for d in dirs:
             cmd += ["-import", d]
@@ -148,13 +163,46 @@ def run_tests(verbose=False):
         shutil.rmtree(ws, ignore_errors=True)
 
 
+def render_gallery(out_dir, mode="dark", width=1180):
+    """Render shell/gallery/GalleryContent offscreen as scrolled slices out_dir/gallery-<mode>-N.png.
+
+    Uses the real fonts when RUTILE_FONT_DIRS finds them. Returns (exit code, output, list of slice PNGs).
+    """
+    runner = qt_tool("qmltestrunner")
+    if not runner:
+        return SKIPPED, "qmltestrunner not found (set RUTILE_QT_BIN)", None
+    ws = workspace()
+    try:
+        for f in (ws / "tests").glob("*.qml"):
+            f.unlink()
+        shutil.copy(ROOT / "tests" / "qml_render" / "tst_render.qml", ws / "tests" / "tst_render.qml")
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        png = out_dir / f"gallery-{mode}.png"
+        for old in out_dir.glob(f"gallery-{mode}-*.png"):
+            old.unlink()
+        (ws / "data" / "render.json").write_text(json.dumps({"out": str(png), "mode": mode, "width": width}))
+        dirs = [str(ws)] + qml_import_dirs(runner)
+        env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
+                                 QML_XHR_ALLOW_FILE_READ="1"))
+        cmd = [runner, "-input", str(ws / "tests")]
+        for d in dirs:
+            cmd += ["-import", d]
+        proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=300)
+        out = proc.stdout + proc.stderr
+        slices = sorted(out_dir.glob(f"gallery-{mode}-*.png"), key=lambda q: int(q.stem.rsplit('-', 1)[1]))
+        return proc.returncode, out, (slices if slices else None)
+    finally:
+        shutil.rmtree(ws, ignore_errors=True)
+
+
 def run_lint():
     linter = qt_tool("qmllint")
     if not linter:
         return SKIPPED, "qmllint not found (set RUTILE_QT_BIN)"
     ws = workspace()
     try:
-        files = sorted(str(p) for p in (ws / "imp").glob("*.qml"))
+        files = sorted(str(p) for m in MODULES for p in (ws / "qs" / m).glob("*.qml"))
         incs = ["-I", str(ws)]
         for d in qml_import_dirs(linter):
             incs += ["-I", d]
@@ -167,6 +215,15 @@ def run_lint():
 
 
 def main(argv):
+    if argv and argv[0] == "render":
+        mode = argv[argv.index("--mode") + 1] if "--mode" in argv else "dark"
+        out_dir = argv[argv.index("--out") + 1] if "--out" in argv else "render"
+        code, out, png = render_gallery(out_dir, mode)
+        if code == SKIPPED:
+            print(f"render: SKIPPED, {out}")
+            return 0
+        print("\n".join(map(str, png)) if png else out[-2000:])
+        return 0 if png else 1
     if not argv or argv[0] not in ("lint", "test"):
         print(__doc__)
         return 2

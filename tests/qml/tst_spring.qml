@@ -1,7 +1,7 @@
 import QtQuick
 import QtTest
-import "../imp"
-import "../imp/SpringMath.js" as SpringMath
+import qs.common
+import "../qs/common/SpringMath.js" as SpringMath
 
 TestCase {
     name: "Spring"
@@ -107,8 +107,41 @@ TestCase {
         verify(sp.settled);
     }
 
+    Item { id: driver; property real goal: 5 }
+    Component { id: boundComp; Spring { target: driver.goal } }
+
+    function test_rest_keeps_a_bound_target_snap_does_not() {
+        driver.goal = 5;
+        var bound = createTemporaryObject(boundComp, this);
+        compare(bound.target, 5);
+        bound.rest();
+        compare(bound.value, 5);
+        verify(bound.settled);
+        driver.goal = 9;                    // the binding must still be alive
+        compare(bound.target, 9);
+        verify(!bound.settled);
+
+        var snapped = createTemporaryObject(boundComp, this);
+        snapped.snap(5);                    // documents the pitfall: assignment removes the binding
+        driver.goal = 12;
+        compare(snapped.target, 5);
+        driver.goal = 5;
+    }
+
+    function test_spring_created_at_rest_is_settled_in_any_assignment_order() {
+        var a = Qt.createQmlObject('import qs.common; Spring { value: 1; target: 1 }', this);
+        var b = Qt.createQmlObject('import qs.common; Spring { target: 1; value: 1 }', this);
+        verify(a.settled);
+        verify(b.settled);
+        var moving = Qt.createQmlObject('import qs.common; Spring { target: 3 }', this);
+        verify(!moving.settled);
+        a.destroy();
+        b.destroy();
+        moving.destroy();
+    }
+
     function test_defaults_follow_expressive_default_spatial() {
-        var fresh = Qt.createQmlObject('import QtQuick; import "../imp"; Spring {}', this);
+        var fresh = Qt.createQmlObject('import QtQuick; import qs.common; Spring {}', this);
         var want = Motion.spring("spatial", "default");
         compare(fresh.stiffness, want.stiffness);
         compare(fresh.dampingRatio, want.dampingRatio);

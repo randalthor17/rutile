@@ -33,7 +33,15 @@ QtObject {
         }
     }
 
-    // Jump to v with no motion.
+    // Stop at the current target without moving it. Use this (not snap) when `target` is a
+    // binding: snap assigns target, and assigning from JavaScript removes the binding.
+    function rest() {
+        value = target;
+        velocity = 0;
+        settled = true;
+    }
+
+    // Jump to v with no motion. Assigns target, so it breaks a binding on target; see rest().
     function snap(v) {
         target = v;
         value = v;
@@ -43,6 +51,12 @@ QtObject {
 
     onTargetChanged: {
         if (value !== target) settled = false;
+    }
+
+    // A spring created at rest (value equal to target) is settled, whatever order the
+    // properties were assigned in.
+    Component.onCompleted: {
+        if (value === target && velocity === 0) settled = true;
     }
 
     default property list<QtObject> data: [

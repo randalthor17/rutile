@@ -1,0 +1,307 @@
+{
+  "_meta": {
+    "corrections": {
+      "button.sizes.xs": {
+        "applied": {
+          "icon_label_gap": 4,
+          "leading": 12,
+          "trailing": 12
+        },
+        "reason": "ButtonXSmallTokens.kt is not yet corrected upstream; Compose overrides it in Button.kt (ExtraSmallContentPadding, ExtraSmallIconSpacing)."
+      }
+    },
+    "fetched": "2026-10-07",
+    "generator": "tools/gen_components.py",
+    "note": "Generated from vendored androidx Compose Material3 token sources (Apache-2.0). Do not edit by hand.",
+    "ref": "androidx-main"
+  },
+  "button": {
+    "sizes": {
+      "l": {
+        "height": 96,
+        "icon": 32,
+        "icon_label_gap": 12,
+        "label_style": "headline_small",
+        "leading": 48,
+        "outline": 2,
+        "shape_pressed": 16,
+        "shape_round": "full",
+        "shape_selected_round": "full",
+        "shape_selected_square": 28,
+        "shape_square": 28,
+        "trailing": 48
+      },
+      "m": {
+        "height": 56,
+        "icon": 24,
+        "icon_label_gap": 8,
+        "label_style": "title_medium",
+        "leading": 24,
+        "outline": 1,
+        "shape_pressed": 12,
+        "shape_round": "full",
+        "shape_selected_round": "full",
+        "shape_selected_square": 16,
+        "shape_square": 16,
+        "trailing": 24
+      },
+      "s": {
+        "height": 40,
+        "icon": 20,
+        "icon_label_gap": 8,
+        "label_style": "label_large",
+        "leading": 16,
+        "outline": 1,
+        "shape_pressed": 8,
+        "shape_round": "full",
+        "shape_selected_round": "full",
+        "shape_selected_square": 12,
+        "shape_square": 12,
+        "trailing": 16
+      },
+      "xl": {
+        "height": 136,
+        "icon": 40,
+        "icon_label_gap": 16,
+        "label_style": "headline_large",
+        "leading": 64,
+        "outline": 3,
+        "shape_pressed": 16,
+        "shape_round": "full",
+        "shape_selected_round": "full",
+        "shape_selected_square": 28,
+        "shape_square": 28,
+        "trailing": 64
+      },
+      "xs": {
+        "height": 32,
+        "icon": 20,
+        "icon_label_gap": 4,
+        "label_style": "label_large",
+        "leading": 12,
+        "outline": 1,
+        "shape_pressed": 8,
+        "shape_round": "full",
+        "shape_selected_round": "full",
+        "shape_selected_square": 12,
+        "shape_square": 12,
+        "trailing": 12
+      }
+    },
+    "types": {
+      "elevated": {
+        "container": "surface_container_low",
+        "content": "primary",
+        "disabled_container": "on_surface",
+        "disabled_content": "on_surface_variant",
+        "outline": null,
+        "selected_container": "primary",
+        "selected_content": "on_primary",
+        "unselected_container": "surface_container_low",
+        "unselected_content": "primary"
+      },
+      "filled": {
+        "container": "primary",
+        "content": "on_primary",
+        "disabled_container": "on_surface",
+        "disabled_content": "on_surface_variant",
+        "outline": null,
+        "selected_container": "primary",
+        "selected_content": "on_primary",
+        "unselected_container": "surface_container",
+        "unselected_content": "on_surface_variant"
+      },
+      "outlined": {
+        "container": null,
+        "content": "on_surface_variant",
+        "disabled_container": null,
+        "disabled_content": "on_surface_variant",
+        "outline": "outline_variant",
+        "selected_container": "inverse_surface",
+        "selected_content": "inverse_on_surface",
+        "unselected_container": null,
+        "unselected_content": "on_surface_variant"
+      },
+      "text": {
+        "container": null,
+        "content": "on_surface_variant",
+        "disabled_container": null,
+        "disabled_content": "on_surface_variant",
+        "outline": null,
+        "selected_container": null,
+        "selected_content": "on_surface_variant",
+        "unselected_container": null,
+        "unselected_content": "on_surface_variant"
+      },
+      "tonal": {
+        "container": "secondary_container",
+        "content": "on_secondary_container",
+        "disabled_container": "on_surface",
+        "disabled_content": "on_surface_variant",
+        "outline": null,
+        "selected_container": "secondary",
+        "selected_content": "on_secondary",
+        "unselected_container": "secondary_container",
+        "unselected_content": "on_secondary_container"
+      }
+    }
+  },
+  "icon_button": {
+    "sizes": {
+      "l": {
+        "height": 96,
+        "icon": 32,
+        "outline": 2,
+        "padding": {
+          "default": 32,
+          "narrow": 16,
+          "wide": 48
+        },
+        "shape_pressed": 16,
+        "shape_round": "full",
+        "shape_selected_round": 28,
+        "shape_selected_square": "full",
+        "shape_square": 28,
+        "width": {
+          "default": 96,
+          "narrow": 64,
+          "wide": 128
+        }
+      },
+      "m": {
+        "height": 56,
+        "icon": 24,
+        "outline": 1,
+        "padding": {
+          "default": 16,
+          "narrow": 12,
+          "wide": 24
+        },
+        "shape_pressed": 12,
+        "shape_round": "full",
+        "shape_selected_round": 16,
+        "shape_selected_square": "full",
+        "shape_square": 16,
+        "width": {
+          "default": 56,
+          "narrow": 48,
+          "wide": 72
+        }
+      },
+      "s": {
+        "height": 40,
+        "icon": 24,
+        "outline": 1,
+        "padding": {
+          "default": 8,
+          "narrow": 4,
+          "wide": 14
+        },
+        "shape_pressed": 8,
+        "shape_round": "full",
+        "shape_selected_round": 12,
+        "shape_selected_square": "full",
+        "shape_square": 12,
+        "width": {
+          "default": 40,
+          "narrow": 32,
+          "wide": 52
+        }
+      },
+      "xl": {
+        "height": 136,
+        "icon": 40,
+        "outline": 3,
+        "padding": {
+          "default": 48,
+          "narrow": 32,
+          "wide": 72
+        },
+        "shape_pressed": 16,
+        "shape_round": "full",
+        "shape_selected_round": 28,
+        "shape_selected_square": "full",
+        "shape_square": 28,
+        "width": {
+          "default": 136,
+          "narrow": 104,
+          "wide": 184
+        }
+      },
+      "xs": {
+        "height": 32,
+        "icon": 20,
+        "outline": 1,
+        "padding": {
+          "default": 6,
+          "narrow": 4,
+          "wide": 10
+        },
+        "shape_pressed": 8,
+        "shape_round": "full",
+        "shape_selected_round": 12,
+        "shape_selected_square": "full",
+        "shape_square": 12,
+        "width": {
+          "default": 32,
+          "narrow": 28,
+          "wide": 40
+        }
+      }
+    },
+    "types": {
+      "filled": {
+        "container": "primary",
+        "content": "on_primary",
+        "disabled_container": "on_surface",
+        "disabled_content": "on_surface",
+        "outline": null,
+        "selected_container": "primary",
+        "selected_content": "on_primary",
+        "unselected_container": "surface_container",
+        "unselected_content": "on_surface_variant"
+      },
+      "outlined": {
+        "container": null,
+        "content": "on_surface_variant",
+        "disabled_container": null,
+        "disabled_content": "on_surface",
+        "outline": "outline_variant",
+        "selected_container": "inverse_surface",
+        "selected_content": "inverse_on_surface",
+        "unselected_container": null,
+        "unselected_content": "on_surface_variant"
+      },
+      "standard": {
+        "container": null,
+        "content": "on_surface_variant",
+        "disabled_container": null,
+        "disabled_content": "on_surface",
+        "outline": null,
+        "selected_container": null,
+        "selected_content": "primary",
+        "unselected_container": null,
+        "unselected_content": "on_surface_variant"
+      },
+      "tonal": {
+        "container": "secondary_container",
+        "content": "on_secondary_container",
+        "disabled_container": "on_surface",
+        "disabled_content": "on_surface",
+        "outline": null,
+        "selected_container": "secondary",
+        "selected_content": "on_secondary",
+        "unselected_container": "secondary_container",
+        "unselected_content": "on_secondary_container"
+      }
+    }
+  },
+  "state_opacity": {
+    "disabled_container": 0.1,
+    "disabled_content": 0.38,
+    "dragged": 0.16,
+    "focus": 0.1,
+    "hover": 0.08,
+    "pressed": 0.1
+  }
+}

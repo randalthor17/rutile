@@ -1,6 +1,6 @@
 import QtQuick
 import QtTest
-import "../imp"
+import qs.common
 
 TestCase {
     name: "Colors"

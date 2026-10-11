@@ -39,6 +39,9 @@ QtObject {
     readonly property var titleSmall: ({"font": "plain", "size": 14, "lineHeight": 20, "tracking": 0.1, "weight": 500})
     readonly property var titleSmallEmphasized: ({"font": "plain", "size": 14, "lineHeight": 20, "tracking": 0.1, "weight": 700})
 
+    // camelCase names of every style above, in token order (for galleries and tests).
+    readonly property var styleNames: ["bodyLarge", "bodyLargeEmphasized", "bodyMedium", "bodyMediumEmphasized", "bodySmall", "bodySmallEmphasized", "displayLarge", "displayLargeEmphasized", "displayMedium", "displayMediumEmphasized", "displaySmall", "displaySmallEmphasized", "headlineLarge", "headlineLargeEmphasized", "headlineMedium", "headlineMediumEmphasized", "headlineSmall", "headlineSmallEmphasized", "labelLarge", "labelLargeEmphasized", "labelMedium", "labelMediumEmphasized", "labelSmall", "labelSmallEmphasized", "titleLarge", "titleLargeEmphasized", "titleMedium", "titleMediumEmphasized", "titleSmall", "titleSmallEmphasized"]
+
     function family(style) {
         return style.font === "brand" ? brandFamily : plainFamily;
     }
@@ -46,7 +49,18 @@ QtObject {
     // A QML font value for a style (family, pixel size, weight, letter spacing).
     // lineHeight cannot live in a font: set Text.lineHeight and lineHeightMode yourself.
     function font(style) {
-        return Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,
-                         letterSpacing: style.tracking });
+        const f = Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,
+                           letterSpacing: style.tracking });
+        // Exact weight and optical size when this Qt has font.variableAxes (recent Qt). Without it
+        // only the font's named instances are reachable (Regular and Bold, not Medium, in Qt 6.4).
+        // The access is feature-detected, so the linter's "not found" warning is suppressed here.
+        // qmllint disable type
+        if (f["variableAxes"] !== undefined) {
+            const opsz = Fonts.textAxes.opsz;
+            f["variableAxes"] = ({ "wght": style.weight,
+                                   "opsz": Math.max(opsz.min, Math.min(opsz.max, style.size)) });
+        }
+        // qmllint enable type
+        return f;
     }
 }
