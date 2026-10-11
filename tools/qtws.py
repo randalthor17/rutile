@@ -81,6 +81,20 @@ def qml_env(dirs, base):
     return env
 
 
+def summarize(output):
+    """The failing lines of qmltestrunner output (each FAIL! plus its Loc/Actual/Expected), so a long
+    run's real error is the first thing shown instead of being cut off by truncation."""
+    lines = output.splitlines()
+    out = []
+    for i, line in enumerate(lines):
+        if line.startswith("FAIL!"):
+            out.append(line)
+            for nxt in lines[i + 1:i + 4]:
+                if nxt.lstrip().startswith(("Loc:", "Actual", "Expected")):
+                    out.append(nxt)
+    return "\n".join(out)
+
+
 def hint(output):
     """Extra advice appended to Qt failures that are environment problems, not test failures."""
     # Only when a Qt module itself is missing; a missing qs.* module is a different problem.
@@ -155,7 +169,7 @@ def run_tests(verbose=False):
         proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=300)
         out = proc.stdout + proc.stderr
         if proc.returncode != 0:
-            out += hint(out)
+            out = (summarize(out) + "\n\n" if summarize(out) else "") + out + hint(out)
         m = re.search(r"Totals: (\d+) passed, (\d+) failed, (\d+) skipped", out)
         counts = tuple(map(int, m.groups())) if m else None
         return proc.returncode, out, counts

@@ -4,7 +4,7 @@ A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
 
-Status: **0.5.0.** Design tokens, the matugen palette pipeline, the QML singletons, fonts,
+Status: **0.5.1.** Design tokens, the matugen palette pipeline, the QML singletons, fonts,
 a nix devshell, the first M3E components (Surface, StateLayer, Icon, Button, IconButton)
 and a component gallery, with the checks every later commit has to pass. No shell UI yet.
 

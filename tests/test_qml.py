@@ -13,7 +13,7 @@ HAVE_QT = qtws.qt_tool("qmltestrunner") is not None
 class QmlSuite(unittest.TestCase):
     def test_qml_tests_pass_offscreen(self):
         code, out, counts = qtws.run_tests()
-        self.assertEqual(code, 0, out[-3000:])
+        self.assertEqual(code, 0, qtws.summarize(out) + "\n\n" + out[-1500:])
         self.assertIsNotNone(counts, "could not parse qmltestrunner totals")
         passed, failed, skipped = counts
         self.assertEqual(failed, 0, out[-3000:])
@@ -201,6 +201,39 @@ class ImportDiscovery(unittest.TestCase):
         self.assertEqual(qtws.hint("FAIL!  : Colors::test_known_values()"), "")
         # a missing qs.* module is our problem, not Qt's: no Qt-path advice
         self.assertEqual(qtws.hint('module "qs.common" is not installed'), "")
+
+
+class Summarize(unittest.TestCase):
+    SAMPLE = "\n".join([
+        "PASS   : A::one()",
+        "FAIL!  : Fonts::two() 'bodyLargeEmphasized width 296 should exceed 302' returned FALSE. ()",
+        "   Loc: [/tmp/x/tst_fonts.qml(80)]",
+        "PASS   : A::three()",
+        "FAIL!  : Tokens::four() name",
+        "   Actual   (): 0.14",
+        "   Expected (): 0.15",
+        "   Loc: [/tmp/x/tst_tokens.qml(123)]",
+        "Totals: 1 passed, 2 failed, 0 skipped",
+    ])
+
+    def test_failures_come_first_with_their_details(self):
+        text = qtws.summarize(self.SAMPLE)
+        self.assertEqual(text.splitlines()[0].split()[0], "FAIL!")
+        self.assertIn("should exceed 302", text)
+        self.assertIn("tst_fonts.qml(80)", text)
+        self.assertIn("Actual   (): 0.14", text)
+        self.assertNotIn("PASS", text)
+        self.assertNotIn("Totals", text)
+
+    def test_no_failures_gives_nothing(self):
+        self.assertEqual(qtws.summarize("PASS   : A::one()\nTotals: 1 passed, 0 failed"), "")
+
+    def test_a_long_run_does_not_hide_the_failure(self):
+        passes = "\n".join(f"PASS   : T::t{i}()" for i in range(500))
+        long_output = self.SAMPLE + "\n" + passes          # the failure is followed by a long run of passes
+        tail = long_output[-300:]
+        self.assertNotIn("should exceed", tail)            # plain truncation would lose the message
+        self.assertIn("should exceed", qtws.summarize(long_output))
 
 
 class SkipPath(unittest.TestCase):

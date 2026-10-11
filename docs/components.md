@@ -51,7 +51,12 @@ Changing a token or component and re-rendering is the quickest way to check a lo
 
 ## What is verified where
 
-Offscreen with Qt 6.4: sizes, colors per type, toggle, disabled, press morph, keyboard, state layer,
-springs, pixels through a software renderer, gallery contents, `make check` (lint, 100+ tests).
-Not verifiable without Quickshell: `import qs.*` resolution and singleton registration (we generate a
-qmldir for tests; Quickshell is expected to do the equivalent), `FloatingWindow`, `PaletteWatcher`.
+Offscreen: sizes, colors per type, toggle, disabled, press morph, keyboard, state layer, springs,
+pixels through a software renderer, gallery contents, render tool, `make check` (lint, 120+ tests).
+
+Run on Qt 6.4 and on a modern Qt (6.12) because they differ: font axis control (exact weights, the
+`FILL` axis) only exists on newer Qt, and those tests skip on 6.4 and run on 6.11+.
+
+Seen working in a real Quickshell session: the gallery configuration loads without errors, which
+exercises `import qs.*` resolution, singleton registration, `FloatingWindow` and `PaletteWatcher`.
+Still unconfirmed visually in a real session: the look itself (compare your window to `render`).

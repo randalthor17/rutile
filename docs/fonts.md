@@ -49,16 +49,21 @@ the fonts normally.
 
 ## What is and is not verified
 
-Verified (with the real files, offscreen, Qt 6.4.2): both fonts load into Qt and
-report the configured family names; `Type.font()` carries the right family,
-size and weight; the `settings` icon ligature renders as one glyph;
-fontconfig resolves the family through the generated config.
+Verified with the real font files, offscreen:
 
-- Qt stores letter spacing in 1/64 px steps (0.15 reads back as 0.140625), so
-  tracking tokens are rounded by up to 0.016 px. Harmless, but tests allow for it.
-- Axis control (`ROND`, `opsz`, `wght` beyond named instances, icon `FILL`)
-  needs `font.variableAxes`, which Qt 6.4 does not have. A feature-detected test
-  checks it where Qt supports it and skips, with its reason, where it does not.
-  It has not been run against a Qt that supports it yet.
-- How weights 500 and 700 render for the variable font on newer Qt is checked
-  visually in the component gallery (plan item 1.7), not assumed.
+- both fonts load into Qt and report the configured family names; `Type.font()` carries the right
+  family, size and weight; the `settings` icon ligature renders as one glyph; fontconfig resolves the
+  family through the generated config
+- **On Qt 6.11 and 6.12** (`font.variableAxes` exists): `Type.font()` returns a font whose `wght` and
+  `opsz` axes equal the style's weight and size; Emphasized styles render heavier (weights 500 and 700,
+  not just the named Regular and Bold); `Icon.fill` changes the `FILL` axis (a filled `star` carries
+  clearly more ink than the outline one). These run in `make check` when the fonts are available.
+- On **Qt 6.4** (no `font.variableAxes`) those tests skip with their reason, and only the named
+  instances are reachable: weight 700 renders bold but 500 looks like 400.
+
+Notes:
+
+- Qt stores letter spacing in 1/64 px steps (0.15 reads back as 0.140625), so tracking tokens are
+  rounded by up to 0.016 px. Harmless; tests allow for it.
+- Emphasized styles also change letter spacing (`bodyLarge` 0.5 px vs `bodyLargeEmphasized` 0.15 px),
+  so an Emphasized line can be *narrower* than its regular twin. Width tests must neutralize tracking.
