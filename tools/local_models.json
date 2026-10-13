@@ -1,0 +1,35 @@
+{
+  "_note": "Model tiers for the local side-work agent on a 16 GB card (Radeon RX 9060 XT). Tags and sizes come from third-party summaries of the Ollama library, so confirm with `ollama list` / `ollama pull`. approx_gb is the Q4_K_M download size; weights plus KV cache must fit in vram_gb to stay fully on the GPU.",
+  "ollama_host": "127.0.0.1:11434",
+  "vram_gb": 16,
+  "context": 16384,
+  "kv_cache_overhead_gb": 2.5,
+  "default_tier": "main",
+  "env": {
+    "OLLAMA_FLASH_ATTENTION": "1",
+    "OLLAMA_KV_CACHE_TYPE": "q8_0",
+    "OLLAMA_CONTEXT_LENGTH": "16384"
+  },
+  "tiers": {
+    "fast": {
+      "tag": "qwen2.5-coder:7b",
+      "approx_gb": 4.7,
+      "note": "quick edits and docs; weakest at multi-file reasoning"
+    },
+    "main": {
+      "tag": "qwen2.5-coder:14b",
+      "approx_gb": 9.0,
+      "note": "dense 14B coder; the default. Fits with 16K context on 16 GB"
+    },
+    "general": {
+      "tag": "qwen3:14b",
+      "approx_gb": 9.3,
+      "note": "general model with a thinking mode; better for planning and prose, slower"
+    },
+    "stretch": {
+      "tag": "qwen3-coder:30b",
+      "approx_gb": 17.3,
+      "note": "MoE coder; does not fit in 16 GB, so part runs on the CPU. Measure speed before relying on it"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # Every commit must pass `make check`.
 PY ?= python3
 
-.PHONY: gallery render check tokens tokens-check generate generate-check test lint qmllint flake-check
+.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check
 
 check: tokens-check generate-check test lint qmllint
 
@@ -42,3 +42,7 @@ gallery:
 render:
 	$(PY) tools/qtws.py render --out render --mode dark
 	$(PY) tools/qtws.py render --out render --mode light
+
+# GPU-path rendering checks (need a graphical session; not part of `make check`).
+check-gpu:
+	$(PY) tools/qtws.py test-gpu

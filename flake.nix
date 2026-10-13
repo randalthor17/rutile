@@ -11,6 +11,9 @@
       googleSansFlex = pkgs: pkgs.callPackage ./nix/googlesans-flex.nix { };
     in
     {
+      # Ollama as a NixOS service on the AMD GPU (see nix/local-ai-module.nix and docs/sidework.md).
+      nixosModules.local-ai = import ./nix/local-ai-module.nix;
+
       packages = forAllSystems (pkgs: {
         google-sans-flex = googleSansFlex pkgs;
       });
@@ -53,6 +56,25 @@
                 fi
               fi
               echo "rutile dev shell: run 'make check'"
+            '';
+          };
+        } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
+          # ROCm only exists on x86_64, so this shell is not offered elsewhere.
+
+          # `nix develop .#local-ai`: the local-model side-work tools. Kept separate because the ROCm
+          # build of Ollama is a multi-gigabyte closure the everyday shell should not pull in.
+          local-ai = pkgs.mkShell {
+            name = "rutile-local-ai";
+            packages = [
+              pkgs.git
+              pkgs.gnumake
+              python
+              pkgs.ollama-rocm   # server + client with ROCm; use pkgs.ollama-vulkan if ROCm fails on the card
+              pkgs.aider-chat    # git-aware coding agent that talks to Ollama
+              pkgs.radeontop     # GPU load while a model runs
+            ];
+            shellHook = ''
+              echo "rutile local-ai shell: python3 tools/sidework.py models | serve | start TASK | agent TASK"
             '';
           };
         });

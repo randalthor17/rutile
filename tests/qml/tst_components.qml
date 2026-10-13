@@ -94,6 +94,13 @@ TestCase {
         compare(i.text, "home");
     }
 
+    function test_icon_uses_native_text_rendering() {
+        // Distance-field text corrupts filled Material Symbols glyphs on the GPU path; the software
+        // renderer used here cannot show that, so the setting itself is pinned (pixels: tests/qml_gpu).
+        var i = make(iconComp, { name: "favorite", fill: 1 });
+        compare(i.renderType, Text.NativeRendering);
+    }
+
     // ---- StateLayer ----
     function test_statelayer_target_opacity_follows_the_m3_state_opacities() {
         var s = make(stateComp);

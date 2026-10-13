@@ -56,6 +56,30 @@ class FlakeShape(unittest.TestCase):
         # the helper includes the system config; the shell must not point FONTCONFIG_FILE elsewhere
         self.assertEqual(body.count("export FONTCONFIG_FILE"), 1)
 
+    def test_local_ai_shell_and_module(self):
+        body = code(FLAKE)
+        self.assertIn("local-ai = pkgs.mkShell", body)
+        self.assertIn("pkgs.ollama-rocm", body)
+        self.assertIn("pkgs.aider-chat", body)
+        self.assertIn("nixosModules.local-ai", body)
+        self.assertIn("./nix/local-ai-module.nix", body)
+        self.assertTrue((ROOT / "nix" / "local-ai-module.nix").exists())
+
+    def test_local_ai_shell_is_x86_64_only_and_does_not_leak_into_the_default_shell(self):
+        body = code(FLAKE)
+        self.assertIn("isx86_64", body)
+        self.assertLess(body.index("isx86_64"), body.index("local-ai = pkgs.mkShell"),
+                        "the local-ai shell must sit behind the x86_64 guard")
+        default_part = body[body.index("default = pkgs.mkShell"):body.index("isx86_64")]
+        for heavy in ("ollama", "aider"):
+            self.assertNotIn(heavy, default_part, f"{heavy} must not be in the everyday shell")
+
+    def test_module_uses_the_rocm_package_with_a_vulkan_escape_hatch(self):
+        text = (ROOT / "nix" / "local-ai-module.nix").read_text()
+        self.assertIn("lib.mkDefault pkgs.ollama-rocm", text)
+        self.assertIn("pkgs.ollama-vulkan", text)
+        self.assertIn("services.ollama", text)
+
     def test_materialyoucolor_is_optional(self):
         self.assertIn("lib.optional (ps ? materialyoucolor)", FLAKE)
 

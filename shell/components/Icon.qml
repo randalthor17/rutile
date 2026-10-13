@@ -22,6 +22,12 @@ Text {
     font.family: Fonts.iconFamily
     font.pixelSize: size
 
+    // Native glyph rendering on purpose. Qt's default (distance-field) text mishandles the overlapping
+    // contours of filled Material Symbols glyphs (FILL 1): the shape comes out with light holes and
+    // streaks. CurveRendering leaves hairline seams. Reproduced on Qt 6.12 under OpenGL; see
+    // tests/qml_gpu/tst_glyphs.qml, which checks it through the real scene graph.
+    renderType: Text.NativeRendering
+
     // font.variableAxes exists only in recent Qt; the access is feature-detected on purpose, so the
     // "property not found" warning (true on Qt 6.4) is suppressed for this function only.
     // qmllint disable type

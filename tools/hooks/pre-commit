@@ -1,0 +1,6 @@
+#!/bin/sh
+# Rejects commits on local/* branches that touch paths outside the local model's allowlist.
+# A no-op on every other branch. Installed by `sidework.py start` (core.hooksPath, absolute).
+# Runs sidework.py from the checkout this hook lives in (the main one), never from the worktree
+# being policed, so editing tools/ in the worktree cannot weaken the guard.
+exec python3 "$(cd "$(dirname "$0")/.." && pwd)/sidework.py" guard

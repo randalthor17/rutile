@@ -1,0 +1,24 @@
+{
+  "_note": "Who may change what. Branches named local/* (the local-model side work) may only touch local_owned paths, and never always_forbidden ones. Enforced at commit time by tools/hooks/pre-commit, re-checked by `sidework.py check`. Claude's sessions never touch local_owned while a local branch is open, so merges cannot conflict.",
+  "base": "main",
+  "branch_prefix": "local/",
+  "identity": {"name": "local-model", "email": "local-model@localhost"},
+  "local_owned": [
+    "widgets/**",
+    "docs/llm/**"
+  ],
+  "always_forbidden": [
+    ".git/**",
+    "tools/sidework.py",
+    "tools/ownership.json",
+    "tools/local_models.json",
+    "tools/hooks/**",
+    "flake.nix",
+    "flake.lock",
+    "Makefile",
+    ".gitignore",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ]
+}

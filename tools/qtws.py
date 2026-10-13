@@ -7,6 +7,7 @@ normally registers them itself.
 
     qtws.py lint     qmllint the QML that can be checked without Quickshell
     qtws.py test     run tests/qml/tst_*.qml with qmltestrunner
+    qtws.py test-gpu run tests/qml_gpu through the real scene graph (needs a display session)
     qtws.py render [--mode dark|light] [--out DIR]
                      render the gallery offscreen to a PNG (to look at the result)
 
@@ -105,7 +106,7 @@ def hint(output):
     return ""
 
 
-def workspace():
+def workspace(tests_dir="qml"):
     """Return a temp dir laid out like Quickshell's import root.
 
     qs/common and qs/components hold copies of shell/common and shell/components with
@@ -131,7 +132,7 @@ def workspace():
                 kind = "singleton " if re.search(r"^pragma Singleton", text, re.M) else ""
                 entries.append(f"{kind}{f.stem} {f.name}")
         (dst / "qmldir").write_text("\n".join(entries) + "\n")
-    for f in (ROOT / "tests" / "qml").glob("*.qml"):
+    for f in (ROOT / "tests" / tests_dir).glob("*.qml"):
         shutil.copy(f, tests / f.name)
     # Fonts are not vendored. When the real files are found (RUTILE_FONT_DIRS) an extra QML
     # test loads them into Qt; otherwise that test is simply not part of the run.
@@ -143,7 +144,7 @@ def workspace():
         if path:
             found[kind] = path
     (data / "fontpaths.json").write_text(json.dumps(found))
-    if found:
+    if found and tests_dir == "qml":
         shutil.copy(ROOT / "tests" / "qml_optional" / "tst_fonts.qml", tests / "tst_fonts.qml")
     shutil.copy(ROOT / "theme" / "roles.json", data)
     shutil.copy(ROOT / "tokens" / "m3e.json", data)
@@ -154,15 +155,25 @@ def workspace():
     return ws
 
 
-def run_tests(verbose=False):
+def has_display():
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
+def run_tests(verbose=False, gpu=False):
     runner = qt_tool("qmltestrunner")
     if not runner:
         return SKIPPED, "qmltestrunner not found (set RUTILE_QT_BIN)", None
-    ws = workspace()
+    if gpu and not has_display():
+        return SKIPPED, "no display session (DISPLAY/WAYLAND_DISPLAY unset): GPU tests need a real one", None
+    ws = workspace("qml_gpu" if gpu else "qml")
     try:
         dirs = [str(ws)] + qml_import_dirs(runner)
-        env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
-                                 QML_XHR_ALLOW_FILE_READ="1"))
+        if gpu:
+            # the real scene graph: keep the session's platform and backend, only allow reading local files
+            env = qml_env(dirs, dict(os.environ, QML_XHR_ALLOW_FILE_READ="1"))
+        else:
+            env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
+                                     QML_XHR_ALLOW_FILE_READ="1"))
         cmd = [runner, "-input", str(ws / "tests")]
         for d in dirs:
             cmd += ["-import", d]
@@ -238,6 +249,13 @@ def main(argv):
             return 0
         print("\n".join(map(str, png)) if png else out[-2000:])
         return 0 if png else 1
+    if argv and argv[0] == "test-gpu":
+        code, out, counts = run_tests(gpu=True)
+        if code == SKIPPED:
+            print(f"gpu tests: SKIPPED, {out}")
+            return 0
+        print(out if code else f"gpu tests passed {counts}")
+        return code
     if not argv or argv[0] not in ("lint", "test"):
         print(__doc__)
         return 2
