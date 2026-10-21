@@ -1,35 +1,35 @@
 {
-  "_note": "Model tiers for the local side-work agent on a 16 GB card (Radeon RX 9060 XT). Tags and sizes come from third-party summaries of the Ollama library, so confirm with `ollama list` / `ollama pull`. approx_gb is the Q4_K_M download size; weights plus KV cache must fit in vram_gb to stay fully on the GPU.",
+  "_note": "Model tiers for the local side-work agent (opencode on Ollama) on a 16 GB card (Radeon RX 9060 XT). An agent needs a model with reliable TOOL CALLING and a long context, so these are the Qwen3 family, not qwen2.5-coder (reported to hang in opencode's tool loop). Tags and sizes come from third-party summaries of the Ollama library: confirm with `ollama pull`. approx_gb is the Q4_K_M download; weights plus kv_cache_overhead_gb must fit vram_gb to stay fully on the GPU. `sidework.py prepare` bakes `context` into a derived model because Ollama's OpenAI-compatible endpoint ignores per-request context.",
   "ollama_host": "127.0.0.1:11434",
   "vram_gb": 16,
-  "context": 16384,
-  "kv_cache_overhead_gb": 2.5,
+  "context": 32768,
+  "output_tokens": 8192,
+  "kv_cache_overhead_gb": 3.5,
+  "derived_prefix": "rutile-",
   "default_tier": "main",
   "env": {
     "OLLAMA_FLASH_ATTENTION": "1",
     "OLLAMA_KV_CACHE_TYPE": "q8_0",
-    "OLLAMA_CONTEXT_LENGTH": "16384"
+    "OLLAMA_CONTEXT_LENGTH": "32768"
   },
   "tiers": {
     "fast": {
-      "tag": "qwen2.5-coder:7b",
-      "approx_gb": 4.7,
-      "note": "quick edits and docs; weakest at multi-file reasoning"
+      "tag": "qwen3:8b",
+      "approx_gb": 5.2,
+      "temperature": 0.6,
+      "note": "quick and light; weakest at long tool loops. Good for docs and small data files"
     },
     "main": {
-      "tag": "qwen2.5-coder:14b",
-      "approx_gb": 9.0,
-      "note": "dense 14B coder; the default. Fits with 16K context on 16 GB"
-    },
-    "general": {
       "tag": "qwen3:14b",
       "approx_gb": 9.3,
-      "note": "general model with a thinking mode; better for planning and prose, slower"
+      "temperature": 0.6,
+      "note": "the default: tool-capable 14B with a thinking mode. Fits with a 32K context on 16 GB"
     },
     "stretch": {
       "tag": "qwen3-coder:30b",
-      "approx_gb": 17.3,
-      "note": "MoE coder; does not fit in 16 GB, so part runs on the CPU. Measure speed before relying on it"
+      "approx_gb": 18.0,
+      "temperature": 0.7,
+      "note": "MoE coder built for agentic use, but it does not fit in 16 GB so part runs on the CPU. Measure its speed before relying on it"
     }
   }
 }

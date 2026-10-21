@@ -1,5 +1,7 @@
 # Rutile Shell
 
+**Resuming this project (new session, new person, or a different AI)? Start with `docs/HANDOFF.md`.**
+
 A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
@@ -19,7 +21,7 @@ and a component gallery, with the checks every later commit has to pass. No shel
 | `shell/common/` | QML singletons (mostly generated), `Spring`, `SpringColor`, `PaletteWatcher` |
 | `shell/components/` | M3E components: Surface, StateLayer, Icon, Button, IconButton |
 | `shell/gallery.qml`, `shell/gallery/` | component gallery (window + content) |
-| `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` (`qml_optional/`: need real fonts; `qml_render/`: gallery renderer) |
+| `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` (`tests/qml_optional/`: need real fonts; `tests/qml_gpu/`: need a display; `tests/qml_render/`: gallery renderer) |
 | `nix/` | `googlesans-flex.nix`, our Google Sans Flex package |
 | `settings/` `widgets/` | empty for now, see roadmap |
 
@@ -77,4 +79,4 @@ See `docs/components.md`.
 
 `tools/sidework.py` runs a local Ollama model on bounded tasks in separate worktrees, in paths the main
 line of work does not touch, with commit-time enforcement. `nix develop .#local-ai` provides Ollama
-(ROCm) and aider; `nixosModules.local-ai` runs Ollama as a service. See `docs/sidework.md`.
+(ROCm) and opencode; `nixosModules.local-ai` runs Ollama as a service. See `docs/sidework.md`.

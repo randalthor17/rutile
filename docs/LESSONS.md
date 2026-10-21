@@ -1,0 +1,93 @@
+# Lessons
+
+Traps already hit, how each was found, and what now prevents it. Read this before debugging something that
+smells familiar. Add to it when you learn something; a lesson recorded is a bug not repeated.
+
+## Qt and QML
+
+- **`onPrimary` is a signal handler.** A QML property named `on` plus a capital is read as a handler, so
+  `Colors.onPrimary` returned nothing for 17 roles. Found by a test that read every role. Now `xOn`, and the
+  generator refuses `on*` names.
+- **Assigning a property from JavaScript destroys its binding.** `Spring.snap(v)` assigns `target`, which froze
+  every button's press morph. Found when a hover/press test never moved the radius. Added `rest()`; `snap()` is for
+  unbound targets only (`tests/qml/tst_spring.qml` pins both).
+- **Objects created with bound values start a transition.** `SpringColor` faded in from transparent at creation.
+  Found when a pixel test read a half-faded color. It now resets on `Component.onCompleted`.
+- **`for...in` does not enumerate a QML singleton's properties.** The type scale section of the gallery was empty.
+  `Type.styleNames` is generated instead.
+- **`property color` needs `import QtQuick`; pure data singletons only need `QtQml`.** Importing the wrong one
+  fails with "color is not a type".
+- **`Item` has a final property `right`.** A delegate declaring `property bool right` failed to compile.
+- **Ids can shadow JavaScript globals.** `id: gc` fails with "ID illegally masks global JavaScript property".
+- **Delegates should not reach into outer ids.** qmllint flags it; pass data through the model or a JS helper.
+- **qmllint directive comments are keyword-parsed.** A comment beginning "qmllint ..." is treated as a directive.
+  Suppress by category: `type` covers both missing `Qt.CursorShape` on Qt 6.4 and a feature-detected
+  `font.variableAxes`. Keep suppressions scoped to the few lines.
+- **`img.save()` returns `undefined` in Qt Quick Test**, so `verify(img.save(...))` always fails. Check the file exists.
+- **`grabImage` may composite onto an opaque background** (the software renderer does), so test shape by color,
+  not alpha.
+- **Qt stores letter spacing in 1/64 px steps** (0.15 reads back 0.140625). Tests allow one step.
+- **M3E Emphasized styles change letter spacing too** (`bodyLarge` 0.5 px, `bodyLargeEmphasized` 0.15 px), which can
+  make the heavier line narrower. A width test must zero the tracking so only weight differs. This was a wrong
+  test, found by reproducing a failure on the maintainer's Qt.
+- **Qt 6.4 vs 6.7+:** `font.variableAxes` does not exist before about 6.7. On 6.4 weight 700 renders bold but 500
+  looks like 400, and the `FILL` axis cannot be set. Feature-detect, never version-check, and skip tests loudly.
+- **Distance-field text corrupts filled Material Symbols glyphs.** The software renderer ignores `renderType`, so
+  every software-rendered test passed while the real GPU path showed holes. Only a real scene graph exposed it.
+  Use `NativeRendering` for icons; `tests/qml_gpu/` guards it.
+- **`qmltestrunner` needs a visible `TestCase`** (`width`, `height`, `visible: true`, `when: windowShown`) for any pixel check.
+
+## Testing method
+
+- **A test that cannot fail proves nothing.** Mutate the code and watch the test fail. Several guards turned out
+  vacuous this way (a quote-parity check that failed on valid Nix and passed on invalid; a "weaken the rules" attack
+  test that passed against the vulnerable design). An *equivalent mutant* (changes nothing observable) is not a gap;
+  mutate the real protection instead (remove the `onCompleted` reset, not the redundant guard).
+- **Reproduce the user's failure before fixing it.** The maintainer's Qt 6.11 failure reproduced on Qt 6.12, and the
+  real assertion text showed the test was wrong, not the code. Long output truncated the message: failing
+  assertions now print first (`tools/qtws.py` `summarize`).
+- **Check claims against the real tool.** Real opencode 1.19 showed the config precedence and the rule order; real
+  matugen and materialyoucolor exposed the 2021 vs 2025 spec gap; the real fonts' `fvar` tables gave the axes;
+  aider's source showed `--git-commit-verify` defaults to false.
+- **Run on more than one Qt.** 6.4 catches old-Qt assumptions, 6.12 catches new-Qt behavior. Neither stands in for
+  the maintainer's 6.11 session.
+- **Skipped is not passed.** `make check` prints a reason for every skip. Do not read a green run as "the font
+  behavior was verified" if the font tests skipped.
+- **Don't assert what you cannot justify.** A threshold guessed too high (95% agreement vs a measured 94.7%) was a
+  guess; set bounds from measurement and say so in a comment.
+
+## Nix and environment
+
+- **Flakes only see git-tracked files.** `git add` before evaluating. A new file missing from the commit breaks the
+  maintainer's shell.
+- **GitHub's API is rate limited in the sandbox** (`nix flake lock` fails with HTTP 403). `tools/dev/eval_flake.sh`
+  overrides nixpkgs with a codeload tarball of a known revision (`git ls-remote` works).
+- **ROCm does not exist on aarch64.** `local-ai` is behind an x86_64 guard; evaluate both architectures.
+- **A bare `qtdeclarative` in a nix shell leaves its QML modules off the import path** (`module "QtQuick.Window" is
+  not installed`). The dev shell exports `QML2_IMPORT_PATH` from nixpkgs' own prefix, and `tools/qtws.py` derives
+  it from the tool's real location as a fallback.
+- **Do not export `QT_QPA_PLATFORM=offscreen` in a shell hook**: Quickshell started from it would render nowhere.
+- **`sh` has no brace expansion and no `$PIPESTATUS`.** A failed `cd` chained with `&&` skipped commands silently
+  and files landed in `/`. Use explicit paths and check results.
+- **`package.name` is the same for every Ollama variant** (`ollama-0.40.0`). Compare derivation paths to prove
+  which build a module selects.
+- **GitHub raw and release assets work from the sandbox; most other hosts do not.** Prefer them for vendoring checks.
+
+## Side-work tooling
+
+- **Enforce rules from outside the thing being policed.** The first guard read `ownership.json` and ran
+  `sidework.py` from the worktree, so editing either there weakened it. Rules and code now come from the main checkout.
+- **aider skips git hooks by default** and its edit-format loop does not suit a small local model. opencode replaced it.
+- **opencode silently does nothing without `"tool_call": true`**, and Ollama's 4096-token default context breaks an
+  agent. Both are handled in the launcher and tested.
+- **opencode config precedence:** inline `OPENCODE_CONFIG_CONTENT` outranks a project `opencode.json`; its permission
+  maps merge key by key and the last match wins. Tool permissions are advisory, not a sandbox.
+- **opencode 1.x and 2.x have different config schemas.** The launcher refuses 2.x.
+
+## Process
+
+- **The first design is often wrong; test the attack.** The ownership guard, the weight test and the transparency
+  test were all fixed by trying to break them.
+- **Say what is unverified.** Every handoff names what was not tested and why (needs the maintainer's hardware or a
+  real session). Do not let a long list of green checks imply it.
+- **Do not tag what the maintainer already has.** If a tag was delivered, add a commit instead.

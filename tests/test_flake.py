@@ -60,7 +60,7 @@ class FlakeShape(unittest.TestCase):
         body = code(FLAKE)
         self.assertIn("local-ai = pkgs.mkShell", body)
         self.assertIn("pkgs.ollama-rocm", body)
-        self.assertIn("pkgs.aider-chat", body)
+        self.assertIn("pkgs.opencode", body)
         self.assertIn("nixosModules.local-ai", body)
         self.assertIn("./nix/local-ai-module.nix", body)
         self.assertTrue((ROOT / "nix" / "local-ai-module.nix").exists())
@@ -71,7 +71,7 @@ class FlakeShape(unittest.TestCase):
         self.assertLess(body.index("isx86_64"), body.index("local-ai = pkgs.mkShell"),
                         "the local-ai shell must sit behind the x86_64 guard")
         default_part = body[body.index("default = pkgs.mkShell"):body.index("isx86_64")]
-        for heavy in ("ollama", "aider"):
+        for heavy in ("ollama", "opencode"):
             self.assertNotIn(heavy, default_part, f"{heavy} must not be in the everyday shell")
 
     def test_module_uses_the_rocm_package_with_a_vulkan_escape_hatch(self):

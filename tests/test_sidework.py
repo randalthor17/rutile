@@ -174,11 +174,27 @@ class Consistency(unittest.TestCase):
         wanted = sw.load_models()["env"]
         self.assertEqual(in_module, wanted)
 
-    def test_hook_marks_in_the_docs_match_the_code(self):
-        doc = (ROOT / "docs" / "sidework.md").read_text()
-        self.assertIn("--git-commit-verify", doc)
-        self.assertIn("--git-commit-verify", " ".join(sw.aider_command(None, "x:1b")))
+    def test_docs_describe_the_opencode_workflow_and_its_limits_honestly(self):
+        doc = " ".join((ROOT / "docs" / "sidework.md").read_text().split())   # independent of line wrapping
+        for needle in ("opencode", "sidework.py prepare", "OPENCODE_CONFIG_CONTENT", "tool_call", "not a sandbox"):
+            self.assertIn(needle, doc, needle)
+        self.assertNotIn("aider", doc.lower(), "aider was dropped; the docs must not send people to it")
         self.assertIn("always forbidden", doc.lower().replace("*", ""))
+
+    def test_nothing_in_the_repo_still_points_at_aider(self):
+        for rel in ("tools/sidework.py", "flake.nix", "docs/sidework/CONVENTIONS.md", "README.md"):
+            self.assertNotIn("aider", (ROOT / rel).read_text().lower(), rel)
+
+    def test_context_is_consistent_between_agent_config_server_env_and_module(self):
+        m = sw.load_models()
+        self.assertEqual(int(m["env"]["OLLAMA_CONTEXT_LENGTH"]), m["context"])
+        self.assertGreaterEqual(m["context"], 32768, "an agent's system prompt and tools need a long context")
+
+    def test_tiers_are_tool_capable_families_not_the_one_reported_to_hang(self):
+        m = sw.load_models()
+        for name, t in m["tiers"].items():
+            self.assertNotIn("qwen2.5-coder", t["tag"], name)
+            self.assertIn("temperature", t, name)
 
 
 class StartAndGuard(Base):
@@ -352,73 +368,397 @@ class CheckMergeBundle(Base):
         self.assertEqual(outside.returncode, 2)
 
 
+RULES_SAMPLE = [
+    ("edit", "widgets/a.json", "allow"), ("edit", "widgets/templates/x/y.json", "allow"),
+    ("edit", "docs/llm/TOKENS.md", "allow"), ("edit", "shell/common/Colors.qml", "deny"),
+    ("edit", "tools/sidework.py", "deny"), ("edit", "tools/hooks/pre-commit", "deny"),
+    ("edit", "flake.nix", "deny"), ("edit", "README.md", "deny"), ("edit", "opencode.json", "deny"),
+    ("edit", ".git/config", "deny"), ("bash", "git status", "allow"), ("bash", "git add -A", "allow"),
+    ("bash", "git commit -m 'x'", "allow"), ("bash", "make check", "allow"),
+    ("bash", "git push origin main", "deny"), ("bash", "git commit --no-verify -m x", "deny"),
+    ("bash", "git commit -n -m x", "deny"), ("bash", "git config core.hooksPath /dev/null", "deny"),
+    ("bash", "git worktree add ../x", "deny"), ("bash", "curl https://example.com", "deny"),
+    ("bash", "sudo rm -rf /", "deny"), ("external_directory", "/elsewhere/file", "deny"),
+    ("webfetch", "https://example.com", "deny"),
+]
+
+
+def wildcard(pattern):
+    import re
+    return re.compile("^" + "".join(".*" if c == "*" else re.escape(c) for c in pattern) + "$", re.S)
+
+
+def decide(permission, kind, value):
+    """opencode semantics: patterns in order, the last match wins; a plain string applies to everything."""
+    rule = permission.get(kind)
+    if isinstance(rule, str):
+        return rule
+    action = None
+    for pattern, act in (rule or {}).items():
+        if wildcard(pattern).match(value):
+            action = act
+    return action
+
+
+def fake_bin(tmp, name, body):
+    d = Path(tmp) / "bin"
+    d.mkdir(exist_ok=True)
+    f = d / name
+    f.write_text("#!/bin/sh\n" + body)
+    f.chmod(0o755)
+    return d
+
+
+class OpencodeConfig(unittest.TestCase):
+    def setUp(self):
+        self.cfg, self.models = sw.load_config(), sw.load_models()
+
+    def config(self, allowed=None, host=None, instructions=("docs/sidework/CONVENTIONS.md",)):
+        if host:
+            os.environ["OLLAMA_HOST"] = host
+            self.addCleanup(os.environ.pop, "OLLAMA_HOST", None)
+        return sw.opencode_config(self.cfg, self.models, "rutile-main:32k", 0.6,
+                                  allowed or self.cfg["local_owned"], list(instructions))
+
+    def test_provider_model_and_limits(self):
+        c = self.config()
+        self.assertEqual(c["model"], "ollama/rutile-main:32k")
+        prov = c["provider"]["ollama"]
+        self.assertEqual(prov["npm"], "@ai-sdk/openai-compatible")
+        self.assertEqual(prov["options"]["baseURL"], "http://127.0.0.1:11434/v1")
+        m = prov["models"]["rutile-main:32k"]
+        self.assertIs(m["tool_call"], True, "without tool_call opencode silently sends no tools")
+        self.assertEqual(m["limit"], {"context": 32768, "output": 8192})
+        self.assertEqual(m["options"]["temperature"], 0.6)
+
+    def test_base_url_follows_the_host_and_accepts_a_scheme(self):
+        self.assertEqual(self.config(host="10.0.0.5:11434")["provider"]["ollama"]["options"]["baseURL"], "http://10.0.0.5:11434/v1")
+        self.assertEqual(self.config(host="https://gpu.lan")["provider"]["ollama"]["options"]["baseURL"], "https://gpu.lan/v1")
+
+    def test_never_leaves_the_machine(self):
+        c = self.config()
+        self.assertEqual(c["enabled_providers"], ["ollama"])
+        self.assertEqual(c["share"], "disabled")
+        self.assertIs(c["autoupdate"], False)
+        self.assertEqual(c["permission"]["webfetch"], "deny")
+        self.assertEqual(c["permission"]["websearch"], "deny")
+
+    def test_permission_decisions(self):
+        perm = self.config()["permission"]
+        for kind, value, want in RULES_SAMPLE:
+            self.assertEqual(decide(perm, kind, value), want, f"{kind} {value}")
+
+    def test_forbidden_paths_stay_denied_even_when_the_task_is_granted_a_wide_area(self):
+        perm = self.config(allowed=["tools/**", "widgets/**"])["permission"]
+        for path in ("tools/sidework.py", "tools/ownership.json", "tools/hooks/pre-commit", "flake.nix", "Makefile"):
+            self.assertEqual(decide(perm, "edit", path), "deny", path)
+        self.assertEqual(decide(perm, "edit", "tools/extra.py"), "allow")
+
+    def test_per_task_allowlist_narrows_edits(self):
+        perm = self.config(allowed=["widgets/templates/**"])["permission"]
+        self.assertEqual(decide(perm, "edit", "widgets/templates/a.json"), "allow")
+        self.assertEqual(decide(perm, "edit", "widgets/spec.schema.json"), "deny")
+
+    def test_glob_translation(self):
+        self.assertEqual(sw.glob_for_opencode("widgets/**"), "widgets/*")
+        self.assertEqual(sw.glob_for_opencode("**/*.md"), "*.md")
+        self.assertEqual(sw.glob_for_opencode("tools/hooks/**"), "tools/hooks/*")
+        self.assertEqual(sw.glob_for_opencode("README.md"), "README.md")
+
+    def test_bash_denies_cover_hook_skipping_and_leaving_the_repo(self):
+        joined = " ".join(sw.BASH_DENY)
+        for needle in ("git push", "git config", "git worktree", "--no-verify", "curl", "sudo"):
+            self.assertIn(needle, joined, needle)
+
+    def test_instructions_and_context_handling(self):
+        c = self.config(instructions=("docs/sidework/CONVENTIONS.md", "docs/sidework/tasks/t.md"))
+        self.assertEqual(c["instructions"], ["docs/sidework/CONVENTIONS.md", "docs/sidework/tasks/t.md"])
+        self.assertTrue(c["compaction"]["auto"])
+        self.assertIs(c["snapshot"], False)
+
+    def test_config_is_json_serializable_and_stable(self):
+        c = self.config()
+        self.assertEqual(json.loads(json.dumps(c)), c)
+        self.assertEqual(list(c["permission"]["edit"])[0], "*", "the catch-all must come first (last match wins)")
+        self.assertEqual(list(c["permission"]["bash"])[0], "*")
+
+    def test_derived_model_and_modelfile(self):
+        self.assertEqual(sw.derived_name("main", self.models), "rutile-main:32k")
+        text = sw.modelfile_text("qwen3:14b", self.models, 0.6)
+        self.assertEqual(text.splitlines(), ["FROM qwen3:14b", "PARAMETER num_ctx 32768", "PARAMETER temperature 0.6"])
+
+    def test_default_prompt_mentions_the_brief_only_when_there_is_one(self):
+        self.assertIn("docs/sidework/tasks/x.md", sw.default_prompt("x", True))
+        self.assertNotIn("tasks/", sw.default_prompt("x", False))
+        self.assertIn("docs/sidework/CONVENTIONS.md", sw.default_prompt("x", False))
+
+
 class Agent(Base):
-    def test_dry_run_shows_model_context_identity_and_environment(self):
+    def dry(self, task, *extra):
+        return tool(self.repo, "agent", task, "--dry-run", *extra)
+
+    def test_dry_run_interactive(self):
         self.start("docs")
-        (self.repo / "docs" / "sidework" / "tasks").mkdir(parents=True, exist_ok=True)
-        res = tool(self.repo, "agent", "docs", "--dry-run")
+        res = self.dry("docs")
         self.assertEqual(res.returncode, 0, res.stderr)
         out = res.stdout
-        self.assertIn("--model ollama_chat/qwen2.5-coder:14b", out)
-        self.assertIn("--read docs/sidework/CONVENTIONS.md", out)
-        self.assertIn("--git-commit-verify", out)
-        self.assertIn("num_ctx: 16384".replace(": ", ": "), out.replace("num_ctx: ", "num_ctx: "))
+        self.assertIn("command   opencode\n", out)
+        self.assertIn("ollama/rutile-main:32k  (base qwen3:14b, context 32768)", out)
         self.assertIn("local-model <local-model@localhost>", out)
-        self.assertIn("OLLAMA_KV_CACHE_TYPE=q8_0", out)
-        self.assertIn("OLLAMA_FLASH_ATTENTION=1", out)
+        self.assertIn('"tool_call": true', out)
+        self.assertIn('"enabled_providers"', out)
+
+    def test_unattended_runs_headless_with_auto_and_a_prompt(self):
+        self.start("docs")
+        out = self.dry("docs", "--unattended").stdout
+        self.assertIn("opencode run --model ollama/rutile-main:32k --title docs --auto", out)
+        self.assertIn("Follow docs/sidework/CONVENTIONS.md", out)
+
+    def test_a_custom_prompt_runs_headless_without_auto(self):
+        self.start("docs")
+        out = self.dry("docs", "--prompt", "fix the typo").stdout
+        self.assertIn("opencode run --model", out)
+        self.assertIn("'fix the typo'", out)
+        self.assertNotIn("--auto", out)
+
+    def test_instructions_include_the_brief_only_when_it_exists_on_the_branch(self):
+        wt = self.start("brief")
+        cfg = lambda: json.loads(self.dry("brief").stdout.split("config   ", 1)[1])
+        self.assertEqual(cfg()["instructions"], ["docs/sidework/CONVENTIONS.md"])
+        (wt / "docs" / "sidework" / "tasks").mkdir(parents=True)
+        (wt / "docs" / "sidework" / "tasks" / "brief.md").write_text("do the thing\n")
+        self.assertEqual(cfg()["instructions"], ["docs/sidework/CONVENTIONS.md", "docs/sidework/tasks/brief.md"])
+
+    def test_the_task_allowlist_reaches_the_edit_permissions(self):
+        self.start("narrow", "--path", "widgets/templates/**")
+        c = json.loads(self.dry("narrow").stdout.split("config   ", 1)[1])
+        self.assertEqual(decide(c["permission"], "edit", "widgets/templates/a.json"), "allow")
+        self.assertEqual(decide(c["permission"], "edit", "widgets/spec.json"), "deny")
 
     def test_tier_and_model_overrides_and_unknown_tier(self):
         self.start("t")
-        self.assertIn("ollama_chat/qwen2.5-coder:7b", tool(self.repo, "agent", "t", "--tier", "fast", "--dry-run").stdout)
-        self.assertIn("ollama_chat/my:model", tool(self.repo, "agent", "t", "--model", "my:model", "--dry-run").stdout)
-        bad = tool(self.repo, "agent", "t", "--tier", "huge", "--dry-run")
+        self.assertIn("ollama/rutile-fast:32k", self.dry("t", "--tier", "fast").stdout)
+        self.assertIn("ollama/my:model", self.dry("t", "--model", "my:model").stdout)
+        bad = self.dry("t", "--tier", "huge")
         self.assertEqual(bad.returncode, 2)
         self.assertIn("unknown tier", bad.stderr)
 
-    def test_a_task_brief_is_added_when_it_exists_on_the_branch(self):
-        wt = self.start("brief")
-        self.assertNotIn("tasks/brief.md", tool(self.repo, "agent", "brief", "--dry-run").stdout)
-        (wt / "docs" / "sidework" / "tasks").mkdir(parents=True)
-        (wt / "docs" / "sidework" / "tasks" / "brief.md").write_text("do the thing\n")
-        self.assertIn("--read docs/sidework/tasks/brief.md", tool(self.repo, "agent", "brief", "--dry-run").stdout)
-
     def test_without_a_worktree_it_says_to_start_one(self):
-        res = tool(self.repo, "agent", "ghost", "--dry-run")
+        res = self.dry("ghost")
         self.assertEqual(res.returncode, 2)
         self.assertIn("sidework.py start ghost", res.stderr)
 
+    def run_agent(self, task, *args, path="", host=None, extra_env=None):
+        env = dict(GIT_ENV, PATH=path + os.pathsep + "/usr/bin" + os.pathsep + "/bin")
+        if host:
+            env["OLLAMA_HOST"] = host
+        env.update(extra_env or {})
+        return subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "agent", task, *args],
+                              cwd=self.repo, capture_output=True, text=True, env=env)
+
+    def test_opencode_missing_points_at_the_dev_shell(self):
+        self.start("p")
+        res = self.run_agent("p", path="")
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("nix develop .#local-ai", res.stderr)
+
+    def test_opencode_2x_is_refused_because_the_config_schema_differs(self):
+        self.start("v2")
+        binpath = fake_bin(self.tmp, "opencode", 'echo "2.0.3"\n')
+        res = self.run_agent("v2", path=str(binpath))
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("1.x schema", res.stderr)
+
     def test_unreachable_ollama_gives_actionable_advice(self):
         self.start("down")
-        env = dict(GIT_ENV, OLLAMA_HOST="127.0.0.1:9")
-        p = subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "agent", "down"], cwd=self.repo,
-                           capture_output=True, text=True, env=env)
-        self.assertEqual(p.returncode, 2)
-        self.assertIn("not reachable", p.stderr)
-        self.assertIn("ollama serve", p.stderr)
+        binpath = fake_bin(self.tmp, "opencode", 'echo "1.19.0"\n')
+        res = self.run_agent("down", path=str(binpath), host="127.0.0.1:9")
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("not reachable", res.stderr)
+        self.assertIn("sidework.py serve", res.stderr)
 
-    def test_unpulled_model_says_which_to_pull(self):
-        self.start("pull")
-        server, host = fake_ollama(["some-other:1b"])
+    def test_a_tier_whose_derived_model_is_missing_says_to_prepare_it(self):
+        self.start("prep")
+        binpath = fake_bin(self.tmp, "opencode", 'echo "1.19.0"\n')
+        server, host = fake_ollama(["qwen3:14b"])
         self.addCleanup(server.shutdown)
-        env = dict(GIT_ENV, OLLAMA_HOST=host)
-        p = subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "agent", "pull"], cwd=self.repo,
-                           capture_output=True, text=True, env=env)
-        self.assertEqual(p.returncode, 2)
-        self.assertIn("ollama pull qwen2.5-coder:14b", p.stderr)
+        res = self.run_agent("prep", path=str(binpath), host=host)
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("sidework.py prepare --tier main", res.stderr)
+        self.assertIn("ollama pull qwen3:14b", res.stderr)
 
-    def test_models_command_reports_pulled_and_fit(self):
-        server, host = fake_ollama(["qwen2.5-coder:14b"])
+    def test_a_raw_model_that_is_not_pulled_says_to_pull_it(self):
+        self.start("raw")
+        binpath = fake_bin(self.tmp, "opencode", 'echo "1.19.0"\n')
+        server, host = fake_ollama(["other:1b"])
         self.addCleanup(server.shutdown)
-        env = dict(GIT_ENV, OLLAMA_HOST=host)
+        res = self.run_agent("raw", "--model", "my:model", path=str(binpath), host=host)
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("ollama pull my:model", res.stderr)
+
+    def test_a_ready_setup_execs_opencode_in_the_worktree_with_the_inline_config_and_identity(self):
+        wt = self.start("go")
+        out = Path(self.tmp) / "out"
+        out.mkdir()
+        body = ('if [ "$1" = "--version" ]; then echo 1.19.0; exit 0; fi\n'
+                f'pwd > {out}/cwd\nprintf "%s\\n" "$@" > {out}/args\n'
+                f'printf "%s" "$OPENCODE_CONFIG_CONTENT" > {out}/config\n'
+                f'echo "$GIT_AUTHOR_NAME <$GIT_AUTHOR_EMAIL>|$GIT_COMMITTER_NAME" > {out}/ident\n')
+        binpath = fake_bin(self.tmp, "opencode", body)
+        server, host = fake_ollama(["rutile-main:32k"])
+        self.addCleanup(server.shutdown)
+        res = self.run_agent("go", "--unattended", path=str(binpath), host=host)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(Path((out / "cwd").read_text().strip()).resolve(), wt.resolve())
+        args = (out / "args").read_text().splitlines()
+        self.assertEqual(args[:5], ["run", "--model", "ollama/rutile-main:32k", "--title", "go"])
+        self.assertIn("--auto", args)
+        conf = json.loads((out / "config").read_text())
+        self.assertEqual(conf["model"], "ollama/rutile-main:32k")
+        self.assertEqual(conf["provider"]["ollama"]["options"]["baseURL"], f"http://{host}/v1")
+        self.assertEqual(decide(conf["permission"], "edit", "shell/a.qml"), "deny")
+        self.assertEqual((out / "ident").read_text().strip(), "local-model <local-model@localhost>|local-model")
+
+
+class ModelsCmd(Base):
+    def test_reports_pulled_prepared_and_fit(self):
+        server, host = fake_ollama(["qwen3:14b", "rutile-main:32k"])
+        self.addCleanup(server.shutdown)
         p = subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "models"], cwd=self.repo,
-                           capture_output=True, text=True, env=env)
+                           capture_output=True, text=True, env=dict(GIT_ENV, OLLAMA_HOST=host))
         self.assertEqual(p.returncode, 0, p.stderr)
-        lines = {l.split()[0]: l for l in p.stdout.splitlines() if l.split() and l.split()[0] in ("fast", "main", "general", "stretch")}
-        self.assertIn(" pulled", lines["main"].replace("not pulled", "NOPE") if "not pulled" in lines["main"] else lines["main"])
-        self.assertNotIn("not pulled", lines["main"])
-        self.assertIn("not pulled", lines["fast"])
-        self.assertIn("SPILLS TO CPU", lines["stretch"])
+        lines = {l.split()[0]: l for l in p.stdout.splitlines() if l.split() and l.split()[0] in ("fast", "main", "stretch")}
+        self.assertEqual(set(lines), {"fast", "main", "stretch"})
         self.assertIn("fits", lines["main"])
+        self.assertIn("pulled, ready", lines["main"])
+        self.assertIn("not pulled, not prepared", lines["fast"])
+        self.assertIn("SPILLS TO CPU", lines["stretch"])
+        self.assertIn("agent model: ollama/rutile-main:32k", p.stdout)
+        self.assertIn("agent context 32768", p.stdout)
+
+    def test_when_ollama_is_down_it_still_lists_the_tiers(self):
+        p = subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "models"], cwd=self.repo,
+                           capture_output=True, text=True, env=dict(GIT_ENV, OLLAMA_HOST="127.0.0.1:9"))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("not reachable", p.stdout)
+        self.assertIn("qwen3:14b", p.stdout)
+
+
+class Prepare(Base):
+    def run_prepare(self, *args, path="", host=None):
+        env = dict(GIT_ENV, PATH=path + os.pathsep + "/usr/bin" + os.pathsep + "/bin")
+        if host:
+            env["OLLAMA_HOST"] = host
+        return subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "prepare", *args],
+                              cwd=self.repo, capture_output=True, text=True, env=env)
+
+    def test_dry_run_shows_the_modelfile(self):
+        res = self.run_prepare("--dry-run")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("ollama create rutile-main:32k", res.stdout)
+        self.assertIn("FROM qwen3:14b", res.stdout)
+        self.assertIn("PARAMETER num_ctx 32768", res.stdout)
+
+    def test_creates_the_derived_model_through_ollama(self):
+        out = Path(self.tmp) / "o"
+        out.mkdir()
+        binpath = fake_bin(self.tmp, "ollama", f'echo "$@" > {out}/args\ncp "$4" {out}/Modelfile\n')
+        server, host = fake_ollama(["qwen3:8b"])
+        self.addCleanup(server.shutdown)
+        res = self.run_prepare("--tier", "fast", path=str(binpath), host=host)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertTrue((out / "args").read_text().startswith("create rutile-fast:32k -f "))
+        self.assertEqual((out / "Modelfile").read_text().splitlines()[0], "FROM qwen3:8b")
+        self.assertIn("created rutile-fast:32k", res.stdout)
+
+    def test_base_model_must_be_pulled_first(self):
+        binpath = fake_bin(self.tmp, "ollama", "exit 0\n")
+        server, host = fake_ollama([])
+        self.addCleanup(server.shutdown)
+        res = self.run_prepare(path=str(binpath), host=host)
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("ollama pull qwen3:14b", res.stderr)
+
+    def test_unreachable_server_unknown_tier_and_raw_models(self):
+        self.assertIn("not reachable", self.run_prepare(host="127.0.0.1:9").stderr)
+        self.assertIn("unknown tier", self.run_prepare("--tier", "huge", "--dry-run").stderr)
+        self.assertIn("works on tiers", self.run_prepare("--model", "x:1", "--dry-run").stderr)
+
+    def test_ollama_create_failure_is_reported(self):
+        binpath = fake_bin(self.tmp, "ollama", "exit 3\n")
+        server, host = fake_ollama(["qwen3:14b"])
+        self.addCleanup(server.shutdown)
+        res = self.run_prepare(path=str(binpath), host=host)
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("failed", res.stderr)
+
+
+REAL_OPENCODE = shutil.which("opencode") or os.environ.get("RUTILE_OPENCODE")
+
+
+@unittest.skipUnless(REAL_OPENCODE, "opencode not found (put it on PATH or set RUTILE_OPENCODE); real-opencode checks SKIPPED")
+class RealOpencode(unittest.TestCase):
+    """The generated config, checked against the actual opencode binary (`opencode debug ...`)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.proj = Path(self.tmp) / "proj"
+        self.proj.mkdir()
+        run(["git", "init", "-q", "-b", "main"], self.proj)
+        cfg, models = sw.load_config(), sw.load_models()
+        self.conf = sw.opencode_config(cfg, models, "rutile-main:32k", 0.6, cfg["local_owned"],
+                                       ["docs/sidework/CONVENTIONS.md"])
+        home = Path(self.tmp) / "home"
+        self.env = dict(os.environ, HOME=str(home), XDG_CONFIG_HOME=str(home / "c"), XDG_DATA_HOME=str(home / "d"),
+                        XDG_CACHE_HOME=str(home / "k"), XDG_STATE_HOME=str(home / "s"),
+                        OPENCODE_CONFIG_CONTENT=json.dumps(self.conf))
+
+    def debug(self, *args):
+        p = subprocess.run([REAL_OPENCODE, "debug", *args], cwd=self.proj, capture_output=True, text=True,
+                           env=self.env, timeout=120)
+        self.assertEqual(p.returncode, 0, p.stderr[-1500:])
+        return json.loads(p.stdout[p.stdout.index("{"):])
+
+    def test_version_is_the_1x_line_the_config_targets(self):
+        out = subprocess.run([REAL_OPENCODE, "--version"], capture_output=True, text=True, env=self.env).stdout.strip()
+        self.assertTrue(out.startswith("1."), f"opencode {out}: the config schema targets 1.x")
+
+    def test_the_resolved_config_keeps_our_provider_model_and_limits(self):
+        d = self.debug("config")
+        self.assertEqual(d["model"], "ollama/rutile-main:32k")
+        self.assertEqual(d["enabled_providers"], ["ollama"])
+        m = d["provider"]["ollama"]["models"]["rutile-main:32k"]
+        self.assertIs(m["tool_call"], True)
+        self.assertEqual(m["limit"], {"context": 32768, "output": 8192})
+
+    def test_a_project_opencode_json_cannot_override_the_inline_settings(self):
+        (self.proj / "opencode.json").write_text(json.dumps({
+            "model": "openai/gpt-5", "enabled_providers": ["openai"], "share": "auto", "autoupdate": True,
+            "permission": {"webfetch": "allow", "external_directory": {"*": "allow"}, "bash": {"git push*": "allow"}}}))
+        d = self.debug("config")
+        self.assertEqual(d["model"], "ollama/rutile-main:32k")
+        self.assertEqual(d["enabled_providers"], ["ollama"])
+        self.assertEqual((d["share"], d["autoupdate"]), ("disabled", False))
+        self.assertEqual(d["permission"]["webfetch"], "deny")
+        self.assertEqual(d["permission"]["external_directory"], {"*": "deny"})
+        self.assertEqual(d["permission"]["bash"]["git push*"], "deny")
+
+    def test_effective_rules_decide_the_sample_actions_as_intended(self):
+        agent = self.debug("agent", "build")
+        rules = agent["permission"]
+        for kind, value, want in RULES_SAMPLE:
+            action = None
+            for r in rules:
+                if r["permission"] == kind and wildcard(r["pattern"]).match(value):
+                    action = r["action"]
+            self.assertEqual(action, want, f"{kind} {value}")
+
+    def test_a_deliberately_unknown_key_is_what_the_binary_reports_so_the_check_is_meaningful(self):
+        self.env["OPENCODE_CONFIG_CONTENT"] = json.dumps({**self.conf, "provider": {"ollama": {"models": "not-an-object"}}})
+        p = subprocess.run([REAL_OPENCODE, "debug", "config"], cwd=self.proj, capture_output=True, text=True,
+                           env=self.env, timeout=120)
+        self.assertTrue(p.returncode != 0 or "not-an-object" in p.stdout, "opencode accepted an invalid provider block silently")
 
 
 class Serve(Base):
@@ -426,7 +766,7 @@ class Serve(Base):
         res = tool(self.repo, "serve", "--dry-run")
         self.assertEqual(res.returncode, 0, res.stderr)
         self.assertIn("ollama serve", res.stdout)
-        for want in ("OLLAMA_FLASH_ATTENTION=1", "OLLAMA_KV_CACHE_TYPE=q8_0", "OLLAMA_CONTEXT_LENGTH=16384", "OLLAMA_HOST="):
+        for want in ("OLLAMA_FLASH_ATTENTION=1", "OLLAMA_KV_CACHE_TYPE=q8_0", "OLLAMA_CONTEXT_LENGTH=32768", "OLLAMA_HOST="):
             self.assertIn(want, res.stdout)
 
     def test_already_running_is_not_started_twice(self):

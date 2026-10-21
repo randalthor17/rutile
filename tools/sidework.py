@@ -8,8 +8,9 @@ agent that wanders cannot commit outside its area. Claude's sessions leave those
 
     sidework.py start TASK [--path GLOB ...] [--dir DIR] [--base REF]
                                    create branch local/TASK in a new worktree, install the guard
-    sidework.py agent TASK [--tier T | --model TAG] [--dry-run]
-                                   run aider on that worktree with a local Ollama model
+    sidework.py prepare [--tier T]  bake the context length into a derived Ollama model
+    sidework.py agent TASK [--tier T | --model NAME] [--unattended] [--prompt TEXT] [--dry-run]
+                                   run opencode in that worktree with a local Ollama model
     sidework.py check [TASK] [--run-checks]
                                    verify a branch only touches allowed paths (and `make check`)
     sidework.py merge-check [TASK] dry-run the merge into main; fails on any conflict
@@ -320,12 +321,15 @@ def cmd_models(args):
     host = host_of(m)
     pulled = ollama_tags(host)
     print(f"Ollama at {host}: " + ("not reachable" if pulled is None else f"{len(pulled)} model(s) pulled"))
-    print(f"GPU memory budget {m['vram_gb']} GB, context {m['context']}, default tier {m['default_tier']}\n")
+    print(f"GPU memory budget {m['vram_gb']} GB, agent context {m['context']}, default tier {m['default_tier']}\n")
     for name, t in m["tiers"].items():
         ok, need = fits(t, m)
         have = "pulled" if pulled and t["tag"] in pulled else "not pulled"
-        print(f"{name:8s} {t['tag']:22s} ~{need:4.1f} GB needed  {'fits' if ok else 'SPILLS TO CPU':13s} {have}")
+        derived = derived_name(name, m)
+        ready = "ready" if pulled and derived in pulled else "not prepared"
+        print(f"{name:8s} {t['tag']:18s} ~{need:4.1f} GB needed  {'fits' if ok else 'SPILLS TO CPU':13s} {have}, {ready}")
         print(f"         {t['note']}")
+        print(f"         agent model: ollama/{derived}")
     return 0
 
 
@@ -350,31 +354,152 @@ def cmd_serve(args):
     return 0  # unreachable
 
 
-def aider_command(task_file, tag, settings_file="aider.model.settings.yml"):
-    cmd = ["aider", "--model", f"ollama_chat/{tag}",
-           "--read", "docs/sidework/CONVENTIONS.md"]
-    if task_file:
-        cmd += ["--read", task_file]
-    # aider skips git hooks by default (it commits with --no-verify); --git-commit-verify makes it honor the guard
-    cmd += ["--git-commit-verify", "--model-settings-file", settings_file, "--analytics-disable",
-            "--no-check-update", "--no-show-release-notes"]
-    return cmd
+def glob_for_opencode(pattern):
+    """opencode permission globs: `*` matches any characters including `/`, so `**` becomes `*`.
+
+    A single `*` there also crosses directories, i.e. slightly wider than ours. That is acceptable
+    because this layer is advisory; the commit guard and `check` use the exact patterns.
+    """
+    return pattern.replace("**/", "*").replace("**", "*")
 
 
-def agent_env(cfg, models, base_env):
-    env = dict(base_env)
+# bash commands the local agent may never run. Matched as parsed commands (last matching rule wins).
+BASH_DENY = [
+    "git push*", "git remote*", "git config*", "git worktree*", "git clone*", "git fetch*", "git pull*",
+    "git commit*--no-verify*", "git commit* -n *", "git commit* -n",
+    "sudo *", "su *", "rm -rf /*", "rm -rf ~*", "curl *", "wget *", "ssh *", "scp *", "nc *",
+]
+
+
+def derived_name(tier_name, models):
+    return f"{models['derived_prefix']}{tier_name}:{models['context'] // 1024}k"
+
+
+def modelfile_text(tag, models, temperature):
+    return f"FROM {tag}\nPARAMETER num_ctx {models['context']}\nPARAMETER temperature {temperature}\n"
+
+
+def opencode_config(cfg, models, model_name, temperature, allowed, instructions):
+    """The inline config handed to opencode through OPENCODE_CONFIG_CONTENT (opencode 1.x schema).
+
+    It is passed inline because that outranks a project opencode.json inside the worktree, which
+    the agent could create or edit. Rules in a permission map are evaluated last-match-wins.
+    """
     host = host_of(models)
-    env["OLLAMA_API_BASE"] = host if host.startswith("http") else f"http://{host}"
+    base = host if host.startswith("http") else f"http://{host}"
+    edit = {"*": "deny"}
+    for pat in allowed:
+        edit[glob_for_opencode(pat)] = "allow"
+    # the guard and the config are never editable, whatever the allowlist says
+    for pat in cfg["always_forbidden"]:
+        edit[glob_for_opencode(pat)] = "deny"
+    bash = {"*": "allow"}
+    bash.update({pat: "deny" for pat in BASH_DENY})
+    return {
+        "$schema": "https://opencode.ai/config.json",
+        "model": f"ollama/{model_name}",
+        "enabled_providers": ["ollama"],      # never fall back to a cloud provider
+        "autoupdate": False,
+        "share": "disabled",
+        "snapshot": False,                    # the branch's own commits are the history
+        "instructions": instructions,
+        "provider": {
+            "ollama": {
+                "npm": "@ai-sdk/openai-compatible",
+                "name": "Ollama (local)",
+                "options": {"baseURL": base + "/v1", "apiKey": "ollama"},
+                "models": {
+                    model_name: {
+                        "name": model_name,
+                        # without this opencode silently sends no tools and the agent can do nothing
+                        "tool_call": True,
+                        "limit": {"context": models["context"], "output": models["output_tokens"]},
+                        "options": {"temperature": temperature},
+                    }
+                },
+            }
+        },
+        "permission": {
+            "edit": edit,
+            "bash": bash,
+            "external_directory": {"*": "deny"},   # nothing outside the worktree
+            "webfetch": "deny",
+            "websearch": "deny",
+            "doom_loop": "deny",                   # stop a model repeating the same failing call
+        },
+        "compaction": {"auto": True, "prune": True},
+    }
+
+
+def agent_env(cfg, models, base_env, config):
+    env = dict(base_env)
     ident = cfg["identity"]
     for who in ("AUTHOR", "COMMITTER"):
         env[f"GIT_{who}_NAME"] = ident["name"]
         env[f"GIT_{who}_EMAIL"] = ident["email"]
-    env.update(models.get("env", {}))
+    env["OPENCODE_CONFIG_CONTENT"] = json.dumps(config)
     return env
 
 
-def settings_yaml(tag, context):
-    return f"- name: ollama_chat/{tag}\n  extra_params:\n    num_ctx: {context}\n"
+def opencode_version():
+    """(major, text) of the installed opencode, or None if it is not installed."""
+    exe = shutil.which("opencode")
+    if exe is None:
+        return None
+    try:
+        out = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return (0, "unknown")
+    m = re.match(r"(\d+)\.", out)
+    return (int(m.group(1)) if m else 0, out or "unknown")
+
+
+def default_prompt(task, has_brief):
+    brief = f"Read docs/sidework/tasks/{task}.md and complete the task it describes. " if has_brief else ""
+    return (brief + "Follow docs/sidework/CONVENTIONS.md. Work in small commits (one concern each, imperative "
+            "one-line messages). Run the acceptance checks from the brief after each change and fix failures "
+            "before moving on. Stop and explain if the task needs a file you may not edit. When finished, "
+            "summarize what you changed and anything you are unsure about.")
+
+
+def resolve_model(args, models):
+    """(model name used with opencode, base tag, temperature, tier name or None)."""
+    if args.model:
+        return args.model, args.model, 0.6, None
+    tier_name = args.tier or models["default_tier"]
+    if tier_name not in models["tiers"]:
+        raise SideworkError(f"unknown tier {tier_name!r}; choose from {', '.join(models['tiers'])}")
+    t = models["tiers"][tier_name]
+    return derived_name(tier_name, models), t["tag"], t["temperature"], tier_name
+
+
+def cmd_prepare(args):
+    models = load_models()
+    name, tag, temperature, tier = resolve_model(args, models)
+    if tier is None:
+        raise SideworkError("prepare works on tiers; use --tier")
+    text = modelfile_text(tag, models, temperature)
+    if args.dry_run:
+        print(f"ollama create {name} -f <Modelfile>")
+        print(text, end="")
+        return 0
+    pulled = ollama_tags(host_of(models))
+    if pulled is None:
+        raise SideworkError(f"Ollama is not reachable at {host_of(models)}; start it with `sidework.py serve` first")
+    if tag not in pulled:
+        raise SideworkError(f"{tag} is not pulled yet: run `ollama pull {tag}` first")
+    if shutil.which("ollama") is None:
+        raise SideworkError("`ollama` is not on PATH: use `nix develop .#local-ai`")
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        mf = Path(d) / "Modelfile"
+        mf.write_text(text)
+        env = dict(os.environ, OLLAMA_HOST=host_of(models))
+        proc = subprocess.run(["ollama", "create", name, "-f", str(mf)], env=env)
+    if proc.returncode != 0:
+        raise SideworkError(f"`ollama create {name}` failed")
+    print(f"created {name} (context {models['context']})")
+    return 0
 
 
 def cmd_agent(args):
@@ -383,40 +508,44 @@ def cmd_agent(args):
     wt = worktree_of(branch)
     if wt is None:
         raise SideworkError(f"no worktree for {branch}; run `sidework.py start {args.task}` first")
-    tier_name = args.tier or models["default_tier"]
-    if args.model:
-        tag = args.model
+    name, tag, temperature, tier = resolve_model(args, models)
+    brief = f"docs/sidework/tasks/{args.task}.md"
+    has_brief = (wt / brief).exists()
+    instructions = ["docs/sidework/CONVENTIONS.md"] + ([brief] if has_brief else [])
+    allowed = allowed_paths(branch, cfg, wt)
+    config = opencode_config(cfg, models, name, temperature, allowed, instructions)
+    prompt = args.prompt or default_prompt(args.task, has_brief)
+    if args.unattended or args.prompt:
+        cmd = ["opencode", "run", "--model", f"ollama/{name}", "--title", args.task]
+        if args.unattended:
+            cmd.append("--auto")
+        cmd.append(prompt)
     else:
-        if tier_name not in models["tiers"]:
-            raise SideworkError(f"unknown tier {tier_name!r}; choose from {', '.join(models['tiers'])}")
-        tag = models["tiers"][tier_name]["tag"]
-    task_file = f"docs/sidework/tasks/{args.task}.md"
-    task_file = task_file if (wt / task_file).exists() else None
-    settings = "aider.model.settings.yml"
-    cmd = aider_command(task_file, tag, settings)
-    env = agent_env(cfg, models, os.environ)
+        cmd = ["opencode"]
+    env = agent_env(cfg, models, os.environ, config)
     if args.dry_run:
         print("cwd      ", wt)
-        print("command  ", " ".join(cmd))
-        print("settings ", settings_yaml(tag, models["context"]).strip().replace("\n", " | "))
+        print("command  ", " ".join(cmd[:-1] + [repr(cmd[-1])] if cmd[:2] == ["opencode", "run"] else cmd))
+        print("model    ", f"ollama/{name}  (base {tag}, context {models['context']})")
         print("identity ", f"{env['GIT_AUTHOR_NAME']} <{env['GIT_AUTHOR_EMAIL']}>")
-        print("env      ", ", ".join(f"{k}={env[k]}" for k in sorted(models.get("env", {}))))
+        print("config   ", json.dumps(config, indent=2))
         return 0
+    found = opencode_version()
+    if found is None:
+        raise SideworkError("`opencode` is not on PATH: use `nix develop .#local-ai`")
+    if found[0] != 1:
+        raise SideworkError(f"opencode {found[1]} found, but the generated config follows the 1.x schema "
+                            "(2.x renamed the model and provider fields). Use a 1.x opencode, or update tools/sidework.py")
     pulled = ollama_tags(host_of(models))
     if pulled is None:
         raise SideworkError(
-            f"Ollama is not reachable at {host_of(models)}. Start it (`ollama serve`, or enable the NixOS "
+            f"Ollama is not reachable at {host_of(models)}. Start it (`sidework.py serve`, or enable the NixOS "
             "service from docs/sidework.md) and try again.")
-    if tag not in pulled:
-        raise SideworkError(f"{tag} is not pulled yet: run `ollama pull {tag}` first")
-    (wt / settings).write_text(settings_yaml(tag, models["context"]))
-    exclude = common_dir(wt) / "info" / "exclude"
-    exclude.parent.mkdir(parents=True, exist_ok=True)
-    existing = exclude.read_text() if exclude.exists() else ""
-    for pat in (settings, ".aider*"):
-        if pat not in existing.splitlines():
-            existing += ("" if existing.endswith("\n") or not existing else "\n") + pat + "\n"
-    exclude.write_text(existing)
+    if tier is not None and name not in pulled:
+        raise SideworkError(f"{name} does not exist yet: run `sidework.py prepare --tier {tier}` "
+                            f"(after `ollama pull {tag}`)")
+    if tier is None and name not in pulled:
+        raise SideworkError(f"{name} is not pulled: run `ollama pull {name}`")
     os.chdir(wt)
     os.execvpe(cmd[0], cmd, env)
     return 0  # unreachable
@@ -434,7 +563,14 @@ def main(argv):
     a.add_argument("task")
     a.add_argument("--tier")
     a.add_argument("--model")
+    a.add_argument("--prompt", help="run one headless prompt instead of the interactive UI")
+    a.add_argument("--unattended", action="store_true",
+                   help="run the default task prompt headless and auto-approve anything not explicitly denied")
     a.add_argument("--dry-run", action="store_true")
+    pr = sub.add_parser("prepare")
+    pr.add_argument("--tier")
+    pr.add_argument("--model")
+    pr.add_argument("--dry-run", action="store_true")
     c = sub.add_parser("check")
     c.add_argument("task", nargs="?")
     c.add_argument("--run-checks", action="store_true")
@@ -449,7 +585,7 @@ def main(argv):
     sv.add_argument("--dry-run", action="store_true")
     sub.add_parser("guard")
     args = p.parse_args(argv)
-    handlers = {"start": cmd_start, "agent": cmd_agent, "check": cmd_check, "merge-check": cmd_merge_check,
+    handlers = {"start": cmd_start, "agent": cmd_agent, "prepare": cmd_prepare, "check": cmd_check, "merge-check": cmd_merge_check,
                 "bundle": cmd_bundle, "status": cmd_status, "models": cmd_models, "serve": cmd_serve, "guard": cmd_guard}
     try:
         return handlers[args.cmd](args)

@@ -70,7 +70,7 @@
               pkgs.gnumake
               python
               pkgs.ollama-rocm   # server + client with ROCm; use pkgs.ollama-vulkan if ROCm fails on the card
-              pkgs.aider-chat    # git-aware coding agent that talks to Ollama
+              pkgs.opencode      # terminal coding agent (1.x); talks to Ollama through its OpenAI-compatible API
               pkgs.radeontop     # GPU load while a model runs
             ];
             shellHook = ''
