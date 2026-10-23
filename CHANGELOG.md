@@ -20,6 +20,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 - **Dev tools** (`tools/dev/`): `pyside_qml.py` (run the QML tests or render the gallery on a modern Qt via PySide6,
   optionally through the real OpenGL scene graph), `eval_flake.sh`, `setup_sandbox.sh`.
 
+- **Fix:** the first handoff bundle (`rutile-dev-17ca1a5`) failed `make check` on a clean clone: the docs mentioned
+  `widgets/` and `settings/`, which existed only as untracked empty directories. They now hold tracked READMEs, and
+  the path check uses `git ls-files` so leftovers cannot mask this again.
+
 ## 0.5.1
 
 - Fixed a test that wrongly expected Emphasized type styles to render wider (they also change letter spacing).

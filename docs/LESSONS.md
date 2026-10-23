@@ -86,6 +86,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 
 ## Process
 
+- **Verify in a fresh clone, and read the result before delivering.** A bundle shipped with a failing check because
+  `widgets/` and `settings/` existed in the working directory only as untracked empty directories (git does not
+  track empty directories), so a path check passed locally and failed in every clone. The fresh-clone step was
+  run, but the bundle was presented before its output was read. Tests that look at the filesystem cannot tell
+  "committed" from "happens to be here": consult `git ls-files` (`tests/test_handoff.py` does now). A sandbox
+  reset later made this visible, because the repo had to be rebuilt from the bundle alone.
+
 - **The first design is often wrong; test the attack.** The ownership guard, the weight test and the transparency
   test were all fixed by trying to break them.
 - **Say what is unverified.** Every handoff names what was not tested and why (needs the maintainer's hardware or a

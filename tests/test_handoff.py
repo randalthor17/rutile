@@ -99,6 +99,23 @@ class Decisions(unittest.TestCase):
                     self.assertLessEqual(int(n), len(ids), f"{rel} cites D{n}")
 
 
+def tracked_paths():
+    """Paths git knows about (files plus every directory containing one), or None outside a git checkout.
+
+    Looking at the filesystem would let untracked leftovers (empty directories, ignored output) hide a doc that
+    mentions something a fresh clone does not have, which is exactly how a bundle once shipped a failing check.
+    """
+    r = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip():
+        return None
+    files = set(r.stdout.splitlines())
+    dirs = {str(Path(f).parent.as_posix()) for f in files}
+    for d in list(dirs):
+        parts = Path(d).parts
+        dirs |= {"/".join(parts[:i]) for i in range(1, len(parts) + 1)}
+    return files | dirs
+
+
 class DocsMatchTheRepository(unittest.TestCase):
     @staticmethod
     def candidates(text):
@@ -111,10 +128,12 @@ class DocsMatchTheRepository(unittest.TestCase):
 
     def test_every_path_mentioned_in_the_docs_exists_or_is_deliberately_planned(self):
         missing = []
+        tracked = tracked_paths()
         for rel in DOC_PATHS:
             for tok in self.candidates(read(rel)):
                 path = tok.rstrip("/")
-                if path in PLANNED or (ROOT / path).exists():
+                exists = (path in tracked) if tracked is not None else (ROOT / path).exists()
+                if path in PLANNED or exists:
                     continue
                 missing.append(f"{rel}: {tok}")
         self.assertEqual(missing, [], "docs mention paths that do not exist; fix the docs or add to PLANNED")
@@ -149,6 +168,21 @@ class DocsMatchTheRepository(unittest.TestCase):
 
     def test_changelog_has_an_unreleased_section(self):
         self.assertIn("## Unreleased", read("CHANGELOG.md"))
+
+
+class TrackedPathLogic(unittest.TestCase):
+    def test_tracked_paths_include_files_and_their_directories_but_not_untracked_things(self):
+        tracked = tracked_paths()
+        self.assertIsNotNone(tracked, "these tests are meant to run in a git checkout")
+        for p in ("docs/HANDOFF.md", "docs", "tools/dev", "tools/dev/setup_sandbox.sh", "widgets/README.md", "widgets"):
+            self.assertIn(p, tracked, p)
+        for p in ("docs/definitely-not-here.md", "render", "flake.lock"):
+            self.assertNotIn(p, tracked, p)
+
+    def test_reserved_directories_are_real_tracked_content(self):
+        tracked = tracked_paths()
+        for d in ("widgets", "settings"):
+            self.assertIn(d, tracked, f"{d}/ must contain a tracked file or it will not exist in a clone")
 
 
 class DevTools(unittest.TestCase):
