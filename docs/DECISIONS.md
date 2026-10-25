@@ -186,4 +186,4 @@ neighbor into the gap: with `gravity` on, tiles keep their reading order and eac
 after the tile before it, wrapping to the next row when it does not fit, so free space is left only at the end
 of a row and the last tile never stretches into it. DMS's gravity only pulled items up, which can let a later
 tile jump ahead into a hole; the flow keeps the order. Items without a saved position join at the end, and the
-"is there room" check for adding one uses the same flow.
+"is there room" check for adding one uses the same flow. The full behavior is in `docs/editable-grid.md`.

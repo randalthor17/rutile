@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **`docs/editable-grid.md`**: the grid's full behavior in one place, with diagrams and the test that pins each
+  rule (layout without gaps, select, drag and drop, resize with shrinking neighbors, row limit, adding, right to
+  left, motion and memory). `make check` fails if it cites a test that no longer exists, or a missing path.
 - **No gaps in the Quick Settings grid** (D35, maintainer's rule): with gravity, tiles flow in reading order,
   so gaps at the top, at a row's start and between tiles close as the tiles behind slide forward, and the next
   row's first tile moves up into the free end of the row above. Nothing stretches; free space is left only at

@@ -1,5 +1,6 @@
 // Grid packing for EditableGrid: places items of w x h cells on a grid of `columns`, keeping saved positions
-// where they fit and first-fitting the rest. Pure functions, no QML.
+// where they fit, and resizes them one edge at a time. Pure functions, no QML. The behavior these implement is
+// described, with examples, in docs/editable-grid.md; keep the two in step.
 //
 // Ported from DankMaterialShell's quickshell/Common/GridLayout.js (MIT, Copyright (c) 2025 Avenge Media LLC;
 // now github.com/duxlabs-dev/dux-shell, commit e689cd2). Changed: no half-step rows and no shrinking rows (Rutile

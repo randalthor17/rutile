@@ -148,7 +148,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
-| `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`) |
+| `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`) |
 | `flake.nix` | dev shells (`default`, and x86_64-only `local-ai`), the font package, the NixOS module |
 
 Tool inventory (every script has a docstring with usage): `tools/gen_tokens.py` and `tools/gen_components.py`

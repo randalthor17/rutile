@@ -126,6 +126,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   file between two function names also deleted a test that had been inserted in between; two mutants it had
   caught came back, which is how it was noticed. List the test functions before committing.
 
+- **Write down interaction rules with examples as they are decided.** The grid's gap, resize and drop rules took
+  three rounds with the maintainer; `docs/editable-grid.md` holds them with diagrams and the test for each, so
+  nobody has to rediscover them from the code.
+
 - **Drive a drag in fixed coordinates.** QtTest's `mouseMove(item, x, y)` maps from the item at the time of the
   call, so moving relative to the item being dragged compounds every step. The grid tests press on the item and
   then move in the TestCase's coordinates.

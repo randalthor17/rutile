@@ -65,21 +65,9 @@ Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
   a segmented group the first item keeps 16 px top corners and the last 16 px bottom corners
   (`ListItemDefaults.segmentedShapes`); put items 2 px apart (`listSpec.segmentedGap`) on a container.
 
-EditableGrid (plan 1.6) is the grid under Quick Settings tiles and, later, desktop widgets (D17). Items are saved
-data: an id, a size in cells and the cell they were placed at. Packing is `GridLayout.js`, ported from
-DankMaterialShell (MIT): saved positions are kept where they fit, and `gravity` (Quick Settings) closes every
-gap by flowing the items in reading order, so free space is left only at the end of a row and nothing
-stretches (D35); without gravity (the desktop grid, later) items stay where they are put. In `editMode` (Googlebook's "Edit tiles", `docs/reference/README.md`) a click selects an item and
-a drag past the platform's drag distance moves it while the others make room around a placeholder. The selected
-item shows a handle on each side that can move (`canResize(index, edge)`: room to grow, neighbors that can make
-room, or size above its minimum); a handle moves its edge by whole cells. Neighbors in the way shrink from the
-facing side down to their minimum and move away only beyond that (D34). Every item can grow to the full width
-and to `maxRows` unless it sets minW/maxW/minH/maxH. Changes go to `commitHandler(items)` with every item's col,
-row and size; the owner saves them and sets `items`, as with controlled toggles (D33). Without a handler the
-grid keeps them itself. Columns follow `LayoutMirroring` (a right-to-left session sets it once at the root): the
-first column is on the right and the left handle moves the end edge. Delegates are kept across reorders, the
-edit chrome exists only in edit mode (handles only on the selected item), and one spring per grid animates
-every move. Not done: keyboard moves and resizes, dragging items in from outside (the Add sheet).
+EditableGrid (plan 1.6) is the grid under Quick Settings tiles and, later, desktop widgets (D17). Its behavior
+(layout without gaps, select, drag, resize with shrinking neighbors, row limit, right to left, commits through
+the owner) is described with examples in `docs/editable-grid.md`.
 
 Tile works at any size: content stays vertically centered, and under `LayoutMirroring` the icon sits on the
 right. The other components do not mirror yet.

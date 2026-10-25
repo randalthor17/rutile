@@ -8,7 +8,7 @@
 //
 // Light on memory (D31): delegates are kept across reorders (a ListModel keyed by id), the edit chrome exists only
 // in edit mode, and one spring per grid moves every item (each lerps from where it was to where it goes).
-// Packing is GridLayout.js, ported from DankMaterialShell (MIT).
+// Packing is GridLayout.js, ported from DankMaterialShell (MIT). The full behavior, with examples: docs/editable-grid.md.
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
@@ -22,7 +22,7 @@ Item {
     property real rowHeight: ControlSpec.tileSpec.tileHeight
     property real gap: ControlSpec.tileSpec.tileArrangementPadding
     property int maxRows: 0
-    property bool gravity: true             // close every gap: up and toward the row start (Quick Settings); off keeps items where put
+    property bool gravity: true             // no gaps: items flow in reading order (Quick Settings, D35); off keeps items where put
     property bool editMode: false
     property Component delegate: null
     property real slotRadius: Shapes.extraLarge    // for the selection outline and the drop placeholder

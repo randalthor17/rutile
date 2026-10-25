@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOC_PATHS = ["docs/HANDOFF.md", "docs/PLAN.md", "docs/DECISIONS.md", "docs/LESSONS.md", "CHANGELOG.md",
-             "AGENTS.md", "README.md"]
+             "AGENTS.md", "README.md", "docs/editable-grid.md"]
 # Paths the docs mention that do not exist (yet) on purpose: planned work, user-generated or output directories.
 PLANNED = {
     "docs/reference", "widgets/spec.schema.json", "docs/llm/TOKENS.md", "docs/llm/COMPONENTS.md",
@@ -168,6 +168,19 @@ class DocsMatchTheRepository(unittest.TestCase):
 
     def test_changelog_has_an_unreleased_section(self):
         self.assertIn("## Unreleased", read("CHANGELOG.md"))
+
+
+class BehaviorDocsCiteRealTests(unittest.TestCase):
+    """A behavior doc names the test that pins each rule; a renamed or deleted test must not leave it pointing
+    at nothing (docs/editable-grid.md)."""
+
+    def test_cited_qml_tests_exist(self):
+        defined = set()
+        for f in (ROOT / "tests" / "qml").glob("tst_*.qml"):
+            defined |= set(re.findall(r"function (test_\w+)\s*\(", f.read_text()))
+        cited = set(re.findall(r"`(test_\w+)`", read("docs/editable-grid.md")))
+        self.assertTrue(cited, "the grid doc cites its tests")
+        self.assertEqual(sorted(cited - defined), [], "docs/editable-grid.md cites tests that do not exist")
 
 
 class TrackedPathLogic(unittest.TestCase):
