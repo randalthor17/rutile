@@ -47,10 +47,6 @@ ran the suite and the gallery, and (October 2026) the opencode 2.1.1 checks and 
 Known visual gaps in the components: no ripple, no elevation shadow (elevated buttons are faint on dark
 surfaces), no focus ring. See `docs/components.md`.
 
-`make check-gpu` fails on the maintainer's machine (October 2026): 1 of 81 pixels at the centre of a filled
-toggle icon shows the container color. It fails the same way at 8ce07de, before Switch/Slider/ProgressBar
-and the memory work, so it predates them; likely the Qt 6.12 or Mesa update. Not investigated yet.
-
 ### Next up
 
 1. The maintainer reviews Switch, Slider and ProgressBar in the gallery and picks the next batch: the

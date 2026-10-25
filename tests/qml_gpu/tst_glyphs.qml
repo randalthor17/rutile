@@ -79,6 +79,9 @@ TestCase {
         var cx = b.spec.leading + b.spec.icon / 2, cy = b.height / 2, r = 4;
         for (var y = Math.round(cy - r); y <= Math.round(cy + r); y++)
             for (var x = Math.round(cx - r); x <= Math.round(cx + r); x++) {
+                // a disc, not the square: the square's corners reach the heart's slanted lower edges, and a
+                // 1 px shift in glyph placement (seen on Qt 6.12) put one corner pixel outside the glyph
+                if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > r * r) continue;
                 total++;
                 // the glyph is drawn in primaryOn (dark on this container); holes would show the container color
                 if (Math.abs(img.red(x, y) / 255 - fill.r) < 0.06 && Math.abs(img.green(x, y) / 255 - fill.g) < 0.06) light++;

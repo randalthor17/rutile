@@ -122,6 +122,9 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   compile error (an alias named `layer`, which `Item` already has) made every mutation look caught. Check the
   failure count per mutation: one or two real failures, not a missing test case.
 
+- **Before fixing a failing pixel test, print the pixels.** A "hole" in a filled icon was the corner of the test's
+  sample square on the glyph's edge; dumping the sampled grid as text showed it in one run.
+
 - **The first design is often wrong; test the attack.** The ownership guard, the weight test and the transparency
   test were all fixed by trying to break them.
 - **Say what is unverified.** Every handoff names what was not tested and why (needs the maintainer's hardware or a

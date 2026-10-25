@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Test fix:** `make check-gpu` failed on one pixel. The glyph was solid; the test sampled a square whose
+  corner reached the heart's slanted edge once Qt 6.12 placed the glyph 1 px differently. It samples a disc now,
+  as its comment said, and still fails with the old (holey) text rendering.
 - **Lighter components** (D31, `docs/memory.md`): colors and opacities animate with Qt animations on the
   effects-spring curve (`EffectsColor`, `EffectsNumber`; the curve is fitted in `tools/gen_qml.py` and checked)
   instead of a JavaScript spring object each; Slider and ProgressBar draw with Rectangles, the wave's Canvas
