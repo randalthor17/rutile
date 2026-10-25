@@ -1,20 +1,30 @@
 {
   "version": 1,
-  "name": "Weather",
+  "name": "Weather Dashboard",
   "root": {
-    "type": "card",
-    "tone": "surface_container",
+    "type": "column",
     "children": [
       {
-        "type": "heroImage",
-        "source": "{{weather.icon}}",
-        "aspect": "square"
-      },
-      {
-        "type": "stat",
-        "label": "Temperature",
-        "value": "{{weather.temperature}}",
-        "unit": "°C"
+        "type": "card",
+        "tone": "surface_container",
+        "children": [
+          {
+            "type": "header",
+            "icon": "weather_sunny",
+            "title": "Current Weather"
+          },
+          {
+            "type": "stat",
+            "label": "Temperature",
+            "value": "{{weather.temperature}}",
+            "unit": "°C"
+          },
+          {
+            "type": "heroImage",
+            "source": "{{weather.icon}}",
+            "aspect": "16:9"
+          }
+        ]
       }
     ]
   }

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "Battery Status",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "card",
+        "tone": "primary_container",
+        "children": [
+          {
+            "type": "header",
+            "icon": "battery_full",
+            "title": "Battery"
+          },
+          {
+            "type": "stat",
+            "label": "Level",
+            "value": "{{battery.level}}",
+            "unit": "%"
+          }
+        ]
+      }
+    ]
+  }
+}

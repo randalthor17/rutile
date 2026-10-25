@@ -1,16 +1,26 @@
 {
   "version": 1,
-  "name": "Tasks",
+  "name": "Event List",
   "root": {
-    "type": "card",
-    "tone": "surface",
+    "type": "column",
     "children": [
       {
-        "type": "listRow",
-        "icon": "task_alt",
-        "title": "{{todo.title}}",
-        "subtitle": "{{todo.description}}",
-        "trailingIcon": "check_circle"
+        "type": "card",
+        "tone": "surface_container",
+        "children": [
+          {
+            "type": "header",
+            "icon": "event",
+            "title": "Upcoming Events"
+          },
+          {
+            "type": "listRow",
+            "icon": "calendar_today",
+            "title": "{{calendar.events.title}}",
+            "subtitle": "{{calendar.events.date}}",
+            "trailingIcon": "arrow_forward"
+          }
+        ]
       }
     ]
   }
