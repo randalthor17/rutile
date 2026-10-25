@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **No gaps in the Quick Settings grid** (D35, maintainer's rule): with gravity, tiles flow in reading order,
+  so gaps at the top, at a row's start and between tiles close as the tiles behind slide forward, and the next
+  row's first tile moves up into the free end of the row above. Nothing stretches; free space is left only at
+  the end of a row. Tiles without a saved position join at the end, and `fitNew` uses the same flow. Before,
+  gravity only pulled tiles up, so a later tile could jump ahead into a hole. 2 new QML tests.
 - **Grid resizing from every side** (D34, maintainer's bug report): a neighbor in the way of a resize now
   shrinks down to its minimum before it moves (before, it always moved). The selected item shows a handle on
   each side that can move (before, only the right edge), every item can grow to the full width and in height,

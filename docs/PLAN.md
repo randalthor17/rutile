@@ -52,7 +52,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
   sizes clamped to columns/rows, edit mode; used by both Quick Settings tiles and the desktop widget grid
   (unreleased). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that
-  shrink before they move (D34), `maxRows`, gravity, right to left, commits through the owner; in the gallery as
+  shrink before they move (D34), `maxRows`, gravity that leaves no gaps (D35), right to left, commits through the
+  owner; in the gallery as
   Googlebook's "Edit tiles". Not done: keyboard editing, drag in from outside.
 - [ ] **1.7** Gallery covering every component, compared against the spec and screenshots. Exists for the current
   components; extend as each lands. The maintainer's look review is pending.

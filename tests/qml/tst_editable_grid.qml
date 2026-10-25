@@ -120,8 +120,30 @@ TestCase {
         compare([g.slotLayout.slots[0].col, g.slotLayout.slots[0].row], [2, 3], "kept where it was saved");
         compare(g.slotLayout.slots[1].row, 4, "a clash settles downward");
         var up = make({ items: saved });
-        compare([up.slotLayout.slots[0].col, up.slotLayout.slots[0].row], [2, 0], "gravity pulls into the hole");
-        compare(up.slotLayout.slots[1].row, 1);
+        compare([up.slotLayout.slots[0].col, up.slotLayout.slots[0].row], [0, 0], "gravity closes the gap above and before it");
+        compare([up.slotLayout.slots[1].col, up.slotLayout.slots[1].row], [1, 0], "and b follows into the same row");
+    }
+
+    function test_gravity_leaves_no_gaps_and_stretches_nothing() {
+        var g = make({ items: [{ id: "a", col: 0, row: 0 }, { id: "b", col: 2, row: 0 },
+                               { id: "c", col: 0, row: 1 }, { id: "d", col: 1, row: 1 }] });
+        compare(g.slotLayout.slots.map(function (c) { return [c.col, c.row]; }), [[0, 0], [1, 0], [2, 0], [3, 0]],
+                "b slides into the gap, c and d move up into the free end of the row above");
+        var order = make({ items: [{ id: "a", w: 3 }, { id: "b", w: 2 }, { id: "c" }], y: 150 });
+        compare(order.slotLayout.slots.map(function (c) { return [c.col, c.row]; }), [[0, 0], [0, 1], [2, 1]],
+                "b does not fit after a, so it starts the next row; c stays behind it, not in the hole after a");
+        var r = make({ items: [{ id: "a", w: 2 }, { id: "b" }, { id: "c" }, { id: "d" }], editMode: true, y: 300 });
+        mouseClick(slotsOf(r)[0]);
+        var p = pullHandle(slotsOf(r)[0], "right", -1);
+        p.release();
+        compare(r.items.map(function (c) { return [c.col, c.row, c.w]; }), [[0, 0, 1], [1, 0, 1], [2, 0, 1], [3, 0, 1]],
+                "a shrinks: b and c slide forward, d moves up from the next row, nobody stretches");
+        var tail = make({ items: [{ id: "a", w: 2 }, { id: "b" }, { id: "c" }], editMode: true, y: 300 });
+        mouseClick(slotsOf(tail)[0]);
+        p = pullHandle(slotsOf(tail)[0], "right", -1);
+        p.release();
+        compare(tail.items.map(function (c) { return [c.col, c.w]; }), [[0, 1], [1, 1], [2, 1]],
+                "the last one does not stretch into the free end");
     }
 
     function test_delegates_are_kept_across_changes() {
@@ -282,19 +304,23 @@ TestCase {
     }
 
     function test_handles_show_only_on_sides_that_can_move() {
-        var g = make({ items: [{ id: "a" }, { id: "b" }], editMode: true, maxRows: 1 });
+        var g = make({ items: [{ id: "a" }, { id: "b" }, { id: "c", w: 2, minW: 2 }], editMode: true, maxRows: 1 });
         compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(0, e); }),
-                [false, false, false, false], "a: at the start, b at its minimum, one row allowed");
+                [false, false, false, false], "a: at the start, the row full, nobody can shrink, one row allowed");
         compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(1, e); }),
-                [false, true, false, false], "b: free columns after it");
+                [false, false, false, false], "b: the same between a and c");
+        compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(2, e); }),
+                [false, false, false, false], "c: at its minimum");
         mouseClick(slotsOf(g)[1]);
         var h = handlesOf(slotsOf(g)[1]);
-        compare([h.left.visible, h.right.visible, h.top.visible, h.bottom.visible], [false, true, false, false]);
+        compare([h.left.visible, h.right.visible, h.top.visible, h.bottom.visible], [false, false, false, false]);
+        g.items = [{ id: "a" }, { id: "b" }, { id: "c" }];
+        compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(1, e); }),
+                [true, true, false, false], "b: with room at the row end, neighbors move along the row");
+        compare([h.left.visible, h.right.visible, h.top.visible, h.bottom.visible], [true, true, false, false]);
         g.maxRows = 0;
         compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(0, e); }),
-                [false, true, false, true], "without a row limit b can move away and a can grow down");
-        compare([h.left.visible, h.right.visible, h.top.visible, h.bottom.visible], [true, true, false, true],
-                "b: its start can now push a away");
+                [false, true, false, true], "without a row limit a can also grow down");
         var fixed = make({ items: [{ id: "f", minW: 1, maxW: 1, minH: 1, maxH: 1 }, { id: "x" }], editMode: true, y: 300 });
         compare(["start", "end", "top", "bottom"].map(function (e) { return fixed.canResize(0, e); }),
                 [false, false, false, false], "a fixed-size item has no handles");
@@ -342,6 +368,13 @@ TestCase {
         compare(g.fitNew({ id: "x", w: 1 }), null, "no room for another");
         var roomy = make({ items: [{ id: "a", w: 4 }, { id: "b", w: 2 }], maxRows: 2 });
         compare(roomy.fitNew({ id: "x", w: 4, minW: 1 }), { w: 2, h: 1 }, "a new item shrinks to fit");
+        var gap = [{ id: "a", w: 3 }, { id: "b", w: 4 }];
+        compare(make({ items: gap, maxRows: 2 }).fitNew({ id: "x" }), null,
+                "a new item goes after the last one, not into the free end of the first row");
+        compare(make({ items: gap, maxRows: 2, gravity: false }).fitNew({ id: "x" }), { w: 1, h: 1 },
+                "without gravity it may take that free cell");
+        compare(make({ items: gap.concat([{ id: "c" }]), maxRows: 2 }).fitNew({ id: "x" }), { w: 1, h: 1 },
+                "a grid already a row over (3 rows) may fill its last row");
         var r = make({ items: [{ id: "a", w: 2 }, { id: "b", w: 2 }, { id: "c", w: 4 }], maxRows: 2, editMode: true });
         r.previewResize(0, "bottom", 1);
         compare([r.resizeItems[0].h, r.resizeItems[2].col, r.resizeItems[2].w], [2, 2, 2],

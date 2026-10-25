@@ -179,3 +179,11 @@ that can actually move, and a neighbor in the way gives up cells down to its min
 elsewhere. Googlebook shows only a right-edge handle and two tile widths; this goes further on purpose. Right to
 left follows Qt's `LayoutMirroring`, set once at the shell's root from the locale: the grid reads it for its
 columns and the Tile lays out with anchors, so neither needs its own setting.
+
+**D35. A Quick Settings grid keeps no gaps, and nothing stretches to fill one.** The maintainer's rule: no empty
+space at the top, at the start of a row or between tiles. The maintainer chose "slide forward" over growing a
+neighbor into the gap: with `gravity` on, tiles keep their reading order and each takes the first free cell
+after the tile before it, wrapping to the next row when it does not fit, so free space is left only at the end
+of a row and the last tile never stretches into it. DMS's gravity only pulled items up, which can let a later
+tile jump ahead into a hole; the flow keeps the order. Items without a saved position join at the end, and the
+"is there room" check for adding one uses the same flow.

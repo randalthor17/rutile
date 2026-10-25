@@ -22,7 +22,7 @@ Item {
     property real rowHeight: ControlSpec.tileSpec.tileHeight
     property real gap: ControlSpec.tileSpec.tileArrangementPadding
     property int maxRows: 0
-    property bool gravity: true             // pull items up into holes (Quick Settings); off keeps them where put
+    property bool gravity: true             // close every gap: up and toward the row start (Quick Settings); off keeps items where put
     property bool editMode: false
     property Component delegate: null
     property real slotRadius: Shapes.extraLarge    // for the selection outline and the drop placeholder
@@ -192,7 +192,7 @@ Item {
     function fitNew(item) {
         const l = limits(item);
         return GridLayout.fitNew(clampedItems, columns, maxRows, Object.assign({}, item, clampSize(item, item.w, item.h)),
-                                 { w: l.minW, h: l.minH });
+                                 { w: l.minW, h: l.minH }, gravity);
     }
 
     // ---- delegates kept across reorders ----

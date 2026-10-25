@@ -67,8 +67,9 @@ Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
 
 EditableGrid (plan 1.6) is the grid under Quick Settings tiles and, later, desktop widgets (D17). Items are saved
 data: an id, a size in cells and the cell they were placed at. Packing is `GridLayout.js`, ported from
-DankMaterialShell (MIT): saved positions are kept where they fit, the rest first-fit, and `gravity` pulls items
-up into holes. In `editMode` (Googlebook's "Edit tiles", `docs/reference/README.md`) a click selects an item and
+DankMaterialShell (MIT): saved positions are kept where they fit, and `gravity` (Quick Settings) closes every
+gap by flowing the items in reading order, so free space is left only at the end of a row and nothing
+stretches (D35); without gravity (the desktop grid, later) items stay where they are put. In `editMode` (Googlebook's "Edit tiles", `docs/reference/README.md`) a click selects an item and
 a drag past the platform's drag distance moves it while the others make room around a placeholder. The selected
 item shows a handle on each side that can move (`canResize(index, edge)`: room to grow, neighbors that can make
 room, or size above its minimum); a handle moves its edge by whole cells. Neighbors in the way shrink from the

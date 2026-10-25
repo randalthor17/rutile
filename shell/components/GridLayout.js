@@ -3,8 +3,8 @@
 //
 // Ported from DankMaterialShell's quickshell/Common/GridLayout.js (MIT, Copyright (c) 2025 Avenge Media LLC;
 // now github.com/duxlabs-dev/dux-shell, commit e689cd2). Changed: no half-step rows and no shrinking rows (Rutile
-// does not use them yet), fitNew takes the new item whole, and resizing moves one edge at a time with neighbors
-// shrinking out of the way (resizeEdge, Rutile's own).
+// does not use them yet), fitNew takes the new item whole, resizing moves one edge at a time with neighbors
+// shrinking out of the way (resizeEdge, Rutile's own), and gravity also slides items toward the row start.
 .pragma library
 
 // Cells for `cards` (each {w, h} and optionally a saved {col, row}), placed in `order` (indices into cards):
@@ -25,15 +25,18 @@ function packCells(cards, order, columns, isAvailable, gravity) {
         }
         const w = Math.max(1, Math.min(columns, Math.round(card.w || 1)));
         const h = Math.max(1, Math.round(card.h || 1));
+        // Without a saved position: the first cell that fits or, with gravity, a row below everything, so that
+        // compact() places it after the items before it in the list.
         const cell = positioned(card)
             ? settle(taken, Math.max(0, Math.min(columns - w, Math.round(card.col))), Math.max(0, Math.round(card.row)), w, h)
-            : firstFit(taken, columns, w, h);
+            : gravity ? { "x": 0, "y": taken.reduce((top, c) => Math.max(top, c.y + c.h), 0), "w": w, "h": h }
+                      : firstFit(taken, columns, w, h);
         taken.push(cell);
         cells[sourceIndex] = cell;
     }
 
     if (gravity)
-        compact(taken);
+        compact(taken, columns);
     for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
         if (!cell)
@@ -44,13 +47,30 @@ function packCells(cards, order, columns, isAvailable, gravity) {
     return { "cells": cells, "rows": rows };
 }
 
-// Saved positions only settle downward, so a shrink or removal above leaves a hole; gravity pulls everything up into it.
-function compact(taken) {
+// Saved positions only settle downward, so a shrink, move or removal leaves holes; gravity closes them. Items keep
+// their reading order (row by row, then by column) and each takes the first free cell after the one before it,
+// moving to the next row when it does not fit: gaps at the top, at a row's start and between items close as the
+// items behind slide forward, and nothing grows, so free space is left only at the end of a row (D35). Rutile's
+// change: DMS only pulls items up, which can let an item jump ahead of the others into a hole.
+function compact(taken, columns) {
     const ordered = taken.slice().sort((a, b) => a.y - b.y || a.x - b.x);
+    const placed = [];
+    let x = 0, y = 0;
     for (const cell of ordered) {
-        const others = taken.filter(other => other !== cell);
-        while (cell.y > 0 && !overlaps(others, cell.x, cell.y - 1, cell.w, cell.h))
-            cell.y--;
+        for (;;) {
+            if (x + cell.w > columns) {
+                x = 0;
+                y++;
+            } else if (overlaps(placed, x, y, cell.w, cell.h)) {
+                x++;
+            } else {
+                break;
+            }
+        }
+        cell.x = x;
+        cell.y = y;
+        placed.push(cell);
+        x += cell.w;
     }
 }
 
@@ -211,19 +231,19 @@ function shrinkAway(other, r, l, across) {
 
 // The row limit for a change: `maxRows` (0 for none), or the rows already used if they exceed it, so a layout
 // that is already too tall can still change without first having to shrink.
-function rowLimit(cards, order, columns, maxRows) {
+function rowLimit(cards, order, columns, maxRows, gravity) {
     if (!(maxRows > 0))
         return Infinity;
-    return Math.max(maxRows, packCells(cards, order, columns, null, false).rows);
+    return Math.max(maxRows, packCells(cards, order, columns, null, gravity).rows);
 }
 
-function fitWithin(cards, order, columns, limit, index, want, min) {
+function fitWithin(cards, order, columns, limit, index, want, min, gravity) {
     let best = null;
     for (let w = Math.min(columns, want.w); w >= min.w; w--) {
         for (let h = want.h; h >= min.h; h--) {
             const trial = cards.slice();
             trial[index] = Object.assign({}, cards[index], { "w": w, "h": h });
-            if (packCells(trial, order, columns, null, false).rows > limit)
+            if (packCells(trial, order, columns, null, gravity).rows > limit)
                 continue;
             const distance = want.w - w + want.h - h;
             const better = !best || distance < best.distance || (distance === best.distance && w * h > best.w * best.h);
@@ -235,10 +255,11 @@ function fitWithin(cards, order, columns, limit, index, want, min) {
     return best ? { "w": best.w, "h": best.h } : null;
 }
 
-// The same for a new item appended to the grid: the size it can have, or null when there is no room.
-function fitNew(cards, columns, maxRows, item, min) {
+// The size a new item appended to the grid can have (nearest `want`, down to `min`) without the grid outgrowing
+// maxRows, or null when there is no room.
+function fitNew(cards, columns, maxRows, item, min, gravity) {
     const order = cards.map((card, i) => i);
-    const limit = rowLimit(cards, order, columns, maxRows);
+    const limit = rowLimit(cards, order, columns, maxRows, gravity);
     const want = { "w": item.w || 1, "h": item.h || 1 };
-    return fitWithin(cards.concat([Object.assign({}, item, want)]), order.concat([cards.length]), columns, limit, cards.length, want, min);
+    return fitWithin(cards.concat([Object.assign({}, item, want)]), order.concat([cards.length]), columns, limit, cards.length, want, min, gravity);
 }
