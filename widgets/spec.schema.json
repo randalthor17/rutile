@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rutile Widget Schema v1",
+  "type": "object",
+  "required": ["version", "name", "root"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "Widget name"
+    },
+    "root": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+        }
+      },
+      "if": {
+        "properties": {
+          "type": {"const": "card"}
+        }
+      },
+      "then": {
+        "properties": {
+          "tone": {
+            "type": "string",
+            "description": "Color role name in snake_case"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+                }
+              },
+              "required": ["type"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["tone", "children"],
+        "additionalProperties": false
+      },
+      "else": {
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "type": {"const": "row"},
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+                          }
+                        },
+                        "required": ["type"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["type"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "column"},
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+                          }
+                        },
+                        "required": ["type"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["type"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "grid"},
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+                          }
+                        },
+                        "required": ["type"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["type"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "card"},
+                    "tone": {
+                      "type": "string",
+                      "description": "Color role name in snake_case"
+                    },
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+                          }
+                        },
+                        "required": ["type"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["type", "tone", "children"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "header"},
+                    "icon": {
+                      "type": "string",
+                      "description": "Material Symbols ligature name"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "icon", "title"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "tile"},
+                    "tone": {
+                      "type": "string",
+                      "description": "Color role name in snake_case"
+                    },
+                    "children": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+                          }
+                        },
+                        "required": ["type"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["type", "tone", "children"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "heroImage"},
+                    "source": {
+                      "type": "string"
+                    },
+                    "aspect": {
+                      "type": "string",
+                      "description": "Aspect ratio like '16:9'"
+                    }
+                  },
+                  "required": ["type", "source", "aspect"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "stat"},
+                    "label": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "label", "value", "unit"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "progress"},
+                    "value": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "style": {
+                      "type": "string",
+                      "enum": ["linear", "wavy"]
+                    }
+                  },
+                  "required": ["type", "value", "style"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "listRow"},
+                    "icon": {
+                      "type": "string",
+                      "description": "Material Symbols ligature name"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "subtitle": {
+                      "type": "string"
+                    },
+                    "trailingIcon": {
+                      "type": "string",
+                      "description": "Material Symbols ligature name"
+                    }
+                  },
+                  "required": ["type", "icon", "title", "subtitle", "trailingIcon"],
+                  "additionalProperties": false
+                },
+                {
+                  "properties": {
+                    "type": {"const": "chip"},
+                    "label": {
+                      "type": "string"
+                    },
+                    "icon": {
+                      "type": "string",
+                      "description": "Material Symbols ligature name"
+                    }
+                  },
+                  "required": ["type", "label", "icon"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

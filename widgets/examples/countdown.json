@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "name": "Countdown Timer",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "card",
+        "tone": "primary_container",
+        "children": [
+          {
+            "type": "header",
+            "icon": "timer",
+            "title": "Countdown"
+          },
+          {
+            "type": "progress",
+            "value": "{{countdown.remaining}}",
+            "style": "wavy"
+          }
+        ]
+      }
+    ]
+  }
+}

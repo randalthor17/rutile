@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "name": "Event List",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "card",
+        "tone": "surface_container",
+        "children": [
+          {
+            "type": "header",
+            "icon": "event",
+            "title": "Upcoming Events"
+          },
+          {
+            "type": "listRow",
+            "icon": "calendar_today",
+            "title": "{{calendar.events.title}}",
+            "subtitle": "{{calendar.events.date}}",
+            "trailingIcon": "arrow_forward"
+          }
+        ]
+      }
+    ]
+  }
+}

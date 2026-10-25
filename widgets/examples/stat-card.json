@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "Battery",
+  "root": {
+    "type": "card",
+    "tone": "secondary_container",
+    "children": [
+      {
+        "type": "stat",
+        "label": "Battery Level",
+        "value": "{{battery.level}}",
+        "unit": "%"
+      },
+      {
+        "type": "progress",
+        "value": 0.8,
+        "style": "linear"
+      }
+    ]
+  }
+}
