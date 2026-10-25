@@ -54,6 +54,23 @@ TestCase {
                 verify(iconSeen[itypes[a] + "/" + sizes[c]], "missing icon button " + itypes[a] + "/" + sizes[c]);
     }
 
+    function test_gallery_shows_switches_sliders_and_progress_in_every_state() {
+        var g = createTemporaryObject(galleryComp, root);
+        wait(200);
+        var sw = byName(g, "gallerySwitch");
+        compare(sw.length, 6);
+        verify(sw.some(function (s) { return s.checked && s.hasIcon; }), "a checked switch with an icon");
+        verify(sw.some(function (s) { return !s.enabled; }), "a disabled switch");
+        var sl = byName(g, "gallerySlider");
+        compare(sl.length, 3);
+        verify(sl.some(function (s) { return s.stepCount > 0; }), "a stepped slider");
+        var pr = byName(g, "galleryProgress");
+        compare(pr.length, 2);
+        verify(pr.some(function (p) { return p.wavy && p.waveOn; }), "a visibly wavy bar");
+        sl[0].value = 0.9;
+        compare(pr[0].value, 0.9, "progress follows the first slider");
+    }
+
     function test_content_is_scrollable_and_taller_than_the_window() {
         var g = createTemporaryObject(galleryComp, root);
         wait(200);

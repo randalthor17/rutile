@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate tokens/components.json from the vendored Material 3 component tokens.
 
-Covers button and icon button sizes, shapes, color roles and state opacities.
+Covers button and icon button sizes, shapes, color roles and state opacities, and the full token
+tables of the switch, slider and progress indicators plus the few values Compose hardcodes for them.
 Everything is parsed from tokens/sources/*.kt (checksummed by manifest.json) and
 the script fails loudly on anything it does not understand.
 
@@ -165,6 +166,81 @@ def label_styles():
             "xl": "headline_large"}
 
 
+def token_table(file, corners):
+    """Every token of a component token file, snake_cased: dp as numbers, colors as roles,
+    shapes as px or "full", type styles by name, opacities as numbers. Anything else is an error."""
+    text = (SRC / file).read_text()
+    declared = re.findall(r"^\s*(?:inline |const )?val (\w+)", text, re.M)
+    tokens = parse_kt(text)
+    if sorted(declared) != sorted(tokens):
+        raise ComponentError(f"{file}: could not parse {sorted(set(declared) - set(tokens))}")
+    out = {}
+    for name, expr in tokens.items():
+        what = f"{file}:{name}"
+        if re.fullmatch(r"[\d.]+", expr):
+            v = float(expr)
+            out[snake(name)] = int(v) if v.is_integer() else v
+        elif expr.endswith(".dp"):
+            out[snake(name)] = dp(expr, what)
+        elif expr.startswith("ColorSchemeKeyTokens."):
+            out[snake(name)] = role(expr, what)
+        elif expr.startswith("ShapeKeyTokens."):
+            out[snake(name)] = shape(expr, corners, what)
+        elif expr.startswith("TypographyKeyTokens."):
+            out[snake(name)] = snake(expr.split(".", 1)[1])
+        else:
+            raise ComponentError(f"{what}: unknown token kind {expr!r}")
+    return out
+
+
+def find(file, pattern, what):
+    m = re.search(pattern, (SRC / file).read_text(), re.S)
+    if not m:
+        raise ComponentError(f"{file}: {what} not found; Compose changed, review the component")
+    return m
+
+
+def slider_impl(tokens):
+    """Values Slider.kt hardcodes or derives instead of taking a token."""
+    inside = find("Slider.kt", r"private val TrackInsideCornerSize: Dp\s*get\(\) = (\d+)\.dp", "TrackInsideCornerSize")
+    find("Slider.kt", r"private val ThumbTrackGapSize: Dp\s*get\(\) = SliderTokens\.ActiveHandleLeadingSpace",
+         "ThumbTrackGapSize = ActiveHandleLeadingSpace")
+    find("Slider.kt", r"thumbSize\.copy\(width = thumbSize\.width / 2\)", "the handle halving while interacted")
+    return {"track_inside_corner": int(inside.group(1)), "handle_gap": tokens["active_handle_leading_space"]}
+
+
+def progress_impl():
+    """Values ProgressIndicator.kt and WavyProgressIndicator.kt hardcode instead of taking a token."""
+    width = find("ProgressIndicator.kt", r"internal val LinearIndicatorWidth\s*get\(\) = (\d+)\.dp", "LinearIndicatorWidth")
+    stop = find("ProgressIndicator.kt", r"internal val StopIndicatorTrailingSpace\s*get\(\) = (\d+)\.dp",
+                "StopIndicatorTrailingSpace")
+    # Spring.DampingRatioNoBouncy is 1 and Spring.StiffnessVeryLow is 50 in compose animation-core.
+    find("ProgressIndicator.kt", r"ProgressAnimationSpec: SpringSpec<Float> =\s*SpringSpec\(\s*"
+         r"dampingRatio = Spring\.DampingRatioNoBouncy,\s*stiffness = Spring\.StiffnessVeryLow", "ProgressAnimationSpec")
+    amp = find("WavyProgressIndicator.kt", r"if \(progress <= ([\d.]+)f \|\| progress >= ([\d.]+)f\) \{\s*0f\s*\} else \{\s*1f",
+               "indicatorAmplitude")
+    find("WavyProgressIndicator.kt", r"waveSpeed: Dp = wavelength, // Match to 1 wavelength per second", "waveSpeed")
+    up = find("WavyProgressIndicator.kt", r"IncreasingAmplitudeAnimationSpec: AnimationSpec<Float> =\s*tween\(\s*"
+              r"durationMillis = MotionTokens\.Duration(\w+)\.toInt\(\),\s*easing = MotionTokens\.Easing(\w+)CubicBezier",
+              "IncreasingAmplitudeAnimationSpec")
+    down = find("WavyProgressIndicator.kt", r"DecreasingAmplitudeAnimationSpec: AnimationSpec<Float> =\s*tween\(\s*"
+                r"durationMillis = MotionTokens\.Duration(\w+)\.toInt\(\),\s*easing = MotionTokens\.Easing(\w+)CubicBezier",
+                "DecreasingAmplitudeAnimationSpec")
+
+    def first_lower(n):
+        return n[0].lower() + n[1:]
+    return {
+        "linear_width": int(width.group(1)),
+        "stop_trailing_space_max": int(stop.group(1)),
+        "progress_spring": {"stiffness": 50, "damping_ratio": 1, "visibility_threshold": 0.001},
+        "wave_on_above": float(amp.group(1)),
+        "wave_off_from": float(amp.group(2)),
+        "wavelengths_per_second": 1,
+        "amplitude_in": {"duration": first_lower(up.group(1)), "easing": first_lower(up.group(2))},
+        "amplitude_out": {"duration": first_lower(down.group(1)), "easing": first_lower(down.group(2))},
+    }
+
+
 def build():
     manifest = gen_tokens.load_manifest()
     gen_tokens.verify_sources(manifest)
@@ -271,6 +347,14 @@ def build():
         "state_opacity": opacity,
         "button": {"sizes": button_sizes, "types": btypes},
         "icon_button": {"sizes": icon_sizes, "types": itypes},
+        "switch": token_table("SwitchTokens.kt", corners),
+        "slider": {**(slider := token_table("SliderTokens.kt", corners)), "impl": slider_impl(slider)},
+        "progress": {
+            **token_table("ProgressIndicatorTokens.kt", corners),
+            "linear": token_table("LinearProgressIndicatorTokens.kt", corners),
+            "circular": token_table("CircularProgressIndicatorTokens.kt", corners),
+            "impl": progress_impl(),
+        },
     }
 
 

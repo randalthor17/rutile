@@ -272,6 +272,35 @@ Rectangle {
                 }
             }
 
+            // ---- switches, sliders, progress ----
+            GallerySection {
+                title: "Switch, slider, progress"
+                width: parent.width
+                Column {
+                    width: parent.width
+                    spacing: Spacing.lg
+                    Row {
+                        spacing: Spacing.xl
+                        Switch { objectName: "gallerySwitch" }
+                        Switch { objectName: "gallerySwitch"; checked: true }
+                        Switch { objectName: "gallerySwitch"; checkedIcon: "check"; uncheckedIcon: "close" }
+                        Switch { objectName: "gallerySwitch"; checkedIcon: "check"; uncheckedIcon: "close"; checked: true }
+                        Switch { objectName: "gallerySwitch"; enabled: false }
+                        Switch { objectName: "gallerySwitch"; enabled: false; checked: true }
+                    }
+                    Slider { objectName: "gallerySlider"; id: demoSlider; width: 360; value: 0.4 }
+                    Slider { objectName: "gallerySlider"; width: 360; from: 0; to: 10; stepSize: 1; value: 3 }
+                    Slider { objectName: "gallerySlider"; width: 360; value: 0.6; enabled: false }
+                    ProgressBar { objectName: "galleryProgress"; width: 360; value: demoSlider.value }
+                    ProgressBar { objectName: "galleryProgress"; width: 360; value: demoSlider.value; wavy: true }
+                    Text {
+                        text: "The progress bars follow the first slider."
+                        color: Colors.surfaceVariantOn
+                        font: Type.font(Type.labelMedium)
+                    }
+                }
+            }
+
             // ---- motion ----
             GallerySection {
                 title: "Motion (click to move)"

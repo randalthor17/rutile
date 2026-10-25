@@ -11,6 +11,9 @@ directory containing the entry file, so run things from `shell/`.
 | `Button` | types `filled` `tonal` `elevated` `outlined` `text`; sizes `xs` `s` `m` `l` `xl`; `shape` round or square; `toggle`/`checked`; `iconName` |
 | `IconButton` | types `standard` `filled` `tonal` `outlined`; same sizes; `widthVariant` default (square), narrow, wide; `toggle`/`checked` |
 | `ButtonBase` | shared behavior (not used directly) |
+| `Switch` | `checked`, `toggled(bool)`; optional `checkedIcon` / `uncheckedIcon` in the handle |
+| `Slider` | horizontal; `from`, `to`, `value`, `stepSize` (0 = continuous), `moved(real)` when the user changes it |
+| `ProgressBar` | linear, determinate; `value` 0..1, `wavy`, `animated` |
 
 ```qml
 Button { text: "Create a widget"; iconName: "auto_awesome"; type: "filled"; size: "m"; onClicked: ... }
@@ -25,6 +28,20 @@ vendored Compose Material3 token sources into `ControlSpec.qml`. Behavior implem
 - container and color changes animate with effects springs (`SpringColor`), including theme switches
 - disabled: container 10%, content 38% opacity; keyboard activation with Space/Return; focus state layer
 
+Switch, Slider and ProgressBar take every value from `ControlSpec.switchSpec`, `sliderSpec` and
+`progressSpec`, generated from the Compose token files. Values Compose hardcodes rather than tokenizes are
+parsed from its sources and land under `impl` (the slider's 2 px inner corner, the 240 px default bar width,
+the wave thresholds and the progress spring); the generator fails if those sources change. Behavior:
+
+- Switch: the handle snaps to 28 px while pressed and springs (fast spatial) to 16 or 24 px on release;
+  hover and press lighten the handle; disabled colors are composited over the surface, as Compose does.
+  Its state layer is a 40 px circle around the handle. Its colors (primary when on, on-surface when off) come
+  from the M3 spec, not a token, because the token file only gives the size.
+- Slider: click or drag anywhere; arrows move a step (or 1/100), PageUp/PageDown a tenth, Home/End the ends.
+  Tick dots sit where stepped values put the handle; Compose spaces them slightly differently.
+- ProgressBar: the wave fades in over `Motion.long2` with the standard easing and out with emphasized
+  accelerate; it only animates while visible.
+
 ## One correction to the tokens
 
 `ButtonXSmallTokens.kt` is not yet corrected upstream: Compose overrides it in `Button.kt` with 12 px
@@ -32,6 +49,9 @@ padding and a 4 px icon gap (the token file says 16 and 8). `tools/gen_component
 override, records it in `components.json`, and fails if the upstream TODOs disappear so it gets reviewed.
 
 ## Not done yet
+
+- **Slider:** vertical and range sliders, the value label above the handle, centered sliders.
+- **Progress:** indeterminate (flat and wavy) and circular indicators. The tokens for circular are generated.
 
 - **Ripple:** state layers only. Rounded clipping of a ripple needs masking; decide from the gallery.
 - **Elevation shadows:** `elevated` shows its container color only, so it is faint on dark surfaces.

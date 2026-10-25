@@ -31,7 +31,7 @@ Unreleased. There is no shell UI yet: what exists is the foundation and the firs
 | Palette pipeline (matugen to `palette.json`) | done; matugen's 2021-era color spec is accepted for now |
 | QML singletons: Colors, Shapes, Motion, Type, Fonts, Elevation, Spacing, Spring, SpringColor | done |
 | Fonts: Google Sans Flex (text), Material Symbols Rounded (icons) | done |
-| Components: Surface, StateLayer, Icon, Button, IconButton | done, in the gallery |
+| Components: Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar | done, in the gallery |
 | Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
 | Remaining components, EditableGrid, shell, widget renderer, settings, distro | not started (see plan) |
 | Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
@@ -49,8 +49,8 @@ surfaces), no focus ring. See `docs/components.md`.
 
 ### Next up
 
-1. The maintainer reviews the gallery look and picks the next component batch: Switch, Slider and
-   ProgressBar (Quick Settings needs them) or the Googlebook signature pieces (ShapeMorph, GeminiGlow).
+1. The maintainer reviews Switch, Slider and ProgressBar in the gallery and picks the next batch: the
+   Googlebook signature pieces (ShapeMorph, GeminiGlow) or what Quick Settings needs next.
 2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
    `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
    `sidework.py merge TASK --close`. Judge speed and whether ROCm runs on the card.

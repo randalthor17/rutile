@@ -1,6 +1,7 @@
 // Hover, focus, pressed and dragged feedback: a translucent overlay of `stateColor` whose
 // opacity chases the M3 state opacities with an effects spring (never overshoots).
-// It also owns the MouseArea, so put it above the content it should react for.
+// It also owns the MouseArea, so put it above the content it should react for. A control whose
+// pointer area is larger than its overlay (the switch's circle) sets `input` to its own MouseArea.
 import QtQuick
 import qs.common
 
@@ -11,9 +12,10 @@ Item {
     property real radius: Shapes.none
     property bool focused: false
     property bool dragged: false
+    property MouseArea input: mouse
 
-    readonly property bool hovered: mouse.containsMouse
-    readonly property bool pressed: mouse.pressed
+    readonly property bool hovered: input.containsMouse
+    readonly property bool pressed: input.pressed
 
     // Where the overlay opacity is heading (exposed for tests and for derived controls).
     readonly property real targetOpacity: {
@@ -46,7 +48,7 @@ Item {
     MouseArea {
         id: mouse
         anchors.fill: parent
-        enabled: root.enabled
+        enabled: root.enabled && root.input === mouse
         hoverEnabled: true
         // Lint note: the Qt 6.4 linter cannot resolve Qt.CursorShape (a one-line MouseArea shows it).
         // qmllint disable type

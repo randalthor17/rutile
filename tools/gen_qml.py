@@ -157,6 +157,21 @@ def role_names(table):
     return {k: (None if v is None else qml_name(v)) for k, v in table.items()}
 
 
+def spec_values(value):
+    """camelCase keys of a component token table; `*_color` values become Colors property names and
+    `*_font` values Type style names."""
+    if not isinstance(value, dict):
+        return value
+    out = {}
+    for k, v in value.items():
+        if k.endswith("_color"):
+            v = qml_name(v)
+        elif k.endswith("_font"):
+            v = camel(v)
+        out[camel(k)] = spec_values(v)
+    return out
+
+
 def gen_control_spec(c):
     def sizes(table):
         out = {}
@@ -167,8 +182,8 @@ def gen_control_spec(c):
             out[key] = camel_keys(spec)
         return out
 
-    out = [header("Button and icon button specs from tokens/components.json (sizes in px, colors as "
-                  "Colors property names, shapes in px or \"full\").") + "QtObject {"]
+    out = [header("Button, icon button, switch, slider and progress specs from tokens/components.json (sizes in "
+                  "px, colors as Colors property names, shapes in px or \"full\").") + "QtObject {"]
     out.append(f"    readonly property var stateOpacity: ({js(camel_keys(c['state_opacity']))})")
     out.append(f"    readonly property var buttonSizes: ({js(sizes(c['button']['sizes']))})")
     out.append(f"    readonly property var buttonTypes: "
@@ -176,6 +191,8 @@ def gen_control_spec(c):
     out.append(f"    readonly property var iconButtonSizes: ({js(sizes(c['icon_button']['sizes']))})")
     out.append(f"    readonly property var iconButtonTypes: "
                f"({js({k: camel_keys(role_names(v)) for k, v in c['icon_button']['types'].items()})})")
+    for name in ("switch", "slider", "progress"):
+        out.append(f"    readonly property var {name}Spec: ({js(spec_values(c[name]))})")
     out.append("}")
     return "\n".join(out) + "\n"
 

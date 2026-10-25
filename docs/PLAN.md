@@ -36,9 +36,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   The gallery opens in real Quickshell. Not done: ripple, elevation shadow, focus ring.
 - [x] **1.5b** Filled-icon glitch fixed (unreleased): `Icon` uses `Text.NativeRendering`; GPU-path regression
   test in `tests/qml_gpu/` (`make check-gpu`).
-- [ ] **1.5** Component kit, remaining: FAB, Switch, Slider, ProgressBar (incl. wavy), Card, ListItem, Chip,
-  TextField, Menu, Dialog, NavRail, ShapeMorph (cookie/scallop shapes), GeminiGlow gradient border. Likely
-  order: Switch, Slider, ProgressBar (Quick Settings needs them), then ShapeMorph and GeminiGlow.
+- [x] **1.5c** Switch, Slider, ProgressBar (unreleased): specs from the vendored Compose token files plus the few
+  values Compose hardcodes (parsed from `Slider.kt`, `ProgressIndicator.kt`, `WavyProgressIndicator.kt`), in the
+  gallery. Slider is horizontal; ProgressBar is linear and determinate (flat or wavy). Not done: vertical and
+  range sliders, the slider value label, indeterminate and circular progress.
+- [ ] **1.5** Component kit, remaining: FAB, Card, ListItem, Chip, TextField, Menu, Dialog, NavRail, ShapeMorph
+  (cookie/scallop shapes), GeminiGlow gradient border, and the 1.5c leftovers when something needs them.
+  Likely next: ShapeMorph and GeminiGlow, or what Quick Settings (2.6) needs first.
 - [ ] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
   sizes clamped to columns/rows, edit mode; used by both Quick Settings tiles and the desktop widget grid.
 - [ ] **1.7** Gallery covering every component, compared against the spec and screenshots. Exists for the current

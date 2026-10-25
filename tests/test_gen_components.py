@@ -85,6 +85,31 @@ class Committed(unittest.TestCase):
         self.assertEqual(i["tonal"]["selected_container"], "secondary")
 
 
+    def test_switch_slider_progress_spot_values(self):
+        sw, sl, pr = self.data["switch"], self.data["slider"], self.data["progress"]
+        self.assertEqual((sw["track_width"], sw["track_height"], sw["track_outline_width"]), (52, 32, 2))
+        self.assertEqual((sw["unselected_handle_width"], sw["selected_handle_width"], sw["pressed_handle_width"]),
+                         (16, 24, 28))
+        self.assertEqual((sw["selected_track_color"], sw["selected_handle_color"]), ("primary", "on_primary"))
+        self.assertEqual(sw["disabled_track_opacity"], 0.12)
+        self.assertEqual((sl["handle_width"], sl["handle_height"], sl["pressed_handle_width"]), (4, 44, 2))
+        self.assertEqual((sl["inactive_track_height"], sl["inactive_track_color"]), (16, "secondary_container"))
+        self.assertEqual(sl["value_indicator_label_text_font"], "label_large")
+        self.assertEqual(sl["impl"], {"track_inside_corner": 2, "handle_gap": 6})
+        self.assertEqual((pr["linear"]["wave_height"], pr["linear"]["active_wave_amplitude"]), (10, 3))
+        self.assertEqual(pr["circular"]["active_wave_amplitude"], 1.6)
+        self.assertEqual(pr["impl"]["linear_width"], 240)
+        self.assertEqual((pr["impl"]["wave_on_above"], pr["impl"]["wave_off_from"]), (0.1, 0.95))
+        self.assertEqual(pr["impl"]["amplitude_out"], {"duration": "long2", "easing": "emphasizedAccelerate"})
+
+    def test_impl_easings_and_durations_exist_in_the_motion_tokens(self):
+        m3e = json.loads((ROOT / "tokens" / "m3e.json").read_text())["motion"]
+        impl = self.data["progress"]["impl"]
+        for ease in (impl["amplitude_in"], impl["amplitude_out"]):
+            self.assertIn(gc.snake(ease["duration"]), m3e["duration_ms"])
+            self.assertIn(gc.snake(ease["easing"]), m3e["easing_cubic_bezier"])
+
+
 class FailsLoudly(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
@@ -117,6 +142,36 @@ class FailsLoudly(unittest.TestCase):
         self.with_modified_source("FilledButtonTokens.kt", lambda t: t + "\n// tampered\n")
         with self.assertRaises(gen_tokens.TokenError):
             gc.build()
+
+    def test_unknown_token_kinds_and_unparsed_declarations_fail(self):
+        self.with_modified_source("SwitchTokens.kt", lambda t: t.replace(
+            "get() = ColorSchemeKeyTokens.Secondary", "get() = SomethingNew.Secondary"))
+        with self.assertRaises(gc.ComponentError) as cm:
+            gc.token_table("SwitchTokens.kt", CORNERS)
+        self.assertIn("unknown token kind", str(cm.exception))
+        shutil.rmtree(self.tmp / "src")
+        self.with_modified_source("SliderTokens.kt", lambda t: t.replace(
+            "internal object SliderTokens {", "internal object SliderTokens {\n    val Extra = listOf(1)"))
+        with self.assertRaises(gc.ComponentError) as cm:
+            gc.token_table("SliderTokens.kt", CORNERS)
+        self.assertIn("could not parse", str(cm.exception))
+
+    def test_changed_compose_hardcoded_values_force_a_review(self):
+        cases = [
+            ("Slider.kt", "private val TrackInsideCornerSize: Dp", "private val TrackInnerCornerSize: Dp", gc.slider_impl),
+            ("Slider.kt", "thumbSize.copy(width = thumbSize.width / 2)", "thumbSize.copy(width = thumbSize.width / 3)",
+             gc.slider_impl),
+            ("ProgressIndicator.kt", "stiffness = Spring.StiffnessVeryLow", "stiffness = Spring.StiffnessLow",
+             gc.progress_impl),
+            ("WavyProgressIndicator.kt", "progress <= 0.1f", "progress <= 0.2f || progress < 0f", gc.progress_impl),
+            ("WavyProgressIndicator.kt", "waveSpeed: Dp = wavelength, // Match to 1 wavelength per second",
+             "waveSpeed: Dp = wavelength * 2,", gc.progress_impl),
+        ]
+        for name, old, new, fn in cases:
+            self.with_modified_source(name, lambda t: t.replace(old, new))
+            with self.assertRaises(gc.ComponentError, msg=f"{name}: {old}"):
+                fn({"active_handle_leading_space": 6}) if fn is gc.slider_impl else fn()
+            shutil.rmtree(self.tmp / "src")
 
     def test_parsers_reject_unexpected_expressions(self):
         with self.assertRaises(gc.ComponentError):

@@ -5,6 +5,14 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Switch, Slider, ProgressBar** (plan 1.5c). Switch: 52x32, handle 16/24/28 px with optional icons, snaps while
+  pressed and springs on release. Slider: expressive track with a 6 px gap around a 4x44 handle that narrows to
+  2 px while pressed or focused, stop and tick dots, steps, keyboard. ProgressBar: linear determinate, flat or
+  wavy (the wave moves one wavelength per second and flattens below 10% and from 95%), progress eased with
+  Compose's spring. Specs come from five more vendored token files plus values parsed from `Slider.kt`,
+  `ProgressIndicator.kt` and `WavyProgressIndicator.kt`; the generator fails if those change. `StateLayer` takes
+  an external `input` area. In the gallery; 19 new QML tests (18 in `tests/qml/tst_controls.qml`, one in the
+  gallery test). A 17-fault mutation run caught every fault.
 - **Fix:** the `local-ai` dev shell now has everything the default shell has (Qt, qmltestrunner, Quickshell,
   matugen, `QML2_IMPORT_PATH`, the fonts), so an agent in it can run `make check` and its acceptance check.
 - `local-ai` dev shell: Node.js 22, which some local MCP servers need.

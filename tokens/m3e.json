@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "fetched": "2026-10-07",
+    "fetched": "2026-10-26",
     "generator": "tools/gen_tokens.py",
     "note": "Generated from androidx Compose Material3 token sources (Apache-2.0), not from m3.material.io pages. Do not edit by hand.",
     "ref": "androidx-main",

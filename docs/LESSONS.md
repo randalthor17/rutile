@@ -118,6 +118,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   passed; the maintainer found it by clicking a motion lane twice. Tests now repeat the interaction after a full
   settle.
 
+- **A mutation counts as caught only if a test failed, not if the file failed to load.** A QML test file with a
+  compile error (an alias named `layer`, which `Item` already has) made every mutation look caught. Check the
+  failure count per mutation: one or two real failures, not a missing test case.
+
 - **The first design is often wrong; test the attack.** The ownership guard, the weight test and the transparency
   test were all fixed by trying to break them.
 - **Say what is unverified.** Every handoff names what was not tested and why (needs the maintainer's hardware or a
