@@ -158,3 +158,9 @@ the shape, and nothing animates while idle. Rules and measurements are in `docs/
 the mechanical ones and `tools/dev/memcost.py` measures the rest. Qt 6.4 was only ever the sandbox's Qt: the
 flake's Quickshell 0.3.2 is built on Qt 6.12, so the code now uses Qt 6.7 features (per-corner radii,
 `font.variableAxes` without feature detection, `pragma ComponentBehavior`) and tests run on 6.12.
+
+**D32. The Quick Settings tile follows Android 16 until Googlebook references exist.** Material has no tile
+component, and the Googlebook screenshots are not in the repository yet (plan 0.2). The maintainer chose
+Android 16's SystemUI tile as the stand-in: its sizes, corner radii and per-state colors are parsed from the
+vendored `Tile.kt` and `CommonTile.kt` (Apache-2.0), like the Compose token files. Revisit against the
+references when they arrive.

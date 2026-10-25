@@ -11,6 +11,11 @@ Item {
 
     property color stateColor: Colors.surfaceOn
     property real radius: Shapes.none
+    // Per-corner radii, for containers whose corners differ (segmented list items).
+    property real topLeftRadius: radius
+    property real topRightRadius: radius
+    property real bottomLeftRadius: radius
+    property real bottomRightRadius: radius
     property bool focused: false
     property bool dragged: false
     property MouseArea input: mouse
@@ -34,7 +39,10 @@ Item {
     Rectangle {
         id: overlay
         anchors.fill: parent
-        radius: root.radius
+        topLeftRadius: root.topLeftRadius
+        topRightRadius: root.topRightRadius
+        bottomLeftRadius: root.bottomLeftRadius
+        bottomRightRadius: root.bottomRightRadius
         color: root.stateColor
         opacity: root.targetOpacity
         visible: opacity > 0

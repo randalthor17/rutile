@@ -301,6 +301,54 @@ Rectangle {
                 }
             }
 
+            // ---- quick settings: tiles, chips, list items ----
+            GallerySection {
+                title: "Tiles, chips, list items"
+                width: parent.width
+                Column {
+                    width: parent.width
+                    spacing: Spacing.lg
+                    Flow {
+                        width: Math.min(parent.width, 640)
+                        spacing: Spacing.sm
+                        Tile { objectName: "galleryTile"; text: "Wi-Fi"; secondaryText: "Home"; iconName: "wifi"; active: true; dualTarget: true; width: 300 }
+                        Tile { objectName: "galleryTile"; text: "Bluetooth"; secondaryText: "Off"; iconName: "bluetooth"; dualTarget: true; width: 300 }
+                        Tile { objectName: "galleryTile"; text: "Do not disturb"; secondaryText: "On"; iconName: "do_not_disturb_on"; active: true; width: 300 }
+                        Tile { objectName: "galleryTile"; text: "Night light"; secondaryText: "Off"; iconName: "nightlight"; width: 300 }
+                        Tile { objectName: "galleryTile"; text: "Airplane mode"; secondaryText: "Unavailable"; iconName: "flight"; available: false; width: 300 }
+                        Tile { objectName: "galleryTile"; iconName: "flashlight_on"; iconOnly: true; active: true }
+                        Tile { objectName: "galleryTile"; iconName: "screen_rotation"; iconOnly: true }
+                    }
+                    Flow {
+                        width: parent.width
+                        spacing: Spacing.sm
+                        Chip { objectName: "galleryChip"; text: "Assist"; iconName: "event" }
+                        Chip { objectName: "galleryChip"; text: "Elevated"; iconName: "share"; elevated: true }
+                        Chip { objectName: "galleryChip"; text: "Filter"; type: "filter" }
+                        Chip { objectName: "galleryChip"; text: "Selected"; type: "filter"; selected: true }
+                        Chip { objectName: "galleryChip"; text: "Dropdown"; type: "filter"; trailingIconName: "arrow_drop_down" }
+                        Chip { objectName: "galleryChip"; text: "Disabled"; type: "filter"; selected: true; enabled: false }
+                    }
+                    Rectangle {
+                        width: Math.min(parent.width, 420)
+                        height: group.height + 2 * Spacing.sm
+                        radius: Shapes.large
+                        color: Colors.surfaceContainer
+                        Column {
+                            id: group
+                            x: Spacing.sm
+                            y: Spacing.sm
+                            width: parent.width - 2 * Spacing.sm
+                            spacing: ControlSpec.listSpec.segmentedGap
+                            ListItem { objectName: "galleryListItem"; width: parent.width; position: "first"; text: "Network"; supportingText: "Wi-Fi, mobile, hotspot"; iconName: "wifi" }
+                            ListItem { objectName: "galleryListItem"; width: parent.width; position: "middle"; text: "Bluetooth"; iconName: "bluetooth"; Switch { checked: true } }
+                            ListItem { objectName: "galleryListItem"; width: parent.width; position: "middle"; text: "Display"; iconName: "brightness_6"; selected: true }
+                            ListItem { objectName: "galleryListItem"; width: parent.width; position: "last"; text: "Storage"; trailingText: "64 GB free"; iconName: "storage" }
+                        }
+                    }
+                }
+            }
+
             // ---- motion ----
             GallerySection {
                 title: "Motion (click to move)"

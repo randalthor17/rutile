@@ -205,7 +205,7 @@ def gen_control_spec(c):
             out[key] = camel_keys(spec)
         return out
 
-    out = [header("Button, icon button, switch, slider and progress specs from tokens/components.json (sizes in "
+    out = [header("Button, icon button, switch, slider, progress, chip, list and tile specs from tokens/components.json (sizes in "
                   "px, colors as Colors property names, shapes in px or \"full\").") + "QtObject {"]
     out.append(f"    readonly property var stateOpacity: ({js(camel_keys(c['state_opacity']))})")
     out.append(f"    readonly property var buttonSizes: ({js(sizes(c['button']['sizes']))})")
@@ -214,7 +214,7 @@ def gen_control_spec(c):
     out.append(f"    readonly property var iconButtonSizes: ({js(sizes(c['icon_button']['sizes']))})")
     out.append(f"    readonly property var iconButtonTypes: "
                f"({js({k: camel_keys(role_names(v)) for k, v in c['icon_button']['types'].items()})})")
-    for name in ("switch", "slider", "progress"):
+    for name in ("switch", "slider", "progress", "chip", "list", "tile"):
         out.append(f"    readonly property var {name}Spec: ({js(spec_values(c[name]))})")
     out.append("}")
     return "\n".join(out) + "\n"

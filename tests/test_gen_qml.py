@@ -131,6 +131,24 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class ControlSpecColors(unittest.TestCase):
+    def test_every_color_in_every_spec_is_a_colors_property(self):
+        spec = (COMMON / "ControlSpec.qml").read_text()
+        colors = set(re.findall(r"property color (\w+)", (COMMON / "Colors.qml").read_text()))
+        found = 0
+        for m in re.finditer(r"readonly property var (\w+Spec): \((.*)\)\n", spec):
+            def walk(x, path):
+                nonlocal found
+                for k, v in x.items():
+                    if isinstance(v, dict):
+                        walk(v, path + k + ".")
+                    elif k.endswith("Color"):
+                        found += 1
+                        self.assertIn(v, colors, f"{m.group(1)}.{path}{k}")
+            walk(json.loads(m.group(2)), "")
+        self.assertGreater(found, 100)
+
+
 class EffectsCurve(unittest.TestCase):
     """The bezier that stands in for a critically damped spring (EffectsColor, EffectsNumber)."""
 

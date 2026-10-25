@@ -5,6 +5,14 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Tile, Chip, ListItem** (plan 1.5d). Tile: Android 16's Quick Settings tile (D32): pill when inactive, 24 px
+  corners when active, large or icon-only, dual-target (icon toggles, body opens details), unavailable state.
+  Chip: assist (flat or elevated) and filter (check when selected), with Compose's spacing. ListItem: one or
+  two lines, leading icon, trailing text and a slot for a control, expressive shape morph (4/12/16 px), and
+  segmented groups that keep their outer corners. Values from AssistChipTokens, FilterChipTokens, ListTokens,
+  ListItemDefaults.kt, Chip.kt and SystemUI's Tile.kt/CommonTile.kt (vendored; `gen_tokens.py --refresh`
+  decodes googlesource's base64). `StateLayer` takes per-corner radii. 16 new QML tests; a 15-fault mutation
+  run caught every fault.
 - **Test fix:** `make check-gpu` failed on one pixel. The glyph was solid; the test sampled a square whose
   corner reached the heart's slanted edge once Qt 6.12 placed the glyph 1 px differently. It samples a disc now,
   as its comment said, and still fails with the old (holey) text rendering.

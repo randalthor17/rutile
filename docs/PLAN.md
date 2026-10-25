@@ -40,7 +40,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   values Compose hardcodes (parsed from `Slider.kt`, `ProgressIndicator.kt`, `WavyProgressIndicator.kt`), in the
   gallery. Slider is horizontal; ProgressBar is linear and determinate (flat or wavy). Not done: vertical and
   range sliders, the slider value label, indeterminate and circular progress.
-- [ ] **1.5** Component kit, remaining: FAB, Card, ListItem, Chip, TextField, Menu, Dialog, NavRail, ShapeMorph
+- [x] **1.5d** Tile, Chip, ListItem (unreleased): Tile after Android 16 SystemUI (D32), Chip (assist, filter) and
+  the expressive segmented ListItem from the Compose tokens; in the gallery. Not done: input and suggestion
+  chips, three-line and avatar/image list items, the tile focus border, Googlebook references for the tile.
+- [ ] **1.5** Component kit, remaining: FAB, Card, TextField, Menu, Dialog, NavRail, ShapeMorph
   (cookie/scallop shapes), GeminiGlow gradient border, and the 1.5c leftovers when something needs them.
   Likely next: ShapeMorph and GeminiGlow, or what Quick Settings (2.6) needs first.
 - [ ] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,

@@ -189,13 +189,17 @@ def render(tokens):
 
 
 def refresh():
+    import base64
     import urllib.request
     manifest = load_manifest()
     from urllib.parse import urljoin
     for name in manifest["files"]:
         url = urljoin(manifest["base_url"], manifest.get("paths", {}).get(name, name))
         with urllib.request.urlopen(url, timeout=30) as r:
-            (SRC / name).write_bytes(r.read())
+            data = r.read()
+        if "format=TEXT" in url:          # googlesource (AOSP) serves raw files base64-encoded
+            data = base64.b64decode(data)
+        (SRC / name).write_bytes(data)
         manifest["files"][name] = sha256(SRC / name)
     (SRC / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     print("sources refreshed; review the diff, then run gen_tokens.py")

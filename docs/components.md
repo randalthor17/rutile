@@ -14,6 +14,9 @@ directory containing the entry file, so run things from `shell/`.
 | `Switch` | `checked`, `toggled(bool)`; optional `checkedIcon` / `uncheckedIcon` in the handle |
 | `Slider` | horizontal; `from`, `to`, `value`, `stepSize` (0 = continuous), `moved(real)` when the user changes it |
 | `ProgressBar` | linear, determinate; `value` 0..1, `wavy`, `animated` |
+| `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`; `clicked()`, `toggled(bool)` |
+| `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, check when selected); `iconName`, `trailingIconName` |
+| `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 
 ```qml
 Button { text: "Create a widget"; iconName: "auto_awesome"; type: "filled"; size: "m"; onClicked: ... }
@@ -42,6 +45,18 @@ the wave thresholds and the progress spring); the generator fails if those sourc
   Tick dots sit where stepped values put the handle; Compose spaces them slightly differently.
 - ProgressBar: the wave fades in over `Motion.long2` with the standard easing and out with emphasized
   accelerate; it only animates while visible.
+
+Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
+
+- Tile follows Android 16's Quick Settings tile from SystemUI (`Tile.kt`, `CommonTile.kt`, vendored and
+  parsed like the Compose files) until there are Googlebook references (plan 0.2, D32). Inactive tiles are
+  pills, active ones 24 px corners; on a dual-target tile the icon toggles and the body emits `clicked()`
+  (open details). The focus border SystemUI draws is not done yet.
+- Chip spacing is Compose's `ChipArrangement`: 8 px padding at the ends, 8 px between elements, 4 px between a
+  filter chip's icon and label. Elevated chips have no shadow yet (as elevated buttons).
+- ListItem uses the expressive shapes: 4 px at rest, 12 hovered, 16 pressed, focused or selected, sprung. In
+  a segmented group the first item keeps 16 px top corners and the last 16 px bottom corners
+  (`ListItemDefaults.segmentedShapes`); put items 2 px apart (`listSpec.segmentedGap`) on a container.
 
 ## One correction to the tokens
 

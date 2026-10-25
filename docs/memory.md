@@ -51,6 +51,9 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | Switch | 125.2 | 90.3 | three color Behaviors, handle icon on demand |
 | Slider | 140.3 | 71.6 | Rectangles instead of a Canvas |
 | ProgressBar | 92.0 | 50.0 | Rectangles; the wave's Canvas only while it shows |
+| Chip | | 71.1 | icons only when shown |
+| ListItem | | 85.1 | includes its shape spring |
+| Tile | | 101.6 | one icon for both layouts; a dual-target tile adds a state layer (about 160) |
 
 For scale: an empty `Item` is about 3 KiB, a `Rectangle` 2, a `Text` 6, a `MouseArea` 2, a `Behavior` with
 its animation 2, a `Spring` about 7 and a JavaScript binding about 0.3 (0.7 for a color expression).

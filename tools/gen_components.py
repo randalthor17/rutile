@@ -168,7 +168,8 @@ def label_styles():
 
 def token_table(file, corners):
     """Every token of a component token file, snake_cased: dp as numbers, colors as roles,
-    shapes as px or "full", type styles by name, opacities as numbers. Anything else is an error."""
+    shapes as px or "full", type styles by name, elevation levels as 0..5, opacities as numbers. Anything else
+    is an error."""
     text = (SRC / file).read_text()
     declared = re.findall(r"^\s*(?:inline |const )?val (\w+)", text, re.M)
     tokens = parse_kt(text)
@@ -188,6 +189,8 @@ def token_table(file, corners):
             out[snake(name)] = shape(expr, corners, what)
         elif expr.startswith("TypographyKeyTokens."):
             out[snake(name)] = snake(expr.split(".", 1)[1])
+        elif re.fullmatch(r"ElevationTokens\.Level\d", expr):
+            out[snake(name)] = int(expr[-1])          # an elevation level, 0..5
         else:
             raise ComponentError(f"{what}: unknown token kind {expr!r}")
     return out
@@ -239,6 +242,77 @@ def progress_impl():
         "amplitude_in": {"duration": first_lower(up.group(1)), "easing": first_lower(up.group(2))},
         "amplitude_out": {"duration": first_lower(down.group(1)), "easing": first_lower(down.group(2))},
     }
+
+
+def chip_impl():
+    """Spacing Chip.kt hardcodes: content padding, the gap between elements, and the compact gap a filter
+    chip uses next to an icon."""
+    pad = find("Chip.kt", r"object AssistChipDefaults.*?ContentPadding: PaddingValues = PaddingValues\(horizontal = (\d+)\.dp\)",
+               "AssistChipDefaults.ContentPadding")
+    gap = find("Chip.kt", r"object FilterChipDefaults.*?HorizontalSpacing: Dp = (\d+)\.dp", "FilterChipDefaults.HorizontalSpacing")
+    compact = find("Chip.kt", r"CompactHorizontalSpacing: Dp = (\d+)\.dp", "CompactHorizontalSpacing")
+    find("Chip.kt", r"else if \(hasLeadingIcon\) ChipArrangement\(CompactHorizontalSpacing, HorizontalSpacing\)",
+         "the filter chip arrangement with a leading icon")
+    return {"content_padding": int(pad.group(1)), "gap": int(gap.group(1)), "compact_gap": int(compact.group(1))}
+
+
+
+def list_impl(tokens):
+    """ListItemDefaults.kt: which shape token each state uses, and that segmented lists round only the outer
+    corners of the first and last item with ListTokens.ContainerShape."""
+    m = find("ListItemDefaults.kt", r"defaultListItemShapes: ListItemShapes.*?ListItemShapes\((.*?)\)\s*\.also",
+             "defaultListItemShapes")
+    shapes = dict(re.findall(r"(\w+) = fromToken\(ListTokens\.(\w+)\)", m.group(1)))
+    want = {"shape": "ItemContainerExpressiveShape", "selectedShape": "ItemSelectedContainerExpressiveShape",
+            "pressedShape": "ItemPressedContainerExpressiveShape", "focusedShape": "ItemFocusedContainerExpressiveShape",
+            "hoveredShape": "ItemHoveredContainerExpressiveShape"}
+    if shapes != want:
+        raise ComponentError(f"ListItemDefaults shapes changed: {shapes}")
+    find("ListItemDefaults.kt", r"val overrideShape = ListTokens\.ContainerShape\.value", "segmented override shape")
+    find("ListItemDefaults.kt", r"index == 0 -> .*?topStart = overrideShape\.topStart,\s*topEnd = overrideShape\.topEnd,\s*\)",
+         "segmented first item rounds its top corners")
+    find("ListItemDefaults.kt", r"index == count - 1 -> .*?bottomStart = overrideShape\.bottomStart,\s*"
+         r"bottomEnd = overrideShape\.bottomEnd,\s*\)", "segmented last item rounds its bottom corners")
+    find("ListItemDefaults.kt", r"containerColor = fromToken\(ListTokens\.ItemSegmentedContainerColor\)",
+         "segmented container color")
+    # shape per state, in px: rest, hovered, pressed, focused, selected
+    return {"shapes": {("rest" if k == "shape" else snake(k).replace("_shape", "")): tokens[snake(v)] for k, v in want.items()}}
+
+
+TILE_STATES = {"active": "activeTileColors", "active_dual": "activeDualTargetTileColors",
+               "inactive": "inactiveTileColors", "inactive_dual": "inactiveDualTargetTileColors",
+               "unavailable": "unavailableTileColors"}
+
+
+def tile_spec():
+    """Android 16 Quick Settings tile (SystemUI, Apache-2.0): sizes from CommonTileDefaults, corner radii
+    and per-state colors from TileDefaults, label styles from CommonTile."""
+    common = (SRC / "SystemUICommonTile.kt").read_text()
+    block = re.search(r"object CommonTileDefaults \{(.*?)\n\}", common, re.S)
+    if not block:
+        raise ComponentError("SystemUICommonTile.kt: CommonTileDefaults not found")
+    sizes = {snake(n): int(float(v)) for n, v in re.findall(r"val (\w+) = ([\d.]+)\.dp", block.group(1))}
+    want = {"icon_size", "large_tile_icon_size", "toggle_target_size", "tile_height", "tile_padding",
+            "tile_arrangement_padding", "inactive_corner_radius"}
+    if not want <= set(sizes):
+        raise ComponentError(f"CommonTileDefaults lacks {sorted(want - set(sizes))}")
+    styles = re.findall(r"style = MaterialTheme\.typography\.(\w+)", common)
+    if styles[:2] != ["labelLarge", "bodyMedium"]:
+        raise ComponentError(f"tile label styles changed: {styles[:2]}")
+    tile = (SRC / "SystemUITile.kt").read_text()
+    radii = {snake(n): int(float(v)) for n, v in re.findall(r"val (Active\w+CornerRadius) = ([\d.]+)\.dp", tile)}
+    if set(radii) != {"active_icon_corner_radius", "active_tile_corner_radius"}:
+        raise ComponentError(f"tile corner radii changed: {radii}")
+    colors = {}
+    for state, fn in TILE_STATES.items():
+        m = re.search(rf"fun {fn}\(\): TileColors =\s*TileColors\((.*?)\)", tile, re.S)
+        if not m:
+            raise ComponentError(f"SystemUITile.kt: {fn} not found")
+        roles = dict(re.findall(r"(\w+) = MaterialTheme\.colorScheme\.(\w+)", m.group(1)))
+        if set(roles) != {"background", "iconBackground", "label", "secondaryLabel", "icon"}:
+            raise ComponentError(f"{fn}: unexpected fields {sorted(roles)}")
+        colors[state] = {snake(k) + "_color": snake(v) for k, v in roles.items()}
+    return {**sizes, **radii, "label_font": "label_large", "secondary_label_font": "body_medium", "states": colors}
 
 
 def build():
@@ -349,6 +423,13 @@ def build():
         "icon_button": {"sizes": icon_sizes, "types": itypes},
         "switch": token_table("SwitchTokens.kt", corners),
         "slider": {**(slider := token_table("SliderTokens.kt", corners)), "impl": slider_impl(slider)},
+        "chip": {
+            "assist": token_table("AssistChipTokens.kt", corners),
+            "filter": token_table("FilterChipTokens.kt", corners),
+            "impl": chip_impl(),
+        },
+        "list": {**(lst := token_table("ListTokens.kt", corners)), "impl": list_impl(lst)},
+        "tile": tile_spec(),
         "progress": {
             **token_table("ProgressIndicatorTokens.kt", corners),
             "linear": token_table("LinearProgressIndicatorTokens.kt", corners),

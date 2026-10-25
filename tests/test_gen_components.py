@@ -102,6 +102,21 @@ class Committed(unittest.TestCase):
         self.assertEqual((pr["impl"]["wave_on_above"], pr["impl"]["wave_off_from"]), (0.1, 0.95))
         self.assertEqual(pr["impl"]["amplitude_out"], {"duration": "long2", "easing": "emphasizedAccelerate"})
 
+    def test_chip_list_tile_spot_values(self):
+        chip, lst, tile = self.data["chip"], self.data["list"], self.data["tile"]
+        self.assertEqual((chip["filter"]["container_height"], chip["filter"]["icon_size"]), (32, 18))
+        self.assertEqual(chip["filter"]["flat_selected_container_color"], "secondary_container")
+        self.assertEqual(chip["assist"]["elevated_hover_container_elevation"], 2)
+        self.assertEqual(chip["impl"], {"content_padding": 8, "gap": 8, "compact_gap": 4})
+        self.assertEqual((lst["item_one_line_container_height"], lst["item_two_line_container_height"]), (56, 72))
+        self.assertEqual((lst["item_container_expressive_shape"], lst["item_pressed_container_expressive_shape"]), (4, 16))
+        self.assertEqual((tile["tile_height"], tile["toggle_target_size"], tile["inactive_corner_radius"]), (72, 56, 50))
+        self.assertEqual((tile["active_tile_corner_radius"], tile["active_icon_corner_radius"]), (24, 16))
+        self.assertEqual(tile["states"]["active"]["background_color"], "primary")
+        self.assertEqual(tile["states"]["inactive_dual"]["icon_background_color"], "surface_container_highest")
+        self.assertEqual(set(tile["states"]), set(gc.TILE_STATES))
+        self.assertEqual(lst["impl"]["shapes"], {"rest": 4, "hovered": 12, "pressed": 16, "focused": 16, "selected": 16})
+
     def test_impl_easings_and_durations_exist_in_the_motion_tokens(self):
         m3e = json.loads((ROOT / "tokens" / "m3e.json").read_text())["motion"]
         impl = self.data["progress"]["impl"]
@@ -171,6 +186,24 @@ class FailsLoudly(unittest.TestCase):
             self.with_modified_source(name, lambda t: t.replace(old, new))
             with self.assertRaises(gc.ComponentError, msg=f"{name}: {old}"):
                 fn({"active_handle_leading_space": 6}) if fn is gc.slider_impl else fn()
+            shutil.rmtree(self.tmp / "src")
+
+    def test_changed_chip_and_tile_sources_force_a_review(self):
+        cases = [
+            ("Chip.kt", "CompactHorizontalSpacing: Dp = 4.dp", "CompactHorizontalSpacing: Dp = Spacing", gc.chip_impl),
+            ("SystemUICommonTile.kt", "val TileHeight = 72.dp", "val TileHeight = height()", gc.tile_spec),
+            ("SystemUICommonTile.kt", "MaterialTheme.typography.labelLarge", "MaterialTheme.typography.titleSmall", gc.tile_spec),
+            ("SystemUITile.kt", "fun inactiveTileColors(): TileColors", "fun offTileColors(): TileColors", gc.tile_spec),
+            ("SystemUITile.kt", "val ActiveTileCornerRadius = 24.dp", "val ActiveTileCornerRadius = big", gc.tile_spec),
+            ("ListItemDefaults.kt", "pressedShape = fromToken(ListTokens.ItemPressedContainerExpressiveShape)",
+             "pressedShape = fromToken(ListTokens.ItemContainerExpressiveShape)", lambda: gc.list_impl(gc.token_table("ListTokens.kt", CORNERS))),
+            ("ListItemDefaults.kt", "val overrideShape = ListTokens.ContainerShape.value",
+             "val overrideShape = ListTokens.ItemContainerShape.value", lambda: gc.list_impl(gc.token_table("ListTokens.kt", CORNERS))),
+        ]
+        for name, old, new, fn in cases:
+            self.with_modified_source(name, lambda t: t.replace(old, new))
+            with self.assertRaises(gc.ComponentError, msg=f"{name}: {old}"):
+                fn()
             shutil.rmtree(self.tmp / "src")
 
     def test_parsers_reject_unexpected_expressions(self):
