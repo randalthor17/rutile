@@ -128,6 +128,20 @@ TestCase {
         driver.goal = 5;
     }
 
+    // Settling by itself must not break the binding either (the gallery's motion lanes only moved one way).
+    function test_a_bound_target_still_follows_after_settling() {
+        driver.goal = 0;
+        var bound = createTemporaryObject(boundComp, this);
+        for (var round = 1; round <= 3; round++) {
+            driver.goal = round % 2;
+            for (var i = 0; i < 2000 && !bound.settled; i++) bound.step(1 / 240);
+            verify(bound.settled, "round " + round);
+            compare(bound.value, driver.goal, "round " + round);
+            compare(bound.target, driver.goal, "binding kept, round " + round);
+        }
+        driver.goal = 5;
+    }
+
     function test_spring_created_at_rest_is_settled_in_any_assignment_order() {
         var a = Qt.createQmlObject('import qs.common; Spring { value: 1; target: 1 }', this);
         var b = Qt.createQmlObject('import qs.common; Spring { target: 1; value: 1 }', this);

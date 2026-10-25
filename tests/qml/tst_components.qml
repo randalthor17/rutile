@@ -269,6 +269,11 @@ TestCase {
         tryVerify(function () { return Math.abs(b.radiusNow - pressed) < 0.6; }, 4000);
         mouseRelease(b, b.width / 2, b.height / 2);
         tryVerify(function () { return Math.abs(b.radiusNow - rest) < 0.6; }, 4000);
+        // Again, after the spring has come fully to rest: settling once must not stop the morph.
+        tryVerify(function () { return b.radiusNow === rest; }, 4000);
+        mousePress(b, b.width / 2, b.height / 2);
+        tryVerify(function () { return Math.abs(b.radiusNow - pressed) < 0.6; }, 4000);
+        mouseRelease(b, b.width / 2, b.height / 2);
     }
 
     function test_selected_toggle_changes_rest_shape() {

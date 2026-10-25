@@ -112,6 +112,12 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   "committed" from "happens to be here": consult `git ls-files` (`tests/test_handoff.py` does now). A sandbox
   reset later made this visible, because the repo had to be rebuilt from the bundle alone.
 
+- **Test the second interaction, not just the first.** `Spring` came to rest through `snap(target)`, which assigns
+  `target` and so silently removed every `target:` binding after the first settle. Button press morphs, state-layer
+  opacity and the gallery's motion lanes each worked exactly once. The tests pressed once and released, so they
+  passed; the maintainer found it by clicking a motion lane twice. Tests now repeat the interaction after a full
+  settle.
+
 - **The first design is often wrong; test the attack.** The ownership guard, the weight test and the transparency
   test were all fixed by trying to break them.
 - **Say what is unverified.** Every handoff names what was not tested and why (needs the maintainer's hardware or a

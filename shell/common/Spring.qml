@@ -29,7 +29,7 @@ QtObject {
         value = s.x;
         velocity = s.v;
         if (Math.abs(value - target) < restDelta && Math.abs(velocity) < restVelocity) {
-            snap(target);
+            rest();     // not snap(target): that would break a binding on target
         }
     }
 

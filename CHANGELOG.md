@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Fix:** springs stopped following a bound target after their first settle (`Spring` rested via `snap()`, which
+  assigns `target` and breaks the binding). Button press morphs, state-layer opacity and the gallery's motion
+  lanes only worked once. Found by the maintainer in the gallery.
 - **Fix:** filled (selected) toggle icons rendered with holes and streaks. Qt's default distance-field text
   corrupts the overlapping contours of filled Material Symbols glyphs. `Icon` now uses `Text.NativeRendering`.
   Reproduced under Mesa OpenGL on Qt 6.12; a GPU-path test (`tests/qml_gpu/`, `make check-gpu`) and a cheap
