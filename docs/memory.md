@@ -54,7 +54,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | Chip | | 71.1 | icons only when shown |
 | ListItem | | 85.1 | includes its shape spring |
 | Tile | | 101.6 | one icon for both layouts; a dual-target tile adds a state layer (about 160) |
-| EditableGrid, 9 tiles | | 1278 | 9 tiles (114 each in that measurement) plus about 28 per slot; edit mode adds about 29 per slot, only while editing |
+| EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 
 For scale: an empty `Item` is about 3 KiB, a `Rectangle` 2, a `Text` 6, a `MouseArea` 2, a `Behavior` with
 its animation 2, a `Spring` about 7 and a JavaScript binding about 0.3 (0.7 for a color expression).

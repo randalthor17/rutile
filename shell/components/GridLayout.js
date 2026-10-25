@@ -2,8 +2,9 @@
 // where they fit and first-fitting the rest. Pure functions, no QML.
 //
 // Ported from DankMaterialShell's quickshell/Common/GridLayout.js (MIT, Copyright (c) 2025 Avenge Media LLC;
-// now github.com/duxlabs-dev/dux-shell, commit e689cd2). Changed: no half-step rows, no right-to-left mirroring
-// and no shrinking rows (Rutile does not use them yet), and fitNew takes the new item whole.
+// now github.com/duxlabs-dev/dux-shell, commit e689cd2). Changed: no half-step rows and no shrinking rows (Rutile
+// does not use them yet), fitNew takes the new item whole, and resizing moves one edge at a time with neighbors
+// shrinking out of the way (resizeEdge, Rutile's own).
 .pragma library
 
 // Cells for `cards` (each {w, h} and optionally a saved {col, row}), placed in `order` (indices into cards):
@@ -78,8 +79,9 @@ function firstFit(taken, columns, w, h) {
     return { "x": 0, "y": ceiling, "w": w, "h": h };
 }
 
-// Cells plus pixel rects ({x, y, w, h} merged into each slot) for a grid `width` wide.
-function packCards(cards, order, columns, width, gap, rowHeight, isAvailable, gravity) {
+// Cells plus pixel rects ({x, y, w, h} merged into each slot) for a grid `width` wide; `mirror` lays columns out
+// right to left.
+function packCards(cards, order, columns, width, gap, rowHeight, isAvailable, gravity, mirror) {
     const packed = packCells(cards, order, columns, isAvailable, gravity);
     const layout = {
         "slots": [],
@@ -89,7 +91,8 @@ function packCards(cards, order, columns, width, gap, rowHeight, isAvailable, gr
         "width": width,
         "colW": (width - gap * (columns - 1)) / columns,
         "rowHeight": rowHeight,
-        "gap": gap
+        "gap": gap,
+        "mirror": !!mirror
     };
     layout.slots = packed.cells.map(cell => cell ? Object.assign(slotRect(layout, cell.col, cell.row, cell.cols, cell.rows), cell) : null);
     return layout;
@@ -100,17 +103,20 @@ function sameRect(a, b) {
 }
 
 function slotRect(layout, col, row, cols, rows) {
+    const px = col * (layout.colW + layout.gap);
+    const pw = cols * layout.colW + (cols - 1) * layout.gap;
     return {
-        "x": col * (layout.colW + layout.gap),
+        "x": layout.mirror ? layout.width - px - pw : px,
         "y": row * (layout.rowHeight + layout.gap),
-        "w": cols * layout.colW + (cols - 1) * layout.gap,
+        "w": pw,
         "h": rows * layout.rowHeight + (rows - 1) * layout.gap
     };
 }
 
 // The cell nearest to a top-left corner at (x, y) for an item of cols x rows, kept inside the columns.
 function cellAt(layout, x, y, cols, rows) {
-    const col = Math.round(x / (layout.colW + layout.gap));
+    const px = layout.mirror ? layout.width - x - (cols * layout.colW + (cols - 1) * layout.gap) : x;
+    const col = Math.round(px / (layout.colW + layout.gap));
     return {
         "col": Math.max(0, Math.min(layout.columns - cols, col)),
         "row": Math.max(0, Math.round(y / (layout.rowHeight + layout.gap)))
@@ -146,6 +152,63 @@ function placedItems(items, slots) {
     return items.map((item, i) => slots[i] ? Object.assign({}, item, { "col": slots[i].col, "row": slots[i].row }) : item);
 }
 
+// Item `index` (all items placed, with col and row) with one edge moved outward by `growth` cells (negative
+// moves it inward). `edge` is "start" or "end" (along the columns, so it follows the layout direction), "top"
+// or "bottom". Neighbors in the way shrink from the side facing it, down to their minimum; one that would have
+// to go below its minimum keeps its place and is left to the packer, which moves it away. Null when the item
+// itself cannot take that size or would leave the grid. `limitsOf(item)` gives {minW, maxW, minH, maxH}.
+function resizeEdge(items, index, edge, growth, limitsOf, columns) {
+    const item = items[index];
+    if (!item || !positioned(item))
+        return null;
+    const l = limitsOf(item);
+    const r = { "col": item.col, "row": item.row, "w": item.w, "h": item.h };
+    if (edge === "end") {
+        r.w += growth;
+    } else if (edge === "start") {
+        r.col -= growth;
+        r.w += growth;
+    } else if (edge === "bottom") {
+        r.h += growth;
+    } else if (edge === "top") {
+        r.row -= growth;
+        r.h += growth;
+    } else {
+        return null;
+    }
+    if (r.w < l.minW || r.w > l.maxW || r.h < l.minH || r.h > l.maxH || r.col < 0 || r.row < 0 || r.col + r.w > columns)
+        return null;
+    const across = edge === "start" || edge === "end";
+    return items.map((other, i) => i === index ? Object.assign({}, other, r) : shrinkAway(other, r, limitsOf(other), across));
+}
+
+// `other` cut back so it no longer overlaps rect `r`, keeping the most cells (ties go to a cut along the resize,
+// `across` the columns or down the rows); unchanged when it does not overlap or cannot shrink that far.
+function shrinkAway(other, r, l, across) {
+    if (!positioned(other) || !overlaps([{ "x": r.col, "y": r.row, "w": r.w, "h": r.h }], other.col, other.row, other.w, other.h))
+        return other;
+    const cuts = [
+        { "w": r.col - other.col, "across": true },
+        { "col": r.col + r.w, "w": other.col + other.w - (r.col + r.w), "across": true },
+        { "h": r.row - other.row, "across": false },
+        { "row": r.row + r.h, "h": other.row + other.h - (r.row + r.h), "across": false }
+    ];
+    let best = null;
+    for (const cut of cuts) {
+        const w = cut.w ?? other.w, h = cut.h ?? other.h;
+        if (w < l.minW || h < l.minH)
+            continue;
+        const better = !best || w * h > best.area || (w * h === best.area && cut.across === across && best.cut.across !== across);
+        if (better)
+            best = { "cut": cut, "area": w * h };
+    }
+    if (!best)
+        return other;
+    const changes = Object.assign({}, best.cut);
+    delete changes.across;
+    return Object.assign({}, other, changes);
+}
+
 // The row limit for a change: `maxRows` (0 for none), or the rows already used if they exceed it, so a layout
 // that is already too tall can still change without first having to shrink.
 function rowLimit(cards, order, columns, maxRows) {
@@ -170,13 +233,6 @@ function fitWithin(cards, order, columns, limit, index, want, min) {
         }
     }
     return best ? { "w": best.w, "h": best.h } : null;
-}
-
-// The size nearest `want` (down to `min`) that item `index` can take without the grid outgrowing maxRows; null if
-// none fits.
-function fitResize(cards, columns, maxRows, index, want, min) {
-    const order = cards.map((card, i) => i);
-    return fitWithin(cards, order, columns, rowLimit(cards, order, columns, maxRows), index, want, min);
 }
 
 // The same for a new item appended to the grid: the size it can have, or null when there is no room.

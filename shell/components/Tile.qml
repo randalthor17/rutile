@@ -2,8 +2,9 @@
 // 56 px icon target, a label and a secondary label; `iconOnly` makes a square small tile. Inactive
 // tiles are pills; active ones animate to 24 px corners (icon target 16 px). A `dualTarget` tile
 // toggles from its icon and opens details from the rest (`clicked`); otherwise a click toggles.
-// Values and per-state colors come from ControlSpec.tileSpec. The Googlebook look may differ; this
-// follows Android until there are references (plan 0.2).
+// Values and per-state colors come from ControlSpec.tileSpec; the Googlebook references show the same tile
+// (D32). Any width or height works: content stays vertically centered. Under LayoutMirroring (a right-to-left
+// locale) the icon sits on the right and the labels read from the right.
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
@@ -89,7 +90,8 @@ Item {
     Rectangle {
         id: iconTarget
         visible: !root.iconOnly
-        x: root.spec.tilePadding
+        anchors.left: parent.left
+        anchors.leftMargin: root.spec.tilePadding
         anchors.verticalCenter: parent.verticalCenter
         width: root.spec.toggleTargetSize
         height: width
@@ -101,9 +103,7 @@ Item {
 
     // One icon for both layouts: centered in the tile when small, in the icon target when large.
     Icon {
-        readonly property Item frame: root.iconOnly ? root : iconTarget
-        x: frame.x * (root.iconOnly ? 0 : 1) + (frame.width - width) / 2
-        y: (root.height - height) / 2
+        anchors.centerIn: root.iconOnly ? root : iconTarget
         name: root.iconName
         size: root.iconOnly ? root.spec.iconSize : root.spec.largeTileIconSize
         color: Colors[root.colors.iconColor]
@@ -123,8 +123,10 @@ Item {
 
     Column {
         visible: !root.iconOnly
-        x: iconTarget.x + iconTarget.width + root.spec.tileArrangementPadding
-        width: Math.max(0, root.width - x - root.spec.tilePadding)
+        anchors.left: iconTarget.right
+        anchors.leftMargin: root.spec.tileArrangementPadding
+        anchors.right: parent.right
+        anchors.rightMargin: root.spec.tilePadding
         anchors.verticalCenter: parent.verticalCenter
 
         Text {

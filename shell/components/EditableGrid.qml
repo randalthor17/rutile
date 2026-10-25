@@ -1,10 +1,10 @@
 // A grid of items that are saved data ({id, w, h} in cells, plus the col and row they were placed at), shared by
 // Quick Settings tiles and the desktop widget grid (D17). `delegate` draws one item; it gets `modelData` and `index`
-// if it declares them. In `editMode` an item is selected by a click, moved by dragging, and the selected one is
-// resized by the handle on its right edge (Googlebook's "Edit tiles"); everything else makes room as it moves.
-// Changes go to `commitHandler(items)`; with none, the grid keeps them itself (demos). Items may limit their size
-// with minW/maxW/minH/maxH, and are resizable along an axis only when they set its maximum; `maxRows` (0 for
-// none) caps the height.
+// if it declares them. In `editMode` an item is selected by a click and moved by dragging; the selected one shows a
+// resize handle on each side it can move (Googlebook's "Edit tiles"). Neighbors in the way of a resize shrink, and
+// move away only when they would have to go below their minimum. Changes go to `commitHandler(items)`; with none,
+// the grid keeps them itself (demos). Every item can grow to the full width and to `maxRows` (0 for no limit)
+// unless it sets minW/maxW/minH/maxH. Columns follow LayoutMirroring, so a right-to-left session mirrors the grid.
 //
 // Light on memory (D31): delegates are kept across reorders (a ListModel keyed by id), the edit chrome exists only
 // in edit mode, and one spring per grid moves every item (each lerps from where it was to where it goes).
@@ -31,12 +31,14 @@ Item {
 
     property int draggingIndex: -1
     property var dragCell: null
-    property var sizePreview: null          // {index, changes: {w, h}} while resizing
+    property int resizingIndex: -1
+    property var resizeItems: null          // every item as the resize under way leaves it, or null for no change
     property var pinnedCells: null          // where everything was when the interaction began
     property real heldHeight: 0
 
-    readonly property bool interacting: draggingIndex >= 0 || sizePreview !== null
-    readonly property int interactingIndex: draggingIndex >= 0 ? draggingIndex : (sizePreview?.index ?? -1)
+    readonly property bool mirrored: LayoutMirroring.enabled
+    readonly property bool interacting: draggingIndex >= 0 || resizingIndex >= 0
+    readonly property int interactingIndex: draggingIndex >= 0 ? draggingIndex : resizingIndex
     // The item being moved or resized is placed first, so it gets the cell it asks for and the rest make room.
     readonly property var placementOrder: {
         const order = items.map((item, i) => i);
@@ -49,16 +51,16 @@ Item {
     readonly property var clampedItems: items.map(item => Object.assign({}, item, clampSize(item, item.w, item.h)))
     readonly property var pinnedItems: pinnedCells ? GridLayout.placedItems(clampedItems, pinnedCells) : clampedItems
     readonly property var layoutItems: {
-        const changes = sizePreview?.changes ?? dragCell;
-        if (interactingIndex < 0 || !changes)
+        if (resizeItems)
+            return resizeItems;
+        if (draggingIndex < 0 || !dragCell)
             return pinnedItems;
-        const changed = pinnedItems.map((item, i) => i === interactingIndex ? Object.assign({}, item, changes) : item);
-        return gravity && dragCell && draggingIndex >= 0
-            ? GridLayout.dropInto(changed, pinnedCells, draggingIndex, dragCell, trial => pack(trial).cells)
-            : changed;
+        const changed = pinnedItems.map((item, i) => i === draggingIndex ? Object.assign({}, item, dragCell) : item);
+        return gravity ? GridLayout.dropInto(changed, pinnedCells, draggingIndex, dragCell, trial => pack(trial).cells)
+                       : changed;
     }
     readonly property var slotLayout: GridLayout.packCards(layoutItems, placementOrder, columns, width, gap, rowHeight,
-                                                           null, gravity)
+                                                           null, gravity, mirrored)
     // The height holds while an interaction is under way, so the grid does not jump under the pointer.
     readonly property real layoutHeight: interacting ? Math.max(heldHeight, slotLayout.totalHeight) : slotLayout.totalHeight
     readonly property alias motion: motion  // exposed for tests
@@ -85,6 +87,12 @@ Item {
     function pack(trial) {
         return GridLayout.packCells(trial, placementOrder, columns, null, gravity);
     }
+    // Whether a layout stays under maxRows (or under what `base` already uses, if that is more).
+    function fits(trial, base) {
+        if (maxRows <= 0)
+            return true;
+        return pack(trial).rows <= Math.max(maxRows, pack(base).rows);
+    }
 
     function pin() {
         pinnedCells = slotLayout.slots.slice();
@@ -93,7 +101,8 @@ Item {
     function cancelInteraction() {
         draggingIndex = -1;
         dragCell = null;
-        sizePreview = null;
+        resizingIndex = -1;
+        resizeItems = null;
         pinnedCells = null;
         heldHeight = 0;
     }
@@ -137,29 +146,42 @@ Item {
             commit(next);
     }
 
-    // Resize item `index` toward a size in pixels; it takes the nearest cell size that fits.
-    function previewResize(index, pixelWidth, pixelHeight) {
-        if (!editMode || draggingIndex >= 0 || !items[index])
-            return;
-        const l = limits(items[index]);
-        const want = clampSize(items[index], (pixelWidth + gap) / (slotLayout.colW + gap),
-                               (pixelHeight + gap) / (rowHeight + gap));
-        const base = pinnedCells ? pinnedItems : clampedItems;
-        const fit = GridLayout.fitResize(base, columns, maxRows, index, want, { w: l.minW, h: l.minH });
-        if (!fit)
-            return;
-        if (sizePreview && sizePreview.index === index && sizePreview.changes.w === fit.w && sizePreview.changes.h === fit.h)
+    // ---- resizing, one edge at a time ----
+    // Every item where it is now, with its col and row (the pinned layout while an interaction is under way).
+    function placedNow() {
+        return pinnedCells ? pinnedItems : GridLayout.placedItems(clampedItems, slotLayout.slots);
+    }
+    // Item `index` with `edge` ("start", "end", "top", "bottom") moved outward by `growth` cells, as the grid would
+    // take it: null if it cannot move that far or the result would outgrow maxRows.
+    function resized(base, index, edge, growth) {
+        const next = GridLayout.resizeEdge(base, index, edge, growth, item => limits(item), columns);
+        return next && fits(next, base) ? next : null;
+    }
+    // Whether the edge can move at all: outward (room, or neighbors that shrink or move) or inward (above minimum).
+    function canResize(index, edge) {
+        if (!editMode || !items[index])
+            return false;
+        const base = placedNow();
+        return resized(base, index, edge, 1) !== null || resized(base, index, edge, -1) !== null;
+    }
+    // Move an edge of item `index` by `growth` cells (fractional from a pointer; rounded). Takes the largest move
+    // toward it that fits.
+    function previewResize(index, edge, growth) {
+        if (!editMode || draggingIndex >= 0 || (resizingIndex >= 0 && resizingIndex !== index) || !items[index])
             return;
         if (!pinnedCells)
             pin();
-        sizePreview = { index: index, changes: fit };
+        resizingIndex = index;
+        let next = null;
+        for (let d = Math.round(growth); d !== 0 && !next; d -= Math.sign(d))
+            next = resized(pinnedItems, index, edge, d);
+        if (JSON.stringify(next) !== JSON.stringify(resizeItems))
+            resizeItems = next;
     }
     function commitResize() {
-        const preview = sizePreview;
-        if (!preview)
+        if (resizingIndex < 0)
             return;
-        const before = clampedItems[preview.index];
-        const changed = before && (before.w !== preview.changes.w || before.h !== preview.changes.h);
+        const changed = resizeItems !== null;
         const next = committedItems();
         cancelInteraction();
         if (changed)
@@ -297,10 +319,6 @@ Item {
         readonly property var entry: JSON.parse(json)
         readonly property bool dragging: root.draggingIndex === index
         readonly property bool selected: root.editMode && root.selectedIndex === index
-        // Resizable along an axis only when the item sets a maximum for it.
-        readonly property bool tallResizable: entry.maxH !== undefined && root.limits(entry).maxH > root.limits(entry).minH
-        readonly property bool resizable: tallResizable
-                                          || (entry.maxW !== undefined && root.limits(entry).maxW > root.limits(entry).minW)
         property var from: null
         property var to: null
         property point dragPos: Qt.point(0, 0)
@@ -340,22 +358,12 @@ Item {
         }
     }
 
-    // Over a slot in edit mode: takes its clicks and drags, outlines it when selected, and holds the resize handle.
+    // Over a slot in edit mode: takes its clicks and drags; the selected one also gets its outline and handles.
     component EditChrome: Item {
         id: chrome
 
         required property GridSlot slot
         property var origin: null
-
-        Rectangle {
-            visible: chrome.slot.selected
-            anchors.fill: parent
-            anchors.margins: -border.width * 2
-            radius: Math.min(root.slotRadius, height / 2)
-            color: "transparent"
-            border.color: Colors.primary
-            border.width: Spacing.xs / 2
-        }
 
         MouseArea {
             id: move
@@ -405,45 +413,74 @@ Item {
             }
         }
 
-        // The resize handle: a short bar centered on the right edge (width only), or on the bottom-right corner
-        // when the item can also change height; with a larger area to grab.
-        MouseArea {
-            id: handle
-            visible: chrome.slot.selected && chrome.slot.resizable && !chrome.slot.dragging
-            width: Spacing.xl
-            height: chrome.slot.tallResizable ? Spacing.xl : parent.height
-            x: parent.width - width / 2
-            y: chrome.slot.tallResizable ? parent.height - height / 2 : 0
-            preventStealing: true
-            cursorShape: chrome.slot.tallResizable ? Qt.SizeFDiagCursor : Qt.SizeHorCursor
-            property var origin: null
-            onPressed: mouse => {
-                const p = mapToItem(root, mouse.x, mouse.y);
-                origin = { px: p.x, py: p.y, w: chrome.slot.width, h: chrome.slot.height };
+        Loader {
+            anchors.fill: parent
+            active: chrome.slot.selected && !chrome.slot.dragging
+            sourceComponent: Item {
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: -border.width * 2
+                    radius: Math.min(root.slotRadius, height / 2)
+                    color: "transparent"
+                    border.color: Colors.primary
+                    border.width: Spacing.xs / 2
+                }
+                // Visual sides; in a mirrored grid the left side is the end of the row.
+                ResizeHandle { slot: chrome.slot; side: "left"; edge: root.mirrored ? "end" : "start" }
+                ResizeHandle { slot: chrome.slot; side: "right"; edge: root.mirrored ? "start" : "end" }
+                ResizeHandle { slot: chrome.slot; side: "top"; edge: "top" }
+                ResizeHandle { slot: chrome.slot; side: "bottom"; edge: "bottom" }
             }
-            onPositionChanged: mouse => {
-                if (!origin)
-                    return;
-                const p = mapToItem(root, mouse.x, mouse.y);
-                const dy = chrome.slot.tallResizable ? p.y - origin.py : 0;
-                root.previewResize(chrome.slot.index, origin.w + p.x - origin.px, origin.h + dy);
-            }
-            onReleased: {
-                origin = null;
-                root.commitResize();
-            }
-            onCanceled: {
-                origin = null;
-                root.cancelInteraction();
-            }
+        }
+    }
 
-            Rectangle {
-                anchors.centerIn: parent
-                width: chrome.slot.tallResizable ? Spacing.sm : Spacing.xs
-                height: chrome.slot.tallResizable ? Spacing.sm : Spacing.xl
-                radius: width / 2
-                color: Colors.primary
-            }
+    // A short bar centered on one side of the selected item, with a larger area to grab. Shown only on a side that
+    // can move; dragging it moves that edge by whole cells.
+    component ResizeHandle: MouseArea {
+        id: handle
+
+        required property GridSlot slot
+        required property string side       // left | right | top | bottom, as seen
+        required property string edge       // start | end | top | bottom, in the grid's terms
+        readonly property bool across: side === "left" || side === "right"
+        property var origin: null
+
+        visible: root.resizingIndex === slot.index || root.canResize(slot.index, edge)
+        width: across ? Spacing.xl : Math.max(Spacing.xl, slot.width - 2 * Spacing.lg)
+        height: across ? Math.max(Spacing.xl, slot.height - 2 * Spacing.lg) : Spacing.xl
+        x: side === "left" ? -width / 2 : (side === "right" ? slot.width - width / 2 : (slot.width - width) / 2)
+        y: side === "top" ? -height / 2 : (side === "bottom" ? slot.height - height / 2 : (slot.height - height) / 2)
+        preventStealing: true
+        cursorShape: across ? Qt.SizeHorCursor : Qt.SizeVerCursor
+        onPressed: mouse => {
+            const p = mapToItem(root, mouse.x, mouse.y);
+            origin = { px: p.x, py: p.y };
+        }
+        onPositionChanged: mouse => {
+            if (!origin)
+                return;
+            const p = mapToItem(root, mouse.x, mouse.y);
+            // How far the edge moved outward, in pixels: right and down are outward for the right and bottom sides.
+            const out = side === "left" ? origin.px - p.x : side === "right" ? p.x - origin.px
+                      : side === "top" ? origin.py - p.y : p.y - origin.py;
+            const pitch = across ? root.slotLayout.colW + root.gap : root.rowHeight + root.gap;
+            root.previewResize(slot.index, edge, out / pitch);
+        }
+        onReleased: {
+            origin = null;
+            root.commitResize();
+        }
+        onCanceled: {
+            origin = null;
+            root.cancelInteraction();
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: handle.across ? Spacing.xs : Spacing.xl
+            height: handle.across ? Spacing.xl : Spacing.xs
+            radius: Spacing.xs / 2
+            color: Colors.primary
         }
     }
 }

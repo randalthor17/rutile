@@ -137,6 +137,29 @@ TestCase {
         verify(!d.active);
     }
 
+    Component {
+        id: mirroredTileComp
+        Item {
+            property alias tile: t
+            LayoutMirroring.enabled: true
+            LayoutMirroring.childrenInherit: true
+            x: 40; y: 300; width: 300; height: 72
+            Tile { id: t; width: 300; text: "Wi-Fi"; iconName: "wifi" }
+        }
+    }
+
+    function test_tile_mirrors_for_right_to_left() {
+        var spec = ControlSpec.tileSpec;
+        var t = make(mirroredTileComp).tile;
+        var iconTarget = t.children[2], labels = t.children[5];
+        compare(iconTarget.x, t.width - spec.tilePadding - spec.toggleTargetSize, "the icon is on the right");
+        compare(labels.x + labels.width, iconTarget.x - spec.tileArrangementPadding, "the labels end before it");
+        var ltr = make(tileComp);
+        compare(ltr.children[2].x, spec.tilePadding, "and on the left otherwise");
+        var tall = make(tileComp, { height: 150 });
+        compare(tall.children[2].y, (150 - spec.toggleTargetSize) / 2, "a taller tile keeps its content centered");
+    }
+
     function test_tile_colors_follow_systemui() {
         var states = ControlSpec.tileSpec.states;
         var t = make(tileComp, { active: true });

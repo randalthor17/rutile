@@ -5,6 +5,13 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Grid resizing from every side** (D34, maintainer's bug report): a neighbor in the way of a resize now
+  shrinks down to its minimum before it moves (before, it always moved). The selected item shows a handle on
+  each side that can move (before, only the right edge), every item can grow to the full width and in height,
+  and the grid and the Tile mirror for right-to-left locales through `LayoutMirroring` (icon on the right).
+  The gallery's grid has a right-to-left switch. Handles now exist only on the selected item, so edit mode
+  costs about 11 KiB per slot instead of 29. 6 new QML tests; a 20-fault mutation run caught every fault after
+  two more.
 - **EditableGrid** (plan 1.6): the grid under Quick Settings tiles and later desktop widgets. Packing ported from
   DankMaterialShell's `GridLayout.js` (MIT, in `NOTICE`). In edit mode: click to select, drag to move (the rest
   make room around a placeholder), a resize handle within each item's limits and `maxRows`; changes go through

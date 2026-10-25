@@ -358,22 +358,17 @@ Rectangle {
                     width: parent.width
                     spacing: Spacing.md
 
-                    readonly property var tileInfo: ({
-                        "wifi": { text: "Wi-Fi", secondaryText: "Home", iconName: "wifi", dualTarget: true },
-                        "bluetooth": { text: "Bluetooth", secondaryText: "Off", iconName: "bluetooth", dualTarget: true },
-                        "dnd": { text: "Do not disturb", iconName: "do_not_disturb_on" },
-                        "rotate": { text: "Auto-rotate", iconName: "screen_rotation" },
-                        "dark": { text: "Dark theme", iconName: "contrast" },
-                        "mic": { text: "Mic access", secondaryText: "Available", iconName: "mic" },
-                        "camera": { text: "Camera access", secondaryText: "Available", iconName: "videocam" },
-                        "flashlight": { text: "Flashlight", iconName: "flashlight_on" },
-                        "keyboard": { text: "Keyboard", iconName: "keyboard" }
-                    })
+                    // Demo data: a real panel saves only id and size, and looks the rest up by id.
                     readonly property var startTiles: [
-                        { id: "wifi", w: 2, minW: 1, maxW: 2 }, { id: "bluetooth", w: 2, minW: 1, maxW: 2 },
-                        { id: "dnd", w: 1, maxW: 2 }, { id: "rotate", w: 1, maxW: 2 }, { id: "dark", w: 1, maxW: 2 },
-                        { id: "mic", w: 1, maxW: 2 }, { id: "camera", w: 1, maxW: 2 }, { id: "flashlight", w: 1, maxW: 2 },
-                        { id: "keyboard", w: 1, maxW: 2 }
+                        { id: "wifi", w: 2, text: "Wi-Fi", secondaryText: "Home", iconName: "wifi", dualTarget: true },
+                        { id: "bluetooth", w: 2, text: "Bluetooth", secondaryText: "Off", iconName: "bluetooth", dualTarget: true },
+                        { id: "dnd", text: "Do not disturb", iconName: "do_not_disturb_on" },
+                        { id: "rotate", text: "Auto-rotate", iconName: "screen_rotation" },
+                        { id: "dark", text: "Dark theme", iconName: "contrast" },
+                        { id: "mic", text: "Mic access", secondaryText: "Available", iconName: "mic" },
+                        { id: "camera", text: "Camera access", secondaryText: "Available", iconName: "videocam" },
+                        { id: "flashlight", text: "Flashlight", iconName: "flashlight_on" },
+                        { id: "keyboard", text: "Keyboard", iconName: "keyboard" }
                     ]
 
                     Row {
@@ -395,6 +390,17 @@ Rectangle {
                             type: "text"
                             onClicked: qsGrid.items = qsDemo.startTiles
                         }
+                        Switch {
+                            id: rtlSwitch
+                            objectName: "galleryGridRtl"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Right to left"
+                            color: Colors.surfaceVariantOn
+                            font: Type.font(Type.labelLarge)
+                        }
                     }
 
                     Rectangle {
@@ -404,6 +410,9 @@ Rectangle {
                         color: Colors.surfaceContainer
                         border.width: qsGrid.editMode ? Spacing.xs / 2 : 0
                         border.color: Colors.primary
+                        // What a right-to-left locale sets once at the shell's root.
+                        LayoutMirroring.enabled: rtlSwitch.checked
+                        LayoutMirroring.childrenInherit: true
 
                         EditableGrid {
                             id: qsGrid
@@ -412,17 +421,16 @@ Rectangle {
                             y: Spacing.lg
                             width: parent.width - 2 * Spacing.lg
                             columns: 4
-                            maxRows: 4
+                            maxRows: 5
                             items: qsDemo.startTiles
                             slotRadius: ControlSpec.tileSpec.inactiveCornerRadius
                             delegate: Tile {
                                 property var modelData: ({})
-                                readonly property var info: qsDemo.tileInfo[modelData.id] ?? ({})
-                                text: info.text ?? ""
-                                secondaryText: info.secondaryText ?? ""
-                                iconName: info.iconName ?? ""
-                                dualTarget: info.dualTarget ?? false
-                                iconOnly: modelData.w === 1
+                                text: modelData.text ?? ""
+                                secondaryText: modelData.secondaryText ?? ""
+                                iconName: modelData.iconName ?? ""
+                                dualTarget: modelData.dualTarget ?? false
+                                iconOnly: !(modelData.w > 1)
                             }
                         }
                     }

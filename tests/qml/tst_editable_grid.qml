@@ -29,6 +29,7 @@ TestCase {
     Component {
         id: gridComp
         EditableGrid {
+            property var committed: null
             x: 20; y: 20
             width: 406                      // 4 columns of 100 with 2 px gaps
             columns: 4
@@ -233,41 +234,106 @@ TestCase {
         compare([d.x, d.y], [0, 52], "and the item returns");
     }
 
-    function test_resize_handle_changes_the_width_within_limits() {
-        var items = four();
-        items[0].minW = 1; items[0].maxW = 2;
-        var committed = null;
-        var g = make({ items: items, editMode: true });
-        g.commitHandler = function (next) { committed = next; g.items = next; };
+    // The four handles of the selected slot `s`: {left, right, top, bottom}.
+    function handlesOf(s) {
+        var box = s.children[1].item.children[1].item;
+        return { left: box.children[1], right: box.children[2], top: box.children[3], bottom: box.children[4] };
+    }
+    // Drag the handle on `side` of slot `s` outward by `cells` (negative: inward).
+    function pullHandle(s, side, cells) {
+        var at = { left: [1, s.height / 2], right: [s.width - 1, s.height / 2],
+                   top: [s.width / 2, 1], bottom: [s.width / 2, s.height - 1] }[side];
+        var p = press(s, at[0], at[1]);
+        var px = { left: -102, right: 102, top: 0, bottom: 0 }[side] * cells;
+        var py = { left: 0, right: 0, top: -52, bottom: 52 }[side] * cells;
+        p.to(px, py, 8);
+        return p;
+    }
+    function controlled(props) {
+        var g = make(props);
+        g.commitHandler = function (next) { g.committed = next; g.items = next; };
+        return g;
+    }
+    Component { id: committedHolder; QtObject { property var list: null } }
+
+    function test_growing_into_a_neighbor_shrinks_it_then_moves_it() {
+        var g = make({ items: [{ id: "a", w: 2 }, { id: "b", w: 2 }], editMode: true });
+        var a = slotsOf(g)[0], b = slotsOf(g)[1];
+        mouseClick(a);
+        var p = pullHandle(a, "right", 1);
+        compare([g.resizeItems[0].w, g.resizeItems[1].col, g.resizeItems[1].w], [3, 3, 1], "b gives up a column");
+        p.release();
+        compare([g.items[0].w, g.items[1].col, g.items[1].w, g.items[1].row], [3, 3, 1, 0], "and keeps it smaller");
+        settle(g);
+        compare([b.x, b.width], [306, 100]);
+        p = pullHandle(a, "right", 1);
+        p.release();
+        compare([g.items[0].w, g.items[1].row, g.items[1].w], [4, 1, 1], "at its minimum b moves to the next row");
+        p = pullHandle(a, "right", -2);
+        p.release();
+        compare(g.items[0].w, 2, "shrinking gives nothing back on its own");
+        compare(g.items[1].w, 1);
+
+        var m = make({ items: [{ id: "a", w: 2 }, { id: "b", w: 2, minW: 2 }], editMode: true, y: 300 });
+        mouseClick(slotsOf(m)[0]);
+        p = pullHandle(slotsOf(m)[0], "right", 1);
+        p.release();
+        compare([m.items[1].row, m.items[1].w], [1, 2], "a neighbor at its minimum moves instead");
+    }
+
+    function test_handles_show_only_on_sides_that_can_move() {
+        var g = make({ items: [{ id: "a" }, { id: "b" }], editMode: true, maxRows: 1 });
+        compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(0, e); }),
+                [false, false, false, false], "a: at the start, b at its minimum, one row allowed");
+        compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(1, e); }),
+                [false, true, false, false], "b: free columns after it");
+        mouseClick(slotsOf(g)[1]);
+        var h = handlesOf(slotsOf(g)[1]);
+        compare([h.left.visible, h.right.visible, h.top.visible, h.bottom.visible], [false, true, false, false]);
+        g.maxRows = 0;
+        compare(["start", "end", "top", "bottom"].map(function (e) { return g.canResize(0, e); }),
+                [false, true, false, true], "without a row limit b can move away and a can grow down");
+        compare([h.left.visible, h.right.visible, h.top.visible, h.bottom.visible], [true, true, false, true],
+                "b: its start can now push a away");
+        var fixed = make({ items: [{ id: "f", minW: 1, maxW: 1, minH: 1, maxH: 1 }, { id: "x" }], editMode: true, y: 300 });
+        compare(["start", "end", "top", "bottom"].map(function (e) { return fixed.canResize(0, e); }),
+                [false, false, false, false], "a fixed-size item has no handles");
+    }
+
+    function test_a_neighbor_is_cut_along_the_resize_and_items_stay_inside() {
+        // b overlaps a's new rect at one cell; cutting its start or its top keeps the same area. A resize down the
+        // rows cuts b's top (it moves down a row); one across the columns cuts its start.
+        var down = make({ items: [{ id: "a", w: 2, col: 0, row: 0 }, { id: "b", w: 2, h: 2, col: 1, row: 1 }],
+                          editMode: true, gravity: false });
+        down.previewResize(0, "bottom", 1);
+        compare([down.resizeItems[1].col, down.resizeItems[1].row, down.resizeItems[1].w, down.resizeItems[1].h],
+                [1, 2, 2, 1], "cut from the top");
+        var across = make({ items: [{ id: "a", col: 0, row: 1 }, { id: "b", w: 2, h: 2, col: 1, row: 0 }],
+                            editMode: true, gravity: false, y: 300 });
+        across.previewResize(0, "end", 1);
+        compare([across.resizeItems[1].col, across.resizeItems[1].row, across.resizeItems[1].w, across.resizeItems[1].h],
+                [2, 0, 1, 2], "cut from the start");
+        var last = make({ items: [{ id: "z", col: 3, row: 0 }], editMode: true, gravity: false });
+        verify(!last.canResize(0, "end"), "nothing to grow into past the last column");
+        verify(last.canResize(0, "start"));
+    }
+
+    function test_every_edge_moves() {
+        var g = make({ items: [{ id: "a", col: 1, row: 1 }], editMode: true, gravity: false });
         var a = slotsOf(g)[0];
         mouseClick(a);
-        compare(g.selectedIndex, 0);
-        // The handle sits on the right edge; drag it one column left.
-        var p = press(a, a.width - 1, 25);
-        p.to(-102, 0, 8);
-        compare(g.sizePreview.changes.w, 1, "previews the narrower size");
-        p.release();
-        compare(committed[0].w, 1);
+        var steps = [["left", 1, { col: 0, w: 2 }], ["top", 1, { row: 0, h: 2 }], ["bottom", 1, { h: 3 }],
+                     ["right", 2, { w: 4 }], ["left", -1, { col: 1, w: 3 }], ["top", -2, { row: 2, h: 1 }]];
+        for (var i = 0; i < steps.length; i++) {
+            settle(g);
+            var p = pullHandle(a, steps[i][0], steps[i][1]);
+            p.release();
+            var want = steps[i][2];
+            for (var key in want)
+                compare(g.items[0][key], want[key], steps[i][0] + " " + steps[i][1] + ": " + key);
+        }
         settle(g);
-        compare(a.width, 100);
-        // Back out past its maximum: it stops at 2.
-        p = press(a, a.width - 1, 25);
-        p.to(306, 0, 8);
-        p.release();
-        compare(committed[0].w, 2, "maxW holds");
-        committed = null;
-        p = press(a, a.width - 1, 25);
-        p.to(-20, 0);
-        p.release();
-        compare(committed, null, "a resize that ends at the same size commits nothing");
-        var fixed = slotsOf(g)[1];
-        mouseClick(fixed);
-        compare(g.selectedIndex, 1);
-        p = press(fixed, fixed.width - 1, 25);
-        p.to(120, 0);
-        p.release();
-        compare(g.sizePreview, null, "an item with no maximum has no handle");
-        compare(cellOf(g, "b").cols, 1);
+        compare([a.x, a.y, a.width, a.height], [102, 104, 304, 50], "shown where it was left");
     }
 
     function test_max_rows_limits_resizes_and_new_items() {
@@ -276,10 +342,48 @@ TestCase {
         compare(g.fitNew({ id: "x", w: 1 }), null, "no room for another");
         var roomy = make({ items: [{ id: "a", w: 4 }, { id: "b", w: 2 }], maxRows: 2 });
         compare(roomy.fitNew({ id: "x", w: 4, minW: 1 }), { w: 2, h: 1 }, "a new item shrinks to fit");
-        var r = make({ items: [{ id: "a", w: 2, maxW: 4 }, { id: "b", w: 2 }, { id: "c", w: 4 }], maxRows: 2,
-                       editMode: true });
-        r.previewResize(0, 406, 50);
-        compare(r.sizePreview.changes.w, 2, "growing to 3 or 4 would need a third row; it stays at 2");
+        var r = make({ items: [{ id: "a", w: 2 }, { id: "b", w: 2 }, { id: "c", w: 4 }], maxRows: 2, editMode: true });
+        r.previewResize(0, "bottom", 1);
+        compare([r.resizeItems[0].h, r.resizeItems[2].col, r.resizeItems[2].w], [2, 2, 2],
+                "c below makes room by narrowing");
+        r.previewResize(0, "bottom", 2.4);
+        compare(r.resizeItems[0].h, 2, "a third row is not allowed; it stops at 2");
+        r.previewResize(0, "bottom", 0.3);
+        compare(r.resizeItems, null, "back to where it started");
+        r.commitResize();
+        compare(r.items[0].h, undefined, "nothing committed");
+    }
+
+    Component {
+        id: rtlComp
+        Item {
+            property alias grid: g
+            LayoutMirroring.enabled: true
+            LayoutMirroring.childrenInherit: true
+            x: 20; y: 20; width: 406; height: 300
+            EditableGrid { id: g; width: 406; columns: 4; gap: 2; rowHeight: 50; delegate: cellComp }
+        }
+    }
+
+    function test_right_to_left_mirrors_columns_drags_and_handles() {
+        var g = createTemporaryObject(rtlComp, root).grid;
+        g.items = four();
+        verify(g.mirrored);
+        var s = slotsOf(g);
+        compare(s[0].x, 204, "the first item starts at the right");
+        compare(s[3].x, 306);
+        g.editMode = true;
+        var p = press(s[3], 50, 25);
+        p.to(-306, -52, 8);
+        compare([g.dragCell.col, g.dragCell.row], [3, 0], "dragging left moves toward the end of the row");
+        p.release();
+        settle(g);
+        mouseClick(s[1]);
+        var h = handlesOf(s[1]);
+        verify(h.left.edge === "end" && h.right.edge === "start", "the end is on the left");
+        p = pullHandle(s[1], "left", 1);
+        compare([g.resizeItems[1].col, g.resizeItems[1].w], [2, 2], "the left handle grows it toward the end (higher columns)");
+        p.release();
     }
 
     function test_uncontrolled_grid_keeps_changes_itself() {

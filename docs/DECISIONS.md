@@ -172,3 +172,10 @@ switch or chip wired to a setting turns on or off only once the setting has appl
 changes elsewhere. The controls have a `controlled` mode: a click emits `toggled(wanted)` and changes nothing;
 the owner binds the state to the backend's. Assigning the state inside the control would also break that
 binding, so the uncontrolled default is for demos only.
+
+**D34. Grid items resize from any side, and neighbors shrink before they move.** The maintainer's rules for
+Quick Settings edit mode: every tile can grow to the full width and in height, a handle shows on each side
+that can actually move, and a neighbor in the way gives up cells down to its minimum size before it is pushed
+elsewhere. Googlebook shows only a right-edge handle and two tile widths; this goes further on purpose. Right to
+left follows Qt's `LayoutMirroring`, set once at the shell's root from the locale: the grid reads it for its
+columns and the Tile lays out with anchors, so neither needs its own setting.
