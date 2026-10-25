@@ -380,11 +380,7 @@ def modelfile_text(tag, models, temperature):
 
 
 def opencode_config(cfg, models, model_name, temperature, allowed, instructions):
-    """The inline config handed to opencode through OPENCODE_CONFIG_CONTENT (opencode 1.x schema).
-
-    It is passed inline because that outranks a project opencode.json inside the worktree, which
-    the agent could create or edit. Rules in a permission map are evaluated last-match-wins.
-    """
+    """The inline config handed to opencode through OPENCODE_CONFIG_CONTENT (opencode 2.x schema)."""
     host = host_of(models)
     base = host if host.startswith("http") else f"http://{host}"
     edit = {"*": "deny"}
@@ -403,18 +399,23 @@ def opencode_config(cfg, models, model_name, temperature, allowed, instructions)
         "share": "disabled",
         "snapshot": False,                    # the branch's own commits are the history
         "instructions": instructions,
-        "provider": {
+        "providers": {
             "ollama": {
-                "npm": "@ai-sdk/openai-compatible",
-                "name": "Ollama (local)",
-                "options": {"baseURL": base + "/v1", "apiKey": "ollama"},
+                "settings": {
+                    "baseURL": base + "/v1", 
+                    "apiKey": "ollama"
+                },
                 "models": {
                     model_name: {
                         "name": model_name,
-                        # without this opencode silently sends no tools and the agent can do nothing
-                        "tool_call": True,
-                        "limit": {"context": models["context"], "output": models["output_tokens"]},
-                        "options": {"temperature": temperature},
+                        "capabilities": {"tools": True},
+                        "limit": {
+                            "context": models["context"], 
+                            "output": models["output_tokens"]
+                        },
+                        "body": {
+                            "temperature": temperature
+                        },
                     }
                 },
             }
@@ -429,7 +430,6 @@ def opencode_config(cfg, models, model_name, temperature, allowed, instructions)
         },
         "compaction": {"auto": True, "prune": True},
     }
-
 
 def agent_env(cfg, models, base_env, config):
     env = dict(base_env)
@@ -450,7 +450,7 @@ def opencode_version():
         out = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
     except (OSError, subprocess.SubprocessError):
         return (0, "unknown")
-    m = re.match(r"(\d+)\.", out)
+    m = re.search(r"(\d+)\.", out)
     return (int(m.group(1)) if m else 0, out or "unknown")
 
 
@@ -533,9 +533,9 @@ def cmd_agent(args):
     found = opencode_version()
     if found is None:
         raise SideworkError("`opencode` is not on PATH: use `nix develop .#local-ai`")
-    if found[0] != 1:
-        raise SideworkError(f"opencode {found[1]} found, but the generated config follows the 1.x schema "
-                            "(2.x renamed the model and provider fields). Use a 1.x opencode, or update tools/sidework.py")
+    if found[0] != 2:
+        raise SideworkError(f"opencode {found[1]} found, but the generated config follows the 2.x schema. "
+                            "Please use an OpenCode 2.x release.")    
     pulled = ollama_tags(host_of(models))
     if pulled is None:
         raise SideworkError(
