@@ -142,6 +142,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **H1** Handoff docs (unreleased): `docs/HANDOFF.md`, this plan, `docs/DECISIONS.md`, `docs/LESSONS.md`,
   `CHANGELOG.md`, `AGENTS.md`, and reproducible dev tools in `tools/dev/`.
 - [ ] **H2** Standing rule: keep this file, `CHANGELOG.md` and memory in step with every change.
+- [ ] **H4** Standing rule (D31): light on memory. Lazy-load everything not on screen, measure new components
+  with `tools/dev/memcost.py`, follow `docs/memory.md`. First pass done: components 26-64% smaller.
 - [ ] **H3** First `nix develop` on the maintainer's machine writes `flake.lock`; commit it.
 
 ## Decisions waiting for the maintainer

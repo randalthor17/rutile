@@ -15,7 +15,18 @@ TestCase {
     Component { id: iconButtonComp; IconButton {} }
     Component { id: stateComp; StateLayer { width: 80; height: 40 } }
     Component { id: surfaceComp; Surface { width: 60; height: 30 } }
-    Component { id: colorComp; SpringColor {} }
+    // An animated color the way components write one: a Behavior with EffectsColor.
+    Component {
+        id: colorComp
+        QtObject {
+            id: animated
+            property color target: "transparent"
+            property string speed: "default"
+            property color value: target
+            readonly property bool running: anim.running
+            Behavior on value { EffectsColor { id: anim; speed: animated.speed } }
+        }
+    }
     Component { id: iconComp; Icon {} }
 
     function init() { Colors.mode = "dark"; }
@@ -29,14 +40,14 @@ TestCase {
     }
     function px(v, h) { return v === "full" ? h / 2 : v; }
 
-    // ---- SpringColor ----
-    function test_springcolor_starts_at_its_target() {
+    // ---- EffectsColor ----
+    function test_effectscolor_starts_at_its_target() {
         var c = make(colorComp, { target: "#336699" });
         compare(c.value.toString(), "#336699");
-        verify(c.progress.settled);
+        verify(!c.running);
     }
 
-    function test_springcolor_does_not_fade_in_at_creation() {
+    function test_effectscolor_does_not_fade_in_at_creation() {
         var c = make(colorComp, { target: "#336699" });
         wait(150);
         compare(c.value.toString(), "#336699");
@@ -46,30 +57,42 @@ TestCase {
         compare(s.color.toString(), Colors.surfaceContainer.toString());
     }
 
-    function test_springcolor_leaves_old_color_gradually_and_arrives_exactly() {
+    function test_effectscolor_leaves_old_color_gradually_and_arrives_exactly() {
         var c = make(colorComp, { target: "#000000" });
         c.target = "#ffffff";
         compare(c.value.toString(), "#000000", "must not jump on retarget");
-        var last = 0;
-        for (var i = 0; i < 2000 && !c.progress.settled; i++) {
-            c.progress.step(1 / 240);
+        verify(c.running);
+        var last = 0, samples = 0;
+        tryVerify(function () {
             verify(c.value.r >= last - 1e-9, "red went backwards");
             verify(c.value.r <= 1 + 1e-9, "overshoot");
+            if (c.value.r > 0.02 && c.value.r < 0.98) samples++;
             last = c.value.r;
-        }
-        verify(c.progress.settled);
+            return !c.running;
+        }, 2000);
+        verify(samples > 0, "no intermediate color was ever shown");
         compare(c.value.toString(), "#ffffff");
     }
 
-    function test_springcolor_retarget_midway_starts_from_what_is_shown() {
-        var c = make(colorComp, { target: "#000000" });
+    function test_effectscolor_takes_the_effects_spring_time() {
+        var c = make(colorComp, { target: "#000000", speed: "fast" });
+        var t0 = Date.now();
         c.target = "#ffffff";
-        for (var i = 0; i < 8; i++) c.progress.step(1 / 120);
+        tryVerify(function () { return !c.running; }, 2000);
+        var took = Date.now() - t0;
+        verify(took >= Motion.effects("fast").duration - 20, "too fast: " + took);
+        verify(took < Motion.effects("fast").duration + 200, "too slow: " + took);
+    }
+
+    function test_effectscolor_retarget_midway_starts_from_what_is_shown() {
+        var c = make(colorComp, { target: "#000000", speed: "slow" });
+        c.target = "#ffffff";
+        tryVerify(function () { return c.value.r > 0.1; }, 2000);
         var shown = c.value;
-        verify(shown.r > 0.02 && shown.r < 0.98, "expected a mid transition, got " + shown.r);
+        verify(shown.r < 0.98, "expected a mid transition, got " + shown.r);
         c.target = "#ff0000";
-        verify(rgbEqual(c.value, shown, 1e-6), "color jumped on retarget");
-        settle(c.progress);
+        verify(rgbEqual(c.value, shown, 0.03), "color jumped on retarget: " + c.value + " vs " + shown);
+        tryVerify(function () { return !c.running; }, 2000);
         compare(c.value.toString(), "#ff0000");
     }
 

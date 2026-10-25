@@ -18,7 +18,7 @@ and a component gallery, with the checks every later commit has to pass. No shel
 | `theme/` | matugen config + template, role list, golden palette, `fonts.json` |
 | `tools/` | `gen_tokens.py`, `gen_components.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `fontconf.py`, `otinfo.py`, `lint_hardcoded.py` |
 | `tests/` | unit tests (stdlib `unittest`) |
-| `shell/common/` | QML singletons (mostly generated), `Spring`, `SpringColor`, `PaletteWatcher` |
+| `shell/common/` | QML singletons (mostly generated), `Spring`, `EffectsColor`, `EffectsNumber`, `PaletteWatcher` |
 | `shell/components/` | M3E components: Surface, StateLayer, Icon, Button, IconButton |
 | `shell/gallery.qml`, `shell/gallery/` | component gallery (window + content) |
 | `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` (`tests/qml_optional/`: need real fonts; `tests/qml_gpu/`: need a display; `tests/qml_render/`: gallery renderer) |

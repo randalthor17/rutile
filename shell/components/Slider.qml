@@ -2,6 +2,7 @@
 // each side, outer corners full and inner corners 2 px, a stop dot at the end, and tick dots when
 // stepped. The handle narrows to 2 px while pressed or focused. Sizes and colors come from
 // ControlSpec.sliderSpec, the drawing from Compose's Slider.kt.
+pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
 
@@ -84,79 +85,75 @@ Item {
         stiffness: Motion.spring("spatial", "fast").stiffness
         dampingRatio: Motion.spring("spatial", "fast").dampingRatio
     }
-    SpringColor { id: activeFade; target: root.activeColor }
-    SpringColor { id: inactiveFade; target: root.inactiveColor }
-    SpringColor { id: handleFade; target: root.handleColor }
+    property color activeShown: root.activeColor
+    Behavior on activeShown { EffectsColor {} }
+    property color inactiveShown: root.inactiveColor
+    Behavior on inactiveShown { EffectsColor {} }
+    property color handleShown: root.handleColor
+    Behavior on handleShown { EffectsColor {} }
     Component.onCompleted: widthSpring.rest()
 
-    Canvas {
+    // Plain rectangles, not a Canvas: no per-instance pixel buffer and no JavaScript painting.
+    Item {
         id: track
         anchors.verticalCenter: parent.verticalCenter
         x: root.trackStart
         width: root.trackLength
         height: root.spec.inactiveTrackHeight
 
-        // Repaint whenever anything drawn changes.
-        readonly property var inputs: [root.handleCenter, widthSpring.value, activeFade.value, inactiveFade.value,
-                                       root.stepCount, width, height]
-        onInputsChanged: requestPaint()
+        readonly property real corner: height / 2
+        readonly property real center: root.handleCenter - root.trackStart
+        readonly property real gap: widthSpring.value / 2 + root.spec.impl.handleGap
+        // A segment shorter than its rounded end is left out, as in Compose.
+        readonly property bool showActive: center - gap > corner
+        readonly property bool showInactive: center + gap < width - corner
 
-        // A bar from x0 to x1 with corner radius r0 on the left and r1 on the right.
-        function bar(ctx, x0, x1, r0, r1) {
-            const h = height;
-            r0 = Math.min(r0, h / 2, (x1 - x0) / 2);
-            r1 = Math.min(r1, h / 2, (x1 - x0) / 2);
-            ctx.beginPath();
-            ctx.moveTo(x0 + r0, 0);
-            ctx.lineTo(x1 - r1, 0);
-            ctx.arcTo(x1, 0, x1, r1, r1);
-            ctx.lineTo(x1, h - r1);
-            ctx.arcTo(x1, h, x1 - r1, h, r1);
-            ctx.lineTo(x0 + r0, h);
-            ctx.arcTo(x0, h, x0, h - r0, r0);
-            ctx.lineTo(x0, r0);
-            ctx.arcTo(x0, 0, x0 + r0, 0, r0);
-            ctx.closePath();
-            ctx.fill();
+        Rectangle {
+            visible: track.showActive
+            width: Math.max(0, track.center - track.gap)
+            height: parent.height
+            topLeftRadius: track.corner
+            bottomLeftRadius: track.corner
+            topRightRadius: root.spec.impl.trackInsideCorner
+            bottomRightRadius: root.spec.impl.trackInsideCorner
+            color: root.activeShown
         }
-        function dot(ctx, cx, size) {
-            ctx.beginPath();
-            ctx.arc(cx, height / 2, size / 2, 0, 2 * Math.PI);
-            ctx.fill();
+        Rectangle {
+            visible: track.showInactive
+            x: track.center + track.gap
+            width: Math.max(0, track.width - x)
+            height: parent.height
+            topLeftRadius: root.spec.impl.trackInsideCorner
+            bottomLeftRadius: root.spec.impl.trackInsideCorner
+            topRightRadius: track.corner
+            bottomRightRadius: track.corner
+            color: root.inactiveShown
         }
-
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.reset();
-            const spec = root.spec;
-            const corner = height / 2;
-            const inside = spec.impl.trackInsideCorner;
-            const center = root.handleCenter - root.trackStart;
-            const gap = widthSpring.value / 2 + spec.impl.handleGap;
-            // A segment shorter than its rounded end is left out, as in Compose.
-            const showActive = center - gap > corner;
-            const showInactive = center + gap < width - corner;
-            if (showActive) {
-                ctx.fillStyle = activeFade.value;
-                bar(ctx, 0, center - gap, corner, inside);
+        // Ticks sit where the handle stops: inactive-track color on the active side, active-track
+        // color on the inactive side. Only stepped sliders create them.
+        Repeater {
+            model: Math.max(0, root.stepCount - 1)
+            delegate: Rectangle {
+                required property int index
+                readonly property real cx: track.width * (index + 1) / root.stepCount
+                visible: Math.abs(cx - track.center) > track.gap + width / 2
+                width: root.spec.stopIndicatorSize
+                height: width
+                radius: width / 2
+                x: cx - width / 2
+                anchors.verticalCenter: parent.verticalCenter
+                color: cx < track.center ? root.inactiveShown : root.activeShown
             }
-            if (showInactive) {
-                ctx.fillStyle = inactiveFade.value;
-                bar(ctx, center + gap, width, inside, corner);
-            }
-            // Ticks sit where the handle stops: inactive-track color on the active side,
-            // active-track color on the inactive side. The end stop shows with the inactive track.
-            const size = spec.stopIndicatorSize;
-            for (let i = 1; i < root.stepCount; i++) {
-                const cx = width * i / root.stepCount;
-                if (Math.abs(cx - center) <= gap + size / 2) continue;
-                ctx.fillStyle = cx < center ? inactiveFade.value : activeFade.value;
-                dot(ctx, cx, size);
-            }
-            if (showInactive) {
-                ctx.fillStyle = activeFade.value;
-                dot(ctx, width - corner, size);
-            }
+        }
+        // The end stop shows with the inactive track.
+        Rectangle {
+            visible: track.showInactive
+            width: root.spec.stopIndicatorSize
+            height: width
+            radius: width / 2
+            x: track.width - track.corner - width / 2
+            anchors.verticalCenter: parent.verticalCenter
+            color: root.activeShown
         }
     }
 
@@ -167,7 +164,7 @@ Item {
         radius: width / 2
         x: root.handleCenter - width / 2
         anchors.verticalCenter: parent.verticalCenter
-        color: handleFade.value
+        color: root.handleShown
     }
 
     MouseArea {
@@ -176,9 +173,7 @@ Item {
         enabled: root.enabled
         hoverEnabled: true
         preventStealing: true
-        // qmllint disable type
         cursorShape: Qt.PointingHandCursor
-        // qmllint enable type
         onPressed: mouse => {
             root.forceActiveFocus();
             root.setFromUser(root.valueAt(mouse.x));

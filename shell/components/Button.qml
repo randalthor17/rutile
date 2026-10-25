@@ -1,6 +1,7 @@
 // An M3 Expressive button: five types (filled, tonal, outlined, text, elevated), five
 // sizes (xs, s, m, l, xl), round or square shape, optional leading icon, optional toggle.
 // Elevated buttons show their container color only; shadows are not drawn yet.
+pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
 
@@ -28,13 +29,17 @@ ButtonBase {
         anchors.centerIn: parent
         spacing: root.hasIcon && root.hasText ? root.spec.iconLabelGap : 0
 
-        Icon {
-            visible: root.hasIcon
-            name: root.iconName
-            size: root.spec.icon
-            color: root.contentColor
-            fill: root.selected ? 1 : 0
+        // Created only for buttons with an icon.
+        Loader {
+            active: root.hasIcon
+            visible: active
             anchors.verticalCenter: parent.verticalCenter
+            sourceComponent: Icon {
+                name: root.iconName
+                size: root.spec.icon
+                color: root.contentColor
+                fill: root.selected ? 1 : 0
+            }
         }
 
         Text {

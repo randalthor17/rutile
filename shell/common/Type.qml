@@ -51,16 +51,10 @@ QtObject {
     function font(style) {
         const f = Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,
                            letterSpacing: style.tracking });
-        // Exact weight and optical size when this Qt has font.variableAxes (recent Qt). Without it
-        // only the font's named instances are reachable (Regular and Bold, not Medium, in Qt 6.4).
-        // The access is feature-detected, so the linter's "not found" warning is suppressed here.
-        // qmllint disable type
-        if (f["variableAxes"] !== undefined) {
-            const opsz = Fonts.textAxes.opsz;
-            f["variableAxes"] = ({ "wght": style.weight,
-                                   "opsz": Math.max(opsz.min, Math.min(opsz.max, style.size)) });
-        }
-        // qmllint enable type
+        // Exact weight and optical size through font.variableAxes (Qt 6.7+, the minimum; see D31).
+        const opsz = Fonts.textAxes.opsz;
+        f.variableAxes = ({ "wght": style.weight,
+                            "opsz": Math.max(opsz.min, Math.min(opsz.max, style.size)) });
         return f;
     }
 }

@@ -91,7 +91,8 @@ module directory from the tool's real location (`lib/qt-6/qml`, `lib/qt6/qml`,
 to the directory that contains `QtQuick/` and `QtTest/`; the failure output
 prints the command to do it.
 
-Development used Qt 6.4.2 (sandbox) and Qt 6.11.2 (nix shell).
+Development uses Qt 6.12 (the nix shell; the flake's Quickshell 0.3.2 is built on it). Qt 6.7 is the minimum
+(D31); Qt 6.4, used early in a sandbox, no longer loads the components.
 
 The JS spring math is checked against an independent Python implementation
 (`tests/spring_ref.py`), which is itself checked against RK4 numerical

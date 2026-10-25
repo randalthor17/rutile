@@ -1,6 +1,7 @@
 // An M3 Expressive switch: a 52x32 track and a handle that grows from 16 (off) to 24 (on, or
 // with an icon) and to 28 while pressed. Sizes and colors come from ControlSpec.switchSpec;
 // the motion follows Compose's Switch.kt: a fast spatial spring, snapping while pressed.
+pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
 
@@ -113,9 +114,12 @@ Item {
         stiffness: Motion.spring("spatial", "fast").stiffness
         dampingRatio: Motion.spring("spatial", "fast").dampingRatio
     }
-    SpringColor { id: trackFade; target: root.trackColor }
-    SpringColor { id: outlineFade; target: root.outlineColor }
-    SpringColor { id: handleFade; target: root.handleColor }
+    property color trackShown: root.trackColor
+    Behavior on trackShown { EffectsColor {} }
+    property color outlineShown: root.outlineColor
+    Behavior on outlineShown { EffectsColor {} }
+    property color handleShown: root.handleColor
+    Behavior on handleShown { EffectsColor {} }
 
     Rectangle {
         id: track
@@ -123,9 +127,9 @@ Item {
         width: root.spec.trackWidth
         height: root.spec.trackHeight
         radius: height / 2
-        color: trackFade.value
+        color: root.trackShown
         border.width: root.spec.trackOutlineWidth
-        border.color: outlineFade.value
+        border.color: root.outlineShown
     }
 
     StateLayer {
@@ -147,14 +151,17 @@ Item {
         radius: width / 2
         x: track.x + xSpring.value
         y: track.y + (track.height - height) / 2
-        color: handleFade.value
+        color: root.handleShown
 
-        Icon {
+        // Most switches have no icon; only those that do pay for one.
+        Loader {
             anchors.centerIn: parent
-            visible: root.iconName !== ""
-            name: root.iconName
-            size: root.spec.selectedIconSize
-            color: root.iconColor
+            active: root.iconName !== ""
+            sourceComponent: Icon {
+                name: root.iconName
+                size: root.spec.selectedIconSize
+                color: root.iconColor
+            }
         }
     }
 
@@ -163,9 +170,7 @@ Item {
         anchors.fill: parent
         enabled: root.enabled
         hoverEnabled: true
-        // qmllint disable type
         cursorShape: Qt.PointingHandCursor
-        // qmllint enable type
         onClicked: root.toggle()
     }
 }

@@ -58,8 +58,8 @@ Verified with the real font files, offscreen:
   `opsz` axes equal the style's weight and size; Emphasized styles render heavier (weights 500 and 700,
   not just the named Regular and Bold); `Icon.fill` changes the `FILL` axis (a filled `star` carries
   clearly more ink than the outline one). These run in `make check` when the fonts are available.
-- On **Qt 6.4** (no `font.variableAxes`) those tests skip with their reason, and only the named
-  instances are reachable: weight 700 renders bold but 500 looks like 400.
+- Qt 6.4 (no `font.variableAxes`) is no longer supported (D31); there only the named instances were
+  reachable: weight 700 rendered bold but 500 looked like 400.
 
 Notes:
 

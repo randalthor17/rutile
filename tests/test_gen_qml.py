@@ -1,4 +1,5 @@
 import json
+import math
 import re
 import sys
 import unittest
@@ -128,3 +129,40 @@ class HandWrittenFiles(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EffectsCurve(unittest.TestCase):
+    """The bezier that stands in for a critically damped spring (EffectsColor, EffectsNumber)."""
+
+    @staticmethod
+    def bezier_y(x, p):
+        a, b, c, d = p
+        lo, hi = 0.0, 1.0
+        for _ in range(50):
+            s = (lo + hi) / 2
+            xs = 3 * (1 - s) ** 2 * s * a + 3 * (1 - s) * s * s * c + s ** 3
+            lo, hi = (s, hi) if xs < x else (lo, s)
+        s = (lo + hi) / 2
+        return 3 * (1 - s) ** 2 * s * b + 3 * (1 - s) * s * s * d + s ** 3
+
+    def test_settle_point_is_within_one_255th(self):
+        wt = g.SETTLE_WT
+        self.assertAlmostEqual((1 + wt) * math.exp(-wt), 1 / 255, places=6)
+
+    def test_bezier_follows_the_spring_within_two_percent_and_never_overshoots(self):
+        worst = 0
+        for i in range(201):
+            u = i / 200
+            t = u * g.SETTLE_WT
+            spring = 1 - (1 + t) * math.exp(-t)
+            y = self.bezier_y(u, g.CRITICAL_BEZIER)
+            self.assertLessEqual(y, 1 + 1e-9)
+            worst = max(worst, abs(y - spring))
+        self.assertLess(worst, 0.02)
+
+    def test_durations_follow_stiffness_and_refuse_underdamped_springs(self):
+        curves = g.effects_curves({"fast": {"stiffness": 3800, "damping_ratio": 1},
+                                    "slow": {"stiffness": 800, "damping_ratio": 1}})
+        self.assertEqual((curves["fast"]["duration"], curves["slow"]["duration"]), (125, 272))
+        with self.assertRaises(ValueError):
+            g.effects_curves({"x": {"stiffness": 800, "damping_ratio": 0.8}})

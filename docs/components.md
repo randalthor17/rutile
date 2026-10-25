@@ -25,7 +25,8 @@ vendored Compose Material3 token sources into `ControlSpec.qml`. Behavior implem
 
 - pressed shape morph: the corner radius chases the pressed shape with a spatial spring
 - toggle: selected shape and colors swap (round buttons become squarer when selected)
-- container and color changes animate with effects springs (`SpringColor`), including theme switches
+- container and color changes animate with effects springs (`Behavior on color { EffectsColor {} }`), including
+  theme switches
 - disabled: container 10%, content 38% opacity; keyboard activation with Space/Return; focus state layer
 
 Switch, Slider and ProgressBar take every value from `ControlSpec.switchSpec`, `sliderSpec` and
@@ -74,8 +75,8 @@ Changing a token or component and re-rendering is the quickest way to check a lo
 Offscreen: sizes, colors per type, toggle, disabled, press morph, keyboard, state layer, springs,
 pixels through a software renderer, gallery contents, render tool, `make check` (lint, 120+ tests).
 
-Run on Qt 6.4 and on a modern Qt (6.12) because they differ: font axis control (exact weights, the
-`FILL` axis) only exists on newer Qt, and those tests skip on 6.4 and run on 6.11+.
+Run on Qt 6.12, the Qt the flake's Quickshell is built on. Qt 6.7 is the minimum (D31): the components use
+per-corner radii and `font.variableAxes`.
 
 Seen working in a real Quickshell session: the gallery configuration loads without errors, which
 exercises `import qs.*` resolution, singleton registration, `FloatingWindow` and `PaletteWatcher`.

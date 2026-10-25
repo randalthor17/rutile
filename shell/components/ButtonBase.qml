@@ -18,8 +18,8 @@ Item {
 
     default property alias content: contentArea.data
 
-    readonly property bool pressed: layer.pressed
-    readonly property bool hovered: layer.hovered
+    readonly property bool pressed: stateLayer.pressed
+    readonly property bool hovered: stateLayer.hovered
     readonly property bool selected: toggle && checked
 
     function role(name) {
@@ -36,7 +36,7 @@ Item {
     }
     readonly property real pressedRadius: px(spec.shapePressed)
     readonly property real radiusNow: radiusSpring.value
-    readonly property color containerNow: containerFade.value
+    readonly property color containerNow: container.color
 
     readonly property color containerColor: {
         if (!enabled)
@@ -75,15 +75,12 @@ Item {
         }
     }
 
-    SpringColor {
-        id: containerFade
-        target: root.containerColor
-    }
-
     Rectangle {
+        id: container
         anchors.fill: parent
         radius: radiusSpring.value
-        color: containerFade.value
+        color: root.containerColor
+        Behavior on color { EffectsColor {} }
         border.width: root.outlined ? root.spec.outline : 0
         border.color: root.outlineColor
     }
@@ -94,7 +91,7 @@ Item {
     }
 
     StateLayer {
-        id: layer
+        id: stateLayer
         anchors.fill: parent
         radius: radiusSpring.value
         stateColor: root.contentColor

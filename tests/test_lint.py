@@ -42,6 +42,25 @@ class Lint(unittest.TestCase):
         flagged = {p.split(":")[0] for p in lint.scan(root)}
         self.assertEqual(flagged, {"shell/common/Hand.qml"})
 
+    def test_memory_traps(self):
+        bad = {
+            "shell/Eager.qml": "Item {\n    Canvas {\n        onPaint: {}\n    }\n}\n",
+            "shell/Img.qml": "Item {\n    Image {\n        source: \"a.png\"\n    }\n}\n",
+            "shell/Frame.qml": "Item {\n    FrameAnimation { running: true; onTriggered: {} }\n}\n",
+        }
+        found = lint.scan(project(bad))
+        self.assertEqual(len(found), 3, found)
+        self.assertTrue(any("Eager.qml:2: eager Canvas" in f for f in found))
+        self.assertTrue(any("Img.qml:2: Image without sourceSize" in f for f in found))
+        self.assertTrue(any("Frame.qml:2: FrameAnimation that always runs" in f for f in found))
+        good = {
+            "shell/Lazy.qml": "Item {\n    Loader { sourceComponent: Canvas {\n        onPaint: {}\n    } }\n"
+                              "    Component {\n        id: c\n        Canvas {}\n    }\n}\n",
+            "shell/Img.qml": "Item {\n    Image {\n        source: \"a.png\"\n        sourceSize.width: 64\n    }\n}\n",
+            "shell/Frame.qml": "Item {\n    FrameAnimation { running: root.moving }\n}\n",
+        }
+        self.assertEqual(lint.scan(project(good)), [])
+
     def test_real_repo_is_clean(self):
         self.assertEqual(lint.scan(ROOT), [])
 

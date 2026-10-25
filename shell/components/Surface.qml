@@ -9,11 +9,7 @@ Rectangle {
 
     property color tone: Colors.surfaceContainer
 
-    color: fade.value
+    color: tone
     radius: Shapes.medium
-
-    SpringColor {
-        id: fade
-        target: root.tone
-    }
+    Behavior on color { EffectsColor {} }
 }

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Fail on hardcoded colors, radii and durations in QML.
+"""Fail on hardcoded colors, radii and durations in QML, and on known memory traps.
 
 Design values must come from the token singletons (Colors, Shapes, Motion,
-Type, ...). Append `// lint-ignore` to a line to allow a deliberate exception.
+Type, ...). The memory rules (D31): a Canvas holds a pixel buffer and repaints in
+JavaScript, so it is only created on demand (as a Loader's sourceComponent or inside a
+Component); an Image decodes at full size unless it sets sourceSize; a FrameAnimation
+must not run unconditionally. Append `// lint-ignore` to a line to allow a deliberate
+exception.
 
     lint_hardcoded.py [root]     root defaults to the repo root
 """
@@ -20,6 +24,47 @@ RULES = (
 )
 
 
+def block(text, start):
+    """The text of the QML object whose opening brace is at or after `start`."""
+    i = text.index("{", start)
+    depth = 0
+    for j in range(i, len(text)):
+        depth += {"{": 1, "}": -1}.get(text[j], 0)
+        if depth == 0:
+            return text[i:j + 1]
+    return text[i:]
+
+
+def parent_line(text, start):
+    """The line that opens the object enclosing position `start`."""
+    depth = 0
+    for i in range(start - 1, -1, -1):
+        depth += {"}": 1, "{": -1}.get(text[i], 0)
+        if depth < 0:
+            return text[text.rfind("\n", 0, i) + 1:text.find("\n", i)]
+    return ""
+
+
+def memory_problems(text):
+    """(line number, label) for each memory trap in a QML file."""
+    out = []
+    lines = text.splitlines()
+    for no, line in enumerate(lines, 1):
+        code = line.split("//", 1)[0]
+        if "lint-ignore" in line or not re.search(r"\b(Canvas|Image|AnimatedImage|FrameAnimation)\s*\{", code):
+            continue
+        offset = sum(len(l) + 1 for l in lines[:no - 1]) + code.index("{")
+        body = block(text, offset)
+        if re.search(r"\bCanvas\s*\{", code) and not (
+                "sourceComponent:" in code or "Component {" in code or "Component {" in parent_line(text, offset)):
+            out.append((no, "eager Canvas (create it on demand: a Loader's sourceComponent or a Component)"))
+        if re.search(r"\b(Image|AnimatedImage)\s*\{", code) and "sourceSize" not in body:
+            out.append((no, "Image without sourceSize (it decodes at full resolution)"))
+        if re.search(r"\bFrameAnimation\s*\{", code) and re.search(r"\brunning\s*:\s*true\b", body):
+            out.append((no, "FrameAnimation that always runs (bind running to when it is needed)"))
+    return out
+
+
 def scan(root):
     problems = []
     for d in SCAN_DIRS:
@@ -34,6 +79,8 @@ def scan(root):
                 for label, rx in RULES:
                     if rx.search(code):
                         problems.append(f"{path.relative_to(root)}:{no}: {label}: {line.strip()}")
+            for no, label in memory_problems(text):
+                problems.append(f"{path.relative_to(root)}:{no}: {label}")
     return problems
 
 
@@ -43,9 +90,9 @@ def main(argv):
     for p in problems:
         print(p, file=sys.stderr)
     if problems:
-        print(f"{len(problems)} hardcoded design value(s); use tokens", file=sys.stderr)
+        print(f"{len(problems)} problem(s): use tokens for design values; see D31 for memory", file=sys.stderr)
         return 1
-    print("lint: no hardcoded design values")
+    print("lint: no hardcoded design values or memory traps")
     return 0
 
 

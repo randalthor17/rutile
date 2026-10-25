@@ -9,6 +9,7 @@ Generated files start with a GENERATED marker, which also exempts them from
 tools/lint_hardcoded.py (they are where design values live).
 """
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -61,6 +62,25 @@ def gen_elevation(t):
     return "\n".join(lines) + "\n"
 
 
+# A critically damped spring released from rest follows x(t) = 1 - (1 + wt) e^(-wt), w = sqrt(stiffness).
+# It comes within 1/255 of its target (no visible change left in an 8-bit color) at wt = SETTLE_WT, and
+# on that normalized time this cubic bezier stays within 1.8% of it without overshooting (fitted by a grid
+# search; tests/test_gen_qml.py checks the error). Effects springs are critically damped, so a
+# ColorAnimation or NumberAnimation with this curve replaces a per-frame JavaScript spring.
+SETTLE_WT = 7.705182
+CRITICAL_BEZIER = [0.24, 0.28, 0.12, 1.0]
+
+
+def effects_curves(springs):
+    out = {}
+    for speed, p in springs.items():
+        if p["damping_ratio"] != 1:
+            raise ValueError(f"effects spring {speed} is not critically damped; CRITICAL_BEZIER does not apply")
+        out[speed] = {"duration": round(SETTLE_WT / math.sqrt(p["stiffness"]) * 1000),
+                      "bezier": CRITICAL_BEZIER + [1, 1]}
+    return out
+
+
 def gen_motion(t):
     m = t["motion"]
     out = [header("Durations (ms), easing curves and spring parameters from tokens/m3e.json.") + "QtObject {"]
@@ -84,9 +104,18 @@ def gen_motion(t):
         }
     out.append(f"    readonly property var springs: ({js(springs)})")
     out.append("")
+    out.append("    // The effects springs as a duration (ms) and easing curve, for Behavior animations (see gen_qml.py).")
+    curves = {scheme: effects_curves(m[scheme]["effects"]) for scheme in ("expressive", "standard")}
+    out.append(f"    readonly property var effectsCurves: ({js(curves)})")
+    out.append("")
     out.append("    // axis: \"spatial\" | \"effects\"; speed: \"fast\" | \"default\" | \"slow\"")
     out.append("    function spring(axis, speed) {")
     out.append("        return springs[scheme][axis][speed];")
+    out.append("    }")
+    out.append("")
+    out.append("    // speed: \"fast\" | \"default\" | \"slow\"; returns {duration, bezier}")
+    out.append("    function effects(speed) {")
+    out.append("        return effectsCurves[scheme][speed];")
     out.append("    }")
     out.append("}")
     return "\n".join(out) + "\n"
@@ -116,16 +145,10 @@ def gen_type(t, fonts):
     out.append("    function font(style) {")
     out.append("        const f = Qt.font({ family: family(style), pixelSize: style.size, weight: style.weight,")
     out.append("                           letterSpacing: style.tracking });")
-    out.append("        // Exact weight and optical size when this Qt has font.variableAxes (recent Qt). Without it")
-    out.append("        // only the font's named instances are reachable (Regular and Bold, not Medium, in Qt 6.4).")
-    out.append("        // The access is feature-detected, so the linter's \"not found\" warning is suppressed here.")
-    out.append("        // qmllint disable type")
-    out.append("        if (f[\"variableAxes\"] !== undefined) {")
-    out.append("            const opsz = Fonts.textAxes.opsz;")
-    out.append("            f[\"variableAxes\"] = ({ \"wght\": style.weight,")
-    out.append("                                   \"opsz\": Math.max(opsz.min, Math.min(opsz.max, style.size)) });")
-    out.append("        }")
-    out.append("        // qmllint enable type")
+    out.append("        // Exact weight and optical size through font.variableAxes (Qt 6.7+, the minimum; see D31).")
+    out.append("        const opsz = Fonts.textAxes.opsz;")
+    out.append("        f.variableAxes = ({ \"wght\": style.weight,")
+    out.append("                            \"opsz\": Math.max(opsz.min, Math.min(opsz.max, style.size)) });")
     out.append("        return f;")
     out.append("    }")
     out.append("}")

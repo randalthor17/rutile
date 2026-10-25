@@ -5,6 +5,15 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Lighter components** (D31, `docs/memory.md`): colors and opacities animate with Qt animations on the
+  effects-spring curve (`EffectsColor`, `EffectsNumber`; the curve is fitted in `tools/gen_qml.py` and checked)
+  instead of a JavaScript spring object each; Slider and ProgressBar draw with Rectangles, the wave's Canvas
+  exists only while it shows; Button and Switch create icons only when they have one. Per instance: Surface
+  17 to 6 KiB, Slider 140 to 72, Switch 125 to 90, Button 84 to 62. `SpringColor` is removed.
+  `tools/dev/memcost.py` measures; the lint now fails on an eager Canvas, an Image without `sourceSize` and an
+  always-running FrameAnimation.
+- **Qt 6.7 is the minimum** (D31; the flake's Quickshell is on Qt 6.12). Qt 6.4 workarounds are gone, and
+  `qmllint` reports no warnings (14 before).
 - **Switch, Slider, ProgressBar** (plan 1.5c). Switch: 52x32, handle 16/24/28 px with optional icons, snaps while
   pressed and springs on release. Slider: expressive track with a 6 px gap around a 4x44 handle that narrows to
   2 px while pressed or focused, stop and tick dots, steps, keyboard. ProgressBar: linear determinate, flat or

@@ -30,8 +30,16 @@ QtObject {
     // stiffness is M3/Compose stiffness (mass 1); dampingRatio is the damping ratio.
     readonly property var springs: ({"expressive": {"effects": {"default": {"stiffness": 1600, "dampingRatio": 1}, "fast": {"stiffness": 3800, "dampingRatio": 1}, "slow": {"stiffness": 800, "dampingRatio": 1}}, "spatial": {"default": {"stiffness": 380, "dampingRatio": 0.8}, "fast": {"stiffness": 800, "dampingRatio": 0.6}, "slow": {"stiffness": 200, "dampingRatio": 0.8}}}, "standard": {"effects": {"default": {"stiffness": 1600, "dampingRatio": 1}, "fast": {"stiffness": 3800, "dampingRatio": 1}, "slow": {"stiffness": 800, "dampingRatio": 1}}, "spatial": {"default": {"stiffness": 700, "dampingRatio": 0.9}, "fast": {"stiffness": 1400, "dampingRatio": 0.9}, "slow": {"stiffness": 300, "dampingRatio": 0.9}}}})
 
+    // The effects springs as a duration (ms) and easing curve, for Behavior animations (see gen_qml.py).
+    readonly property var effectsCurves: ({"expressive": {"default": {"duration": 193, "bezier": [0.24, 0.28, 0.12, 1.0, 1, 1]}, "fast": {"duration": 125, "bezier": [0.24, 0.28, 0.12, 1.0, 1, 1]}, "slow": {"duration": 272, "bezier": [0.24, 0.28, 0.12, 1.0, 1, 1]}}, "standard": {"default": {"duration": 193, "bezier": [0.24, 0.28, 0.12, 1.0, 1, 1]}, "fast": {"duration": 125, "bezier": [0.24, 0.28, 0.12, 1.0, 1, 1]}, "slow": {"duration": 272, "bezier": [0.24, 0.28, 0.12, 1.0, 1, 1]}}})
+
     // axis: "spatial" | "effects"; speed: "fast" | "default" | "slow"
     function spring(axis, speed) {
         return springs[scheme][axis][speed];
+    }
+
+    // speed: "fast" | "default" | "slow"; returns {duration, bezier}
+    function effects(speed) {
+        return effectsCurves[scheme][speed];
     }
 }

@@ -55,7 +55,9 @@ palette looks wrong next to the Googlebook references (plan item 1.1b).
 **D10. Springs are solved exactly, not through Qt's `SpringAnimation`.** Qt's parameters are not M3's stiffness and
 damping ratio. `SpringMath.js` solves the damped spring analytically (mass 1, the Compose model), checked against
 an independent Python version that is itself checked against numerical integration. Spatial springs (shape,
-position) overshoot slightly; effects springs (color, opacity) never do. Colors animate through `SpringColor`.
+position) overshoot slightly; effects springs (color, opacity) never do. Effects springs are critically damped, so
+since D31 they run as Qt animations on the equivalent curve (`EffectsColor`, `EffectsNumber`, fitted in
+`tools/gen_qml.py`); `Spring` stays for spatial motion.
 
 **D11. Color roles `on_x` are exposed as `xOn`.** QML reads any property named `on` plus a capital as a signal
 handler, so `Colors.onPrimary` silently returned nothing. The generator refuses such names.
@@ -147,3 +149,12 @@ first trial commit a schema that rejected its own examples. Each brief now decla
 runs it on the staged work, `check` and `merge` run it on the would-be merge result, all using the main
 checkout's brief and tools. A known-broken branch can still be merged deliberately (`--accept-failing`, reason
 recorded in the merge commit), so the gate never forces work to be thrown away.
+
+**D31. The shell is light on memory, and Qt 6.7 is the minimum.** The maintainer's standing requirement: the
+shell runs all day, so everything not on screen is created on demand and unloaded when closed, components keep
+optional parts behind Loaders, colors and opacities animate with Qt's C++ animations on the property (a
+JavaScript spring object per color cost three times as much), Rectangles replace Canvas wherever they can draw
+the shape, and nothing animates while idle. Rules and measurements are in `docs/memory.md`; the lint enforces
+the mechanical ones and `tools/dev/memcost.py` measures the rest. Qt 6.4 was only ever the sandbox's Qt: the
+flake's Quickshell 0.3.2 is built on Qt 6.12, so the code now uses Qt 6.7 features (per-corner radii,
+`font.variableAxes` without feature detection, `pragma ComponentBehavior`) and tests run on 6.12.
