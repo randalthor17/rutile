@@ -12,6 +12,12 @@ Material 3 Expressive look. You are on a `local/*` branch in your own worktree.
 - Do not invent facts about the repo. When unsure what a token, component or property is called, read
   the source (`shell/common/*.qml`, `shell/components/*.qml`, `tokens/*.json`) instead of guessing.
 - Do not add dependencies. Everything is stdlib or already in the repo.
+- Never install anything: no `pip`, no virtualenv, no `nix profile`/`nix shell`, no edits to `flake.nix`.
+  The checks your brief names need nothing that is not already here. If a command is missing, stop and
+  say so; do not work around it.
+- Create and change files only with the write and edit tools, never through shell redirection (`>`,
+  `tee`, `sed -i`). The edit tools are what keep you inside your paths.
+- Stay in this worktree. Do not create other worktrees or work anywhere else.
 
 ## Style
 
@@ -28,5 +34,9 @@ Material 3 Expressive look. You are on a `local/*` branch in your own worktree.
 1. Read the task brief and the files it names before writing anything.
 2. Make small commits, one concern each, with a one-line imperative message.
 3. After each change, run the acceptance commands from the brief. Fix before moving on.
-4. If `make check` fails, say what failed. Do not edit tests to make them pass.
-5. When finished, summarize what changed and anything you were unsure about.
+4. When a check fails, read the first error and fix that one thing. If the same error comes back twice,
+   stop editing: re-read the brief and the error, and plan the fix before the next attempt. After three
+   failed attempts at one error, stop and report it instead of trying more variations.
+5. Commit only your own paths: `git add <your paths>` and `git commit -m "..."`, never `git add -A`.
+6. If `make check` fails, say what failed. Do not edit tests to make them pass.
+7. When finished, summarize what changed and anything you were unsure about.

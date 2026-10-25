@@ -176,7 +176,8 @@ class Consistency(unittest.TestCase):
 
     def test_docs_describe_the_opencode_workflow_and_its_limits_honestly(self):
         doc = " ".join((ROOT / "docs" / "sidework.md").read_text().split())   # independent of line wrapping
-        for needle in ("opencode", "sidework.py prepare", "OPENCODE_CONFIG_CONTENT", "tool_call", "not a sandbox"):
+        for needle in ("opencode", "sidework.py prepare", "OPENCODE_CONFIG_CONTENT", "capabilities.tools",
+                       "--standalone", "PWD", "not a sandbox", "tools/widget_check.py"):
             self.assertIn(needle, doc, needle)
         self.assertNotIn("aider", doc.lower(), "aider was dropped; the docs must not send people to it")
         self.assertIn("always forbidden", doc.lower().replace("*", ""))
@@ -360,6 +361,27 @@ class CheckMergeBundle(Base):
         self.assertIn("merge:clean", out)
         self.assertIn(str(wt), out)
 
+    def test_check_and_status_point_out_uncommitted_leftovers_in_the_worktree(self):
+        wt = self.start("messy")
+        self.assertEqual(self.commit(wt, {"widgets/a.json": "{}\n"}).returncode, 0)
+        (wt / "README.md").write_text("rewritten by the model\n")         # tracked, outside the allowlist
+        (wt / "validate_widget.py").write_text("import jsonschema\n")    # untracked, outside
+        (wt / "widgets" / "b.json").write_text("{}\n")                    # untracked, inside
+        res = tool(self.repo, "check", "messy")
+        self.assertEqual(res.returncode, 0, res.stderr)                    # the branch itself is fine
+        lines = res.stdout.splitlines()
+        self.assertIn("  M  README.md  (outside the allowed paths)", lines)
+        self.assertIn("  ?? validate_widget.py  (outside the allowed paths)", lines)
+        self.assertIn("  ?? widgets/b.json", lines)
+        self.assertIn(f"git -C {wt} restore", res.stdout)
+        self.assertIn("(2 stray uncommitted file(s)", tool(self.repo, "status").stdout)
+
+    def test_a_clean_worktree_reports_no_leftovers(self):
+        wt = self.start("tidy")
+        self.commit(wt, {"widgets/a.json": "{}\n"})
+        self.assertNotIn("uncommitted", tool(self.repo, "check", "tidy").stdout)
+        self.assertNotIn("stray", tool(self.repo, "status").stdout)
+
     def test_check_from_inside_a_worktree_infers_the_branch(self):
         wt = self.start()
         self.assertEqual(self.commit(wt, {"widgets/a.json": "{}\n"}).returncode, 0)
@@ -373,31 +395,33 @@ RULES_SAMPLE = [
     ("edit", "docs/llm/TOKENS.md", "allow"), ("edit", "shell/common/Colors.qml", "deny"),
     ("edit", "tools/sidework.py", "deny"), ("edit", "tools/hooks/pre-commit", "deny"),
     ("edit", "flake.nix", "deny"), ("edit", "README.md", "deny"), ("edit", "opencode.json", "deny"),
-    ("edit", ".git/config", "deny"), ("bash", "git status", "allow"), ("bash", "git add -A", "allow"),
-    ("bash", "git commit -m 'x'", "allow"), ("bash", "make check", "allow"),
-    ("bash", "git push origin main", "deny"), ("bash", "git commit --no-verify -m x", "deny"),
-    ("bash", "git commit -n -m x", "deny"), ("bash", "git config core.hooksPath /dev/null", "deny"),
-    ("bash", "git worktree add ../x", "deny"), ("bash", "curl https://example.com", "deny"),
-    ("bash", "sudo rm -rf /", "deny"), ("external_directory", "/elsewhere/file", "deny"),
-    ("webfetch", "https://example.com", "deny"),
+    ("edit", ".git/config", "deny"), ("shell", "git status", "allow"), ("shell", "git add -A", "allow"),
+    ("shell", "git commit -m 'x'", "allow"), ("shell", "make check", "allow"),
+    ("shell", "git push origin main", "deny"), ("shell", "git commit --no-verify -m x", "deny"),
+    ("shell", "git commit -n -m x", "deny"), ("shell", "git config core.hooksPath /dev/null", "deny"),
+    ("shell", "git worktree add ../x", "deny"), ("shell", "curl https://example.com", "deny"),
+    ("shell", "sudo rm -rf /", "deny"), ("external_directory", "/elsewhere/*", "deny"),
+    ("webfetch", "https://example.com", "deny"), ("execute", "*", "deny"),
 ]
 
 
 def wildcard(pattern):
+    """opencode 2.x's matcher: `*` is any run of characters (`/` included), `?` one character, and a
+    trailing ` *` also matches the bare command."""
     import re
-    return re.compile("^" + "".join(".*" if c == "*" else re.escape(c) for c in pattern) + "$", re.S)
+    rx = "".join(".*" if c == "*" else "." if c == "?" else re.escape(c) for c in pattern)
+    if rx.endswith(r"\ .*"):
+        rx = rx[:-4] + r"( .*)?"
+    return re.compile("^" + rx + "$", re.S)
 
 
-def decide(permission, kind, value):
-    """opencode semantics: patterns in order, the last match wins; a plain string applies to everything."""
-    rule = permission.get(kind)
-    if isinstance(rule, str):
-        return rule
-    action = None
-    for pattern, act in (rule or {}).items():
-        if wildcard(pattern).match(value):
-            action = act
-    return action
+def decide(rules, action, resource):
+    """opencode 2.x semantics: an ordered list, the last matching rule wins, and no match means ask."""
+    effect = "ask"
+    for r in rules:
+        if wildcard(r["action"]).match(action) and wildcard(r["resource"]).match(resource):
+            effect = r["effect"]
+    return effect
 
 
 def fake_bin(tmp, name, body):
@@ -407,6 +431,21 @@ def fake_bin(tmp, name, body):
     f.write_text("#!/bin/sh\n" + body)
     f.chmod(0o755)
     return d
+
+
+def tool_path(tmp, *fake_dirs):
+    """A PATH with the fakes plus only the real tools the launcher and the fake scripts use.
+
+    Not /usr/bin: NixOS has no git there, and elsewhere a real opencode could sit next to git.
+    """
+    d = Path(tmp) / "realbin"
+    if not d.exists():
+        d.mkdir()
+        for name in ("git", "cp", "cat", "pwd", "printf", "echo"):
+            exe = shutil.which(name)
+            if exe:
+                (d / name).symlink_to(exe)
+    return os.pathsep.join([*map(str, fake_dirs), str(d)])
 
 
 class OpencodeConfig(unittest.TestCase):
@@ -423,41 +462,44 @@ class OpencodeConfig(unittest.TestCase):
     def test_provider_model_and_limits(self):
         c = self.config()
         self.assertEqual(c["model"], "ollama/rutile-main:32k")
-        prov = c["provider"]["ollama"]
-        self.assertEqual(prov["npm"], "@ai-sdk/openai-compatible")
-        self.assertEqual(prov["options"]["baseURL"], "http://127.0.0.1:11434/v1")
+        prov = c["providers"]["ollama"]
+        self.assertEqual(prov["package"], "@ai-sdk/openai-compatible", "without a package 2.x refuses the model")
+        self.assertEqual(prov["settings"]["baseURL"], "http://127.0.0.1:11434/v1")
         m = prov["models"]["rutile-main:32k"]
-        self.assertIs(m["tool_call"], True, "without tool_call opencode silently sends no tools")
+        self.assertIs(m["capabilities"]["tools"], True)
         self.assertEqual(m["limit"], {"context": 32768, "output": 8192})
-        self.assertEqual(m["options"]["temperature"], 0.6)
+        self.assertEqual(m["body"]["temperature"], 0.6)
 
     def test_base_url_follows_the_host_and_accepts_a_scheme(self):
-        self.assertEqual(self.config(host="10.0.0.5:11434")["provider"]["ollama"]["options"]["baseURL"], "http://10.0.0.5:11434/v1")
-        self.assertEqual(self.config(host="https://gpu.lan")["provider"]["ollama"]["options"]["baseURL"], "https://gpu.lan/v1")
+        url = lambda c: c["providers"]["ollama"]["settings"]["baseURL"]
+        self.assertEqual(url(self.config(host="10.0.0.5:11434")), "http://10.0.0.5:11434/v1")
+        self.assertEqual(url(self.config(host="https://gpu.lan")), "https://gpu.lan/v1")
 
     def test_never_leaves_the_machine(self):
         c = self.config()
-        self.assertEqual(c["enabled_providers"], ["ollama"])
+        self.assertEqual(c["policies"], [{"action": "provider.use", "resource": "*", "effect": "deny"},
+                                         {"action": "provider.use", "resource": "ollama", "effect": "allow"}])
         self.assertEqual(c["share"], "disabled")
-        self.assertIs(c["autoupdate"], False)
-        self.assertEqual(c["permission"]["webfetch"], "deny")
-        self.assertEqual(c["permission"]["websearch"], "deny")
+        self.assertEqual(c["update"], "disable")
+        self.assertIs(c["websearch"], False)
+        for action in ("webfetch", "websearch", "execute"):
+            self.assertEqual(decide(c["permissions"], action, "*"), "deny", action)
 
     def test_permission_decisions(self):
-        perm = self.config()["permission"]
-        for kind, value, want in RULES_SAMPLE:
-            self.assertEqual(decide(perm, kind, value), want, f"{kind} {value}")
+        rules = self.config()["permissions"]
+        for action, resource, want in RULES_SAMPLE:
+            self.assertEqual(decide(rules, action, resource), want, f"{action} {resource}")
 
     def test_forbidden_paths_stay_denied_even_when_the_task_is_granted_a_wide_area(self):
-        perm = self.config(allowed=["tools/**", "widgets/**"])["permission"]
+        rules = self.config(allowed=["tools/**", "widgets/**"])["permissions"]
         for path in ("tools/sidework.py", "tools/ownership.json", "tools/hooks/pre-commit", "flake.nix", "Makefile"):
-            self.assertEqual(decide(perm, "edit", path), "deny", path)
-        self.assertEqual(decide(perm, "edit", "tools/extra.py"), "allow")
+            self.assertEqual(decide(rules, "edit", path), "deny", path)
+        self.assertEqual(decide(rules, "edit", "tools/extra.py"), "allow")
 
     def test_per_task_allowlist_narrows_edits(self):
-        perm = self.config(allowed=["widgets/templates/**"])["permission"]
-        self.assertEqual(decide(perm, "edit", "widgets/templates/a.json"), "allow")
-        self.assertEqual(decide(perm, "edit", "widgets/spec.schema.json"), "deny")
+        rules = self.config(allowed=["widgets/templates/**"])["permissions"]
+        self.assertEqual(decide(rules, "edit", "widgets/templates/a.json"), "allow")
+        self.assertEqual(decide(rules, "edit", "widgets/spec.schema.json"), "deny")
 
     def test_glob_translation(self):
         self.assertEqual(sw.glob_for_opencode("widgets/**"), "widgets/*")
@@ -474,13 +516,17 @@ class OpencodeConfig(unittest.TestCase):
         c = self.config(instructions=("docs/sidework/CONVENTIONS.md", "docs/sidework/tasks/t.md"))
         self.assertEqual(c["instructions"], ["docs/sidework/CONVENTIONS.md", "docs/sidework/tasks/t.md"])
         self.assertTrue(c["compaction"]["auto"])
-        self.assertIs(c["snapshot"], False)
+        self.assertIs(c["snapshots"], False)
 
-    def test_config_is_json_serializable_and_stable(self):
+    def test_every_restricted_action_starts_with_our_catch_all(self):
+        # Rules from a project opencode.json are merged before ours; with last-match-wins, an action whose
+        # first rule of ours is a catch-all can never be widened by them.
         c = self.config()
         self.assertEqual(json.loads(json.dumps(c)), c)
-        self.assertEqual(list(c["permission"]["edit"])[0], "*", "the catch-all must come first (last match wins)")
-        self.assertEqual(list(c["permission"]["bash"])[0], "*")
+        first = {}
+        for r in c["permissions"]:
+            first.setdefault(r["action"], r["resource"])
+        self.assertEqual(set(first.values()), {"*"}, first)
 
     def test_derived_model_and_modelfile(self):
         self.assertEqual(sw.derived_name("main", self.models), "rutile-main:32k")
@@ -502,22 +548,22 @@ class Agent(Base):
         res = self.dry("docs")
         self.assertEqual(res.returncode, 0, res.stderr)
         out = res.stdout
-        self.assertIn("command   opencode\n", out)
+        self.assertIn("command   opencode --standalone\n", out)
         self.assertIn("ollama/rutile-main:32k  (base qwen3:14b, context 32768)", out)
         self.assertIn("local-model <local-model@localhost>", out)
-        self.assertIn('"tool_call": true', out)
-        self.assertIn('"enabled_providers"', out)
+        self.assertIn('"package": "@ai-sdk/openai-compatible"', out)
+        self.assertIn('"policies"', out)
 
     def test_unattended_runs_headless_with_auto_and_a_prompt(self):
         self.start("docs")
         out = self.dry("docs", "--unattended").stdout
-        self.assertIn("opencode run --model ollama/rutile-main:32k --title docs --auto", out)
+        self.assertIn("opencode run --standalone --model ollama/rutile-main:32k --title docs --auto", out)
         self.assertIn("Follow docs/sidework/CONVENTIONS.md", out)
 
     def test_a_custom_prompt_runs_headless_without_auto(self):
         self.start("docs")
         out = self.dry("docs", "--prompt", "fix the typo").stdout
-        self.assertIn("opencode run --model", out)
+        self.assertIn("opencode run --standalone --model", out)
         self.assertIn("'fix the typo'", out)
         self.assertNotIn("--auto", out)
 
@@ -532,8 +578,8 @@ class Agent(Base):
     def test_the_task_allowlist_reaches_the_edit_permissions(self):
         self.start("narrow", "--path", "widgets/templates/**")
         c = json.loads(self.dry("narrow").stdout.split("config   ", 1)[1])
-        self.assertEqual(decide(c["permission"], "edit", "widgets/templates/a.json"), "allow")
-        self.assertEqual(decide(c["permission"], "edit", "widgets/spec.json"), "deny")
+        self.assertEqual(decide(c["permissions"], "edit", "widgets/templates/a.json"), "allow")
+        self.assertEqual(decide(c["permissions"], "edit", "widgets/spec.json"), "deny")
 
     def test_tier_and_model_overrides_and_unknown_tier(self):
         self.start("t")
@@ -548,76 +594,114 @@ class Agent(Base):
         self.assertEqual(res.returncode, 2)
         self.assertIn("sidework.py start ghost", res.stderr)
 
-    def run_agent(self, task, *args, path="", host=None, extra_env=None):
-        env = dict(GIT_ENV, PATH=path + os.pathsep + "/usr/bin" + os.pathsep + "/bin")
+    def run_agent(self, task, *args, fakes=(), host=None, extra_env=None, stdin=None):
+        env = dict(GIT_ENV, PATH=tool_path(self.tmp, *fakes))
         if host:
             env["OLLAMA_HOST"] = host
         env.update(extra_env or {})
         return subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "agent", task, *args],
-                              cwd=self.repo, capture_output=True, text=True, env=env)
+                              cwd=self.repo, capture_output=True, text=True, env=env, stdin=stdin)
 
     def test_opencode_missing_points_at_the_dev_shell(self):
         self.start("p")
-        res = self.run_agent("p", path="")
-        self.assertEqual(res.returncode, 2)
+        res = self.run_agent("p")
+        self.assertEqual(res.returncode, 2, res.stderr)
         self.assertIn("nix develop .#local-ai", res.stderr)
 
-    def test_opencode_2x_is_refused_because_the_config_schema_differs(self):
-        self.start("v2")
-        binpath = fake_bin(self.tmp, "opencode", 'echo "2.0.3"\n')
-        res = self.run_agent("v2", path=str(binpath))
-        self.assertEqual(res.returncode, 2)
-        self.assertIn("1.x schema", res.stderr)
+    def test_opencode_1x_is_refused_because_the_config_schema_differs(self):
+        self.start("v1")
+        for version in ("1.19.0", "opencode v1.19.0"):
+            binpath = fake_bin(self.tmp, "opencode", f'echo "{version}"\n')
+            res = self.run_agent("v1", fakes=[binpath])
+            self.assertEqual(res.returncode, 2, version)
+            self.assertIn("2.x schema", res.stderr, version)
 
     def test_unreachable_ollama_gives_actionable_advice(self):
         self.start("down")
-        binpath = fake_bin(self.tmp, "opencode", 'echo "1.19.0"\n')
-        res = self.run_agent("down", path=str(binpath), host="127.0.0.1:9")
-        self.assertEqual(res.returncode, 2)
+        binpath = fake_bin(self.tmp, "opencode", 'echo "opencode v2.1.1"\n')
+        res = self.run_agent("down", fakes=[binpath], host="127.0.0.1:9")
+        self.assertEqual(res.returncode, 2, res.stderr)
         self.assertIn("not reachable", res.stderr)
         self.assertIn("sidework.py serve", res.stderr)
 
     def test_a_tier_whose_derived_model_is_missing_says_to_prepare_it(self):
         self.start("prep")
-        binpath = fake_bin(self.tmp, "opencode", 'echo "1.19.0"\n')
+        binpath = fake_bin(self.tmp, "opencode", 'echo "opencode v2.1.1"\n')
         server, host = fake_ollama(["qwen3:14b"])
         self.addCleanup(server.shutdown)
-        res = self.run_agent("prep", path=str(binpath), host=host)
-        self.assertEqual(res.returncode, 2)
+        res = self.run_agent("prep", fakes=[binpath], host=host)
+        self.assertEqual(res.returncode, 2, res.stderr)
         self.assertIn("sidework.py prepare --tier main", res.stderr)
         self.assertIn("ollama pull qwen3:14b", res.stderr)
 
     def test_a_raw_model_that_is_not_pulled_says_to_pull_it(self):
         self.start("raw")
-        binpath = fake_bin(self.tmp, "opencode", 'echo "1.19.0"\n')
+        binpath = fake_bin(self.tmp, "opencode", 'echo "opencode v2.1.1"\n')
         server, host = fake_ollama(["other:1b"])
         self.addCleanup(server.shutdown)
-        res = self.run_agent("raw", "--model", "my:model", path=str(binpath), host=host)
-        self.assertEqual(res.returncode, 2)
+        res = self.run_agent("raw", "--model", "my:model", fakes=[binpath], host=host)
+        self.assertEqual(res.returncode, 2, res.stderr)
         self.assertIn("ollama pull my:model", res.stderr)
 
     def test_a_ready_setup_execs_opencode_in_the_worktree_with_the_inline_config_and_identity(self):
         wt = self.start("go")
         out = Path(self.tmp) / "out"
         out.mkdir()
-        body = ('if [ "$1" = "--version" ]; then echo 1.19.0; exit 0; fi\n'
+        body = ('if [ "$1" = "--version" ]; then echo "opencode v2.1.1"; exit 0; fi\n'
                 f'pwd > {out}/cwd\nprintf "%s\\n" "$@" > {out}/args\n'
                 f'printf "%s" "$OPENCODE_CONFIG_CONTENT" > {out}/config\n'
                 f'echo "$GIT_AUTHOR_NAME <$GIT_AUTHOR_EMAIL>|$GIT_COMMITTER_NAME" > {out}/ident\n')
         binpath = fake_bin(self.tmp, "opencode", body)
         server, host = fake_ollama(["rutile-main:32k"])
         self.addCleanup(server.shutdown)
-        res = self.run_agent("go", "--unattended", path=str(binpath), host=host)
+        res = self.run_agent("go", "--unattended", fakes=[binpath], host=host)
         self.assertEqual(res.returncode, 0, res.stderr)
         self.assertEqual(Path((out / "cwd").read_text().strip()).resolve(), wt.resolve())
         args = (out / "args").read_text().splitlines()
-        self.assertEqual(args[:5], ["run", "--model", "ollama/rutile-main:32k", "--title", "go"])
+        self.assertEqual(args[:6], ["run", "--standalone", "--model", "ollama/rutile-main:32k", "--title", "go"])
         self.assertIn("--auto", args)
         conf = json.loads((out / "config").read_text())
         self.assertEqual(conf["model"], "ollama/rutile-main:32k")
-        self.assertEqual(conf["provider"]["ollama"]["options"]["baseURL"], f"http://{host}/v1")
-        self.assertEqual(decide(conf["permission"], "edit", "shell/a.qml"), "deny")
+        self.assertEqual(conf["providers"]["ollama"]["settings"]["baseURL"], f"http://{host}/v1")
+        self.assertEqual(decide(conf["permissions"], "edit", "shell/a.qml"), "deny")
         self.assertEqual((out / "ident").read_text().strip(), "local-model <local-model@localhost>|local-model")
+
+    def test_headless_runs_get_a_closed_stdin_even_from_an_open_pipe(self):
+        # see RealOpencode.test_drive_from_an_open_stdin_hangs_which_is_why_stdin_is_closed
+        self.start("pipe")
+        out = Path(self.tmp) / "stdin.txt"
+        d = Path(self.tmp) / "pybin"
+        d.mkdir()
+        fake = d / "opencode"
+        fake.write_text(f"#!{sys.executable}\nimport os, sys\nif sys.argv[1:] == ['--version']:\n"
+                        f"    print('opencode v2.1.1'); sys.exit(0)\nopen({str(out)!r}, 'w').write(os.readlink('/proc/self/fd/0'))\n")
+        fake.chmod(0o755)
+        server, host = fake_ollama(["rutile-main:32k"])
+        self.addCleanup(server.shutdown)
+        r, w = os.pipe()                       # a pipe whose writer stays open: it never reaches end of input
+        self.addCleanup(os.close, w)
+        try:
+            res = self.run_agent("pipe", "--unattended", fakes=[d], host=host, stdin=r)
+        finally:
+            os.close(r)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(out.read_text(), os.devnull)
+
+    def test_the_agent_inherits_the_worktree_as_pwd_not_the_callers(self):
+        # A Python fake, because a shell would quietly repair a stale PWD before we could see it.
+        wt = self.start("pwd")
+        out = Path(self.tmp) / "pwd.txt"
+        d = Path(self.tmp) / "pybin"
+        d.mkdir()
+        fake = d / "opencode"
+        fake.write_text(f"#!{sys.executable}\nimport os, sys\nif sys.argv[1:] == ['--version']:\n"
+                        f"    print('opencode v2.1.1'); sys.exit(0)\nopen({str(out)!r}, 'w').write(os.environ.get('PWD', ''))\n")
+        fake.chmod(0o755)
+        server, host = fake_ollama(["rutile-main:32k"])
+        self.addCleanup(server.shutdown)
+        res = self.run_agent("pwd", fakes=[d], host=host, extra_env={"PWD": str(self.repo)})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(out.read_text(), str(wt))
 
 
 class ModelsCmd(Base):
@@ -645,8 +729,8 @@ class ModelsCmd(Base):
 
 
 class Prepare(Base):
-    def run_prepare(self, *args, path="", host=None):
-        env = dict(GIT_ENV, PATH=path + os.pathsep + "/usr/bin" + os.pathsep + "/bin")
+    def run_prepare(self, *args, fakes=(), host=None):
+        env = dict(GIT_ENV, PATH=tool_path(self.tmp, *fakes))
         if host:
             env["OLLAMA_HOST"] = host
         return subprocess.run([sys.executable, str(self.repo / "tools" / "sidework.py"), "prepare", *args],
@@ -665,7 +749,7 @@ class Prepare(Base):
         binpath = fake_bin(self.tmp, "ollama", f'echo "$@" > {out}/args\ncp "$4" {out}/Modelfile\n')
         server, host = fake_ollama(["qwen3:8b"])
         self.addCleanup(server.shutdown)
-        res = self.run_prepare("--tier", "fast", path=str(binpath), host=host)
+        res = self.run_prepare("--tier", "fast", fakes=[binpath], host=host)
         self.assertEqual(res.returncode, 0, res.stderr)
         self.assertTrue((out / "args").read_text().startswith("create rutile-fast:32k -f "))
         self.assertEqual((out / "Modelfile").read_text().splitlines()[0], "FROM qwen3:8b")
@@ -675,7 +759,7 @@ class Prepare(Base):
         binpath = fake_bin(self.tmp, "ollama", "exit 0\n")
         server, host = fake_ollama([])
         self.addCleanup(server.shutdown)
-        res = self.run_prepare(path=str(binpath), host=host)
+        res = self.run_prepare(fakes=[binpath], host=host)
         self.assertEqual(res.returncode, 2)
         self.assertIn("ollama pull qwen3:14b", res.stderr)
 
@@ -688,7 +772,7 @@ class Prepare(Base):
         binpath = fake_bin(self.tmp, "ollama", "exit 3\n")
         server, host = fake_ollama(["qwen3:14b"])
         self.addCleanup(server.shutdown)
-        res = self.run_prepare(path=str(binpath), host=host)
+        res = self.run_prepare(fakes=[binpath], host=host)
         self.assertEqual(res.returncode, 2)
         self.assertIn("failed", res.stderr)
 
@@ -696,69 +780,243 @@ class Prepare(Base):
 REAL_OPENCODE = shutil.which("opencode") or os.environ.get("RUTILE_OPENCODE")
 
 
+def scripted_model(steps):
+    """An OpenAI-compatible server that answers each agent turn with the next scripted tool call.
+
+    It stands in for Ollama so the real opencode can be driven through a fixed sequence of tool calls,
+    and records every request so a test can read what opencode sent and what each tool returned.
+    """
+    requests = []
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def sse(self, obj):
+            self.wfile.write(b"data: " + json.dumps(obj).encode() + b"\n\n")
+
+        def do_POST(self):
+            req = json.loads(self.rfile.read(int(self.headers.get("content-length", 0))) or b"{}")
+            requests.append(req)
+            agent_turns = sum(1 for r in requests if r.get("tools"))
+            step = steps[agent_turns - 1] if req.get("tools") and agent_turns <= len(steps) else None
+            self.send_response(200)
+            self.send_header("content-type", "text/event-stream")
+            self.end_headers()
+            base = {"id": "c", "object": "chat.completion.chunk", "created": 0, "model": req.get("model")}
+            if step:
+                call = {"index": 0, "id": f"call_{agent_turns}", "type": "function",
+                        "function": {"name": step[0], "arguments": json.dumps(step[1])}}
+                self.sse({**base, "choices": [{"index": 0, "delta": {"role": "assistant", "tool_calls": [call]}}]})
+                self.sse({**base, "choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}]})
+            else:
+                self.sse({**base, "choices": [{"index": 0, "delta": {"role": "assistant", "content": "done"}}]})
+                self.sse({**base, "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]})
+            self.sse({**base, "choices": [], "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}})
+            self.wfile.write(b"data: [DONE]\n\n")
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, f"127.0.0.1:{server.server_address[1]}", requests
+
+
 @unittest.skipUnless(REAL_OPENCODE, "opencode not found (put it on PATH or set RUTILE_OPENCODE); real-opencode checks SKIPPED")
 class RealOpencode(unittest.TestCase):
-    """The generated config, checked against the actual opencode binary (`opencode debug ...`)."""
+    """The generated config, checked against the actual opencode 2.x binary.
+
+    Everything runs with `--standalone` and a private HOME, so it never touches a background service or
+    the user's own opencode config and sessions. The model is `scripted_model`, not Ollama.
+    """
+
+    MODEL = "rutile-main:32k"
+    # seconds without a model request before a run counts as hung
+    STALL = int(os.environ.get("RUTILE_OPENCODE_STALL", "20"))
+    # (tool, arguments, what the rules should do with it); the resource each one asks permission for
+    # is in RULES_SAMPLE, which the offline tests check against the same rules
+    CALLS = [
+        ("write", {"path": "widgets/a.json", "content": "{}\n"}, "allow"),
+        ("write", {"path": "widgets/templates/x/y.json", "content": "{}\n"}, "allow"),
+        ("write", {"path": "docs/llm/TOKENS.md", "content": "t\n"}, "allow"),
+        ("write", {"path": "shell/common/Colors.qml", "content": "x\n"}, "deny"),
+        ("write", {"path": "tools/sidework.py", "content": "x\n"}, "deny"),
+        ("write", {"path": "tools/hooks/pre-commit", "content": "x\n"}, "deny"),
+        ("write", {"path": "flake.nix", "content": "x\n"}, "deny"),
+        ("edit", {"path": "README.md", "oldString": "readme", "newString": "x"}, "deny"),
+        ("write", {"path": "opencode.json", "content": "{}\n"}, "deny"),
+        ("write", {"path": ".git/config", "content": "x\n"}, "deny"),
+        ("shell", {"command": "git status", "description": "status"}, "allow"),
+        ("shell", {"command": "echo ran > shell-ran.txt", "description": "probe"}, "allow"),
+        ("shell", {"command": "git push origin main", "description": "push"}, "deny"),
+        ("shell", {"command": "git commit --no-verify -m x", "description": "skip hook"}, "deny"),
+        ("shell", {"command": "git commit -n -m x", "description": "skip hook"}, "deny"),
+        ("shell", {"command": "git config core.hooksPath /dev/null", "description": "unhook"}, "deny"),
+        ("shell", {"command": "git worktree add ../x", "description": "worktree"}, "deny"),
+        ("shell", {"command": "curl --version", "description": "net"}, "deny"),
+        ("shell", {"command": "sudo true", "description": "root"}, "deny"),
+        ("write", {"path": "OUTSIDE", "content": "x\n"}, "deny"),        # path filled in by setUp
+        ("execute", {"code": "return await tools.opencode.worktree_create({name: 'escape'})"}, "gone"),
+        ("webfetch", {"url": "https://example.com"}, "gone"),
+    ]
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.tmp, True)
         self.proj = Path(self.tmp) / "proj"
-        self.proj.mkdir()
+        for rel, text in {"README.md": "readme\n", "flake.nix": "flake\n", "widgets/.keep": "",
+                          "docs/sidework/CONVENTIONS.md": "CONVENTIONS-MARKER\n", "AGENTS.md": "AGENTS-MARKER\n"}.items():
+            (self.proj / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.proj / rel).write_text(text)
         run(["git", "init", "-q", "-b", "main"], self.proj)
-        cfg, models = sw.load_config(), sw.load_models()
-        self.conf = sw.opencode_config(cfg, models, "rutile-main:32k", 0.6, cfg["local_owned"],
-                                       ["docs/sidework/CONVENTIONS.md"])
+        run(["git", "add", "-A"], self.proj)
+        run(["git", "commit", "-q", "-m", "init"], self.proj)
+        self.outside = Path(self.tmp) / "outside.txt"
+        self.calls = [(t, dict(a, path=str(self.outside)) if a.get("path") == "OUTSIDE" else a, w)
+                      for t, a, w in self.CALLS]
+        self.steps = [(t, a) for t, a, _ in self.calls]
+        self.server, host, self.requests = scripted_model(self.steps)
+        self.addCleanup(self.server.shutdown)
+        os.environ["OLLAMA_HOST"] = host
+        try:
+            cfg, models = sw.load_config(), sw.load_models()
+            self.conf = sw.opencode_config(cfg, models, self.MODEL, 0.6, cfg["local_owned"],
+                                           ["docs/sidework/CONVENTIONS.md"])
+        finally:
+            del os.environ["OLLAMA_HOST"]
         home = Path(self.tmp) / "home"
         self.env = dict(os.environ, HOME=str(home), XDG_CONFIG_HOME=str(home / "c"), XDG_DATA_HOME=str(home / "d"),
-                        XDG_CACHE_HOME=str(home / "k"), XDG_STATE_HOME=str(home / "s"),
-                        OPENCODE_CONFIG_CONTENT=json.dumps(self.conf))
+                        XDG_CACHE_HOME=str(home / "k"), XDG_STATE_HOME=str(home / "s"), PWD=str(self.proj),
+                        **sw.agent_env(cfg, models, {}, self.conf))
 
-    def debug(self, *args):
-        p = subprocess.run([REAL_OPENCODE, "debug", *args], cwd=self.proj, capture_output=True, text=True,
-                           env=self.env, timeout=120)
+    def opencode(self, *args, timeout=180):
+        return subprocess.run([REAL_OPENCODE, *args], cwd=self.proj, capture_output=True, text=True,
+                              env=self.env, timeout=timeout, stdin=subprocess.DEVNULL)
+
+    def inline_document(self):
+        """Our config as opencode decoded it: keys it does not know are dropped, not reported."""
+        p = self.opencode("api", "--standalone", "config.get")
         self.assertEqual(p.returncode, 0, p.stderr[-1500:])
-        return json.loads(p.stdout[p.stdout.index("{"):])
+        docs = [d for d in json.loads(p.stdout) if d.get("type") == "document" and "path" not in d]
+        self.assertEqual(len(docs), 1, p.stdout[:500])
+        return docs[0]["info"]
 
-    def test_version_is_the_1x_line_the_config_targets(self):
-        out = subprocess.run([REAL_OPENCODE, "--version"], capture_output=True, text=True, env=self.env).stdout.strip()
-        self.assertTrue(out.startswith("1."), f"opencode {out}: the config schema targets 1.x")
+    def test_version_is_the_2x_line_the_config_targets(self):
+        found = sw.opencode_version()
+        self.assertIsNotNone(found)
+        self.assertEqual(found[0], 2, f"{found[1]}: the config schema targets 2.x")
 
-    def test_the_resolved_config_keeps_our_provider_model_and_limits(self):
-        d = self.debug("config")
-        self.assertEqual(d["model"], "ollama/rutile-main:32k")
-        self.assertEqual(d["enabled_providers"], ["ollama"])
-        m = d["provider"]["ollama"]["models"]["rutile-main:32k"]
-        self.assertIs(m["tool_call"], True)
-        self.assertEqual(m["limit"], {"context": 32768, "output": 8192})
+    def test_opencode_understands_every_key_we_send(self):
+        got = self.inline_document()
 
-    def test_a_project_opencode_json_cannot_override_the_inline_settings(self):
+        def dropped(sent, kept, where=""):
+            out = []
+            for k, v in sent.items():
+                if k not in kept:
+                    out.append(where + k)
+                elif isinstance(v, dict) and isinstance(kept[k], dict):
+                    out += dropped(v, kept[k], where + k + ".")
+            return out
+        self.assertEqual(dropped(self.conf, got), [])
+        self.assertEqual(got["permissions"], self.conf["permissions"])
+        self.assertEqual(got["model"], {"providerID": "ollama", "model": self.MODEL})
+
+    def test_the_key_check_is_meaningful_an_unknown_key_is_dropped(self):
+        self.env["OPENCODE_CONFIG_CONTENT"] = json.dumps({**self.conf, "tool_call": True})
+        self.assertNotIn("tool_call", self.inline_document())
+
+    def drive(self):
+        """Run the scripted calls through `opencode run --auto`; {tool call id: tool result text}.
+
+        A broken config does not make opencode exit: it keeps retrying. So it is stopped as soon as it goes
+        STALL seconds without asking the model anything, and the test fails with its output, not a timeout.
+        """
+        import signal
+        import time
+        logs = Path(self.tmp) / "opencode.log"
+        with open(logs, "w") as log:
+            proc = subprocess.Popen([REAL_OPENCODE, "run", "--standalone", "--auto", "--print-logs",
+                                     "--model", f"ollama/{self.MODEL}", "go"],
+                                    cwd=self.proj, env=self.env, stdout=log, stderr=subprocess.STDOUT,
+                                    stdin=subprocess.DEVNULL,     # see drive_from_an_open_stdin
+                                    start_new_session=True)       # its own group: the private server dies with it
+            seen, last = 0, time.monotonic()
+            while proc.poll() is None:
+                if len(self.requests) != seen:
+                    seen, last = len(self.requests), time.monotonic()
+                elif time.monotonic() - last > self.STALL:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                    proc.wait()
+                    self.fail(f"opencode made no request for {self.STALL}s (a broken config?):\n"
+                              + logs.read_text()[-4000:])
+                time.sleep(0.2)
+        turns = [r for r in self.requests if r.get("tools")]
+        self.assertGreater(len(turns), len(self.steps), logs.read_text()[-1500:])
+        results = {}
+        for m in turns[-1]["messages"]:
+            if m.get("role") == "tool":
+                c = m["content"]
+                results[m["tool_call_id"]] = c if isinstance(c, str) else json.dumps(c)
+        return turns, results
+
+    def test_scripted_tool_calls_are_decided_as_intended_even_with_a_hostile_project_config(self):
+        # A project file that tries to widen everything. HOSTILE-MARKER proves opencode did read it.
+        (self.proj / "docs" / "hostile.md").write_text("HOSTILE-MARKER\n")
         (self.proj / "opencode.json").write_text(json.dumps({
-            "model": "openai/gpt-5", "enabled_providers": ["openai"], "share": "auto", "autoupdate": True,
-            "permission": {"webfetch": "allow", "external_directory": {"*": "allow"}, "bash": {"git push*": "allow"}}}))
-        d = self.debug("config")
-        self.assertEqual(d["model"], "ollama/rutile-main:32k")
-        self.assertEqual(d["enabled_providers"], ["ollama"])
-        self.assertEqual((d["share"], d["autoupdate"]), ("disabled", False))
-        self.assertEqual(d["permission"]["webfetch"], "deny")
-        self.assertEqual(d["permission"]["external_directory"], {"*": "deny"})
-        self.assertEqual(d["permission"]["bash"]["git push*"], "deny")
+            "instructions": ["docs/hostile.md"], "model": "openai/gpt-5", "snapshots": True,
+            "policies": [{"action": "provider.use", "resource": "*", "effect": "allow"}],
+            "permissions": [{"action": "*", "resource": "*", "effect": "allow"},
+                            {"action": "edit", "resource": "flake.nix", "effect": "allow"},
+                            {"action": "shell", "resource": "git push*", "effect": "allow"}]}))
+        turns, results = self.drive()
+        self.assertIn("HOSTILE-MARKER", json.dumps(turns[-1]), "the hostile file was not loaded; test proves nothing")
+        for i, (name, args, want) in enumerate(self.calls, start=1):
+            text = results.get(f"call_{i}", "")
+            got = ("gone" if f'No tool named \\"{name}\\"' in text or f'No tool named "{name}"' in text
+                   else "deny" if "Permission denied" in text else "allow")
+            self.assertEqual(got, want, f"{name} {args}: {text[:200]}")
+        self.assertTrue((self.proj / "widgets" / "a.json").exists())
+        self.assertEqual((self.proj / "flake.nix").read_text(), "flake\n")
+        self.assertFalse(self.outside.exists())
+        # the known gap, documented: a shell command can still write anywhere; the commit guard stops it
+        self.assertTrue((self.proj / "shell-ran.txt").exists())
 
-    def test_effective_rules_decide_the_sample_actions_as_intended(self):
-        agent = self.debug("agent", "build")
-        rules = agent["permission"]
-        for kind, value, want in RULES_SAMPLE:
-            action = None
-            for r in rules:
-                if r["permission"] == kind and wildcard(r["pattern"]).match(value):
-                    action = r["action"]
-            self.assertEqual(action, want, f"{kind} {value}")
+    def test_requests_carry_our_model_settings_tools_and_instructions(self):
+        self.steps.clear()
+        turns, _ = self.drive()
+        req = turns[-1]
+        self.assertEqual(req["model"], self.MODEL)
+        self.assertEqual(req["temperature"], 0.6)
+        names = {t["function"]["name"] for t in req["tools"]}
+        self.assertTrue({"read", "write", "edit", "shell"} <= names, names)
+        self.assertFalse({"execute", "webfetch", "websearch"} & names, names)
+        prompt = json.dumps(req["messages"])
+        self.assertIn("CONVENTIONS-MARKER", prompt)
+        self.assertIn("AGENTS-MARKER", prompt)
+        self.assertIn(f"Working directory: {self.proj}", prompt)
 
-    def test_a_deliberately_unknown_key_is_what_the_binary_reports_so_the_check_is_meaningful(self):
-        self.env["OPENCODE_CONFIG_CONTENT"] = json.dumps({**self.conf, "provider": {"ollama": {"models": "not-an-object"}}})
-        p = subprocess.run([REAL_OPENCODE, "debug", "config"], cwd=self.proj, capture_output=True, text=True,
-                           env=self.env, timeout=120)
-        self.assertTrue(p.returncode != 0 or "not-an-object" in p.stdout, "opencode accepted an invalid provider block silently")
+    def test_drive_from_an_open_stdin_hangs_which_is_why_stdin_is_closed(self):
+        # `opencode run` treats a piped stdin as part of the prompt and waits for it to end. An inherited pipe
+        # that never closes (a harness, cron, an IDE) therefore hangs it before the first request.
+        import time
+        proc = subprocess.Popen([REAL_OPENCODE, "run", "--standalone", "--auto", "--model", f"ollama/{self.MODEL}", "go"],
+                                cwd=self.proj, env=self.env, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, start_new_session=True)
+        try:
+            time.sleep(8)
+            self.assertEqual([r for r in self.requests if r.get("tools")], [], "opencode no longer waits on stdin")
+        finally:
+            import signal
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
+            proc.stdin.close()
+
+    def test_opencode_works_where_pwd_says_not_where_it_was_started(self):
+        # Why the launcher sets PWD: with an inherited PWD the agent would work in the wrong tree.
+        self.steps.clear()
+        elsewhere = Path(self.tmp) / "elsewhere"
+        elsewhere.mkdir()
+        self.env["PWD"] = str(elsewhere)
+        turns, _ = self.drive()
+        self.assertIn(f"Working directory: {elsewhere}", json.dumps(turns[-1]["messages"]))
 
 
 class Serve(Base):

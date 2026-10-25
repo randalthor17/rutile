@@ -34,12 +34,15 @@ Unreleased. There is no shell UI yet: what exists is the foundation and the firs
 | Components: Surface, StateLayer, Icon, Button, IconButton | done, in the gallery |
 | Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
 | Remaining components, EditableGrid, shell, widgets, settings, distro | not started (see plan) |
-| Local-model side-work tooling (opencode on Ollama, ownership guard) | built and tested; **not yet tried on the GPU** |
+| Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
+| `tools/widget_check.py` (widget schema and widget checker, stdlib) | done; the acceptance check of the widget tasks |
+| First local-model trial (`local/widget-schema`) | ran on the maintainer's GPU; output fails the brief, **not merged** (see plan S2) |
 
 Verified, and where: logic and rendering are tested offscreen on Qt 6.4 (what Ubuntu ships) and on Qt 6.12
 (PySide6), plus the real OpenGL scene graph under Xvfb and Mesa. The maintainer's machine (NixOS, Qt 6.11.2)
-ran the suite and the gallery. **Not verified:** how the gallery looks in a real session to the maintainer,
-ROCm on the RX 9060 XT, anything about the local models' real behavior, and every Phase 2 onward item.
+ran the suite and the gallery, and (October 2026) the opencode 2.1.1 checks and the first local-model trial.
+**Not verified:** how the gallery looks in a real session to the maintainer, whether the trial ran fully on the GPU
+(ROCm), the opencode TUI (only `opencode run` is driven by tests), and every Phase 2 onward item.
 
 Known visual gaps in the components: no ripple, no elevation shadow (elevated buttons are faint on dark
 surfaces), no focus ring. See `docs/components.md`.
@@ -48,7 +51,9 @@ surfaces), no focus ring. See `docs/components.md`.
 
 1. The maintainer reviews the gallery look and picks the next component batch: Switch, Slider and
    ProgressBar (Quick Settings needs them) or the Googlebook signature pieces (ShapeMorph, GeminiGlow).
-2. Trial the local model on one bounded task (`widget-schema` is the suggested first) and judge the setup.
+2. Rerun the `widget-schema` trial with the new tooling: rebase `local/widget-schema` on main, clear its stray
+   files (`sidework.py check widget-schema` lists them), run `sidework.py agent widget-schema`, and judge it with
+   `python3 tools/widget_check.py`. Merge only when that passes; Claude then reviews and adds tests.
 3. Finish the component kit (plan item 1.5), then the shared EditableGrid (1.6), then Phase 2.
 
 ## 3. Resume in five minutes
@@ -93,7 +98,8 @@ skip means that tool was missing, not that the behavior was checked.
 - **Ask before changing the plan.** Decisions are in `docs/DECISIONS.md`; reverse one only with the reason.
 - **Releases:** a release-tag-worthy commit gets a version tag and a git bundle given to the maintainer. Other
   commits are untagged; they still need a bundle to reach the maintainer, named `rutile-dev-<shortsha>.bundle`.
-  Never move or reuse a tag the maintainer already has.
+  Never move or reuse a tag the maintainer already has. **Exception:** when working directly in the maintainer's
+  checkout (Claude Code on their machine), just commit; no bundle is needed (the maintainer's instruction).
 - **Record progress** in `docs/PLAN.md` and `CHANGELOG.md`, and in memory if you have it, in the same session.
 
 ### Release protocol
@@ -146,7 +152,8 @@ generate token JSON from the vendored Kotlin sources; `tools/gen_qml.py` generat
 `tools/palette.py` renders and validates `palette.json`; `tools/qtws.py` builds the Qt workspace and runs
 tests, lint, GPU tests and gallery renders; `tools/fontconf.py` writes the dev shell's fontconfig;
 `tools/otinfo.py` reads font names and axes; `tools/lint_hardcoded.py` enforces the no-hardcoded-values rule;
-`tools/sidework.py` runs the local-model workflow.
+`tools/sidework.py` runs the local-model workflow; `tools/widget_check.py` checks the widget schema and widget files; `tools/llm_docs_check.py` checks
+the LLM reference documents (task `llm-docs`) against the QML source.
 
 ## 7. Environment
 
@@ -164,7 +171,8 @@ installs what is needed and prints the exports. What it provides, and why each p
 - Qt 6.4 tools (`qmltestrunner`, `qmllint`): the baseline run. Qt 6.4 lacks `font.variableAxes`.
 - PySide6 via pip: a **modern Qt** (6.12) for `tools/dev/pyside_qml.py`. It found problems 6.4 hides.
 - Xvfb and Mesa: the **real OpenGL scene graph** headless. The software renderer ignores `renderType`, which hid a bug.
-- matugen 4.2.0, the two fonts, `materialyoucolor`, and the real opencode 1.x binary: so tests check the real tools.
+- matugen 4.2.0, the two fonts and `materialyoucolor`, so tests check the real tools. Not opencode: npm's
+  `opencode-ai` stops at 1.x, so the real-opencode tests skip there unless `RUTILE_OPENCODE` names a 2.x binary.
 - `nix-bin` for evaluating the flake (`tools/dev/eval_flake.sh`); it cannot build, only evaluate.
 
 ### Environment variables
@@ -176,10 +184,11 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_MATUGEN` | tests | matugen binary when it is not on `PATH` |
 | `RUTILE_FONT_DIRS` | tests, `tools/fontconf.py`, flake | font directories; the font tests run only if they find the real files |
 | `RUTILE_OPENCODE` | tests | opencode binary for the real-config checks |
+| `RUTILE_OPENCODE_STALL` | tests | seconds without a model request before a real-opencode run counts as hung (default 20) |
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
-| `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config that outranks a project file |
+| `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config, merged after any project file |
 
 ## 8. Resume prompt for a new chat
 
@@ -195,6 +204,7 @@ A different AI or person can use the same instruction. Everything needed is in t
 - How does the gallery look in a real session, compared with the Googlebook references? (Ripple, shadows and the
   focus ring are deliberately not done yet.)
 - Which component batch next: Switch/Slider/ProgressBar, or ShapeMorph/GeminiGlow?
-- Trial the local-model line on `widget-schema`? ROCm on the 9060 XT still needs checking (`ollama ps`).
+- After the `widget-schema` rerun: is the local line worth keeping, and on which tier? ROCm on the 9060 XT still
+  needs checking (`ollama ps` while a model is loaded).
 - Plan item 0.2: Googlebook screenshots of Quick Settings, the launcher and Settings are still missing.
 - Plan item 1.1b: default seed color and scheme type, chosen against the references.

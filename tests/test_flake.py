@@ -74,6 +74,16 @@ class FlakeShape(unittest.TestCase):
         for heavy in ("ollama", "opencode"):
             self.assertNotIn(heavy, default_part, f"{heavy} must not be in the everyday shell")
 
+    def test_claude_code_is_the_only_unfree_package_allowed(self):
+        # pkgs.claude-code straight from legacyPackages fails to evaluate (unfree), which broke
+        # `nix develop .#local-ai`; allowing all unfree software would hide the next one.
+        body = code(FLAKE)
+        self.assertIsNone(re.search(r"\bpkgs\.claude-code\b", body), "plain pkgs.claude-code does not evaluate")
+        self.assertNotRegex(body, r"allowUnfree\s*=\s*true")
+        self.assertRegex(body, r'allowUnfreePredicate\s*=\s*pkg:\s*lib\.getName pkg == "claude-code"')
+        local_ai = body[body.index("local-ai = pkgs.mkShell"):]
+        self.assertIn(").claude-code", local_ai)
+
     def test_module_uses_the_rocm_package_with_a_vulkan_escape_hatch(self):
         text = (ROOT / "nix" / "local-ai-module.nix").read_text()
         self.assertIn("lib.mkDefault pkgs.ollama-rocm", text)

@@ -118,10 +118,13 @@ commits made with `--no-verify`.
 (maintainer's experience). opencode is a real agent loop. Its tool-level permissions are a first layer only: the
 agent has a bash tool, so this is not a sandbox; the commit guard and `check` are the boundary.
 
-**D26. The agent's config is passed inline in `OPENCODE_CONFIG_CONTENT`.** That outranks a project `opencode.json` the
-agent could create (verified against the real opencode). Known limit: permission maps merge key by key and the
-last matching rule wins, so a hostile project file could widen them; again, the guard is the boundary. The config
-targets opencode's 1.x schema; the launcher refuses 2.x, which renamed provider and model fields.
+**D26. The agent's config is passed inline in `OPENCODE_CONFIG_CONTENT`, for opencode 2.x.** The maintainer moved
+to 2.x (commit c62dbf8); the launcher now refuses 1.x. 2.x merges the inline config after a project `opencode.json`
+and evaluates permission rules as an ordered list, last match wins; every restricted action starts with our
+catch-all, so a hostile project file cannot widen anything (verified end to end with the real 2.1.1). The launcher
+runs `--standalone` (a background service would never see the inline config) and sets `PWD` to the worktree
+(opencode follows `$PWD`). `execute` is removed: it can `fetch` and create worktrees without asking. Shell commands
+can still write anywhere, so the guard stays the boundary.
 
 **D27. Qwen3 family, 32K context baked into a derived model.** An agent needs reliable tool calling and a long
 context. Ollama defaults to 4096 tokens and its OpenAI-compatible endpoint ignores a per-request context, so
@@ -129,5 +132,12 @@ context. Ollama defaults to 4096 tokens and its OpenAI-compatible endpoint ignor
 loop. Tiers: `qwen3:14b` (default, fits 16 GB), `qwen3:8b`, `qwen3-coder:30b` (does not fit, partly CPU). Tags and
 sizes come from third-party summaries and are unverified on the maintainer's hardware.
 
-**D28. Model entries must set `"tool_call": true`.** Without it opencode silently sends no tools and the agent does
-nothing, with no error.
+**D28. Model entries declare `capabilities.tools` and the provider names its `package`.** 1.x silently sent no tools
+without `tool_call`; 2.1.1 sends them regardless, but the declaration is kept. Without
+`"package": "@ai-sdk/openai-compatible"` 2.x refuses the model outright.
+
+**D29. Local tasks ship with a check the model can run, using only the standard library.** The first trial model
+spent most of its session trying to install `jsonschema` (venv, flake edits) because its brief named no runnable
+check. `tools/widget_check.py` implements the JSON Schema subset a widget spec needs and refuses every other
+keyword, so a schema cannot depend on a rule nothing enforces; it is cross-checked against `jsonschema` when that
+is installed. It belongs to the main line; the model runs it but may not edit it.

@@ -78,7 +78,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **4.4** Desktop widget grid reusing the EditableGrid (1.6): snap, edit mode, persistence.
 - [ ] **4.5** Custom widgets app: category list and template cards (weather, daily update, world clock, finance,
   countdown, sports) plus a "Create a widget" prompt box. Templates are local-model task `widget-templates`.
-- [ ] **4.6** CLI: widget check / preview / install with machine-readable errors.
+- [ ] **4.6** CLI: widget check / preview / install with machine-readable errors. Started: `tools/widget_check.py`
+  checks a schema against the spec's rules and widgets against the schema (stdlib JSON Schema subset).
 - [ ] **4.7** Ollama bridge: structured output with the schema as format, system prompt from the LLM docs, retry
   loop feeding validator errors back, model configurable (Ollama Cloud now, local on the 9060 XT later).
 - [ ] **4.8** Docs for LLMs: one file with catalog, tokens, data sources, rules and 8+ worked examples, plus the
@@ -116,9 +117,14 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [x] **S1** Tooling (unreleased): `tools/sidework.py`, commit-time guard, flake `local-ai` shell and NixOS module,
   `docs/sidework.md`, conventions and three task briefs. Switched from aider to opencode after the maintainer
-  found aider's workflow unusable for agentic work; verified against the real opencode 1.x.
+  found aider's workflow unusable for agentic work. Moved to opencode 2.x (unreleased): config rewritten
+  against the real 2.1.1 schema, `--standalone`, `PWD`, `execute` removed, tested end to end with a scripted model.
 - [ ] **S2** Trial: run one bounded task on the 9060 XT (suggested `widget-schema`) and judge speed, tool-calling
   reliability and output quality. Also confirm ROCm works on the card (`ollama ps` shows 100% GPU).
+  First attempt (2026-10-25, qwen3:14b, `local/widget-schema`): the model worked but could not check its output
+  and fails the brief (schema not recursive, no `tone` enum, examples rejected). The tooling it lacked is now in
+  place (`tools/widget_check.py`, a structural hint in the brief, stricter conventions); the branch is not merged.
+  Next: rebase it on main, clear the stray files, and rerun.
 - [ ] **S3** Tasks done and merged: `widget-schema`, `llm-docs` (independent), then `widget-templates` (needs the
   schema). Each ends with `sidework.py check --run-checks`, `merge-check`, and a Claude review plus tests.
 

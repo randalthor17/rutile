@@ -3,9 +3,13 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
-      systems = [ "x86_64-linux" "aarch64-linux" ];
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
       # Google Sans Flex is not in nixpkgs; this is our own package (OFL-1.1).
       googleSansFlex = pkgs: pkgs.callPackage ./nix/googlesans-flex.nix { };
@@ -21,7 +25,8 @@
       # `nix develop` gives everything `make check` needs, with Qt's QML modules on
       # the import path (a bare qtdeclarative in a shell does not set it up) and the
       # fonts Rutile depends on visible to Qt.
-      devShells = forAllSystems (pkgs:
+      devShells = forAllSystems (
+        pkgs:
         let
           inherit (pkgs) lib;
           qt = pkgs.qt6;
@@ -58,7 +63,8 @@
               echo "rutile dev shell: run 'make check'"
             '';
           };
-        } // lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
+        }
+        // lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
           # ROCm only exists on x86_64, so this shell is not offered elsewhere.
 
           # `nix develop .#local-ai`: the local-model side-work tools. Kept separate because the ROCm
@@ -69,14 +75,20 @@
               pkgs.git
               pkgs.gnumake
               python
-              pkgs.ollama-rocm   # server + client with ROCm; use pkgs.ollama-vulkan if ROCm fails on the card
-              pkgs.opencode      # terminal coding agent (1.x); talks to Ollama through its OpenAI-compatible API
-              pkgs.radeontop     # GPU load while a model runs
+              pkgs.ollama-rocm # server + client with ROCm; use pkgs.ollama-vulkan if ROCm fails on the card
+              pkgs.opencode # terminal coding agent (2.x); talks to Ollama through its OpenAI-compatible API
+              pkgs.radeontop # GPU load while a model runs
+              # Claude Code is unfree: allow exactly this package, not unfree software in general.
+              (import nixpkgs {
+                inherit (pkgs.stdenv.hostPlatform) system;
+                config.allowUnfreePredicate = pkg: lib.getName pkg == "claude-code";
+              }).claude-code
             ];
             shellHook = ''
               echo "rutile local-ai shell: python3 tools/sidework.py models | serve | start TASK | agent TASK"
             '';
           };
-        });
+        }
+      );
     };
 }

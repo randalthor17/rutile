@@ -20,6 +20,19 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 - **Dev tools** (`tools/dev/`): `pyside_qml.py` (run the QML tests or render the gallery on a modern Qt via PySide6,
   optionally through the real OpenGL scene graph), `eval_flake.sh`, `setup_sandbox.sh`.
 
+- **opencode 2.x** for the local agent (the maintainer's switch, c62dbf8, finished): the generated config follows
+  the real 2.1.1 schema (`providers` with `package`, ordered `permissions`, `policies`); the launcher runs
+  `--standalone`, sets `PWD` to the worktree and removes the `execute` tool. The draft 2.x config could not run
+  (`Unsupported package`), and without `PWD` the agent would have worked in the main checkout. Real-opencode tests
+  now drive 2.1.1 end to end through a scripted fake model, including a hostile project `opencode.json`.
+- **`tools/widget_check.py`**: stdlib checker for the widget schema and widget files, the acceptance check of the
+  `widget-schema` brief; refuses JSON Schema keywords it does not implement. `sidework.py check` and `status`
+  report uncommitted leftovers in a worktree. `tools/llm_docs_check.py` does the same job for the `llm-docs` task.
+- **Local-model conventions and brief** tightened after the first trial: no installing, files only through the
+  edit tools, stop after repeated failures, commit only own paths; the `widget-schema` brief sketches the recursive
+  structure.
+- **Flake:** `claude-code` in the `local-ai` shell is allowed as the only unfree package; plain `pkgs.claude-code`
+  made `nix develop .#local-ai` fail to evaluate.
 - **Fix:** the first handoff bundle (`rutile-dev-17ca1a5`) failed `make check` on a clean clone: the docs mentioned
   `widgets/` and `settings/`, which existed only as untracked empty directories. They now hold tracked READMEs, and
   the path check uses `git ls-files` so leftovers cannot mask this again.

@@ -201,6 +201,31 @@ def changed_files(branch, base, cwd=None):
     return parse_name_status_z(raw)
 
 
+def worktree_leftovers(wt, allowed, cfg):
+    """Uncommitted changes in a worktree as (path, git status, outside the allowed paths).
+
+    They are not part of the branch, so they never merge, but the next agent session sees them as if
+    they were the work (a model once left a rewritten flake.nix and a virtualenv behind).
+    """
+    raw = git("status", "--porcelain", "-z", "--untracked-files=normal", cwd=wt).stdout
+    toks = [t for t in raw.split("\0") if t]
+    out, i = [], 0
+    while i < len(toks):
+        status, path = toks[i][:2], toks[i][3:]
+        i += 2 if status[0] in "RC" else 1        # a rename is followed by its old path
+        out.append((path, status.strip(), bool(violations([path.rstrip("/")], allowed, cfg))))
+    return out
+
+
+def print_leftovers(wt, leftovers, out):
+    print(f"uncommitted in {wt} (not on the branch, so it will not merge):", file=out)
+    for path, status, outside in leftovers:
+        print(f"  {status:2s} {path}" + ("  (outside the allowed paths)" if outside else ""), file=out)
+    if any(outside for _, _, outside in leftovers):
+        print("  clean up what is outside the allowed paths before the next session, e.g. "
+              f"git -C {wt} restore <file>, or delete stray untracked files", file=out)
+
+
 def resolve_branch(task, cfg):
     if task:
         return branch_name(task, cfg)
@@ -225,8 +250,11 @@ def cmd_check(args):
         for path, why in bad:
             print(f"  {path}  ({why})", file=sys.stderr)
         return 1
+    wt = worktree_of(branch)
+    leftovers = worktree_leftovers(wt, allowed_paths(branch, cfg), cfg) if wt else []
+    if leftovers:
+        print_leftovers(wt, leftovers, sys.stdout)
     if args.run_checks:
-        wt = worktree_of(branch)
         if wt is None:
             raise SideworkError(f"{branch} has no worktree to run `make check` in")
         print("running make check ...")
@@ -290,8 +318,10 @@ def cmd_status(args):
         bad = violations(changed_files(br, cfg["base"]), allowed_paths(br, cfg), cfg)
         clean, _ = merge_conflicts(br, cfg["base"])
         wt = worktree_of(br)
+        stray = sum(1 for *_, outside in worktree_leftovers(wt, allowed_paths(br, cfg), cfg) if outside) if wt else 0
         print(f"{br:30s} {ahead:>3} commit(s)  paths:{'OK' if not bad else 'VIOLATED'}  "
-              f"merge:{'clean' if clean else 'CONFLICT'}  {wt or '(no worktree)'}")
+              f"merge:{'clean' if clean else 'CONFLICT'}  {wt or '(no worktree)'}"
+              + (f"  ({stray} stray uncommitted file(s): see `check`)" if stray else ""))
     return 0
 
 
@@ -371,6 +401,15 @@ BASH_DENY = [
 ]
 
 
+# Tools the local agent never gets. `execute` runs JavaScript that can call `fetch` and opencode's own
+# worktree tools, which ask for no permission: a model once used it to make a stray worktree.
+DENIED_TOOLS = ["execute", "webfetch", "websearch", "external_directory", "doom_loop"]
+
+
+def rule(action, resource, effect):
+    return {"action": action, "resource": resource, "effect": effect}
+
+
 def derived_name(tier_name, models):
     return f"{models['derived_prefix']}{tier_name}:{models['context'] // 1024}k"
 
@@ -380,56 +419,55 @@ def modelfile_text(tag, models, temperature):
 
 
 def opencode_config(cfg, models, model_name, temperature, allowed, instructions):
-    """The inline config handed to opencode through OPENCODE_CONFIG_CONTENT (opencode 2.x schema)."""
+    """The inline config handed to opencode through OPENCODE_CONFIG_CONTENT (opencode 2.x schema).
+
+    It is passed inline because opencode merges it after any project opencode.json, and permission
+    rules are an ordered list where the last match wins: every action we restrict starts with a
+    catch-all rule of ours, so nothing a file in the worktree adds can widen it.
+    """
     host = host_of(models)
     base = host if host.startswith("http") else f"http://{host}"
-    edit = {"*": "deny"}
-    for pat in allowed:
-        edit[glob_for_opencode(pat)] = "allow"
+    rules = [rule("edit", "*", "deny")]
+    rules += [rule("edit", glob_for_opencode(pat), "allow") for pat in allowed]
     # the guard and the config are never editable, whatever the allowlist says
-    for pat in cfg["always_forbidden"]:
-        edit[glob_for_opencode(pat)] = "deny"
-    bash = {"*": "allow"}
-    bash.update({pat: "deny" for pat in BASH_DENY})
+    rules += [rule("edit", glob_for_opencode(pat), "deny") for pat in cfg["always_forbidden"]]
+    rules.append(rule("shell", "*", "allow"))
+    rules += [rule("shell", pat, "deny") for pat in BASH_DENY]
+    rules += [rule(action, "*", "deny") for action in DENIED_TOOLS]
     return {
         "$schema": "https://opencode.ai/config.json",
         "model": f"ollama/{model_name}",
-        "enabled_providers": ["ollama"],      # never fall back to a cloud provider
-        "autoupdate": False,
+        "update": "disable",
         "share": "disabled",
-        "snapshot": False,                    # the branch's own commits are the history
+        "snapshots": False,                   # the branch's own commits are the history
+        "websearch": False,
         "instructions": instructions,
+        # never fall back to a cloud provider
+        "policies": [
+            {"action": "provider.use", "resource": "*", "effect": "deny"},
+            {"action": "provider.use", "resource": "ollama", "effect": "allow"},
+        ],
         "providers": {
             "ollama": {
-                "settings": {
-                    "baseURL": base + "/v1", 
-                    "apiKey": "ollama"
-                },
+                "name": "Ollama (local)",
+                # without a package opencode 2.x refuses the model ("Unsupported package")
+                "package": "@ai-sdk/openai-compatible",
+                "settings": {"baseURL": base + "/v1", "apiKey": "ollama"},
                 "models": {
                     model_name: {
                         "name": model_name,
+                        # without this opencode sends no tools and the agent can do nothing
                         "capabilities": {"tools": True},
-                        "limit": {
-                            "context": models["context"], 
-                            "output": models["output_tokens"]
-                        },
-                        "body": {
-                            "temperature": temperature
-                        },
+                        "limit": {"context": models["context"], "output": models["output_tokens"]},
+                        "body": {"temperature": temperature},
                     }
                 },
             }
         },
-        "permission": {
-            "edit": edit,
-            "bash": bash,
-            "external_directory": {"*": "deny"},   # nothing outside the worktree
-            "webfetch": "deny",
-            "websearch": "deny",
-            "doom_loop": "deny",                   # stop a model repeating the same failing call
-        },
-        "compaction": {"auto": True, "prune": True},
+        "permissions": rules,
+        "compaction": {"auto": True},
     }
+
 
 def agent_env(cfg, models, base_env, config):
     env = dict(base_env)
@@ -438,6 +476,7 @@ def agent_env(cfg, models, base_env, config):
         env[f"GIT_{who}_NAME"] = ident["name"]
         env[f"GIT_{who}_EMAIL"] = ident["email"]
     env["OPENCODE_CONFIG_CONTENT"] = json.dumps(config)
+    # Not OPENCODE_DISABLE_PROJECT_CONFIG: in 2.1.1 it also drops AGENTS.md and our `instructions`.
     return env
 
 
@@ -515,13 +554,15 @@ def cmd_agent(args):
     allowed = allowed_paths(branch, cfg, wt)
     config = opencode_config(cfg, models, name, temperature, allowed, instructions)
     prompt = args.prompt or default_prompt(args.task, has_brief)
+    # --standalone: opencode 2.x otherwise attaches to its background service, a server started
+    # earlier with some other environment, which would never see OPENCODE_CONFIG_CONTENT.
     if args.unattended or args.prompt:
-        cmd = ["opencode", "run", "--model", f"ollama/{name}", "--title", args.task]
+        cmd = ["opencode", "run", "--standalone", "--model", f"ollama/{name}", "--title", args.task]
         if args.unattended:
             cmd.append("--auto")
         cmd.append(prompt)
     else:
-        cmd = ["opencode"]
+        cmd = ["opencode", "--standalone"]
     env = agent_env(cfg, models, os.environ, config)
     if args.dry_run:
         print("cwd      ", wt)
@@ -534,8 +575,9 @@ def cmd_agent(args):
     if found is None:
         raise SideworkError("`opencode` is not on PATH: use `nix develop .#local-ai`")
     if found[0] != 2:
-        raise SideworkError(f"opencode {found[1]} found, but the generated config follows the 2.x schema. "
-                            "Please use an OpenCode 2.x release.")    
+        raise SideworkError(f"opencode {found[1]} found, but the generated config follows the 2.x schema "
+                            "(1.x used other keys: provider, permission, tool_call). Use the opencode from "
+                            "`nix develop .#local-ai`, or update tools/sidework.py")
     pulled = ollama_tags(host_of(models))
     if pulled is None:
         raise SideworkError(
@@ -546,7 +588,19 @@ def cmd_agent(args):
                             f"(after `ollama pull {tag}`)")
     if tier is None and name not in pulled:
         raise SideworkError(f"{name} is not pulled: run `ollama pull {name}`")
+    leftovers = [x for x in worktree_leftovers(wt, allowed, cfg) if x[2]]
+    if leftovers:
+        print_leftovers(wt, leftovers, sys.stderr)
+    if cmd[1] == "run" and not sys.stdin.isatty():
+        # `opencode run` appends a piped stdin to the prompt and waits for it to end; an inherited open pipe or
+        # socket (cron, systemd, an IDE) never ends, so the run would hang before its first request
+        null = os.open(os.devnull, os.O_RDONLY)
+        os.dup2(null, 0)
+        os.close(null)
     os.chdir(wt)
+    # opencode takes its directory from $PWD when set, so the inherited one (the main checkout)
+    # would put the agent in the wrong tree
+    env["PWD"] = str(wt)
     os.execvpe(cmd[0], cmd, env)
     return 0  # unreachable
 

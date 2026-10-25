@@ -22,16 +22,31 @@ conflict. The agent is [opencode](https://opencode.ai) talking to Ollama.
    merge that touches nothing.
 6. **A first layer inside the agent.** The launcher hands opencode a permission config that denies edits
    outside the allowlist, `git push`, `git config`, `--no-verify`, network commands and anything outside the
-   worktree, and disables every cloud provider. This is **not a sandbox**: the agent has a bash tool and can
-   write files by other means. It stops accidental straying; the commit guard and `check` stop anything out of
-   scope from reaching history.
+   worktree, removes the `execute`, `webfetch` and `websearch` tools, and blocks every provider but Ollama.
+   This is **not a sandbox**: the agent has a shell tool and can write files by other means (`echo > file`
+   works, and the trial model did exactly that to `flake.nix`). It stops accidental straying; the commit
+   guard and `check` stop anything out of scope from reaching history.
 
-The config is passed inline through `OPENCODE_CONFIG_CONTENT`, which ranks above a project `opencode.json`
-in opencode's precedence, so a file the agent creates in the worktree cannot override the keys we set
-(verified against the real opencode: model, providers, sharing, `webfetch`, `external_directory` and
-`bash` rules all stayed ours). One caveat, also observed: permission maps are merged key by key and the
-last matching rule wins, so a hostile project file that defines extra patterns could widen what is allowed.
-That is why the guard is the real boundary.
+The config is passed inline through `OPENCODE_CONFIG_CONTENT`. opencode 2.x merges it after any project
+`opencode.json`, and its permission rules are an ordered list where the last match wins. Every action we
+restrict starts with a catch-all rule of ours, so a project file cannot widen anything: verified with the real
+opencode 2.1.1 driven through a scripted model, with a hostile `opencode.json` that allows everything in place
+(it was loaded, and every rule still held). `execute` is removed because it runs JavaScript that can call
+`fetch` and opencode's own worktree tools, which ask for no permission; a model used it to create a stray
+worktree under `~/.local/share/opencode`.
+
+Three 2.x behaviours the launcher works around, all found by running the real binary:
+
+- opencode normally attaches to a **background service** (a server started earlier, with its own environment),
+  which would never see `OPENCODE_CONFIG_CONTENT`. The launcher always passes `--standalone`.
+- opencode takes its working directory from **`$PWD`** when set, not from the directory it was started in. The
+  launcher sets `PWD` to the worktree; with the inherited value the agent would work in the main checkout.
+- `opencode run` reads a piped **stdin** as part of the prompt and waits for it to end. Started from anything
+  that leaves stdin open (cron, systemd, an IDE, Claude Code), a headless run hangs before its first request. The
+  launcher gives headless runs `/dev/null` as stdin.
+
+`OPENCODE_DISABLE_PROJECT_CONFIG` is deliberately not used: in 2.1.1 it also drops `AGENTS.md` and our own
+`instructions`, so the model would lose its conventions.
 
 ## Setup
 
@@ -49,7 +64,8 @@ attention, `q8_0` KV cache, 32K context). If ROCm misbehaves on the card, add
 
 **Option B: only in a shell.** `nix develop .#local-ai`, then `python3 tools/sidework.py serve`. This shell is
 x86_64-only and separate from the everyday one because the ROCm build is a multi-gigabyte closure. It
-provides `ollama-rocm`, `opencode` (1.x) and `radeontop`.
+provides `ollama-rocm`, `opencode` (2.x), `radeontop` and `claude-code` (the one unfree package the flake
+allows, by name).
 
 Then pull a model, bake in the context, and check it runs on the GPU:
 
@@ -70,7 +86,8 @@ The RX 9060 XT is RDNA4 (gfx1200), which needs ROCm 7.x; it should not need `HSA
 python3 tools/sidework.py start widget-schema          # branch local/widget-schema in ../rutile-local-widget-schema
 python3 tools/sidework.py agent widget-schema          # interactive opencode, brief and conventions preloaded
 python3 tools/sidework.py agent widget-schema --unattended   # or: headless run on the default task prompt
-python3 tools/sidework.py check widget-schema --run-checks
+python3 tools/widget_check.py                          # in the worktree: the widget tasks' acceptance check
+python3 tools/sidework.py check widget-schema --run-checks   # also lists uncommitted leftovers in the worktree
 python3 tools/sidework.py merge-check widget-schema
 git merge --no-ff local/widget-schema                  # or: sidework.py bundle widget-schema
 python3 tools/sidework.py status                       # all local branches at a glance
@@ -90,8 +107,10 @@ An agent needs two things a chat model does not: reliable **tool calling** and a
   tool calls get cut off. The OpenAI-compatible endpoint ignores a per-request context, hence `sidework.py
   prepare`, which bakes `num_ctx` into a derived model (`rutile-<tier>:32k`). The server also gets
   `OLLAMA_CONTEXT_LENGTH`.
-- The model entry must say `"tool_call": true`, or opencode silently sends no tools and the agent produces no
-  output and writes nothing, with no error. The launcher always sets it.
+- opencode 1.x needed `"tool_call": true` on the model or it silently sent no tools. In 2.x the field is
+  `capabilities.tools`; 2.1.1 was observed to send tools even without it, but the launcher still declares it.
+- A custom provider needs `"package": "@ai-sdk/openai-compatible"` in 2.x, or every request fails with
+  `Unsupported package`.
 - `qwen2.5-coder` was dropped as the default: it is reported to hang in opencode's tool loop. The tiers are
   the Qwen3 family: `qwen3:14b` (default, about 9 GB), `qwen3:8b` (fast), and `qwen3-coder:30b`, which is built
   for agentic coding but does not fit in 16 GB, so part runs on the CPU. Measure its speed before relying on it.
@@ -115,24 +134,29 @@ tests for what the model produced.
 
 ## Troubleshooting
 
-- **The agent says nothing and changes nothing:** the model entry lacks `tool_call`, or the model does not
-  support tools. Run `sidework.py agent TASK --dry-run` and check the config; try another tier.
+- **The agent says nothing and changes nothing:** the model does not support tools, or the config did not reach
+  opencode. Run `sidework.py agent TASK --dry-run` and check the config; try another tier.
+- **`Unsupported package for ollama/...`:** the provider block lacks `package` (an old or hand-made config).
 - **Tool calls look truncated or the agent forgets the task:** the context is too small. Run `sidework.py
   models` and check the tier shows as prepared; `ollama ps` shows the loaded context.
-- **`opencode 2.x found`:** the generated config follows the 1.x schema (2.x renamed the provider and model
-  fields). Use the opencode from `nix develop .#local-ai`.
+- **`opencode 1.x found`:** the generated config follows the 2.x schema (1.x used `provider`, `permission` and
+  `tool_call`). Use the opencode from `nix develop .#local-ai`.
+- **The agent keeps fighting a missing tool** (installing packages, editing the flake): its brief must name a
+  check that runs with what is in the repo. For the widget tasks that is `tools/widget_check.py` (stdlib only).
 - **Slow or CPU-bound:** `ollama ps`; try `qwen3:8b`, the Vulkan build, or a smaller context.
 
 ## What is verified, and what is not
 
 Tested here with real git repositories: the guard and its two attacks, per-task allowlists, rename and delete
-handling, `check`, `merge-check` (clean and conflicting), `bundle`, `status`. The launcher is tested through
-fake `opencode` and `ollama` executables (working directory, arguments, environment, identity, every
-preflight message) and against the **real opencode 1.19** binary: it accepts the generated config, our
-settings win over a hostile project `opencode.json`, and its resolved permission rules decide 23 sample
-edits, commands and paths as intended. Evaluated against real nixpkgs: both shells, and the module inside a
-real `nixosSystem` (it selects `ollama-rocm`, and the environment reaches the systemd unit).
+handling, `check` (including the leftover report), `merge-check` (clean and conflicting), `bundle`, `status`. The
+launcher is tested through fake `opencode` and `ollama` executables (working directory, `PWD`, arguments,
+environment, identity, every preflight message). Against the **real opencode 2.1.1**, with a private HOME and a
+scripted OpenAI-compatible model standing in for Ollama: opencode keeps every key of the generated config (it
+drops unknown keys silently, and a test proves that check can fail), requests carry our model, temperature,
+tools and instructions, and 22 scripted tool calls (edits, shell commands, an outside path, `execute`,
+`webfetch`) are allowed or refused as intended with a hostile project config present. Evaluated against real
+nixpkgs: both shells, and the module inside a real `nixosSystem`.
 
-**Not verified, because it needs your hardware:** that ROCm runs on your card, that Ollama and opencode run
-end to end with these models, token speeds, tool-calling reliability, and how good the models are at these
-tasks. Treat the first task as a trial.
+**Not verified:** the interactive TUI (only `opencode run` was driven), that ROCm runs on your card, Ollama
+end to end with these models, token speeds, and how good the models are at these tasks. The first trial
+(`widget-schema`, October 2026) ran on `rutile-main:32k` before these fixes; see `docs/LESSONS.md`.

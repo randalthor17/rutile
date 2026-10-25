@@ -30,13 +30,35 @@ Use the real design vocabulary: `tone` values are Rutile color role names writte
 (`surface_container`, `primary_container`, ...; read `theme/roles.json` for the full list), and icon
 names are Material Symbols ligature names.
 
+## How to structure it
+Nodes nest to any depth (a card holds a column that holds a row that holds stats), so the schema must be
+recursive. Do not copy node definitions into each level. Instead:
+
+- one entry in `$defs` per node type, each with `"properties": {"type": {"const": "<type>"}}`, its own
+  fields, `"required"` and `"additionalProperties": false`;
+- a `$defs` entry `node` that is a `oneOf` of `{"$ref": "#/$defs/<type>"}` for all eleven types;
+- `children` everywhere is `{"type": "array", "items": {"$ref": "#/$defs/node"}}`, and `root` is
+  `{"$ref": "#/$defs/node"}`;
+- shared pieces (`tone`, a binding-capable text field) are `$defs` entries too, referenced with `$ref`.
+
 ## Acceptance
-- `python3 -m json.tool widgets/spec.schema.json` succeeds and the file declares
-  `"$schema": "https://json-schema.org/draft/2020-12/schema"`.
-- Every example in `widgets/examples/` (write at least four, covering weather, a countdown, a list and a
-  stat card) is valid JSON and uses only node types and fields the schema defines.
-- `tone` is restricted with an `enum` taken from `theme/roles.json`, not free text.
-- Unknown fields are rejected (`"additionalProperties": false` on every node).
+Run this after every change. It is the whole acceptance test, it needs nothing installed, and it prints
+one line per problem with the JSON path:
+
+```
+python3 tools/widget_check.py
+```
+
+It checks that:
+- `widgets/spec.schema.json` is valid JSON and declares `"$schema": "https://json-schema.org/draft/2020-12/schema"`;
+- every node type above has its subschema, with `"additionalProperties": false` (unknown fields rejected);
+- `tone` is restricted with an `enum` of names from `theme/roles.json`, not free text;
+- every example in `widgets/examples/` (write at least four, covering weather, a countdown, a list and a
+  stat card) matches the schema, and every binding uses an allowed source.
+
+The checker supports a subset of JSON Schema and names any keyword it does not support; use the ones it
+lists. If it reports the same problem twice after you changed something, re-read this brief and the
+error before trying again.
 
 ## Out of scope
-A validator program, QML, anything outside the paths above. Claude will add the validator and tests.
+Changing `tools/widget_check.py` (it is Claude's), QML, anything outside the paths above.

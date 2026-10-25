@@ -176,7 +176,7 @@ class TrackedPathLogic(unittest.TestCase):
         self.assertIsNotNone(tracked, "these tests are meant to run in a git checkout")
         for p in ("docs/HANDOFF.md", "docs", "tools/dev", "tools/dev/setup_sandbox.sh", "widgets/README.md", "widgets"):
             self.assertIn(p, tracked, p)
-        for p in ("docs/definitely-not-here.md", "render", "flake.lock"):
+        for p in ("docs/definitely-not-here.md", "render"):
             self.assertNotIn(p, tracked, p)
 
     def test_reserved_directories_are_real_tracked_content(self):

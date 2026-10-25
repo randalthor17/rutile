@@ -78,11 +78,30 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **Enforce rules from outside the thing being policed.** The first guard read `ownership.json` and ran
   `sidework.py` from the worktree, so editing either there weakened it. Rules and code now come from the main checkout.
 - **aider skips git hooks by default** and its edit-format loop does not suit a small local model. opencode replaced it.
-- **opencode silently does nothing without `"tool_call": true`**, and Ollama's 4096-token default context breaks an
-  agent. Both are handled in the launcher and tested.
-- **opencode config precedence:** inline `OPENCODE_CONFIG_CONTENT` outranks a project `opencode.json`; its permission
-  maps merge key by key and the last match wins. Tool permissions are advisory, not a sandbox.
-- **opencode 1.x and 2.x have different config schemas.** The launcher refuses 2.x.
+- **opencode 1.x silently did nothing without `"tool_call": true`**, and Ollama's 4096-token default context breaks
+  an agent. Both are handled in the launcher and tested.
+- **opencode 1.x and 2.x have different config schemas, and 2.x drops unknown keys silently.** A config written
+  from memory of 2.x (commit c62dbf8) evaluated fine and failed every request (`Unsupported package`). The real
+  schema ships with the package (config.json in its share directory), and `opencode api --standalone config.get` shows what 2.x
+  kept of a config, which is the check to run. 2.x also migrates most 1.x keys (`permission` to `permissions`,
+  `bash` to `shell`), which is how the right names were found.
+- **Drive the real agent with a scripted model.** A ~40-line OpenAI-compatible server that answers each turn with
+  the next tool call lets the real opencode be tested end to end without a GPU. It found three bugs nothing else
+  had: the `PWD` one, the background-service one, and that `OPENCODE_DISABLE_PROJECT_CONFIG` also drops `AGENTS.md`.
+- **`opencode run` waits for a piped stdin to end.** Tests that started it without `stdin=DEVNULL` passed or hung
+  depending on how the test run itself was started (a terminal or `/dev/null`, or an open socket from Claude Code),
+  which looked like flakiness and was first blamed on leftover processes. Finding it took `/proc/<pid>/fd/0` on
+  the stuck process. Lesson: when a child process "sleeps", look at what it is blocked on before theorising, and
+  give every child an explicit stdin. The runs now also fail after 20 s without a model request instead of
+  waiting out a timeout.
+- **opencode follows `$PWD`, not its real working directory.** `chdir` plus the inherited environment put the agent
+  in the main checkout. The test that caught it timed out at first instead of failing, which hid the cause.
+- **A local model needs a check it can run with what is installed.** The first trial (qwen3:14b, `widget-schema`)
+  could not validate its schema, so it spent dozens of tool calls on `pip`, a virtualenv and rewriting `flake.nix`
+  through the shell (edit permissions do not cover shell redirection), re-ran the same failing check 13 times,
+  and wrote a schema that copies node definitions two levels deep instead of recursing. The brief now names
+  `tools/widget_check.py` and sketches the recursive structure; the conventions forbid installing and say when
+  to stop retrying.
 
 ## Process
 

@@ -39,10 +39,10 @@ step "Python: materialyoucolor (palette cross-check), PySide6 (modern Qt, option
 try pip install -q --break-system-packages materialyoucolor
 try pip install -q --break-system-packages PySide6-Essentials PySide6-Addons
 
-step "opencode 1.x (real binary, for the config checks)"
-if [ ! -x "$WORK/opencode/node_modules/.bin/opencode" ]; then
-  try sh -c "cd '$WORK/opencode' && npm install --silent opencode-ai"
-fi
+step "opencode 2.x (real binary, for the config checks)"
+# Not from npm: the opencode-ai package there stops at 1.19.x (checked 2026-10-25), and the launcher targets 2.x.
+# Without a 2.x binary on PATH or in RUTILE_OPENCODE the real-opencode tests skip, saying so.
+echo "  skipped: put an opencode 2.x binary on PATH or in RUTILE_OPENCODE (nixpkgs has it as pkgs.opencode)"
 
 step "nix (evaluation only; see tools/dev/eval_flake.sh)"
 try apt_quiet nix-bin
@@ -54,7 +54,6 @@ Done. Export these before running the checks:
   export PATH="\$PATH:/usr/lib/qt6/bin"
   export RUTILE_MATUGEN="$WORK/bin/matugen"
   export RUTILE_FONT_DIRS="$WORK/fonts"
-  export RUTILE_OPENCODE="$WORK/opencode/node_modules/.bin/opencode"
 
 then:  make check
        python3 tools/dev/pyside_qml.py suite                  # same QML tests on a modern Qt
