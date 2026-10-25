@@ -7,6 +7,7 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 - **Fix:** the `local-ai` dev shell now has everything the default shell has (Qt, qmltestrunner, Quickshell,
   matugen, `QML2_IMPORT_PATH`, the fonts), so an agent in it can run `make check` and its acceptance check.
+- `local-ai` dev shell: Node.js 22, which some local MCP servers need.
 - **Fix:** springs stopped following a bound target after their first settle (`Spring` rested via `snap()`, which
   assigns `target` and breaks the binding). Button press morphs, state-layer opacity and the gallery's motion
   lanes only worked once. Found by the maintainer in the gallery.

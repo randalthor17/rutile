@@ -86,6 +86,7 @@
                 inherit (pkgs.stdenv.hostPlatform) system;
                 config.allowUnfreePredicate = pkg: lib.getName pkg == "claude-code";
               }).claude-code
+              pkgs.nodejs_22 # some local MCPs
             ];
             shellHook = devHook + ''
               echo "rutile local-ai shell: python3 tools/sidework.py models | serve | start TASK | agent TASK"
