@@ -37,29 +37,35 @@
           ];
           # materialyoucolor is only used by an optional test cross-check; include it when nixpkgs has it.
           python = pkgs.python3.withPackages (ps: lib.optional (ps ? materialyoucolor) ps.materialyoucolor);
+
+          # The everyday shell's tools and setup, shared by every shell: an agent in local-ai must be
+          # able to run `make check` and the brief's acceptance check without leaving it.
+          devPackages = [
+            pkgs.git
+            pkgs.gnumake
+            python
+            pkgs.matugen
+            qt.qtdeclarative # qmltestrunner, qmllint and the QML modules
+            pkgs.quickshell
+          ];
+          devHook = ''
+            export QML2_IMPORT_PATH=${qmlPath}''${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
+            # Deliberately no QT_QPA_PLATFORM here: tools/qtws.py sets offscreen for tests only,
+            # so Quickshell launched from this shell still opens real windows.
+            export RUTILE_FONT_DIRS=${fontDirs}
+            # Add those font dirs on top of the system fontconfig (it is included, nothing is lost).
+            if root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$root/tools/fontconf.py" ]; then
+              if conf=$(python3 "$root/tools/fontconf.py" write); then
+                export FONTCONFIG_FILE="$conf"
+              fi
+            fi
+          '';
         in
         {
           default = pkgs.mkShell {
             name = "rutile-dev";
-            packages = [
-              pkgs.git
-              pkgs.gnumake
-              python
-              pkgs.matugen
-              qt.qtdeclarative # qmltestrunner, qmllint and the QML modules
-              pkgs.quickshell
-            ];
-            shellHook = ''
-              export QML2_IMPORT_PATH=${qmlPath}''${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
-              # Deliberately no QT_QPA_PLATFORM here: tools/qtws.py sets offscreen for tests only,
-              # so Quickshell launched from this shell still opens real windows.
-              export RUTILE_FONT_DIRS=${fontDirs}
-              # Add those font dirs on top of the system fontconfig (it is included, nothing is lost).
-              if root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$root/tools/fontconf.py" ]; then
-                if conf=$(python3 "$root/tools/fontconf.py" write); then
-                  export FONTCONFIG_FILE="$conf"
-                fi
-              fi
+            packages = devPackages;
+            shellHook = devHook + ''
               echo "rutile dev shell: run 'make check'"
             '';
           };
@@ -71,10 +77,7 @@
           # build of Ollama is a multi-gigabyte closure the everyday shell should not pull in.
           local-ai = pkgs.mkShell {
             name = "rutile-local-ai";
-            packages = [
-              pkgs.git
-              pkgs.gnumake
-              python
+            packages = devPackages ++ [
               pkgs.ollama-rocm # server + client with ROCm; use pkgs.ollama-vulkan if ROCm fails on the card
               pkgs.opencode # terminal coding agent (2.x); talks to Ollama through its OpenAI-compatible API
               pkgs.radeontop # GPU load while a model runs
@@ -84,7 +87,7 @@
                 config.allowUnfreePredicate = pkg: lib.getName pkg == "claude-code";
               }).claude-code
             ];
-            shellHook = ''
+            shellHook = devHook + ''
               echo "rutile local-ai shell: python3 tools/sidework.py models | serve | start TASK | agent TASK"
             '';
           };

@@ -74,6 +74,20 @@ class FlakeShape(unittest.TestCase):
         for heavy in ("ollama", "opencode"):
             self.assertNotIn(heavy, default_part, f"{heavy} must not be in the everyday shell")
 
+    def test_local_ai_shell_has_everything_the_default_shell_has(self):
+        # An agent in local-ai runs `make check` and the acceptance checks; without qmltestrunner,
+        # QML2_IMPORT_PATH and the fonts they fail for reasons that are not its work.
+        body = code(FLAKE)
+        local_ai = body[body.index("local-ai = pkgs.mkShell"):]
+        self.assertRegex(local_ai, r"packages\s*=\s*devPackages\s*\+\+")
+        self.assertRegex(local_ai, r"shellHook\s*=\s*devHook\s*\+")
+        default = body[body.index("default = pkgs.mkShell"):body.index("isx86_64")]
+        self.assertRegex(default, r"packages\s*=\s*devPackages;")
+        self.assertRegex(default, r"shellHook\s*=\s*devHook\s*\+")
+        shared = body[body.index("devPackages = ["):body.index("default = pkgs.mkShell")]
+        for need in ("qt.qtdeclarative", "pkgs.quickshell", "pkgs.matugen", "QML2_IMPORT_PATH", "fontconf.py"):
+            self.assertIn(need, shared)
+
     def test_claude_code_is_the_only_unfree_package_allowed(self):
         # pkgs.claude-code straight from legacyPackages fails to evaluate (unfree), which broke
         # `nix develop .#local-ai`; allowing all unfree software would hide the next one.
