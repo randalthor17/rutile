@@ -33,10 +33,10 @@ Unreleased. There is no shell UI yet: what exists is the foundation and the firs
 | Fonts: Google Sans Flex (text), Material Symbols Rounded (icons) | done |
 | Components: Surface, StateLayer, Icon, Button, IconButton | done, in the gallery |
 | Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
-| Remaining components, EditableGrid, shell, widgets, settings, distro | not started (see plan) |
+| Remaining components, EditableGrid, shell, widget renderer, settings, distro | not started (see plan) |
 | Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
 | `tools/widget_check.py` (widget schema and widget checker, stdlib) | done; the acceptance check of the widget tasks |
-| First local-model trial (`local/widget-schema`) | ran on the maintainer's GPU; output fails the brief, **not merged** (see plan S2) |
+| Widget spec v1 (`widgets/spec.schema.json`, examples) | done: local-model draft merged as failing, rewritten by Claude (plan 4.1, S2) |
 
 Verified, and where: logic and rendering are tested offscreen on Qt 6.4 (what Ubuntu ships) and on Qt 6.12
 (PySide6), plus the real OpenGL scene graph under Xvfb and Mesa. The maintainer's machine (NixOS, Qt 6.11.2)
@@ -51,9 +51,9 @@ surfaces), no focus ring. See `docs/components.md`.
 
 1. The maintainer reviews the gallery look and picks the next component batch: Switch, Slider and
    ProgressBar (Quick Settings needs them) or the Googlebook signature pieces (ShapeMorph, GeminiGlow).
-2. Rerun the `widget-schema` trial with the new tooling: rebase `local/widget-schema` on main, clear its stray
-   files (`sidework.py check widget-schema` lists them), run `sidework.py agent widget-schema`, and judge it with
-   `python3 tools/widget_check.py`. Merge only when that passes; Claude then reviews and adds tests.
+2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
+   `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
+   `sidework.py merge TASK` and `close TASK`. Judge speed and whether ROCm runs on the card.
 3. Finish the component kit (plan item 1.5), then the shared EditableGrid (1.6), then Phase 2.
 
 ## 3. Resume in five minutes
@@ -140,7 +140,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
 | `nix/` | `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service) |
-| `widgets/` | reserved for the widget spec, owned by the local model line |
+| `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |

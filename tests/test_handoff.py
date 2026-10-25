@@ -75,8 +75,8 @@ class PlanFormat(unittest.TestCase):
             self.assertIn(i, self.items, f"plan item {i} is missing")
 
     def test_finished_work_is_ticked_and_open_work_is_not(self):
-        done = ["0.1", "0.3", "0.4", "1.1", "1.2", "1.3", "1.3b", "1.4", "1.5a", "1.5b", "S1", "H1"]
-        todo = ["1.5", "1.6", "2.1", "4.1", "5.1", "6.1", "S2", "S3", "H3"]
+        done = ["0.1", "0.3", "0.4", "1.1", "1.2", "1.3", "1.3b", "1.4", "1.5a", "1.5b", "4.1", "S1", "H1"]
+        todo = ["1.5", "1.6", "2.1", "4.2", "5.1", "6.1", "S2", "S3", "H3"]
         for i in done:
             self.assertEqual(self.items[i], ["x"], f"{i} should be done")
         for i in todo:

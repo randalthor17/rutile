@@ -10,7 +10,7 @@
         "children": [
           {
             "type": "header",
-            "icon": "weather_sunny",
+            "icon": "sunny",
             "title": "Current Weather"
           },
           {

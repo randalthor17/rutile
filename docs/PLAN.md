@@ -70,8 +70,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 ## Phase 4: widget system (the core feature)
 
-- [ ] **4.1** Widget spec v1 (JSON, versioned) with primitives card, header, tile, hero image, stat, progress,
-  list row, chip, row/column/grid, and a JSON Schema. First draft is local-model task `widget-schema`.
+- [x] **4.1** Widget spec v1 (JSON, versioned) with primitives card, header, tile, hero image, stat, progress,
+  list row, chip, row/column/grid, and a JSON Schema (unreleased). The local model's draft was merged as a known
+  failing draft and Claude rewrote the schema on main (recursive `$defs`, surface-role `tone` enum, unknown
+  fields rejected at every level); its five examples pass `tools/widget_check.py` and `jsonschema`, and
+  `tests/test_widget_spec.py` pins what the spec refuses. Node fields are a first cut: the renderer (4.3) may refine them.
 - [ ] **4.2** Data sources: clock, weather (keyless API), calendar, battery, system stats, countdown, HTTP JSON
   (allowlisted), files; bindings `{{source.field}}` with no arbitrary JS.
 - [ ] **4.3** WidgetHost renderer: builds QML from the spec with Loader/Repeater.
@@ -122,12 +125,12 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **S2** Trial: run one bounded task on the 9060 XT (suggested `widget-schema`) and judge speed, tool-calling
   reliability and output quality. Also confirm ROCm works on the card (`ollama ps` shows 100% GPU).
   First attempt (2026-10-25, qwen3:14b, `local/widget-schema`): the model worked but could not check its output
-  and fails the brief (schema not recursive, no `tone` enum, examples rejected). The tooling it lacked is now in
-  place (`tools/widget_check.py`, a structural hint in the brief, stricter conventions); the branch is not merged.
-  Workflow fixed so this cannot recur silently: the acceptance check now gates every commit and merge (D30,
-  `sidework.py merge` and `close`).
-- [ ] **S3** Tasks done and merged: `widget-schema`, `llm-docs` (independent), then `widget-templates` (needs the
-  schema). Each ends with `sidework.py check --run-checks`, `merge-check`, and a Claude review plus tests.
+  and fails the brief (schema not recursive, no `tone` enum, examples rejected). Merged with
+  `sidework.py merge --accept-failing` (092d213, the TODO is in the commit) and fixed by Claude (see 4.1). The
+  tooling it lacked is now in place, and the acceptance check gates every commit and merge (D30), so this
+  cannot recur silently. Still to judge: speed and ROCm, on the next task (`llm-docs` or `widget-templates`).
+- [ ] **S3** Tasks done and merged: `widget-schema` (done, as a draft fixed by Claude), `llm-docs`, then
+  `widget-templates` (now unblocked). Each ends with `sidework.py check --run-checks`, `merge-check`, and a Claude review plus tests.
 
 ## Handoff and housekeeping
 

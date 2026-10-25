@@ -1,10 +1,14 @@
 # widgets/
 
-Reserved for Rutile's widget system (plan items 4.1 to 4.5): the JSON Schema for the widget spec, example
-widgets, and the template widgets shown in the Custom widgets app.
+Rutile's widget system (plan items 4.1 to 4.5).
 
-This directory is owned by the **local-model line of work** (see `docs/sidework.md` and `tools/ownership.json`):
-while a `local/*` branch is open, the main line does not edit anything here, so merges cannot conflict. The
-first tasks are `widget-schema` and `widget-templates` (briefs in `docs/sidework/tasks/`).
+- `spec.schema.json`: the widget spec v1 as JSON Schema 2020-12. A widget is `{"version": 1, "name", "root"}`
+  where `root` is a node tree (`row`, `column`, `grid`, `card`, `header`, `tile`, `heroImage`, `stat`,
+  `progress`, `listRow`, `chip`). Text may hold bindings `{{source.field}}`; never code.
+- `examples/`: example widgets. `templates/` (to come): the Custom widgets app's templates.
 
-Nothing is built here yet. Plan: `docs/PLAN.md`.
+Check everything with `python3 tools/widget_check.py` (standard library only); `tests/test_widget_spec.py`
+runs it in `make check`.
+
+The local-model line may own this directory for a task (see `docs/sidework.md` and `tools/ownership.json`):
+while a `local/*` branch is open here, the main line does not edit it, so merges cannot conflict.

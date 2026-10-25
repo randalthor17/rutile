@@ -1,276 +1,394 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Rutile Widget Schema v1",
+  "title": "Rutile widget spec v1",
+  "description": "A widget: a versioned tree of nodes. Checked by tools/widget_check.py.",
   "type": "object",
-  "required": ["version", "name", "root"],
+  "required": [
+    "version",
+    "name",
+    "root"
+  ],
+  "additionalProperties": false,
   "properties": {
     "version": {
-      "type": "integer",
       "const": 1
     },
     "name": {
       "type": "string",
-      "description": "Widget name"
+      "minLength": 1,
+      "maxLength": 60
     },
     "root": {
-      "type": "object",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-        }
-      },
-      "if": {
-        "properties": {
-          "type": {"const": "card"}
-        }
-      },
-      "then": {
-        "properties": {
-          "tone": {
-            "type": "string",
-            "description": "Color role name in snake_case"
-          },
-          "children": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "string",
-                  "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-                }
-              },
-              "required": ["type"],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": ["tone", "children"],
-        "additionalProperties": false
-      },
-      "else": {
-        "properties": {
-          "children": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "properties": {
-                    "type": {"const": "row"},
-                    "children": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-                          }
-                        },
-                        "required": ["type"],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": ["type"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "column"},
-                    "children": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-                          }
-                        },
-                        "required": ["type"],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": ["type"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "grid"},
-                    "children": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-                          }
-                        },
-                        "required": ["type"],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": ["type"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "card"},
-                    "tone": {
-                      "type": "string",
-                      "description": "Color role name in snake_case"
-                    },
-                    "children": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-                          }
-                        },
-                        "required": ["type"],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": ["type", "tone", "children"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "header"},
-                    "icon": {
-                      "type": "string",
-                      "description": "Material Symbols ligature name"
-                    },
-                    "title": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["type", "icon", "title"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "tile"},
-                    "tone": {
-                      "type": "string",
-                      "description": "Color role name in snake_case"
-                    },
-                    "children": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "type": {
-                            "type": "string",
-                            "enum": ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-                          }
-                        },
-                        "required": ["type"],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": ["type", "tone", "children"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "heroImage"},
-                    "source": {
-                      "type": "string"
-                    },
-                    "aspect": {
-                      "type": "string",
-                      "description": "Aspect ratio like '16:9'"
-                    }
-                  },
-                  "required": ["type", "source", "aspect"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "stat"},
-                    "label": {
-                      "type": "string"
-                    },
-                    "value": {
-                      "type": "string"
-                    },
-                    "unit": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["type", "label", "value", "unit"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "progress"},
-                    "value": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 1
-                    },
-                    "style": {
-                      "type": "string",
-                      "enum": ["linear", "wavy"]
-                    }
-                  },
-                  "required": ["type", "value", "style"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "listRow"},
-                    "icon": {
-                      "type": "string",
-                      "description": "Material Symbols ligature name"
-                    },
-                    "title": {
-                      "type": "string"
-                    },
-                    "subtitle": {
-                      "type": "string"
-                    },
-                    "trailingIcon": {
-                      "type": "string",
-                      "description": "Material Symbols ligature name"
-                    }
-                  },
-                  "required": ["type", "icon", "title", "subtitle", "trailingIcon"],
-                  "additionalProperties": false
-                },
-                {
-                  "properties": {
-                    "type": {"const": "chip"},
-                    "label": {
-                      "type": "string"
-                    },
-                    "icon": {
-                      "type": "string",
-                      "description": "Material Symbols ligature name"
-                    }
-                  },
-                  "required": ["type", "label", "icon"],
-                  "additionalProperties": false
-                }
-              ]
-            }
-          }
-        },
-        "additionalProperties": false
-      }
+      "$ref": "#/$defs/node"
     }
   },
-  "additionalProperties": false
+  "$defs": {
+    "node": {
+      "description": "Any node; the `type` field selects which.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/row"
+        },
+        {
+          "$ref": "#/$defs/column"
+        },
+        {
+          "$ref": "#/$defs/grid"
+        },
+        {
+          "$ref": "#/$defs/card"
+        },
+        {
+          "$ref": "#/$defs/header"
+        },
+        {
+          "$ref": "#/$defs/tile"
+        },
+        {
+          "$ref": "#/$defs/heroImage"
+        },
+        {
+          "$ref": "#/$defs/stat"
+        },
+        {
+          "$ref": "#/$defs/progress"
+        },
+        {
+          "$ref": "#/$defs/listRow"
+        },
+        {
+          "$ref": "#/$defs/chip"
+        }
+      ]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Plain text, optionally with bindings written {{source.field}}; never code."
+    },
+    "binding": {
+      "type": "string",
+      "pattern": "^\\{\\{\\s*[a-z]+(\\.[A-Za-z_][A-Za-z0-9_]*)+\\s*\\}\\}$",
+      "description": "Exactly one binding, e.g. {{battery.level}}."
+    },
+    "icon": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "A Material Symbols ligature name, e.g. timer."
+    },
+    "tone": {
+      "enum": [
+        "background",
+        "error_container",
+        "inverse_surface",
+        "primary",
+        "primary_container",
+        "secondary",
+        "secondary_container",
+        "surface",
+        "surface_bright",
+        "surface_container",
+        "surface_container_high",
+        "surface_container_highest",
+        "surface_container_low",
+        "surface_container_lowest",
+        "surface_dim",
+        "surface_variant",
+        "tertiary",
+        "tertiary_container"
+      ],
+      "description": "A Rutile surface color role (theme/roles.json), snake_case."
+    },
+    "spacing": {
+      "enum": [
+        "none",
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl",
+        "xxl",
+        "xxxl"
+      ],
+      "description": "A Spacing token name (shell/common/Spacing.qml)."
+    },
+    "row": {
+      "type": "object",
+      "description": "Children side by side.",
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "row"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "description": "Child nodes, in order."
+        },
+        "spacing": {
+          "$ref": "#/$defs/spacing"
+        }
+      }
+    },
+    "column": {
+      "type": "object",
+      "description": "Children stacked.",
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "column"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "description": "Child nodes, in order."
+        },
+        "spacing": {
+          "$ref": "#/$defs/spacing"
+        }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "description": "Children in a grid of `columns` columns.",
+      "required": [
+        "type",
+        "children",
+        "columns"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "grid"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "description": "Child nodes, in order."
+        },
+        "spacing": {
+          "$ref": "#/$defs/spacing"
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        }
+      }
+    },
+    "card": {
+      "type": "object",
+      "description": "A surface holding other nodes.",
+      "required": [
+        "type",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "card"
+        },
+        "tone": {
+          "$ref": "#/$defs/tone"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "description": "Child nodes, in order."
+        }
+      }
+    },
+    "header": {
+      "type": "object",
+      "description": "A title with an optional icon.",
+      "required": [
+        "type",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "header"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "tile": {
+      "type": "object",
+      "description": "A tinted block.",
+      "required": [
+        "type",
+        "tone",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "tile"
+        },
+        "tone": {
+          "$ref": "#/$defs/tone"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "description": "Child nodes, in order."
+        }
+      }
+    },
+    "heroImage": {
+      "type": "object",
+      "description": "A large image from a path, URL or binding.",
+      "required": [
+        "type",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "heroImage"
+        },
+        "source": {
+          "$ref": "#/$defs/text"
+        },
+        "aspect": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*:[1-9][0-9]*$",
+          "description": "Width:height, e.g. 16:9."
+        }
+      }
+    },
+    "stat": {
+      "type": "object",
+      "description": "A big value with a label and unit.",
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "stat"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "value": {
+          "$ref": "#/$defs/text"
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 12
+        }
+      }
+    },
+    "progress": {
+      "type": "object",
+      "description": "A progress indicator.",
+      "required": [
+        "type",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "progress"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "$ref": "#/$defs/binding"
+            }
+          ],
+          "description": "0 to 1, or a binding that yields one."
+        },
+        "style": {
+          "enum": [
+            "linear",
+            "wavy"
+          ]
+        }
+      }
+    },
+    "listRow": {
+      "type": "object",
+      "description": "One row of a list.",
+      "required": [
+        "type",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "listRow"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "subtitle": {
+          "$ref": "#/$defs/text"
+        },
+        "trailingIcon": {
+          "$ref": "#/$defs/icon"
+        }
+      }
+    },
+    "chip": {
+      "type": "object",
+      "description": "A small labelled chip.",
+      "required": [
+        "type",
+        "label"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "chip"
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "icon": {
+          "$ref": "#/$defs/icon"
+        }
+      }
+    }
+  }
 }
