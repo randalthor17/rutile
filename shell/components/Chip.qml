@@ -15,9 +15,10 @@ Item {
     property string trailingIconName: ""
     property bool elevated: false           // assist only: tonal container instead of an outline
     property bool selected: false           // filter only
+    property bool controlled: false         // filter only: a click asks (`toggled(wanted)`), the owner sets `selected` (D33)
 
     signal clicked()
-    signal toggled(bool selected)
+    signal toggled(bool selected)           // the state asked for; already shown unless `controlled`
 
     readonly property var spec: ControlSpec.chipSpec[type]
     readonly property var impl: ControlSpec.chipSpec.impl
@@ -89,8 +90,9 @@ Item {
     function activate() {
         if (!enabled) return;
         if (isFilter) {
-            selected = !selected;
-            toggled(selected);
+            const wanted = !selected;
+            if (!controlled) selected = wanted;
+            toggled(wanted);
         }
         clicked();
     }

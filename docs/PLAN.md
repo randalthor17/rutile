@@ -12,8 +12,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [x] **0.1** Name Rutile Shell, MIT license.
 - [ ] **0.2** Collect references in `docs/reference/`: the four supplied Googlebook images, the DMS and Noctalia
-  screenshots (received: quick settings, launcher, settings). Still missing: Googlebook screenshots of Quick
-  Settings, the launcher and Settings.
+  screenshots (received: quick settings, launcher, settings). Googlebook Quick Settings (with edit mode),
+  Settings and the desktop are in, with notes per part in `docs/reference/README.md` (unreleased). Still
+  missing: the Googlebook launcher.
 - [x] **0.3** M3E values into tokens JSON (v0.1.0): `tools/gen_tokens.py` parses vendored androidx Compose
   Material3 sources, sha256-pinned: shape corners, springs, durations, easings, elevation, type scale.
 - [x] **0.4** Monorepo with git, `make check`, MIT `LICENSE`, `NOTICE` (v0.1.0).
@@ -42,7 +43,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   range sliders, the slider value label, indeterminate and circular progress.
 - [x] **1.5d** Tile, Chip, ListItem (unreleased): Tile after Android 16 SystemUI (D32), Chip (assist, filter) and
   the expressive segmented ListItem from the Compose tokens; in the gallery. Not done: input and suggestion
-  chips, three-line and avatar/image list items, the tile focus border, Googlebook references for the tile.
+  chips, three-line and avatar/image list items, the tile focus border. The Googlebook references show the
+  same tile (D32). Switch, Tile and filter Chip have a `controlled` mode: they change only when the applied
+  setting does (D33, unreleased).
 - [ ] **1.5** Component kit, remaining: FAB, Card, TextField, Menu, Dialog, NavRail, ShapeMorph
   (cookie/scallop shapes), GeminiGlow gradient border, and the 1.5c leftovers when something needs them.
   Likely next: ShapeMorph and GeminiGlow, or what Quick Settings (2.6) needs first.

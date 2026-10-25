@@ -49,9 +49,9 @@ surfaces), no focus ring. See `docs/components.md`.
 
 ### Next up
 
-1. The maintainer reviews Tile, Chip and ListItem in the gallery, and adds the Googlebook screenshots to
-   `docs/reference/` (plan 0.2) so the Tile can match them. Then: the shared EditableGrid (1.6) for the Quick
-   Settings tiles, or the Googlebook signature pieces (ShapeMorph, GeminiGlow).
+1. The shared EditableGrid (1.6) for the Quick Settings tiles, after the edit-mode reference
+   (`docs/reference/README.md`). Then the Googlebook signature pieces (ShapeMorph, GeminiGlow). The maintainer
+   still reviews Tile, Chip and ListItem in the gallery.
 2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
    `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
    `sidework.py merge TASK --close`. Judge speed and whether ROCm runs on the card.

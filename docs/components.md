@@ -11,11 +11,11 @@ directory containing the entry file, so run things from `shell/`.
 | `Button` | types `filled` `tonal` `elevated` `outlined` `text`; sizes `xs` `s` `m` `l` `xl`; `shape` round or square; `toggle`/`checked`; `iconName` |
 | `IconButton` | types `standard` `filled` `tonal` `outlined`; same sizes; `widthVariant` default (square), narrow, wide; `toggle`/`checked` |
 | `ButtonBase` | shared behavior (not used directly) |
-| `Switch` | `checked`, `toggled(bool)`; optional `checkedIcon` / `uncheckedIcon` in the handle |
+| `Switch` | `checked`, `toggled(bool)`, `controlled`; optional `checkedIcon` / `uncheckedIcon` in the handle |
 | `Slider` | horizontal; `from`, `to`, `value`, `stepSize` (0 = continuous), `moved(real)` when the user changes it |
 | `ProgressBar` | linear, determinate; `value` 0..1, `wavy`, `animated` |
-| `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`; `clicked()`, `toggled(bool)` |
-| `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, check when selected); `iconName`, `trailingIconName` |
+| `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`, `controlled`; `clicked()`, `toggled(bool)` |
+| `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 
 ```qml
@@ -46,10 +46,16 @@ the wave thresholds and the progress spring); the generator fails if those sourc
 - ProgressBar: the wave fades in over `Motion.long2` with the standard easing and out with emphasized
   accelerate; it only animates while visible.
 
+Switch, Tile and filter Chip toggle themselves by default, which suits the gallery. Anything wired to the
+system sets `controlled: true` and binds the state (`active: Network.wifiEnabled`): a click then only emits
+`toggled(wanted)`, the owner applies the setting, and the control changes when the bound state does. A change
+that fails never shows, and one made elsewhere does (D33).
+
 Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
 
 - Tile follows Android 16's Quick Settings tile from SystemUI (`Tile.kt`, `CommonTile.kt`, vendored and
-  parsed like the Compose files) until there are Googlebook references (plan 0.2, D32). Inactive tiles are
+  parsed like the Compose files). The Googlebook screenshots show the same tile (D32,
+  `docs/reference/README.md`). Inactive tiles are
   pills, active ones 24 px corners; on a dual-target tile the icon toggles and the body emits `clicked()`
   (open details). The focus border SystemUI draws is not done yet.
 - Chip spacing is Compose's `ChipArrangement`: 8 px padding at the ends, 8 px between elements, 4 px between a

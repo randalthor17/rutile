@@ -18,9 +18,12 @@ Item {
     property bool available: true
     property bool dualTarget: false
     property bool iconOnly: false
+    // Controlled: a toggle only asks (`toggled(wanted)`) and the owner sets `active` once the setting has
+    // applied (D33). Every real tile is controlled; the default suits demos.
+    property bool controlled: false
 
     signal clicked()                        // the tile body: opens details on a dual-target tile
-    signal toggled(bool active)
+    signal toggled(bool active)             // the state asked for; already shown unless `controlled`
 
     readonly property var spec: ControlSpec.tileSpec
     // Which of SystemUI's color sets applies (exposed for tests).
@@ -47,8 +50,9 @@ Item {
 
     function toggle() {
         if (!enabled || !available) return;
-        active = !active;
-        toggled(active);
+        const wanted = !active;
+        if (!controlled) active = wanted;
+        toggled(wanted);
     }
     function body() {
         if (!enabled || !available) return;

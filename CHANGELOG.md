@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Toggles show the applied state** (D33). Switch, Tile and filter Chip take `controlled: true`: a click
+  emits `toggled(wanted)` and changes nothing, and the control follows its bound state, so a setting that
+  fails to apply never shows as changed. One new QML test drives all three against a stand-in backend.
+- **Googlebook references** in `docs/reference/` with notes per part (Quick Settings and its edit mode,
+  Settings, desktop). The Quick Settings tile matches Android 16's, so the Tile stays as built (D32).
 - **Tile, Chip, ListItem** (plan 1.5d). Tile: Android 16's Quick Settings tile (D32): pill when inactive, 24 px
   corners when active, large or icon-only, dual-target (icon toggles, body opens details), unavailable state.
   Chip: assist (flat or elevated) and filter (check when selected), with Compose's spacing. ListItem: one or

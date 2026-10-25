@@ -19,6 +19,29 @@ TestCase {
     Component { id: spyComp; SignalSpy {} }
     Component { id: switchComp; Switch {} }
 
+    // A stand-in for a system setting: the controls bind to `on` and only `apply()` changes it, as a real
+    // backend does once the setting took effect (D33).
+    QtObject {
+        id: backend
+        property bool on: false
+        property var asked: []
+        function apply() { on = asked[asked.length - 1]; }
+    }
+    Component {
+        id: boundComp
+        Item {
+            property alias tile: t
+            property alias sw: s
+            property alias chip: c
+            Tile { id: t; x: 40; y: 40; width: 300; text: "Wi-Fi"; controlled: true; active: backend.on
+                   onToggled: wanted => backend.asked.push(wanted) }
+            Switch { id: s; x: 40; y: 140; controlled: true; checked: backend.on
+                     onToggled: wanted => backend.asked.push(wanted) }
+            Chip { id: c; x: 40; y: 200; type: "filter"; text: "On"; controlled: true; selected: backend.on
+                   onToggled: wanted => backend.asked.push(wanted) }
+        }
+    }
+
     function init() { Colors.mode = "dark"; }
     function cleanup() { Colors.mode = "dark"; mouseMove(root, 790, 590); }
 
@@ -31,6 +54,30 @@ TestCase {
     }
     function settledAt(get, want) {
         tryVerify(function () { return Math.abs(get() - want) < 0.05; }, 4000, "expected " + want + ", got " + get());
+    }
+
+    // ---- Controlled controls show only the applied state ----
+    function test_controlled_controls_wait_for_the_setting_to_apply() {
+        backend.on = false;
+        var b = make(boundComp);
+        var controls = [[b.tile, "active", 200, 36], [b.sw, "checked", 26, 16], [b.chip, "selected", 10, 16]];
+        for (var i = 0; i < controls.length; i++) {
+            var c = controls[i][0], prop = controls[i][1], px = controls[i][2], py = controls[i][3];
+            for (var round = 0; round < 2; round++) {
+                var want = !backend.on;
+                backend.asked = [];
+                mouseClick(c, px, py);
+                compare(backend.asked, [want], prop + ": asks for the other state");
+                compare(c[prop], !want, prop + ": shows nothing until the setting applies");
+                backend.apply();
+                compare(c[prop], want, prop + ": follows the applied state (the binding survived)");
+            }
+            backend.asked = [];
+            mouseClick(c, px, py);
+            compare(c[prop], backend.on, prop + ": a change that never applies is never shown");
+            backend.on = !backend.on;
+            compare(c[prop], backend.on, prop + ": a change made elsewhere shows too");
+        }
     }
 
     // ---- Tile ----

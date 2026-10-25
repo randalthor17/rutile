@@ -163,4 +163,12 @@ flake's Quickshell 0.3.2 is built on Qt 6.12, so the code now uses Qt 6.7 featur
 component, and the Googlebook screenshots are not in the repository yet (plan 0.2). The maintainer chose
 Android 16's SystemUI tile as the stand-in: its sizes, corner radii and per-state colors are parsed from the
 vendored `Tile.kt` and `CommonTile.kt` (Apache-2.0), like the Compose token files. Revisit against the
-references when they arrive.
+references when they arrive. Revisited (2026-10-26): the Googlebook Quick Settings screenshots show Android 16's
+tile unchanged (pill when off, rounded square when on, the dual-target icon box, 4 columns with large tiles
+spanning 2), so the stand-in stays as it is (`docs/reference/README.md`).
+
+**D33. A toggle shows the state the system is in, not the one asked for.** The maintainer's rule: a tile,
+switch or chip wired to a setting turns on or off only once the setting has applied, and follows it when it
+changes elsewhere. The controls have a `controlled` mode: a click emits `toggled(wanted)` and changes nothing;
+the owner binds the state to the backend's. Assigning the state inside the control would also break that
+binding, so the uncontrolled default is for demos only.

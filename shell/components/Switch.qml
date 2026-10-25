@@ -9,10 +9,13 @@ Item {
     id: root
 
     property bool checked: false
+    // Controlled: a click only asks (`toggled(wanted)`) and the owner sets `checked` once the change has
+    // applied, so the switch never shows a state the system is not in (D33). Bind `checked` to the state.
+    property bool controlled: false
     property string checkedIcon: ""      // Material Symbols name shown in the handle when on
     property string uncheckedIcon: ""    // ... and when off; either one makes the handle 24 px
 
-    signal toggled(bool checked)
+    signal toggled(bool checked)            // the state asked for; already shown unless `controlled`
 
     readonly property var spec: ControlSpec.switchSpec
     readonly property bool pressed: area.pressed && enabled
@@ -75,8 +78,9 @@ Item {
 
     function toggle() {
         if (!enabled) return;
-        checked = !checked;
-        toggled(checked);
+        const wanted = !checked;
+        if (!controlled) checked = wanted;
+        toggled(wanted);
     }
 
     Keys.onPressed: event => {
