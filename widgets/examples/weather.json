@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "Weather",
+  "root": {
+    "type": "card",
+    "tone": "surface_container",
+    "children": [
+      {
+        "type": "heroImage",
+        "source": "{{weather.icon}}",
+        "aspect": "square"
+      },
+      {
+        "type": "stat",
+        "label": "Temperature",
+        "value": "{{weather.temperature}}",
+        "unit": "°C"
+      }
+    ]
+  }
+}

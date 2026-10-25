@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "name": "Tasks",
+  "root": {
+    "type": "card",
+    "tone": "surface",
+    "children": [
+      {
+        "type": "listRow",
+        "icon": "task_alt",
+        "title": "{{todo.title}}",
+        "subtitle": "{{todo.description}}",
+        "trailingIcon": "check_circle"
+      }
+    ]
+  }
+}
