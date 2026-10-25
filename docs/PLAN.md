@@ -122,6 +122,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `docs/sidework.md`, conventions and three task briefs. Switched from aider to opencode after the maintainer
   found aider's workflow unusable for agentic work. Moved to opencode 2.x (unreleased): config rewritten
   against the real 2.1.1 schema, `--standalone`, `PWD`, `execute` removed, tested end to end with a scripted model.
+  Cleanup in one step: `merge TASK --close`, `close --merged`.
 - [ ] **S2** Trial: run one bounded task on the 9060 XT (suggested `widget-schema`) and judge speed, tool-calling
   reliability and output quality. Also confirm ROCm works on the card (`ollama ps` shows 100% GPU).
   First attempt (2026-10-25, qwen3:14b, `local/widget-schema`): the model worked but could not check its output

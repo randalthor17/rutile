@@ -119,6 +119,8 @@ python3 tools/sidework.py check widget-schema --run-checks   # paths, acceptance
 python3 tools/sidework.py merge-check widget-schema
 python3 tools/sidework.py merge widget-schema          # refuses unless check and merge-check pass
 python3 tools/sidework.py close widget-schema          # then: worktree, branch and allowlist removed
+python3 tools/sidework.py merge widget-schema --close  # or both in one step
+python3 tools/sidework.py close --merged              # close every local/* branch already in main
 python3 tools/sidework.py status                       # all local branches at a glance
 ```
 
@@ -163,7 +165,8 @@ Tags and sizes come from third-party summaries of the Ollama library: confirm wi
 
 Every task ends with a gate: the acceptance check (at every commit and again at merge), `merge-check`, then
 Claude reviews the merged work and adds tests for it. After `close`, the task's paths belong to the main line
-again.
+again. `close` never deletes uncommitted files in a worktree without `--force`, and never closes an unmerged branch,
+even with `--force`.
 
 ## Troubleshooting
 
@@ -183,7 +186,7 @@ again.
 Tested here with real git repositories: the guard and its two attacks, the acceptance gate (staged versus
 working tree, a rewritten brief or checker in the worktree, a branch older than its checker), per-task
 allowlists, rename and delete handling, `check` (including the leftover report), `merge-check` (clean and
-conflicting), `merge` (refusals and `--accept-failing`), `close`, `bundle`, `status`. The
+conflicting), `merge` (refusals, `--accept-failing`, `--close`), `close` (one task and `--merged`), `bundle`, `status`. The
 launcher is tested through fake `opencode` and `ollama` executables (working directory, `PWD`, arguments,
 environment, identity, every preflight message). Against the **real opencode 2.1.1**, with a private HOME and a
 scripted OpenAI-compatible model standing in for Ollama: opencode keeps every key of the generated config (it

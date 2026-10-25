@@ -441,6 +441,44 @@ class Acceptance(Base):
         self.assertFalse(sw.branch_exists("local/demo", cwd=self.repo))
         self.assertFalse(sw.state_file("local/demo", cwd=self.repo).exists())
 
+    def test_merge_close_cleans_up_in_one_step_but_keeps_uncommitted_files(self):
+        wt = self.start()
+        self.commit(wt, {"widgets/a.json": '{"ok": 1}\n'})
+        res = tool(self.repo, "merge", "demo", "--close")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("closed local/demo", res.stdout)
+        self.assertFalse(wt.exists())
+        self.assertFalse(sw.branch_exists("local/demo", cwd=self.repo))
+        wt2 = self.start("two")
+        self.commit(wt2, {"widgets/b.json": '{"ok": 1}\n'})
+        (wt2 / "stray.txt").write_text("x\n")
+        res = tool(self.repo, "merge", "two", "--close")
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("stray.txt", res.stderr)
+        self.assertTrue((self.repo / "widgets" / "b.json").exists(), "the merge itself still happened")
+        self.assertTrue((wt2 / "stray.txt").exists())
+
+    def test_close_merged_closes_every_merged_branch_and_only_those(self):
+        done, dirty, open_ = self.start("done"), self.start("dirty"), self.start("open")
+        self.commit(done, {"widgets/a.json": '{"ok": 1}\n'})
+        self.commit(dirty, {"widgets/b.json": '{"ok": 1}\n'})
+        self.commit(open_, {"widgets/c.json": '{"ok": 1}\n'})
+        for task in ("done", "dirty"):
+            self.assertEqual(tool(self.repo, "merge", task).returncode, 0)
+        (dirty / "stray.txt").write_text("x\n")
+        self.assertEqual(tool(self.repo, "close").returncode, 2, "a TASK or --merged is required")
+        res = tool(self.repo, "close", "--merged")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("stray.txt", res.stderr)
+        self.assertFalse(done.exists())
+        self.assertTrue(dirty.exists())
+        self.assertTrue(open_.exists())
+        self.assertTrue(sw.branch_exists("local/open", cwd=self.repo))
+        self.assertEqual(tool(self.repo, "close", "--merged", "--force").returncode, 0)
+        self.assertFalse(dirty.exists())
+        self.assertTrue(open_.exists(), "never an unmerged branch, even with --force")
+        self.assertIn("no merged", tool(self.repo, "close", "--merged").stdout)
+
 
 class CheckMergeBundle(Base):
     def test_check_passes_for_a_compliant_branch_and_fails_when_the_hook_was_bypassed(self):

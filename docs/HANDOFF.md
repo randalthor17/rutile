@@ -53,7 +53,7 @@ surfaces), no focus ring. See `docs/components.md`.
    ProgressBar (Quick Settings needs them) or the Googlebook signature pieces (ShapeMorph, GeminiGlow).
 2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
    `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
-   `sidework.py merge TASK` and `close TASK`. Judge speed and whether ROCm runs on the card.
+   `sidework.py merge TASK --close`. Judge speed and whether ROCm runs on the card.
 3. Finish the component kit (plan item 1.5), then the shared EditableGrid (1.6), then Phase 2.
 
 ## 3. Resume in five minutes

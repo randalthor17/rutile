@@ -15,11 +15,14 @@ agent that wanders cannot commit outside its area. Claude's sessions leave those
                                    verify a branch only touches allowed paths and passes its brief's
                                    acceptance check (and `make check`)
     sidework.py merge-check [TASK] dry-run the merge into main; fails on any conflict
-    sidework.py merge TASK [--accept-failing REASON]
+    sidework.py merge TASK [--accept-failing REASON] [--close]
                                    merge into main, only if check and merge-check pass; REASON merges a
-                                   failing branch anyway and records it as a TODO in the merge commit
-    sidework.py close TASK [--force]
-                                   after the merge: remove the worktree, the branch and its allowlist
+                                   failing branch anyway and records it as a TODO in the merge commit;
+                                   --close then closes the task as below
+    sidework.py close TASK | --merged [--force]
+                                   after the merge: remove the worktree, the branch and its allowlist;
+                                   --merged does so for every local/* branch already in main. Uncommitted
+                                   files in a worktree block its close unless --force
     sidework.py bundle TASK [--out FILE]
                                    a git bundle of the branch's commits, to hand over
     sidework.py status             list local/* branches and whether each is clean to merge
@@ -445,30 +448,54 @@ def cmd_merge(args):
     git("merge", "--no-ff", branch, "-m", message)
     print(f"merged {branch} into {cfg['base']}" + (" AS A FAILING DRAFT (TODO recorded in the commit)"
                                                    if accepted is False else ""))
-    print(f"next     python3 tools/sidework.py close {args.task}")
+    if args.close:
+        close_branch(branch, cfg)
+    else:
+        print(f"next     python3 tools/sidework.py close {args.task}")
     return 0
 
 
-def cmd_close(args):
-    """Remove a merged task's worktree, branch and allowlist, which reopens its paths to the main line."""
-    cfg = load_config()
-    branch = branch_name(args.task, cfg)
-    if not branch_exists(branch):
-        raise SideworkError(f"no such branch {branch}")
+def close_branch(branch, cfg, force=False):
+    """Remove a merged branch's worktree, branch and allowlist; refuse to delete uncommitted files unless forced."""
     if git("merge-base", "--is-ancestor", branch, cfg["base"], check=False).returncode != 0:
         raise SideworkError(f"{branch} has commits that are not in {cfg['base']}; merge it first (or delete it by hand)")
     wt = worktree_of(branch)
     if wt is not None:
         leftovers = worktree_leftovers(wt, allowed_paths(branch, cfg), cfg)
-        if leftovers and not args.force:
+        if leftovers and not force:
             print_leftovers(wt, leftovers, sys.stderr)
-            raise SideworkError("the worktree has uncommitted files (above); they would be deleted. "
-                                "Rerun with --force once you are sure they are not needed")
-        git("worktree", "remove", *(["--force"] if args.force else []), str(wt))
+            raise SideworkError(f"the {branch} worktree has uncommitted files (above); they would be deleted. "
+                                "Rerun close with --force once you are sure they are not needed")
+        git("worktree", "remove", *(["--force"] if force else []), str(wt))
     git("branch", "-d", branch)
     state_file(branch).unlink(missing_ok=True)
     print(f"closed {branch}" + (f" and removed {wt}" if wt else ""))
-    return 0
+
+
+def cmd_close(args):
+    """Remove a merged task's worktree, branch and allowlist, which reopens its paths to the main line."""
+    cfg = load_config()
+    if args.merged == bool(args.task):
+        raise SideworkError("give a TASK or --merged (every local/* branch already in the base)")
+    if args.task:
+        branch = branch_name(args.task, cfg)
+        if not branch_exists(branch):
+            raise SideworkError(f"no such branch {branch}")
+        close_branch(branch, cfg, args.force)
+        return 0
+    refs = git("for-each-ref", "--format=%(refname:short)", f"refs/heads/{cfg['branch_prefix']}").stdout.split()
+    merged = [b for b in refs if git("merge-base", "--is-ancestor", b, cfg["base"], check=False).returncode == 0]
+    if not merged:
+        print(f"no merged {cfg['branch_prefix']}* branches to close")
+    failed = False
+    for br in merged:
+        try:
+            close_branch(br, cfg, args.force)
+        except SideworkError as e:
+            print(f"sidework: {e}", file=sys.stderr)
+            failed = True
+    git("worktree", "prune")
+    return 1 if failed else 0
 
 
 def cmd_bundle(args):
@@ -809,8 +836,10 @@ def main(argv):
     m = sub.add_parser("merge")
     m.add_argument("task")
     m.add_argument("--accept-failing", metavar="REASON")
+    m.add_argument("--close", action="store_true")
     cl = sub.add_parser("close")
-    cl.add_argument("task")
+    cl.add_argument("task", nargs="?")
+    cl.add_argument("--merged", action="store_true")
     cl.add_argument("--force", action="store_true")
     b = sub.add_parser("bundle")
     b.add_argument("task")

@@ -20,6 +20,8 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 - **Dev tools** (`tools/dev/`): `pyside_qml.py` (run the QML tests or render the gallery on a modern Qt via PySide6,
   optionally through the real OpenGL scene graph), `eval_flake.sh`, `setup_sandbox.sh`.
 
+- **Side work cleanup:** `sidework.py merge TASK --close` merges and closes in one step; `close --merged` closes
+  every `local/*` branch already in main. Neither deletes uncommitted worktree files without `--force`.
 - **opencode 2.x** for the local agent (the maintainer's switch, c62dbf8, finished): the generated config follows
   the real 2.1.1 schema (`providers` with `package`, ordered `permissions`, `policies`); the launcher runs
   `--standalone`, sets `PWD` to the worktree and removes the `execute` tool. The draft 2.x config could not run
