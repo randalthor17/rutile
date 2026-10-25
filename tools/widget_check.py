@@ -5,6 +5,8 @@
                                     and widgets/templates/*.json against it
     widget_check.py FILE ...        check only these widget files (against widgets/spec.schema.json)
     widget_check.py --schema S ...  use another schema file
+    widget_check.py --templates     also the widget-templates rules: 30 files <category>-<1..5>.json in
+                                    widgets/templates, no two with the same structure, each with a binding
 
 Standard library only, so the local model can run it in any shell (it once spent dozens of tool calls
 trying to install `jsonschema`). It implements the subset of JSON Schema 2020-12 a widget spec needs and
@@ -262,6 +264,40 @@ def find_property(schema, name, path=()):
             yield from find_property(v, name, path + (i,))
 
 
+TEMPLATE_CATEGORIES = ["weather", "daily-update", "world-clock", "finance", "countdown", "sports"]
+TEMPLATES_PER_CATEGORY = 5
+
+
+def structure(node):
+    """A node tree reduced to its types and nesting, to tell layouts apart."""
+    if not isinstance(node, dict):
+        return None
+    kids = node.get("children", [])
+    return (node.get("type"), tuple(structure(k) for k in kids) if isinstance(kids, list) else ())
+
+
+def template_problems(folder):
+    errs = []
+    want = {f"{c}-{n}.json" for c in TEMPLATE_CATEGORIES for n in range(1, TEMPLATES_PER_CATEGORY + 1)}
+    have = {f.name for f in Path(folder).glob("*.json")}
+    for name in sorted(want - have):
+        errs.append(("widgets/templates", (), f"missing {name}"))
+    for name in sorted(have - want):
+        errs.append(("widgets/templates", (), f"{name} is not a template name (<category>-<1..5>.json)"))
+    seen = {}
+    for name in sorted(have & want):
+        widget, err = load_json(Path(folder) / name)
+        if err:
+            continue                       # reported by the schema check
+        shape = structure(widget.get("root"))
+        if shape in seen:
+            errs.append((f"widgets/templates/{name}", ("root",), f"same structure as {seen[shape]}; make the layout differ"))
+        seen.setdefault(shape, name)
+        if not any(BINDING.search(text) for _, text in strings(widget)):
+            errs.append((f"widgets/templates/{name}", (), "uses no binding; each template shows live data"))
+    return errs
+
+
 def load_json(path):
     try:
         return json.loads(Path(path).read_text()), None
@@ -299,6 +335,7 @@ def main(argv, out=sys.stdout):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("files", nargs="*")
     ap.add_argument("--schema", default=str(SCHEMA))
+    ap.add_argument("--templates", action="store_true")
     args = ap.parse_args(argv)
     schema_name = rel(args.schema)
     schema, err = load_json(args.schema)
@@ -328,6 +365,10 @@ def main(argv, out=sys.stdout):
     except SchemaError as e:
         report(schema_name, [((), str(e))], out)
         return 1
+    if args.templates:
+        for name, path, msg in template_problems(ROOT / "widgets" / "templates"):
+            report(name, [(path, msg)], out)
+            ok = False
     print(("ok: " if ok else "FAILED: ") + f"{schema_name} and {len(files)} widget file(s)", file=out)
     return 0 if ok else 1
 

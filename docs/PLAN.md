@@ -124,7 +124,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   First attempt (2026-10-25, qwen3:14b, `local/widget-schema`): the model worked but could not check its output
   and fails the brief (schema not recursive, no `tone` enum, examples rejected). The tooling it lacked is now in
   place (`tools/widget_check.py`, a structural hint in the brief, stricter conventions); the branch is not merged.
-  Next: rebase it on main, clear the stray files, and rerun.
+  Workflow fixed so this cannot recur silently: the acceptance check now gates every commit and merge (D30,
+  `sidework.py merge` and `close`).
 - [ ] **S3** Tasks done and merged: `widget-schema`, `llm-docs` (independent), then `widget-templates` (needs the
   schema). Each ends with `sidework.py check --run-checks`, `merge-check`, and a Claude review plus tests.
 

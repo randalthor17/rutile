@@ -141,3 +141,9 @@ spent most of its session trying to install `jsonschema` (venv, flake edits) bec
 check. `tools/widget_check.py` implements the JSON Schema subset a widget spec needs and refuses every other
 keyword, so a schema cannot depend on a rule nothing enforces; it is cross-checked against `jsonschema` when that
 is installed. It belongs to the main line; the model runs it but may not edit it.
+
+**D30. A task's acceptance check gates commits and merges, not just reviews.** Prose acceptance criteria let the
+first trial commit a schema that rejected its own examples. Each brief now declares one command; the commit hook
+runs it on the staged work, `check` and `merge` run it on the would-be merge result, all using the main
+checkout's brief and tools. A known-broken branch can still be merged deliberately (`--accept-failing`, reason
+recorded in the merge commit), so the gate never forces work to be thrown away.

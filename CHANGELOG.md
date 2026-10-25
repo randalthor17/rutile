@@ -28,6 +28,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 - **`tools/widget_check.py`**: stdlib checker for the widget schema and widget files, the acceptance check of the
   `widget-schema` brief; refuses JSON Schema keywords it does not implement. `sidework.py check` and `status`
   report uncommitted leftovers in a worktree. `tools/llm_docs_check.py` does the same job for the `llm-docs` task.
+- **Acceptance gate for local tasks:** each brief declares a runnable check; the commit hook refuses staged work
+  that fails it, `sidework.py check` judges the would-be merge result, and the new `sidework.py merge` refuses
+  failing branches unless `--accept-failing "why"` (recorded as a TODO in the merge commit). New `sidework.py
+  close` removes a merged task's worktree, branch and allowlist. `tools/widget_check.py --templates` checks the
+  `widget-templates` rules.
 - **Local-model conventions and brief** tightened after the first trial: no installing, files only through the
   edit tools, stop after repeated failures, commit only own paths; the `widget-schema` brief sketches the recursive
   structure.

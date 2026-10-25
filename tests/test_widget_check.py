@@ -227,6 +227,43 @@ class Cli(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
 
 
+class Templates(unittest.TestCase):
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir, True)
+
+    def write_all(self):
+        """30 templates with distinct structures (a column of k chips) and a binding each."""
+        k = 0
+        for c in wc.TEMPLATE_CATEGORIES:
+            for n in range(1, wc.TEMPLATES_PER_CATEGORY + 1):
+                k += 1
+                root = {"type": "column", "children": [{"type": "chip", "label": "{{clock.time}}"}] * k}
+                (self.dir / f"{c}-{n}.json").write_text(json.dumps({"version": 1, "name": "t", "root": root}))
+
+    def messages(self):
+        return [m for _, _, m in wc.template_problems(self.dir)]
+
+    def test_a_complete_distinct_set_passes(self):
+        self.write_all()
+        self.assertEqual(self.messages(), [])
+
+    def test_missing_extra_duplicate_and_unbound_templates_are_reported(self):
+        self.write_all()
+        (self.dir / "sports-5.json").unlink()
+        (self.dir / "golf-1.json").write_text("{}")
+        same = json.loads((self.dir / "weather-1.json").read_text())
+        (self.dir / "weather-2.json").write_text(json.dumps(same))
+        plain = json.loads((self.dir / "finance-1.json").read_text())
+        for child in plain["root"]["children"]:
+            child["label"] = "static"
+        (self.dir / "finance-1.json").write_text(json.dumps(plain))
+        msgs = self.messages()
+        for needle in ("missing sports-5.json", "golf-1.json is not a template name",
+                       "same structure as weather-1.json", "uses no binding"):
+            self.assertTrue(any(needle in m for m in msgs), f"{needle!r} not in {msgs}")
+
+
 try:
     import jsonschema  # optional cross-check only; never a dependency
 except ImportError:

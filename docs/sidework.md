@@ -48,6 +48,34 @@ Three 2.x behaviours the launcher works around, all found by running the real bi
 `OPENCODE_DISABLE_PROJECT_CONFIG` is deliberately not used: in 2.1.1 it also drops `AGENTS.md` and our own
 `instructions`, so the model would lose its conventions.
 
+## How bad work is caught: the acceptance gate
+
+The first trial committed a schema that rejected its own examples, and nothing noticed, because the brief's
+acceptance criteria were prose and `make check` does not look at `widgets/`. Now every brief declares one
+runnable check, the first code block under `## Acceptance` (for example `python3 tools/widget_check.py`), and
+three places run it:
+
+| When | Where | What it judges | On failure |
+|---|---|---|---|
+| every commit on a `local/*` branch | the pre-commit hook | main's tree with the task's paths replaced by exactly what is staged | the commit is refused, with the checker's first errors |
+| `sidework.py check TASK` | anyone, any time | the branch merged into main (`git merge-tree`, nothing touched) | exit 1, with the errors |
+| `sidework.py merge TASK` | the maintainer or Claude | the same merged tree | refused; `--accept-failing "why"` merges anyway and writes the why and the errors into the merge commit as a TODO |
+
+Design points, each covered by a test:
+
+- The command comes from the **main checkout's** brief, never the worktree's, and the checkers live in `tools/`,
+  which a local branch can never commit. Rewriting either inside the worktree changes nothing (both attacks are
+  tested).
+- The hook judges the **index**, not the working tree, so what is checked is what gets committed.
+- Judging the merged tree, not the branch tip, means a branch started before its checker existed is still
+  judged by main's current tools (that was the case for `local/widget-schema`).
+- A brief without an acceptance block still works, and `check` says plainly that nothing verified the content.
+- Every checker is standard-library Python, prints one problem per line, and caps its output, because the
+  reader is a small model with a 32K context.
+
+What this does not catch: work that passes its check but is still poor (a weak schema that happens to accept
+its examples). That is what the review after the merge is for.
+
 ## Setup
 
 **Option A: Ollama as a system service (recommended on NixOS).** In your system flake:
@@ -87,11 +115,15 @@ python3 tools/sidework.py start widget-schema          # branch local/widget-sch
 python3 tools/sidework.py agent widget-schema          # interactive opencode, brief and conventions preloaded
 python3 tools/sidework.py agent widget-schema --unattended   # or: headless run on the default task prompt
 python3 tools/widget_check.py                          # in the worktree: the widget tasks' acceptance check
-python3 tools/sidework.py check widget-schema --run-checks   # also lists uncommitted leftovers in the worktree
+python3 tools/sidework.py check widget-schema --run-checks   # paths, acceptance, leftovers, make check
 python3 tools/sidework.py merge-check widget-schema
-git merge --no-ff local/widget-schema                  # or: sidework.py bundle widget-schema
+python3 tools/sidework.py merge widget-schema          # refuses unless check and merge-check pass
+python3 tools/sidework.py close widget-schema          # then: worktree, branch and allowlist removed
 python3 tools/sidework.py status                       # all local branches at a glance
 ```
+
+`sidework.py bundle TASK` packs a branch into a file, for handing it to a Claude session that cannot see this
+machine; when Claude works in this checkout directly, `merge` is all that is needed.
 
 `--unattended` runs `opencode run --auto`, which approves everything that is not explicitly denied: use it
 for the well-specified briefs, then read the diff. `--prompt TEXT` runs one headless prompt without `--auto`.
@@ -129,8 +161,9 @@ Tags and sizes come from third-party summaries of the Ollama library: confirm wi
 | drafting prose from facts already in the repo | rendering, fonts, motion, anything needing a debugger |
 | more examples, fixtures, variants of existing files | design decisions and architecture |
 
-Every task ends with a gate: `check`, `merge-check`, then Claude reviews the diff in the next session and adds
-tests for what the model produced.
+Every task ends with a gate: the acceptance check (at every commit and again at merge), `merge-check`, then
+Claude reviews the merged work and adds tests for it. After `close`, the task's paths belong to the main line
+again.
 
 ## Troubleshooting
 
@@ -147,8 +180,10 @@ tests for what the model produced.
 
 ## What is verified, and what is not
 
-Tested here with real git repositories: the guard and its two attacks, per-task allowlists, rename and delete
-handling, `check` (including the leftover report), `merge-check` (clean and conflicting), `bundle`, `status`. The
+Tested here with real git repositories: the guard and its two attacks, the acceptance gate (staged versus
+working tree, a rewritten brief or checker in the worktree, a branch older than its checker), per-task
+allowlists, rename and delete handling, `check` (including the leftover report), `merge-check` (clean and
+conflicting), `merge` (refusals and `--accept-failing`), `close`, `bundle`, `status`. The
 launcher is tested through fake `opencode` and `ollama` executables (working directory, `PWD`, arguments,
 environment, identity, every preflight message). Against the **real opencode 2.1.1**, with a private HOME and a
 scripted OpenAI-compatible model standing in for Ollama: opencode keeps every key of the generated config (it

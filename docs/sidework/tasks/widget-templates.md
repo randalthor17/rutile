@@ -15,10 +15,16 @@ Six categories with five templates each, the way the Googlebook "Custom widgets"
 uses a different mix of node types and tones, not five copies of one design.
 
 ## Acceptance
-- 30 files, all valid JSON, all matching `widgets/spec.schema.json`.
-- No two templates have the same `root` structure.
-- Each template uses at least one binding from an allowed data source.
-- `python3 -m json.tool` succeeds on each.
+Run this after every change; a commit is refused until it passes:
+
+```
+python3 tools/widget_check.py --templates
+```
+
+It checks that:
+- there are 30 files, all valid JSON, all matching `widgets/spec.schema.json`;
+- no two templates have the same `root` structure;
+- each template uses at least one binding from an allowed data source.
 
 ## Out of scope
 Changing the schema. If it cannot express something, list it in your summary instead.

@@ -145,6 +145,18 @@ class Consistency(unittest.TestCase):
                 self.assertTrue(sw.matches(path, cfg["local_owned"]), f"{task}: {path} is not local-owned")
                 self.assertFalse(sw.matches(path, cfg["always_forbidden"]), f"{task}: {path} is forbidden")
 
+    def test_every_brief_declares_an_acceptance_check_that_runs_a_repo_tool(self):
+        import shlex
+        for task in self.TASKS:
+            commands = sw.acceptance_commands(task)
+            self.assertTrue(commands, f"{task}: no code block under ## Acceptance, so nothing gates its commits")
+            for cmd in commands:
+                argv = shlex.split(cmd)
+                self.assertEqual(argv[0], "python3", f"{task}: {cmd}")
+                self.assertTrue(argv[1].startswith("tools/") and (ROOT / argv[1]).exists(), f"{task}: {cmd}")
+                self.assertFalse(sw.matches(argv[1], sw.load_config()["local_owned"]),
+                                 f"{task}: the check must not be something the model can edit")
+
     def test_task_names_are_valid_branch_slugs(self):
         for task in self.TASKS:
             self.assertRegex(task, sw.TASK_RE.pattern)
@@ -156,7 +168,7 @@ class Consistency(unittest.TestCase):
 
     def test_the_plan_documents_every_command(self):
         doc = (ROOT / "docs" / "sidework.md").read_text()
-        for cmd in ("start", "agent", "check", "merge-check", "bundle", "status", "models", "serve"):
+        for cmd in ("start", "agent", "check", "merge-check", "merge", "close", "bundle", "status", "models", "serve"):
             self.assertIn(f"sidework.py {cmd}", doc, cmd)
             self.assertIn(f"sidework.py {cmd}", sw.__doc__, cmd)
 
@@ -293,6 +305,141 @@ class StartAndGuard(Base):
         (self.repo / "shell" / "a.qml").write_text("// edited on main\n")
         run(["git", "add", "-A"], self.repo)
         self.assertEqual(run(["git", "commit", "-q", "-m", "main edit"], self.repo, check=False).returncode, 0)
+
+
+ACCEPT_TOOL = """import pathlib, sys
+bad = [p for p in sorted(pathlib.Path("widgets").glob("[ab].json")) if "ok" not in p.read_text()]
+for p in bad:
+    print(f"{p}: missing ok")
+sys.exit(1 if bad else 0)
+"""
+
+
+class Acceptance(Base):
+    """The brief's acceptance check gates commits (hook), `check` and `merge`."""
+
+    def setUp(self):
+        super().setUp()
+        self.add_brief("demo", "python3 tools/accept.py")
+
+    def add_brief(self, task, command, tool_text=ACCEPT_TOOL):
+        (self.repo / "tools" / "accept.py").write_text(tool_text)
+        brief = self.repo / "docs" / "sidework" / "tasks" / f"{task}.md"
+        brief.parent.mkdir(parents=True, exist_ok=True)
+        brief.write_text(f"# Task: {task}\n\n## Acceptance\n\n```\n{command}\n```\n\n## Out of scope\nx\n")
+        run(["git", "add", "-A"], self.repo)
+        run(["git", "commit", "-q", "-m", f"brief {task}"], self.repo)
+
+    def test_briefs_are_parsed_from_the_first_block_under_acceptance(self):
+        brief = self.repo / "docs" / "sidework" / "tasks" / "p.md"
+        brief.write_text("## Goal\n```\nnot this\n```\n## Acceptance\ntext\n```sh\n# a comment\npython3 a.py\n\n"
+                         "python3 b.py --x\n```\n```\nnot this either\n```\n## Out of scope\n")
+        self.assertEqual(sw.acceptance_commands("p", self.repo), ["python3 a.py", "python3 b.py --x"])
+        self.assertEqual(sw.acceptance_commands("nobrief", self.repo), [])
+
+    def test_a_commit_that_fails_the_check_is_rejected_with_its_output(self):
+        wt = self.start()
+        res = self.commit(wt, {"widgets/a.json": "{}\n"})
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("acceptance check fails", res.stderr)
+        self.assertIn("widgets/a.json: missing ok", res.stderr)
+        self.assertEqual(self.commit(wt, {"widgets/a.json": '{"ok": 1}\n'}).returncode, 0)
+
+    def test_the_check_judges_what_is_staged_not_the_working_tree(self):
+        wt = self.start()
+        (wt / "widgets").mkdir(exist_ok=True)
+        (wt / "widgets" / "a.json").write_text("{}\n")
+        run(["git", "add", "-A"], wt)
+        (wt / "widgets" / "a.json").write_text('{"ok": 1}\n')            # fixed on disk, not staged
+        self.assertEqual(run(["git", "commit", "-q", "-m", "x"], wt, check=False).returncode, 1)
+        run(["git", "add", "-A"], wt)
+        (wt / "widgets" / "a.json").write_text("{}\n")                   # broken on disk, fixed in the index
+        self.assertEqual(run(["git", "commit", "-q", "-m", "x"], wt, check=False).returncode, 0)
+
+    def test_attack_rewriting_the_brief_in_the_worktree_does_not_change_the_check(self):
+        wt = self.start()
+        (wt / "docs" / "sidework" / "tasks" / "demo.md").write_text("## Acceptance\n```\ntrue\n```\n")
+        self.assertEqual(self.commit(wt, {"widgets/a.json": "{}\n"}).returncode, 1)
+
+    def test_attack_rewriting_the_checker_in_the_worktree_does_not_change_the_check(self):
+        wt = self.start()
+        (wt / "tools" / "accept.py").write_text("raise SystemExit(0)\n")  # not staged: the commit may not touch tools/
+        self.assertEqual(self.commit(wt, {"widgets/a.json": "{}\n"}).returncode, 1)
+
+    def test_a_task_without_a_declared_check_commits_as_before(self):
+        wt = self.start("free")
+        self.assertEqual(self.commit(wt, {"widgets/a.json": "{}\n"}).returncode, 0)
+        self.assertIn("none declared", tool(self.repo, "check", "free").stdout)
+
+    def test_check_fails_a_branch_whose_content_fails_even_if_the_hook_was_skipped(self):
+        wt = self.start()
+        self.assertEqual(self.commit(wt, {"widgets/a.json": "{}\n"}, verify=False).returncode, 0)
+        res = tool(self.repo, "check", "demo")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("acceptance: FAILED", res.stdout)
+        self.assertIn("widgets/a.json: missing ok", res.stdout)
+
+    def test_a_branch_older_than_its_checker_is_judged_with_mains_tools(self):
+        # How local/widget-schema was: started before tools/widget_check.py existed.
+        wt = self.start("old")
+        self.assertEqual(self.commit(wt, {"widgets/a.json": '{"ok": 1}\n'}).returncode, 0)
+        self.add_brief("old", "python3 tools/accept.py")
+        (self.repo / "tools" / "accept.py").rename(self.repo / "tools" / "accept2.py")
+        self.add_brief("old", "python3 tools/accept2.py")
+        self.assertFalse((wt / "tools" / "accept2.py").exists())
+        res = tool(self.repo, "check", "old")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("acceptance: passed", res.stdout)
+
+    def test_merge_refuses_a_failing_branch_and_records_why_when_told_to_merge_it_anyway(self):
+        wt = self.start()
+        self.commit(wt, {"widgets/a.json": "{}\n"}, verify=False)
+        res = tool(self.repo, "merge", "demo")
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("--accept-failing", res.stderr)
+        self.assertFalse((self.repo / "widgets" / "a.json").exists())
+        res = tool(self.repo, "merge", "demo", "--accept-failing", "draft; Claude fixes the schema on main")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("FAILING DRAFT", res.stdout)
+        msg = run(["git", "log", "-1", "--format=%B"], self.repo).stdout
+        self.assertIn("TODO: draft; Claude fixes the schema on main", msg)
+        self.assertIn("widgets/a.json: missing ok", msg)
+        self.assertEqual(len(run(["git", "log", "-1", "--format=%P"], self.repo).stdout.split()), 2, "a real merge commit")
+
+    def test_merge_of_a_passing_branch(self):
+        wt = self.start()
+        self.commit(wt, {"widgets/a.json": '{"ok": 1}\n'})
+        res = tool(self.repo, "merge", "demo")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertTrue((self.repo / "widgets" / "a.json").exists())
+        self.assertNotIn("TODO", run(["git", "log", "-1", "--format=%B"], self.repo).stdout)
+
+    def test_merge_never_takes_foreign_paths_conflicts_or_a_dirty_main(self):
+        wt = self.start()
+        self.commit(wt, {"widgets/a.json": '{"ok": 1}\n', "README.md": "sneaky\n"}, verify=False)
+        res = tool(self.repo, "merge", "demo", "--accept-failing", "please")
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("does not own", res.stderr)
+        wt2 = self.start("two")
+        self.commit(wt2, {"widgets/b.json": '{"ok": 1}\n'})
+        (self.repo / "README.md").write_text("local edit\n")
+        self.assertIn("uncommitted changes", tool(self.repo, "merge", "two").stderr)
+
+    def test_close_removes_worktree_branch_and_allowlist_but_only_after_a_merge(self):
+        wt = self.start()
+        self.commit(wt, {"widgets/a.json": '{"ok": 1}\n'})
+        self.assertIn("merge it first", tool(self.repo, "close", "demo").stderr)
+        self.assertEqual(tool(self.repo, "merge", "demo").returncode, 0)
+        (wt / "stray.txt").write_text("x\n")
+        res = tool(self.repo, "close", "demo")
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("stray.txt", res.stderr)
+        self.assertTrue(wt.exists())
+        res = tool(self.repo, "close", "demo", "--force")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertFalse(wt.exists())
+        self.assertFalse(sw.branch_exists("local/demo", cwd=self.repo))
+        self.assertFalse(sw.state_file("local/demo", cwd=self.repo).exists())
 
 
 class CheckMergeBundle(Base):

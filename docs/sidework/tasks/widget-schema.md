@@ -42,8 +42,8 @@ recursive. Do not copy node definitions into each level. Instead:
 - shared pieces (`tone`, a binding-capable text field) are `$defs` entries too, referenced with `$ref`.
 
 ## Acceptance
-Run this after every change. It is the whole acceptance test, it needs nothing installed, and it prints
-one line per problem with the JSON path:
+Run this after every change; a commit is refused until it passes. It is the whole acceptance test, it
+needs nothing installed, and it prints one line per problem with the JSON path:
 
 ```
 python3 tools/widget_check.py

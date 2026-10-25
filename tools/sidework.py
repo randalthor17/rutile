@@ -12,14 +12,24 @@ agent that wanders cannot commit outside its area. Claude's sessions leave those
     sidework.py agent TASK [--tier T | --model NAME] [--unattended] [--prompt TEXT] [--dry-run]
                                    run opencode in that worktree with a local Ollama model
     sidework.py check [TASK] [--run-checks]
-                                   verify a branch only touches allowed paths (and `make check`)
+                                   verify a branch only touches allowed paths and passes its brief's
+                                   acceptance check (and `make check`)
     sidework.py merge-check [TASK] dry-run the merge into main; fails on any conflict
+    sidework.py merge TASK [--accept-failing REASON]
+                                   merge into main, only if check and merge-check pass; REASON merges a
+                                   failing branch anyway and records it as a TODO in the merge commit
+    sidework.py close TASK [--force]
+                                   after the merge: remove the worktree, the branch and its allowlist
     sidework.py bundle TASK [--out FILE]
                                    a git bundle of the branch's commits, to hand over
     sidework.py status             list local/* branches and whether each is clean to merge
     sidework.py models             the model tiers and which are pulled in Ollama
     sidework.py serve [--dry-run]  start `ollama serve` with the settings in tools/local_models.json
-    sidework.py guard              (used by the pre-commit hook)
+    sidework.py guard              (used by the pre-commit hook: paths, then the acceptance check)
+
+Every task brief declares its acceptance check as the first code block under `## Acceptance`. It is read
+from the MAIN checkout's brief, never the worktree's, and run on an exact copy of what is being committed
+or merged, so a commit or merge of work that fails its own brief is refused.
 """
 import argparse
 import json
@@ -28,6 +38,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -152,6 +163,92 @@ def worktree_of(branch, cwd=None):
     return None
 
 
+# ---------------------------------------------------------------- acceptance checks
+
+ACCEPT_LINES = 40        # how much of a failing check's output to show; a model reads the first errors
+
+
+def task_of(branch, cfg, cwd=None):
+    f = state_file(branch, cwd)
+    if f.exists():
+        return json.loads(f.read_text())["task"]
+    return branch[len(cfg["branch_prefix"]):]
+
+
+def acceptance_commands(task, root=None):
+    """The commands in the first code block under `## Acceptance` of the task's brief, or [] if none.
+
+    Always the main checkout's brief (`root`), never the copy in the worktree being checked.
+    """
+    brief = (root or ROOT) / "docs" / "sidework" / "tasks" / f"{task}.md"
+    if not brief.exists():
+        return []
+    m = re.search(r"^## Acceptance\n(.*?)(?=^## |\Z)", brief.read_text(), re.S | re.M)
+    block = re.search(r"^```[a-z]*\n(.*?)^```", m.group(1), re.S | re.M) if m else None
+    if not block:
+        return []
+    return [line.strip() for line in block.group(1).splitlines() if line.strip() and not line.strip().startswith("#")]
+
+
+def run_acceptance(commands, tree):
+    """(passed, output) of running the commands in directory `tree`, a copy of the work being judged."""
+    out, ok = [], True
+    for cmd in commands:
+        proc = subprocess.run(cmd, shell=True, cwd=tree, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+                              env=dict(os.environ, PWD=str(tree)))
+        out.append(f"$ {cmd}\n{proc.stdout}{proc.stderr}")
+        ok = ok and proc.returncode == 0
+    return ok, "".join(out)
+
+
+def export_tree(ref, dest, cwd=None):
+    """Write the tree of a commit or tree object `ref` to `dest`."""
+    archive = subprocess.run(["git", "archive", ref], cwd=cwd or ROOT, capture_output=True, check=True).stdout
+    subprocess.run(["tar", "-x", "-C", str(dest)], input=archive, check=True)
+
+
+def merged_tree(branch, cfg, dest):
+    """What the base branch would look like after merging `branch`: the base's tools, the branch's work.
+
+    Judging the branch's own tip instead would use whatever tools it was started with (possibly none).
+    """
+    proc = git("merge-tree", "--write-tree", cfg["base"], branch, check=False)
+    if proc.returncode != 0:
+        raise SideworkError(f"{branch} does not merge cleanly into {cfg['base']}; see `sidework.py merge-check`")
+    export_tree(proc.stdout.split()[0], dest)
+
+
+def staged_onto_base(repo, allowed, cfg, dest):
+    """The base branch with the allowed paths replaced by what is staged in `repo` (the commit being made)."""
+    export_tree(cfg["base"], dest)
+    for f in Path(dest).rglob("*"):
+        if f.is_file() and matches(str(f.relative_to(dest)), allowed):
+            f.unlink()
+    with tempfile.TemporaryDirectory() as staged:
+        git("checkout-index", "--all", f"--prefix={staged}/", cwd=repo)
+        for f in Path(staged).rglob("*"):
+            rel = str(f.relative_to(staged))
+            if f.is_file() and matches(rel, allowed):
+                (Path(dest) / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, Path(dest) / rel)
+
+
+def shorten(text, lines=ACCEPT_LINES):
+    rows = text.rstrip().splitlines()
+    return "\n".join(rows[:lines] + ([f"... {len(rows) - lines} more line(s)"] if len(rows) > lines else []))
+
+
+def branch_acceptance(branch, cfg):
+    """(commands, passed, output) for the tip of `branch`; passed is None when the brief has no check."""
+    commands = acceptance_commands(task_of(branch, cfg))
+    if not commands:
+        return commands, None, ""
+    with tempfile.TemporaryDirectory() as d:
+        merged_tree(branch, cfg, d)
+        ok, output = run_acceptance(commands, Path(d))
+    return commands, ok, output
+
+
 # ---------------------------------------------------------------- commands
 
 def cmd_guard(args):
@@ -166,13 +263,25 @@ def cmd_guard(args):
     raw = git("diff", "--cached", "--name-status", "-z", cwd=here).stdout
     allowed = allowed_paths(branch, cfg, here)
     bad = violations(parse_name_status_z(raw), allowed, cfg)
-    if not bad:
+    if bad:
+        print(f"sidework: commit rejected on {branch}: it touches paths this branch does not own", file=sys.stderr)
+        for path, why in bad:
+            print(f"  {path}  ({why})", file=sys.stderr)
+        print("Allowed: " + ", ".join(allowed), file=sys.stderr)
+        print("Unstage those files (git restore --staged <path>) and commit only your own area.", file=sys.stderr)
+        return 1
+    commands = acceptance_commands(task_of(branch, cfg, here))
+    if not commands:
         return 0
-    print(f"sidework: commit rejected on {branch}: it touches paths this branch does not own", file=sys.stderr)
-    for path, why in bad:
-        print(f"  {path}  ({why})", file=sys.stderr)
-    print("Allowed: " + ", ".join(allowed), file=sys.stderr)
-    print("Unstage those files (git restore --staged <path>) and commit only your own area.", file=sys.stderr)
+    with tempfile.TemporaryDirectory() as d:
+        staged_onto_base(here, allowed, cfg, d)
+        ok, output = run_acceptance(commands, Path(d))
+    if ok:
+        return 0
+    print(f"sidework: commit rejected on {branch}: the task's acceptance check fails on what you staged.",
+          file=sys.stderr)
+    print(shorten(output), file=sys.stderr)
+    print("Fix the first problem above, run the same command, and commit again when it passes.", file=sys.stderr)
     return 1
 
 
@@ -254,6 +363,15 @@ def cmd_check(args):
     leftovers = worktree_leftovers(wt, allowed_paths(branch, cfg), cfg) if wt else []
     if leftovers:
         print_leftovers(wt, leftovers, sys.stdout)
+    commands, accepted, output = branch_acceptance(branch, cfg)
+    if accepted is None:
+        print("acceptance: none declared in the brief (nothing checks this branch's content)")
+    elif not accepted:
+        print(f"acceptance: FAILED for {branch} merged into {cfg['base']}")
+        print(shorten(output))
+        return 1
+    else:
+        print("acceptance: passed (" + "; ".join(commands) + ")")
     if args.run_checks:
         if wt is None:
             raise SideworkError(f"{branch} has no worktree to run `make check` in")
@@ -262,7 +380,8 @@ def cmd_check(args):
         if code != 0:
             print("make check failed", file=sys.stderr)
             return 1
-    print("ok: only allowed paths changed")
+    print("ok: only allowed paths changed, and the acceptance check passes" if accepted
+          else "ok: only allowed paths changed")
     return 0
 
 
@@ -293,6 +412,63 @@ def cmd_merge_check(args):
     for f in files:
         print(f"  {f}", file=sys.stderr)
     return 1
+
+
+def cmd_merge(args):
+    """Merge a local branch, refusing anything `check` or `merge-check` would fail, unless told why."""
+    cfg = load_config()
+    branch = branch_name(args.task, cfg)
+    if not branch_exists(branch):
+        raise SideworkError(f"no such branch {branch}")
+    if current_branch() != cfg["base"]:
+        raise SideworkError(f"run merge from the main checkout on {cfg['base']}")
+    if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
+        raise SideworkError("the main checkout has uncommitted changes; commit or stash them first")
+    bad = violations(changed_files(branch, cfg["base"]), allowed_paths(branch, cfg), cfg)
+    if bad:
+        raise SideworkError(f"{branch} touches paths it does not own ({', '.join(p for p, _ in bad)}); "
+                            "see `sidework.py check`. Never merged, not even with --accept-failing")
+    clean, files = merge_conflicts(branch, cfg["base"])
+    if not clean:
+        raise SideworkError(f"{branch} conflicts with {cfg['base']} in: {', '.join(files)}")
+    commands, accepted, output = branch_acceptance(branch, cfg)
+    if accepted is False and not args.accept_failing:
+        print(shorten(output), file=sys.stderr)
+        raise SideworkError(f"{branch} fails its acceptance check (above). Fix it on the branch, or merge it as a "
+                            "known-broken draft with --accept-failing \"why\"")
+    message = f"Merge {branch}"
+    if accepted is False:
+        message += (f" (fails its acceptance check)\n\nTODO: {args.accept_failing}\n\n"
+                    f"Acceptance output at merge time:\n{shorten(output, 25)}")
+    elif accepted is None:
+        message += "\n\nThe brief declares no acceptance check; nothing verified the content."
+    git("merge", "--no-ff", branch, "-m", message)
+    print(f"merged {branch} into {cfg['base']}" + (" AS A FAILING DRAFT (TODO recorded in the commit)"
+                                                   if accepted is False else ""))
+    print(f"next     python3 tools/sidework.py close {args.task}")
+    return 0
+
+
+def cmd_close(args):
+    """Remove a merged task's worktree, branch and allowlist, which reopens its paths to the main line."""
+    cfg = load_config()
+    branch = branch_name(args.task, cfg)
+    if not branch_exists(branch):
+        raise SideworkError(f"no such branch {branch}")
+    if git("merge-base", "--is-ancestor", branch, cfg["base"], check=False).returncode != 0:
+        raise SideworkError(f"{branch} has commits that are not in {cfg['base']}; merge it first (or delete it by hand)")
+    wt = worktree_of(branch)
+    if wt is not None:
+        leftovers = worktree_leftovers(wt, allowed_paths(branch, cfg), cfg)
+        if leftovers and not args.force:
+            print_leftovers(wt, leftovers, sys.stderr)
+            raise SideworkError("the worktree has uncommitted files (above); they would be deleted. "
+                                "Rerun with --force once you are sure they are not needed")
+        git("worktree", "remove", *(["--force"] if args.force else []), str(wt))
+    git("branch", "-d", branch)
+    state_file(branch).unlink(missing_ok=True)
+    print(f"closed {branch}" + (f" and removed {wt}" if wt else ""))
+    return 0
 
 
 def cmd_bundle(args):
@@ -630,6 +806,12 @@ def main(argv):
     c.add_argument("--run-checks", action="store_true")
     mc = sub.add_parser("merge-check")
     mc.add_argument("task", nargs="?")
+    m = sub.add_parser("merge")
+    m.add_argument("task")
+    m.add_argument("--accept-failing", metavar="REASON")
+    cl = sub.add_parser("close")
+    cl.add_argument("task")
+    cl.add_argument("--force", action="store_true")
     b = sub.add_parser("bundle")
     b.add_argument("task")
     b.add_argument("--out")
@@ -640,6 +822,7 @@ def main(argv):
     sub.add_parser("guard")
     args = p.parse_args(argv)
     handlers = {"start": cmd_start, "agent": cmd_agent, "prepare": cmd_prepare, "check": cmd_check, "merge-check": cmd_merge_check,
+                "merge": cmd_merge, "close": cmd_close,
                 "bundle": cmd_bundle, "status": cmd_status, "models": cmd_models, "serve": cmd_serve, "guard": cmd_guard}
     try:
         return handlers[args.cmd](args)
