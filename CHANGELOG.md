@@ -5,6 +5,12 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **EditableGrid** (plan 1.6): the grid under Quick Settings tiles and later desktop widgets. Packing ported from
+  DankMaterialShell's `GridLayout.js` (MIT, in `NOTICE`). In edit mode: click to select, drag to move (the rest
+  make room around a placeholder), a resize handle within each item's limits and `maxRows`; changes go through
+  `commitHandler`. Delegates survive reorders, the edit chrome exists only while editing, one spring moves
+  everything. A 9-tile grid costs about 28 KiB per slot over the tiles. 14 new QML tests plus a gallery test;
+  a 15-fault mutation run caught every fault after four more tests.
 - **Toggles show the applied state** (D33). Switch, Tile and filter Chip take `controlled: true`: a click
   emits `toggled(wanted)` and changes nothing, and the control follows its bound state, so a setting that
   fails to apply never shows as changed. One new QML test drives all three against a stand-in backend.

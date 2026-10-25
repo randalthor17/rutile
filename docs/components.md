@@ -17,6 +17,7 @@ directory containing the entry file, so run things from `shell/`.
 | `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`, `controlled`; `clicked()`, `toggled(bool)` |
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
+| `EditableGrid` | `items` ({id, w, h, col, row, minW, maxW, minH, maxH}), `columns`, `rowHeight`, `gap`, `maxRows`, `gravity`, `delegate` (gets `modelData`, `index`), `editMode`, `selectedIndex`, `commitHandler(items)`, `fitNew(item)` |
 
 ```qml
 Button { text: "Create a widget"; iconName: "auto_awesome"; type: "filled"; size: "m"; onClicked: ... }
@@ -63,6 +64,18 @@ Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
 - ListItem uses the expressive shapes: 4 px at rest, 12 hovered, 16 pressed, focused or selected, sprung. In
   a segmented group the first item keeps 16 px top corners and the last 16 px bottom corners
   (`ListItemDefaults.segmentedShapes`); put items 2 px apart (`listSpec.segmentedGap`) on a container.
+
+EditableGrid (plan 1.6) is the grid under Quick Settings tiles and, later, desktop widgets (D17). Items are saved
+data: an id, a size in cells and the cell they were placed at. Packing is `GridLayout.js`, ported from
+DankMaterialShell (MIT): saved positions are kept where they fit, the rest first-fit, and `gravity` pulls items
+up into holes. In `editMode` (Googlebook's "Edit tiles", `docs/reference/README.md`) a click selects an item, a
+drag past the platform's drag distance moves it while the others make room around a placeholder, and the
+selected item's handle resizes it to the nearest cell size that fits under `maxRows`. An item is resizable along
+an axis only when it sets `maxW` or `maxH`; the handle sits on the right edge, or on the bottom-right corner when
+height can change too. Changes go to `commitHandler(items)` with every item's col and row; the owner saves them
+and sets `items`, as with controlled toggles (D33). Without a handler the grid keeps them itself. Delegates are
+kept across reorders, the edit chrome exists only in edit mode, and one spring per grid animates every move.
+Not done: keyboard moves and resizes, right-to-left mirroring, dragging items in from outside (the Add sheet).
 
 ## One correction to the tokens
 

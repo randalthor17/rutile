@@ -122,6 +122,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   compile error (an alias named `layer`, which `Item` already has) made every mutation look caught. Check the
   failure count per mutation: one or two real failures, not a missing test case.
 
+- **Drive a drag in fixed coordinates.** QtTest's `mouseMove(item, x, y)` maps from the item at the time of the
+  call, so moving relative to the item being dragged compounds every step. The grid tests press on the item and
+  then move in the TestCase's coordinates.
+
 - **Before fixing a failing pixel test, print the pixels.** A "hole" in a filled icon was the corner of the test's
   sample square on the glyph's edge; dumping the sampled grid as text showed it in one run.
 

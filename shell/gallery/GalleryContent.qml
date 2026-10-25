@@ -349,6 +349,86 @@ Rectangle {
                 }
             }
 
+            // ---- editable grid: Quick Settings tiles ----
+            GallerySection {
+                title: "Editable grid (Quick Settings tiles)"
+                width: parent.width
+                Column {
+                    id: qsDemo
+                    width: parent.width
+                    spacing: Spacing.md
+
+                    readonly property var tileInfo: ({
+                        "wifi": { text: "Wi-Fi", secondaryText: "Home", iconName: "wifi", dualTarget: true },
+                        "bluetooth": { text: "Bluetooth", secondaryText: "Off", iconName: "bluetooth", dualTarget: true },
+                        "dnd": { text: "Do not disturb", iconName: "do_not_disturb_on" },
+                        "rotate": { text: "Auto-rotate", iconName: "screen_rotation" },
+                        "dark": { text: "Dark theme", iconName: "contrast" },
+                        "mic": { text: "Mic access", secondaryText: "Available", iconName: "mic" },
+                        "camera": { text: "Camera access", secondaryText: "Available", iconName: "videocam" },
+                        "flashlight": { text: "Flashlight", iconName: "flashlight_on" },
+                        "keyboard": { text: "Keyboard", iconName: "keyboard" }
+                    })
+                    readonly property var startTiles: [
+                        { id: "wifi", w: 2, minW: 1, maxW: 2 }, { id: "bluetooth", w: 2, minW: 1, maxW: 2 },
+                        { id: "dnd", w: 1, maxW: 2 }, { id: "rotate", w: 1, maxW: 2 }, { id: "dark", w: 1, maxW: 2 },
+                        { id: "mic", w: 1, maxW: 2 }, { id: "camera", w: 1, maxW: 2 }, { id: "flashlight", w: 1, maxW: 2 },
+                        { id: "keyboard", w: 1, maxW: 2 }
+                    ]
+
+                    Row {
+                        spacing: Spacing.sm
+                        Button {
+                            objectName: "galleryGridEdit"
+                            text: qsGrid.editMode ? "Done" : "Edit tiles"
+                            type: qsGrid.editMode ? "filled" : "tonal"
+                            onClicked: qsGrid.editMode = !qsGrid.editMode
+                        }
+                        Button {
+                            text: "Remove"
+                            type: "outlined"
+                            enabled: qsGrid.editMode && qsGrid.selectedIndex >= 0
+                            onClicked: qsGrid.items = qsGrid.items.filter((item, i) => i !== qsGrid.selectedIndex)
+                        }
+                        Button {
+                            text: "Reset"
+                            type: "text"
+                            onClicked: qsGrid.items = qsDemo.startTiles
+                        }
+                    }
+
+                    Rectangle {
+                        width: Math.min(parent.width, 460)
+                        height: qsGrid.height + 2 * Spacing.lg
+                        radius: Shapes.extraLarge
+                        color: Colors.surfaceContainer
+                        border.width: qsGrid.editMode ? Spacing.xs / 2 : 0
+                        border.color: Colors.primary
+
+                        EditableGrid {
+                            id: qsGrid
+                            objectName: "galleryGrid"
+                            x: Spacing.lg
+                            y: Spacing.lg
+                            width: parent.width - 2 * Spacing.lg
+                            columns: 4
+                            maxRows: 4
+                            items: qsDemo.startTiles
+                            slotRadius: ControlSpec.tileSpec.inactiveCornerRadius
+                            delegate: Tile {
+                                property var modelData: ({})
+                                readonly property var info: qsDemo.tileInfo[modelData.id] ?? ({})
+                                text: info.text ?? ""
+                                secondaryText: info.secondaryText ?? ""
+                                iconName: info.iconName ?? ""
+                                dualTarget: info.dualTarget ?? false
+                                iconOnly: modelData.w === 1
+                            }
+                        }
+                    }
+                }
+            }
+
             // ---- motion ----
             GallerySection {
                 title: "Motion (click to move)"

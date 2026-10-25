@@ -71,6 +71,28 @@ TestCase {
         compare(pr[0].value, 0.9, "progress follows the first slider");
     }
 
+    function test_gallery_grid_edits_quick_settings_tiles() {
+        var g = createTemporaryObject(galleryComp, root);
+        wait(200);
+        var grid = byName(g, "galleryGrid")[0];
+        var edit = byName(g, "galleryGridEdit")[0];
+        verify(grid !== undefined && edit !== undefined);
+        compare(grid.items.length, 9);
+        compare(grid.slotLayout.slots[0].cols, 2, "Wi-Fi is a large tile");
+        compare(grid.slotLayout.slots[2].cols, 1, "the rest are small");
+        verify(!grid.editMode);
+        g.flickable.contentY = Math.max(0, edit.mapToItem(g.flickable.contentItem, 0, 0).y - 100);
+        wait(50);
+        var p = edit.mapToItem(g, edit.width / 2, edit.height / 2);
+        mouseClick(g, p.x, p.y);
+        verify(grid.editMode, "the button opens edit mode");
+        grid.selectedIndex = 2;
+        grid.items = grid.items.filter(function (item, i) { return i !== grid.selectedIndex; });
+        compare(grid.items.length, 8);
+        mouseClick(g, p.x, p.y);
+        verify(!grid.editMode);
+    }
+
     function test_content_is_scrollable_and_taller_than_the_window() {
         var g = createTemporaryObject(galleryComp, root);
         wait(200);
