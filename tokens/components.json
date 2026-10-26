@@ -12,7 +12,7 @@
     },
     "fetched": "2026-10-26",
     "generator": "tools/gen_components.py",
-    "note": "Generated from vendored androidx Compose Material3 token sources (Apache-2.0). Do not edit by hand.",
+    "note": "Generated from vendored androidx Compose Material3 token sources and, for the slider sizes, Material Components Android's slider tokens (both Apache-2.0). Do not edit by hand.",
     "ref": "androidx-main"
   },
   "button": {
@@ -620,7 +620,42 @@
     "hover_handle_width": 4,
     "hover_stop_color": "primary",
     "impl": {
+      "active_icon_color": "primary_on",
       "handle_gap": 6,
+      "inactive_icon_color": "secondary_container_on",
+      "sizes": {
+        "l": {
+          "handle_height": 68,
+          "icon_size": 24,
+          "track_corner": 16,
+          "track_height": 56
+        },
+        "m": {
+          "handle_height": 44,
+          "icon_size": 24,
+          "track_corner": 12,
+          "track_height": 40
+        },
+        "s": {
+          "handle_height": 44,
+          "icon_size": 0,
+          "track_corner": 8,
+          "track_height": 24
+        },
+        "xl": {
+          "handle_height": 108,
+          "icon_size": 32,
+          "track_corner": 28,
+          "track_height": 96
+        },
+        "xs": {
+          "handle_height": 44,
+          "icon_size": 0,
+          "track_corner": 8,
+          "track_height": 16
+        }
+      },
+      "track_icon_padding": 10,
       "track_inside_corner": 2
     },
     "inactive_container_opacity": 1,

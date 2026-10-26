@@ -5,6 +5,15 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Expressive slider sizes and track icons** (plan 1.5e, D36): `Slider` takes `size` (`xs` default, `s`, `m`,
+  `l`, `xl`: 16 to 96 px tracks) and, from `m` up, `startIcon` and `endIcon` inside the track, each shown only
+  while its part of the track has room; the end icon replaces the stop dot. Larger sizes shrink their corners on
+  a short part instead of hiding it. The slider now mirrors under `LayoutMirroring`. Sizes come from Material
+  Components Android's slider tokens, vendored and checksummed next to the Compose files. The gallery shows the
+  sizes and Quick Settings' brightness and volume rows. A slider without icons costs 79.5 KiB (was 71.6).
+- **Fix:** `tools/qtws.py test` reported a run with exactly three failures as skipped and exited 0, because its
+  "skipped" code was 3 and qmltestrunner exits with the failure count. `make check` was not affected (it checks
+  the counts). The sentinel is no longer a number.
 - **`docs/editable-grid.md`**: the grid's full behavior in one place, with diagrams and the test that pins each
   rule (layout without gaps, select, drag and drop, resize with shrinking neighbors, row limit, adding, right to
   left, motion and memory). `make check` fails if it cites a test that no longer exists, or a missing path.

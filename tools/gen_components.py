@@ -2,7 +2,8 @@
 """Generate tokens/components.json from the vendored Material 3 component tokens.
 
 Covers button and icon button sizes, shapes, color roles and state opacities, and the full token
-tables of the switch, slider and progress indicators plus the few values Compose hardcodes for them.
+tables of the switch, slider and progress indicators plus the few values Compose hardcodes for them, and the
+expressive slider sizes from Material Components Android's slider tokens (Compose has none yet).
 Everything is parsed from tokens/sources/*.kt (checksummed by manifest.json) and
 the script fails loudly on anything it does not understand.
 
@@ -212,6 +213,59 @@ def slider_impl(tokens):
     return {"track_inside_corner": int(inside.group(1)), "handle_gap": tokens["active_handle_leading_space"]}
 
 
+def mdc_values(file):
+    """name -> value of the <dimen> and <macro> entries of a vendored Material Components Android resource file."""
+    text = (SRC / file).read_text()
+    out = dict(re.findall(r'<dimen name="(\w+)">([^<]+)</dimen>', text))
+    out.update(re.findall(r'<macro name="(\w+)">([^<]+)</macro>', text))
+    return out
+
+
+def mdc_dp(values, key, file):
+    m = re.fullmatch(r"(\d+)dp", pick(values, key, file))
+    if not m:
+        raise ComponentError(f"{file}:{key}: expected dp, got {values[key]!r}")
+    return int(m.group(1))
+
+
+def mdc_role(values, key, file):
+    m = re.fullmatch(r"\?attr/color(\w+)", pick(values, key, file))
+    if not m:
+        raise ComponentError(f"{file}:{key}: expected a color attribute, got {values[key]!r}")
+    # Android names the "on" roles colorOnX; Rutile's are xOn.
+    name = m.group(1)
+    if name.startswith("On"):
+        name = name[2:] + "On"
+    return snake(name[0].lower() + name[1:])
+
+
+def slider_sizes(tokens):
+    """The expressive slider sizes. Compose has no tokens for them yet; Material Components Android does
+    (md.comp.slider.xsmall .. xlarge), with the padding around track icons and the colors of what sits on
+    each track. The XSmall size must equal Compose's default slider, or the two sources have drifted."""
+    file, dimens = "MdcSliderTokens.xml", "MdcSliderDimens.xml"
+    values = mdc_values(file)
+    sizes = {}
+    for key, name in (("xs", "xsmall"), ("s", "small"), ("m", "medium"), ("l", "large"), ("xl", "xlarge")):
+        p = f"m3_comp_slider_{name}_"
+        sizes[key] = {
+            "track_height": mdc_dp(values, p + "active_track_height", file),
+            "track_corner": mdc_dp(values, p + "active_track_shape_leading", file),
+            "handle_height": mdc_dp(values, p + "active_handle_height", file),
+            # Only medium and up have track icons.
+            "icon_size": mdc_dp(values, p + "icon_size", file) if p + "icon_size" in values else 0,
+        }
+    xs = sizes["xs"]
+    if (xs["track_height"], xs["handle_height"]) != (tokens["inactive_track_height"], tokens["handle_height"]):
+        raise ComponentError(f"{file}: xsmall slider {xs} no longer matches SliderTokens.kt")
+    return {
+        "sizes": sizes,
+        "track_icon_padding": mdc_dp(mdc_values(dimens), "m3_slider_track_icon_padding", dimens),
+        "active_icon_color": mdc_role(values, "m3_comp_slider_active_stop_indicator_container_color", file),
+        "inactive_icon_color": mdc_role(values, "m3_comp_slider_inactive_stop_indicator_container_color", file),
+    }
+
+
 def progress_impl():
     """Values ProgressIndicator.kt and WavyProgressIndicator.kt hardcode instead of taking a token."""
     width = find("ProgressIndicator.kt", r"internal val LinearIndicatorWidth\s*get\(\) = (\d+)\.dp", "LinearIndicatorWidth")
@@ -406,8 +460,8 @@ def build():
     return {
         "_meta": {
             "generator": "tools/gen_components.py",
-            "note": "Generated from vendored androidx Compose Material3 token sources (Apache-2.0). "
-                    "Do not edit by hand.",
+            "note": "Generated from vendored androidx Compose Material3 token sources and, for the slider "
+                    "sizes, Material Components Android's slider tokens (both Apache-2.0). Do not edit by hand.",
             "corrections": {
                 "button.sizes.xs": {
                     "applied": fixes,
@@ -422,7 +476,8 @@ def build():
         "button": {"sizes": button_sizes, "types": btypes},
         "icon_button": {"sizes": icon_sizes, "types": itypes},
         "switch": token_table("SwitchTokens.kt", corners),
-        "slider": {**(slider := token_table("SliderTokens.kt", corners)), "impl": slider_impl(slider)},
+        "slider": {**(slider := token_table("SliderTokens.kt", corners)),
+                   "impl": {**slider_impl(slider), **slider_sizes(slider)}},
         "chip": {
             "assist": token_table("AssistChipTokens.kt", corners),
             "filter": token_table("FilterChipTokens.kt", corners),

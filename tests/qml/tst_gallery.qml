@@ -71,6 +71,17 @@ TestCase {
         compare(pr[0].value, 0.9, "progress follows the first slider");
     }
 
+    function test_gallery_shows_slider_sizes_and_quick_settings_sliders() {
+        var g = createTemporaryObject(galleryComp, root);
+        wait(200);
+        var sized = byName(g, "gallerySizedSlider");
+        compare(sized.map(function (s) { return s.size; }).join(), "s,m,l,xl");
+        verify(sized.every(function (s) { return s.startIconShown === (s.size !== "s"); }), "icons from m up");
+        var qs = byName(g, "galleryQsSlider");
+        compare(qs.length, 2, "brightness and volume");
+        verify(qs.every(function (s) { return s.size === "m" && s.endIconShown && !s.startIconShown; }));
+    }
+
     function test_gallery_grid_edits_quick_settings_tiles() {
         var g = createTemporaryObject(galleryComp, root);
         wait(200);

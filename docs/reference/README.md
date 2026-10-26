@@ -22,7 +22,8 @@ Quick Settings panel (plan 2.6):
 - A floating panel under the status pills, about 28 px corners, on a surface container tinted by the scheme.
 - Header row: edit-tiles and settings icon buttons on the left, a power button with a chevron on the right.
 - Brightness and volume: thick expressive sliders (about 40 px) with the icon inside the inactive track end,
-  each followed by an icon button (dark theme, sound settings). Rutile's Slider has only the standard size so far.
+  each followed by an icon button (dark theme, sound settings). Rutile's Slider `size: "m"` with an `endIcon`
+  (D36); the gallery shows the pair under "Slider sizes and track icons".
 - Tiles are Android 16's (D32): 4 columns; large tiles span 2 and small tiles are icon-only. Inactive tiles are
   pills; active ones are rounded squares filled with the primary color; a dual-target tile (Wi-Fi, Bluetooth)
   keeps a surface body and a primary icon box when on, and a slightly lighter round icon box when off.

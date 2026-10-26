@@ -46,9 +46,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   chips, three-line and avatar/image list items, the tile focus border. The Googlebook references show the
   same tile (D32). Switch, Tile and filter Chip have a `controlled` mode: they change only when the applied
   setting does (D33, unreleased).
+- [x] **1.5e** Expressive slider sizes and track icons (unreleased, D36): `size` xs, s, m, l, xl from Material
+  Components Android's tokens, `startIcon`/`endIcon` inside the track on m and up, corners that shrink on a short
+  part, right to left. In the gallery as Quick Settings' brightness and volume rows. Not done: vertical, range,
+  centered, the value label, the other two icon slots.
 - [ ] **1.5** Component kit, remaining: FAB, Card, TextField, Menu, Dialog, NavRail, ShapeMorph
   (cookie/scallop shapes), GeminiGlow gradient border, and the 1.5c leftovers when something needs them.
-  Likely next: ShapeMorph and GeminiGlow, or what Quick Settings (2.6) needs first.
+  Likely next: ShapeMorph and GeminiGlow, or what Quick Settings (2.6) needs first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
   sizes clamped to columns/rows, edit mode; used by both Quick Settings tiles and the desktop widget grid
   (unreleased). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that

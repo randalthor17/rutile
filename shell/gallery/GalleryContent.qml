@@ -301,6 +301,74 @@ Rectangle {
                 }
             }
 
+            // ---- expressive slider sizes, track icons ----
+            GallerySection {
+                title: "Slider sizes and track icons"
+                width: parent.width
+                Column {
+                    width: parent.width
+                    spacing: Spacing.lg
+
+                    // Quick Settings: brightness and volume with their icon at the end of the track.
+                    Rectangle {
+                        width: Math.min(parent.width, 460)
+                        height: qsSliders.height + 2 * Spacing.lg
+                        radius: Shapes.extraLarge
+                        color: Colors.surfaceContainer
+                        Column {
+                            id: qsSliders
+                            x: Spacing.lg
+                            y: Spacing.lg
+                            width: parent.width - 2 * Spacing.lg
+                            spacing: Spacing.sm
+                            Repeater {
+                                model: [
+                                    { icon: "brightness_medium", button: "dark_mode", value: 0.8 },
+                                    { icon: "music_note", button: "tune", value: 0.7 }
+                                ]
+                                delegate: Row {
+                                    id: qsRow
+                                    required property var modelData
+                                    spacing: Spacing.sm
+                                    Slider {
+                                        objectName: "galleryQsSlider"
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: qsRow.parent.width - ControlSpec.iconButtonSizes.s.width.default - qsRow.spacing
+                                        size: "m"
+                                        endIcon: qsRow.modelData.icon
+                                        value: qsRow.modelData.value
+                                    }
+                                    IconButton {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        iconName: qsRow.modelData.button
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Repeater {
+                        model: ["s", "m", "l", "xl"]
+                        delegate: Slider {
+                            required property string modelData
+                            objectName: "gallerySizedSlider"
+                            width: 360
+                            size: modelData
+                            value: 0.5
+                            startIcon: "volume_down"
+                            endIcon: "volume_up"
+                        }
+                    }
+                    Text {
+                        text: "Sizes s, m, l and xl (xs is the slider above). Track icons show from m up, while their part of the track has room."
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        color: Colors.surfaceVariantOn
+                        font: Type.font(Type.labelMedium)
+                    }
+                }
+            }
+
             // ---- quick settings: tiles, chips, list items ----
             GallerySection {
                 title: "Tiles, chips, list items"

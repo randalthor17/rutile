@@ -235,6 +235,121 @@ TestCase {
                "track reaches its top edge");
     }
 
+    function test_slider_sizes_set_track_handle_and_corners() {
+        var sizes = ControlSpec.sliderSpec.impl.sizes;
+        compare(sizes.m.trackHeight, 40, "Quick Settings uses m: 40 px track");
+        for (var name of ["xs", "s", "m", "l", "xl"]) {
+            var s = make(sliderComp, { size: name, value: 0.5 });
+            compare(s.implicitHeight, sizes[name].handleHeight, name);
+            compare(s.children[1].height, sizes[name].handleHeight, name + " handle");
+            compare(findChild(s, "sliderTrack").height, sizes[name].trackHeight, name);
+            compare(findChild(s, "sliderActive").topLeftRadius, sizes[name].trackCorner, name + " outer corner");
+            compare(findChild(s, "sliderActive").topRightRadius, ControlSpec.sliderSpec.impl.trackInsideCorner,
+                    name + " inner corner");
+        }
+    }
+
+    function test_slider_larger_sizes_shrink_corners_instead_of_hiding_a_part() {
+        var spec = ControlSpec.sliderSpec;
+        var gap = spec.handleWidth / 2 + spec.impl.handleGap;
+        var at = function (s, length) { return (length + gap) / s.trackLength; };   // value for a given active length
+        var m = make(sliderComp, { size: "m" });
+        m.value = at(m, 5);
+        var part = findChild(m, "sliderActive");
+        verify(part.visible, "a short part still shows");
+        var fit = 5 / (spec.impl.sizes.m.trackCorner + spec.impl.trackInsideCorner);
+        verify(Math.abs(part.topLeftRadius - spec.impl.sizes.m.trackCorner * fit) < 0.01, "outer " + part.topLeftRadius);
+        verify(Math.abs(part.topRightRadius - spec.impl.trackInsideCorner * fit) < 0.01, "inner " + part.topRightRadius);
+        var xs = make(sliderComp, { size: "xs" });
+        xs.value = at(xs, 5);
+        verify(!findChild(xs, "sliderActive").visible, "xs leaves out a part shorter than its corner");
+        var stepped = make(sliderComp, { size: "m", from: 0, to: 100, stepSize: 1 });
+        stepped.value = 8;     // an active part shorter than the corner
+        verify(findChild(stepped, "sliderTrack").activeLength < spec.impl.sizes.m.trackCorner);
+        verify(findChild(stepped, "sliderTrack").activeLength > 0);
+        verify(!findChild(stepped, "sliderActive").visible, "stepped sliders do not shrink corners");
+    }
+
+    function test_slider_track_icons_show_only_with_room_and_replace_the_stop() {
+        var spec = ControlSpec.sliderSpec;
+        var gap = spec.handleWidth / 2 + spec.impl.handleGap;
+        var need = spec.impl.sizes.m.iconSize + 2 * spec.impl.trackIconPadding;
+        var s = make(sliderComp, { size: "m", startIcon: "brightness_low", endIcon: "settings", value: 0.5 });
+        var stop = findChild(s, "sliderStop");
+        verify(s.startIconShown && s.endIconShown, "both icons at the middle");
+        verify(!stop.visible, "the end icon takes the stop's place");
+        s.value = (need + gap) / s.trackLength;
+        compare(findChild(s, "sliderTrack").activeLength, need);
+        verify(s.startIconShown, "exactly enough room");
+        s.value = (need + gap - 0.5) / s.trackLength;
+        verify(!s.startIconShown, "not enough room");
+        verify(!findChild(s, "sliderStartIcon").visible, "and the icon is hidden");
+        verify(findChild(s, "sliderEndIcon").visible, "the end icon still has room");
+        s.value = 1 - (need + gap - 0.5) / s.trackLength;
+        verify(!s.endIconShown, "the end icon needs room too");
+        verify(!findChild(s, "sliderEndIcon").visible);
+        verify(stop.visible, "then the stop is back");
+        s.value = 1 - (need + gap + 0.5) / s.trackLength;
+        verify(s.endIconShown);
+        s.value = 0.5;
+        var startIcon = findChild(s, "sliderStartIcon");
+        compare(startIcon.x, spec.impl.trackIconPadding, "start icon at the start of the track");
+        compare(startIcon.color.toString(), Colors[spec.impl.activeIconColor].toString());
+        var xs = make(sliderComp, { size: "xs", startIcon: "brightness_low", endIcon: "settings", value: 0.5 });
+        verify(!xs.startIconShown && !xs.endIconShown, "xs has no track icons");
+        compare(findChild(xs, "sliderStartIcon"), null, "and creates none");
+        var plain = make(sliderComp, { size: "m", value: 0.5 });
+        compare(findChild(plain, "sliderStartIcon"), null, "nor does a slider without icons");
+        verify(findChild(xs, "sliderStop").visible);
+    }
+
+    Component {
+        id: mirroredSliderComp
+        Item {
+            property alias slider: ms
+            LayoutMirroring.enabled: true
+            LayoutMirroring.childrenInherit: true
+            x: 40; y: 300; width: 240; height: 44
+            Slider { id: ms; width: 240; size: "m"; startIcon: "brightness_low" }
+        }
+    }
+
+    function test_slider_mirrors_for_right_to_left() {
+        var spec = ControlSpec.sliderSpec;
+        var s = make(mirroredSliderComp).slider;
+        s.value = 0.25;
+        var track = findChild(s, "sliderTrack"), active = findChild(s, "sliderActive");
+        var handle = s.children[1];
+        compare(handle.x + handle.width / 2, s.width - s.handleCenter, "the handle measures from the right");
+        compare(active.x + active.width, track.width, "the active part starts at the right");
+        compare(active.topRightRadius, spec.impl.sizes.m.trackCorner, "its outer corner is on the right");
+        compare(active.topLeftRadius, spec.impl.trackInsideCorner, "its inner corner by the handle");
+        var inactive = findChild(s, "sliderInactive");
+        compare(inactive.x, 0, "the inactive part ends at the left");
+        compare(inactive.topLeftRadius, spec.impl.sizes.m.trackCorner, "with its outer corner there");
+        var icon = findChild(s, "sliderStartIcon");
+        compare(icon.x, track.width - spec.impl.trackIconPadding - icon.size, "the start icon is on the right");
+        mouseClick(s, s.width - 2, 22);
+        compare(s.value, 0, "the right end is the start");
+        s.forceActiveFocus();
+        keyClick(Qt.Key_Left);
+        verify(s.value > 0, "left moves toward the end");
+        keyClick(Qt.Key_Right);
+        compare(s.value, 0);
+    }
+
+    function test_slider_large_pixels() {
+        var s = make(sliderComp, { size: "m", value: 0.5 });
+        var half = ControlSpec.sliderSpec.impl.sizes.m.trackHeight / 2;
+        tryVerify(function () {
+            var img = grabImage(s);
+            return near(pixel(img, 40, 22 - half + 1), Colors.primary, 3 / 255)
+                && near(pixel(img, 200, 22 + half - 1), Colors.secondaryContainer, 3 / 255);
+        }, 2000, "the 40 px track fills its height");
+        var img = grabImage(s);
+        verify(!near(pixel(img, 40, 22 - half - 1), Colors.primary, 8 / 255), "and stops there");
+    }
+
     // ---- ProgressBar ----
     function test_progress_sizes_and_clamping() {
         var lin = ControlSpec.progressSpec.linear;

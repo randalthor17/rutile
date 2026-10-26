@@ -49,9 +49,9 @@ surfaces), no focus ring. See `docs/components.md`.
 
 ### Next up
 
-1. The maintainer tries the editable grid in the gallery ("Editable grid"), and reviews Tile, Chip and ListItem.
-   Then: the Googlebook signature pieces (ShapeMorph, GeminiGlow), or the large expressive slider the Quick
-   Settings panel needs (`docs/reference/README.md`), on the way to Quick Settings (2.6).
+1. The maintainer tries the editable grid ("Editable grid") and the slider sizes ("Slider sizes and track
+   icons") in the gallery, and reviews Tile, Chip and ListItem. Then: the Googlebook signature pieces
+   (ShapeMorph, GeminiGlow), or the Quick Settings panel itself (2.6), which now has its tiles, grid and sliders.
 2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
    `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
    `sidework.py merge TASK --close`. Judge speed and whether ROCm runs on the card.

@@ -12,7 +12,7 @@ directory containing the entry file, so run things from `shell/`.
 | `IconButton` | types `standard` `filled` `tonal` `outlined`; same sizes; `widthVariant` default (square), narrow, wide; `toggle`/`checked` |
 | `ButtonBase` | shared behavior (not used directly) |
 | `Switch` | `checked`, `toggled(bool)`, `controlled`; optional `checkedIcon` / `uncheckedIcon` in the handle |
-| `Slider` | horizontal; `from`, `to`, `value`, `stepSize` (0 = continuous), `moved(real)` when the user changes it |
+| `Slider` | horizontal; `from`, `to`, `value`, `stepSize` (0 = continuous), `moved(real)` when the user changes it; `size` `xs` (default) `s` `m` `l` `xl`; `startIcon`, `endIcon` track icons on `m` and up |
 | `ProgressBar` | linear, determinate; `value` 0..1, `wavy`, `animated` |
 | `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`, `controlled`; `clicked()`, `toggled(bool)` |
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
@@ -44,6 +44,13 @@ the wave thresholds and the progress spring); the generator fails if those sourc
   from the M3 spec, not a token, because the token file only gives the size.
 - Slider: click or drag anywhere; arrows move a step (or 1/100), PageUp/PageDown a tenth, Home/End the ends.
   Tick dots sit where stepped values put the handle; Compose spaces them slightly differently.
+  Sizes (D36): `xs` is Compose's default slider (16 px track); `s` 24, `m` 40 (Quick Settings), `l` 56 and
+  `xl` 96 px tracks, with taller handles and larger outer corners, from Material Components Android's tokens
+  (`impl.sizes`). On the larger sizes a part of the track shorter than its corners shrinks its corners instead
+  of disappearing, except on stepped sliders. `startIcon` sits at the start of the active part and `endIcon`
+  at the end of the inactive part, each only while its part has room for the icon plus 10 px on both sides;
+  the end icon replaces the stop dot. Icons are created only when set. Under `LayoutMirroring` the track fills
+  from the right and the left arrow key increases.
 - ProgressBar: the wave fades in over `Motion.long2` with the standard easing and out with emphasized
   accelerate; it only animates while visible.
 
@@ -80,7 +87,8 @@ override, records it in `components.json`, and fails if the upstream TODOs disap
 
 ## Not done yet
 
-- **Slider:** vertical and range sliders, the value label above the handle, centered sliders.
+- **Slider:** vertical and range sliders, the value label above the handle, centered sliders, icons in the
+  other two track slots (end of the active part, start of the inactive part) that MDC also offers.
 - **Progress:** indeterminate (flat and wavy) and circular indicators. The tokens for circular are generated.
 
 - **Ripple:** state layers only. Rounded clipping of a ripple needs masking; decide from the gallery.

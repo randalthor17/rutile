@@ -264,6 +264,18 @@ class SkipPath(unittest.TestCase):
         self.assertEqual(qtws.run_tests()[0], qtws.SKIPPED)
         self.assertEqual(qtws.run_lint()[0], qtws.SKIPPED)
 
+    def test_cli_fails_on_any_failure_count(self):
+        # qmltestrunner exits with the number of failures; 3 once read as "skipped" and exited 0.
+        import contextlib
+        import io
+        real = qtws.run_tests
+        self.addCleanup(setattr, qtws, "run_tests", real)
+        for failures in (1, 3, 255):
+            qtws.run_tests = lambda *a, n=failures, **k: (n, "FAIL!", (10, n, 0))
+            with contextlib.redirect_stdout(io.StringIO()):
+                for cmd in (["test"], ["test-gpu"]):
+                    self.assertEqual(qtws.main(cmd), failures, cmd)
+
     def test_cli_skips_with_message_and_exit_zero(self):
         import contextlib
         import io

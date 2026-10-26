@@ -23,7 +23,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SKIPPED = 3
+# Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
+SKIPPED = "skipped"
 MODULES = ("common", "components", "gallery")
 
 

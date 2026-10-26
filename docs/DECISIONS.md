@@ -187,3 +187,13 @@ after the tile before it, wrapping to the next row when it does not fit, so free
 of a row and the last tile never stretches into it. DMS's gravity only pulled items up, which can let a later
 tile jump ahead into a hole; the flow keeps the order. Items without a saved position join at the end, and the
 "is there room" check for adding one uses the same flow. The full behavior is in `docs/editable-grid.md`.
+
+**D36. The expressive slider sizes come from Material Components Android's tokens.** Quick Settings needs the
+40 px slider with an icon in its track (Googlebook, `docs/reference/README.md`). Compose has no tokens for the
+five expressive slider sizes yet; Material Components for Android (Apache-2.0) does, generated from the same
+token sets (`md.comp.slider.xsmall` .. `xlarge`). Its `tokens.xml` and `dimens.xml` are vendored next to the
+Compose files and checksummed the same way, and the generator fails if their xsmall size stops matching
+Compose's default slider. From them: track height, outer corner, handle height and icon size per size, the 10 px
+icon padding, and the icon colors (the colors MDC uses for what sits on each part of the track). From Compose's
+`Slider.kt`: the larger sizes shrink their corners on a short part instead of hiding it, but stepped sliders do
+not. The end icon replacing the stop dot is from the Googlebook screenshots, which show no dot beside it.

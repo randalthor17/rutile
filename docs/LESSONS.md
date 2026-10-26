@@ -35,6 +35,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **Distance-field text corrupts filled Material Symbols glyphs.** The software renderer ignores `renderType`, so
   every software-rendered test passed while the real GPU path showed holes. Only a real scene graph exposed it.
   Use `NativeRendering` for icons; `tests/qml_gpu/` guards it.
+- **Custom properties on a repeated child cost memory.** Each instance with its own `property` declarations gets
+  its own meta object: an inline `TrackPart` component with five properties added about 11 KiB per slider. Plain
+  Rectangles binding to properties on their parent cost a fraction of that. An idle `Loader` is about 4 KiB, as
+  much as the icon it would load, so one Loader for two icons beats two. Measure with `tools/dev/memcost.py`.
 - **`qmltestrunner` needs a visible `TestCase`** (`width`, `height`, `visible: true`, `when: windowShown`) for any pixel check.
 
 ## Testing method
@@ -51,6 +55,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   aider's source showed `--git-commit-verify` defaults to false.
 - **Run on more than one Qt.** 6.4 catches old-Qt assumptions, 6.12 catches new-Qt behavior. Neither stands in for
   the maintainer's 6.11 session.
+- **A sentinel must not be a value the tool can return.** `tools/qtws.py` used exit code 3 to mean "skipped", and
+  qmltestrunner exits with its failure count, so a run with exactly three failures printed "SKIPPED" and exited 0.
+  `make check` was safe (it asserts zero failures from the counts), but the CLI and a mutation script that read
+  the exit code were not; the sentinel is now a string. Found because a mutant "survived" while its test failed.
 - **Skipped is not passed.** `make check` prints a reason for every skip. Do not read a green run as "the font
   behavior was verified" if the font tests skipped.
 - **Don't assert what you cannot justify.** A threshold guessed too high (95% agreement vs a measured 94.7%) was a

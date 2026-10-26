@@ -95,7 +95,15 @@ class Committed(unittest.TestCase):
         self.assertEqual((sl["handle_width"], sl["handle_height"], sl["pressed_handle_width"]), (4, 44, 2))
         self.assertEqual((sl["inactive_track_height"], sl["inactive_track_color"]), (16, "secondary_container"))
         self.assertEqual(sl["value_indicator_label_text_font"], "label_large")
-        self.assertEqual(sl["impl"], {"track_inside_corner": 2, "handle_gap": 6})
+        self.assertEqual((sl["impl"]["track_inside_corner"], sl["impl"]["handle_gap"]), (2, 6))
+        sizes = sl["impl"]["sizes"]
+        self.assertEqual(sorted(sizes), ["l", "m", "s", "xl", "xs"])
+        self.assertEqual(sizes["m"], {"track_height": 40, "track_corner": 12, "handle_height": 44, "icon_size": 24})
+        self.assertEqual(sizes["xl"], {"track_height": 96, "track_corner": 28, "handle_height": 108, "icon_size": 32})
+        self.assertEqual((sizes["xs"]["icon_size"], sizes["s"]["icon_size"]), (0, 0), "no track icons below m")
+        self.assertEqual(sl["impl"]["track_icon_padding"], 10)
+        self.assertEqual((sl["impl"]["active_icon_color"], sl["impl"]["inactive_icon_color"]),
+                         ("primary_on", "secondary_container_on"))
         self.assertEqual((pr["linear"]["wave_height"], pr["linear"]["active_wave_amplitude"]), (10, 3))
         self.assertEqual(pr["circular"]["active_wave_amplitude"], 1.6)
         self.assertEqual(pr["impl"]["linear_width"], 240)
@@ -204,6 +212,23 @@ class FailsLoudly(unittest.TestCase):
             self.with_modified_source(name, lambda t: t.replace(old, new))
             with self.assertRaises(gc.ComponentError, msg=f"{name}: {old}"):
                 fn()
+            shutil.rmtree(self.tmp / "src")
+
+    def test_changed_mdc_slider_sources_force_a_review(self):
+        tokens = gc.token_table("SliderTokens.kt", CORNERS)
+        cases = [
+            # The xsmall size drifting from Compose's default slider.
+            ("MdcSliderTokens.xml", "xsmall_active_track_height\">16dp", "xsmall_active_track_height\">18dp"),
+            ("MdcSliderTokens.xml", "medium_active_handle_height\">44dp", "medium_active_handle_height\">?attr/x"),
+            ("MdcSliderTokens.xml", "m3_comp_slider_large_active_track_shape_leading",
+             "m3_comp_slider_large_active_track_shape"),
+            ("MdcSliderTokens.xml", ">?attr/colorOnPrimary</macro>", ">#ffffff</macro>"),
+            ("MdcSliderDimens.xml", "m3_slider_track_icon_padding", "m3_slider_icon_padding"),
+        ]
+        for name, old, new in cases:
+            self.with_modified_source(name, lambda t: t.replace(old, new))
+            with self.assertRaises(gc.ComponentError, msg=f"{name}: {old}"):
+                gc.slider_sizes(tokens)
             shutil.rmtree(self.tmp / "src")
 
     def test_parsers_reject_unexpected_expressions(self):

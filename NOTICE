@@ -1,11 +1,14 @@
 Rutile Shell third-party notices
 ================================
 
-Material 3 token sources (tokens/sources/*.kt)
+Material 3 token sources (tokens/sources/)
   From androidx Compose Material3, Copyright The Android Open Source Project,
   licensed under the Apache License 2.0 (tokens/sources/LICENSE-APACHE-2.0.txt).
   The files are vendored unmodified (checksums in tokens/sources/manifest.json);
   tokens/m3e.json is generated from them.
+  tokens/sources/Mdc*.xml are from Material Components for Android
+  (github.com/material-components/material-components-android), Copyright The Android
+  Open Source Project, Apache License 2.0, vendored the same way.
 
 Fonts (not vendored; installed by nix packages)
   Google Sans Flex, SIL Open Font License 1.1, packaged by nix/googlesans-flex.nix.
