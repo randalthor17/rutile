@@ -15,9 +15,22 @@ ShellRoot {
     // The screen Quick Settings opens on; null lets the compositor choose (the focused output on niri).
     property var quickSettingsScreen: null
 
+    // Open, and not on its way out: a closing panel plays its motion before the loader drops it.
+    readonly property bool quickSettingsOpen: quickSettings.active && !(quickSettings.item?.closing ?? false)
+
+    function closeQuickSettings() {
+        if (quickSettings.item) quickSettings.item.close();
+        else quickSettings.active = false;
+    }
+
     function toggleQuickSettings(screen) {
-        if (quickSettings.active && (screen === null || screen === quickSettingsScreen)) {
-            quickSettings.active = false;
+        const here = screen === null || screen === quickSettingsScreen;
+        if (quickSettingsOpen && here) {
+            closeQuickSettings();
+            return;
+        }
+        if (quickSettings.item?.closing && here) {
+            quickSettings.item.reopen();        // reopened mid-close: it grows back from where it is
             return;
         }
         quickSettings.active = false;
@@ -38,7 +51,7 @@ ShellRoot {
             screen: modelData
             backend: shellBackend
             // the screen the panel is on, also when the compositor chose it (opened over IPC)
-            open: quickSettings.active && quickSettings.item?.screen === modelData
+            open: shell.quickSettingsOpen && quickSettings.item?.screen === modelData
             onClicked: shell.toggleQuickSettings(modelData)
         }
     }
@@ -55,14 +68,15 @@ ShellRoot {
     IpcHandler {
         target: "quicksettings"
         function toggle(): void { shell.toggleQuickSettings(null); }
-        function open(): void { if (!quickSettings.active) shell.toggleQuickSettings(null); }
-        function close(): void { quickSettings.active = false; }
-        function isOpen(): bool { return quickSettings.active; }
+        function open(): void { if (!shell.quickSettingsOpen) shell.toggleQuickSettings(null); }
+        function close(): void { shell.closeQuickSettings(); }
+        function isOpen(): bool { return shell.quickSettingsOpen; }
         // What the windows see, as JSON: for diagnostics and tools/qtws.py test-wayland.
         function state(): string {
             const w = quickSettings.item;
             return JSON.stringify({
-                open: quickSettings.active,
+                open: shell.quickSettingsOpen,
+                loaded: quickSettings.active,
                 panelHasBackend: !!w && w.panelHasBackend,
                 brightnessShown: !!w && w.brightnessShown,
                 pillsOpen: statusWindows.instances.map(s => s.pill.open),

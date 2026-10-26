@@ -514,6 +514,7 @@ Rectangle {
                         readonly property bool darkTheme: Colors.mode === "dark"
                         function setBrightness(v) { brightness = v; }
                         function setVolume(v) { volume = v; muted = false; }
+                        function powerAction(id) {}     // a demo: never locks or shuts down
                         function setMicMuted(m) { micMuted = m; }
                         function setWifiEnabled(b) { wifiEnabled = b; }
                         function setBluetoothEnabled(b) { bluetoothEnabled = b; }

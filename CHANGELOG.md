@@ -5,6 +5,12 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Quick Settings opens and closes with motion** (maintainer's request): the panel grows in from the corner
+  under the status pill on the spatial spring and fades in; closing (pill, Escape, focus leaving, IPC) shrinks and
+  fades it before the window is unloaded. Opening again mid-close grows it back.
+- **Power menu** (maintainer's request): the power button (power icon and chevron, as Googlebook) opens a menu
+  with Lock, Sign out, Restart and Shut down (`loginctl`, niri, `systemctl`). A full-screen power menu over a
+  blurred desktop is planned to replace it (plan 2.8).
 - **Clock** (plan 2.3): every screen shows the time and date at the top left ("8:55  Fri, Oct 9"), on the same
   tonal container as the status pill; 24-hour when the locale uses it. The Wayland smoke test checks that it
   shows the current time.

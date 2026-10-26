@@ -4,6 +4,7 @@ import qs.common
 import qs.components
 import qs.quicksettings
 import "../qs/services/BrightnessCtl.js" as Ctl
+import "../qs/quicksettings/PowerActions.js" as PowerActions
 
 TestCase {
     id: root
@@ -40,6 +41,7 @@ TestCase {
             function setBluetoothEnabled(b) { log("bluetooth " + b); }
             function setDarkTheme(b) { log("dark " + b); }
             function setAirplaneMode(b) { log("airplane " + b); }
+            function powerAction(id) { log("power " + id); }
             function refresh() { log("refresh"); }
         }
     }
@@ -207,16 +209,80 @@ TestCase {
 
     function test_header_buttons() {
         var t = make();
-        var spies = ["settingsRequested", "powerRequested", "soundSettingsRequested"].map(
+        var spies = ["settingsRequested", "soundSettingsRequested"].map(
             n => createTemporaryObject(spyComp, root, { target: t.panel, signalName: n }));
         clickItem(findChild(t.panel, "qsSettings"));
-        clickItem(findChild(t.panel, "qsPower"));
         clickItem(findChild(t.panel, "qsSoundSettings"));
         spies.forEach(s => compare(s.count, 1, s.signalName));
         var dark = findChild(t.panel, "qsDarkButton");
         verify(dark.checked);
         clickItem(dark);
         compare(t.backend.calls[t.backend.calls.length - 1], "dark false");
+    }
+
+    function test_power_button_opens_the_power_menu() {
+        var t = make();
+        var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "powerActionTaken" });
+        var button = findChild(t.panel, "qsPower");
+        compare(findChild(t.panel, "qsPowerChevron").name, "expand_more", "power and a chevron");
+        compare(findChild(t.panel, "qsPowerMenu").item, null, "the menu exists only while open");
+        clickItem(button);
+        verify(t.panel.powerMenuOpen);
+        compare(findChild(t.panel, "qsPowerChevron").name, "expand_less");
+        var menu = findChild(t.panel, "qsPowerMenu").item;
+        verify(menu);
+        ["lock", "logout", "reboot", "poweroff"].forEach(id => verify(findChild(menu, "qsPower_" + id), id));
+        compare(findChild(menu, "qsPower_lock").position, "first");
+        compare(findChild(menu, "qsPower_poweroff").position, "last");
+        compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "opening the menu does nothing yet");
+        clickItem(button);
+        verify(!t.panel.powerMenuOpen, "the button closes it again");
+        clickItem(button);
+        clickItem(findChild(findChild(t.panel, "qsPowerMenu").item, "qsPower_reboot"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "power reboot");
+        compare(spy.count, 1);
+        compare(spy.signalArguments[0][0], "reboot");
+        verify(!t.panel.powerMenuOpen, "choosing closes the menu");
+        // edit mode hides the button and the menu
+        clickItem(button);
+        t.panel.editMode = true;
+        verify(!button.visible);
+        compare(findChild(t.panel, "qsPowerMenu").item, null);
+    }
+
+    function test_power_commands() {
+        compare(PowerActions.actions.map(a => a.id).join(), "lock,logout,reboot,poweroff");
+        compare(PowerActions.command("lock").join(" "), "loginctl lock-session");
+        compare(PowerActions.command("logout").join(" "), "niri msg action quit --skip-confirmation");
+        compare(PowerActions.command("reboot").join(" "), "systemctl reboot");
+        compare(PowerActions.command("poweroff").join(" "), "systemctl poweroff");
+        compare(PowerActions.command("format-disk"), null);
+    }
+
+    function test_panel_grows_in_and_shrinks_away() {
+        var fresh = createTemporaryObject(panelComp, root, { backend: createTemporaryObject(fakeComp, root) });
+        verify(fresh.scale < 0.9, "starts small");
+        tryCompare(fresh, "scale", 1, 2000, "and grows in");
+        var t = make();
+        var hidden = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "hidden" });
+        tryCompare(t.panel, "scale", 1, 2000, "grown in");
+        compare(t.panel.opacity, 1);
+        verify(t.panel.enabled);
+        t.panel.shown = false;
+        verify(!t.panel.enabled, "no input while it goes away");
+        tryVerify(function () { return t.panel.scale < 0.9; }, 2000, "shrinks toward the corner");
+        tryCompare(hidden, "count", 1, 2000);
+        compare(t.panel.opacity, 0);
+        compare(t.panel.transformOrigin, Item.TopRight, "toward the status pill");
+        // shown again before it is gone: it grows back and never reports hidden
+        var u = make();
+        var spy = createTemporaryObject(spyComp, root, { target: u.panel, signalName: "hidden" });
+        tryCompare(u.panel, "scale", 1, 2000);
+        u.panel.shown = false;
+        wait(50);
+        u.panel.shown = true;
+        tryCompare(u.panel, "scale", 1, 2000);
+        compare(spy.count, 0);
     }
 
     function test_edit_mode_removes_tiles() {

@@ -359,7 +359,7 @@ def run_wayland_smoke(screenshot=None):
                         nows = [time.localtime(time.time() - d) for d in (0, 60)]
                         if not any(h % 12 == t.tm_hour % 12 and m == t.tm_min for t in nows):
                             problems.append(f"ipc state: clock {clocks[0]!r} is not the current time")
-                    want = {"open": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
+                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:
                         problems.append(f"ipc state: got {state}, expected {want}")
@@ -380,6 +380,15 @@ def run_wayland_smoke(screenshot=None):
                         got = ipc(call)
                         if got != want:
                             problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
+                    # closing plays the panel's motion, then the loader drops the window (`open` above went
+                    # false at once; `open` right after `toggle` reopened it mid-close)
+                    time.sleep(1.5)
+                    try:
+                        loaded = json.loads(ipc("state")).get("loaded")
+                    except ValueError:
+                        loaded = None
+                    if loaded is not False:
+                        problems.append(f"ipc state: loaded {loaded!r} after closing, expected False")
                     # Closing when another window takes focus (D41) cannot be tested here: sway gives an
                     # on-demand layer surface focus only when it is clicked, and there is no pointer.
                     calls = (fake.parent / (fake.name + ".log"))

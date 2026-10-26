@@ -3,12 +3,13 @@ pragma ComponentBehavior: Bound
 // the brightness and volume sliders, and the tiles on the EditableGrid. Plain QtQuick: everything it shows
 // and does goes through `backend` (QuickSettingsBackend.qml in the shell; a fake in tests and the gallery),
 // so it renders and tests offscreen. Tiles are controlled (D33): a toggle asks the backend, and the tile
-// changes when the system does. The sliders follow the backend except while dragged.
+// changes when the system does. The sliders follow the backend except while dragged. It grows in from the top
+// right when created and shrinks away when `shown` turns false, then reports `hidden` (the window unloads then).
 //
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
 // darkTheme; and setBrightness(v), setVolume(v), setMicMuted(b), setWifiEnabled(b),
-// setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), refresh().
+// setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), powerAction(id) (PowerActions.js), refresh().
 import QtQuick
 import qs.common
 import qs.components
@@ -26,12 +27,17 @@ Rectangle {
         { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }
     ]
     property alias editMode: grid.editMode
+    property bool powerMenuOpen: false
+    // Open and close motion: false shrinks and fades the panel away, then `hidden` fires.
+    property bool shown: true
+    readonly property real appearProgress: appear.value
     readonly property bool brightnessShown: brightnessRow.visible
     readonly property real panelWidth: 412
 
     signal tilesEdited(var tiles)
     signal settingsRequested()
-    signal powerRequested()
+    signal powerActionTaken(string id)
+    signal hidden()
     signal soundSettingsRequested()
     signal detailsRequested(string tileId)
     // The window this panel is in lost keyboard focus (another window took it), after having had it. The
@@ -88,6 +94,12 @@ Rectangle {
         }
     }
 
+    function choosePower(id) {
+        powerMenuOpen = false;
+        backend.powerAction(id);
+        powerActionTaken(id);
+    }
+
     function removeSelected() {
         if (grid.selectedIndex < 0) return;
         var next = tiles.filter((item, i) => i !== grid.selectedIndex);
@@ -102,6 +114,20 @@ Rectangle {
     height: implicitHeight
     radius: Shapes.extraLarge
     color: Colors.surfaceContainer
+
+    // Grows from the corner under the status pill on the spatial spring; the fade uses the effects curve so it
+    // does not overshoot. Input is off while it goes away.
+    transformOrigin: Item.TopRight
+    scale: 0.85 + 0.15 * appear.value
+    opacity: shown ? 1 : 0
+    Behavior on opacity { EffectsNumber {} }
+    enabled: shown
+    Spring {
+        id: appear
+        value: 0        // created at 0 with target 1: it grows in
+        target: root.shown ? 1 : 0
+        onSettledChanged: if (settled && !root.shown) root.hidden()
+    }
 
     // The backend may arrive after creation (a binding through the window): refresh when it does.
     onBackendChanged: if (backend) backend.refresh()
@@ -133,13 +159,43 @@ Rectangle {
                     onClicked: root.settingsRequested()
                 }
             }
-            IconButton {
+            // Googlebook's power button: the power icon and a smaller chevron, opening the menu. Two Icons: one Icon
+            // with two ligatures puts the font's wide space between them.
+            Rectangle {
+                id: powerButton
                 objectName: "qsPower"
                 visible: !root.editMode
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                iconName: "power_settings_new"
-                onClicked: root.powerRequested()
+                width: powerIcons.width + 2 * Spacing.sm
+                height: ControlSpec.iconButtonSizes.s.height
+                radius: height / 2
+                color: root.powerMenuOpen ? Colors.secondaryContainer : Colors.surfaceContainer
+                Behavior on color { EffectsColor {} }
+                readonly property color contentColor: root.powerMenuOpen ? Colors.secondaryContainerOn : Colors.surfaceVariantOn
+                Row {
+                    id: powerIcons
+                    anchors.centerIn: parent
+                    Icon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: "power_settings_new"
+                        size: ControlSpec.iconButtonSizes.s.icon
+                        color: powerButton.contentColor
+                    }
+                    Icon {
+                        objectName: "qsPowerChevron"
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: root.powerMenuOpen ? "expand_less" : "expand_more"
+                        size: Spacing.lg
+                        color: powerButton.contentColor
+                    }
+                }
+                StateLayer {
+                    anchors.fill: parent
+                    radius: powerButton.radius
+                    stateColor: powerButton.contentColor
+                    onClicked: root.powerMenuOpen = !root.powerMenuOpen
+                }
             }
 
             Row {
@@ -275,6 +331,19 @@ Rectangle {
                     onClicked: root.detailsRequested(tile.modelData.id)
                 }
             }
+        }
+    }
+
+    // The power menu over the tiles, under the power button; created only while open (D31).
+    Loader {
+        objectName: "qsPowerMenu"
+        active: root.powerMenuOpen && !root.editMode
+        z: 1
+        anchors.right: parent.right
+        anchors.rightMargin: Spacing.lg
+        y: Spacing.lg + ControlSpec.iconButtonSizes.s.height + Spacing.xs
+        sourceComponent: PowerMenu {
+            onChosen: id => root.choosePower(id)
         }
     }
 }

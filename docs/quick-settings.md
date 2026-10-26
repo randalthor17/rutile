@@ -16,7 +16,14 @@ whether the panel and pills reached the backend, whether brightness shows, which
 layer, the space reserved per screen and the clocks' text). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
-(D41); clicks inside the panel do not.
+(D41); clicks inside the panel do not. The panel grows in from the corner under the pill on the spatial spring
+and fades in; closing shrinks and fades it, and the window is unloaded once the motion ends (`isOpen` turns false
+at once; opening again mid-close grows it back).
+
+The power button at the panel's top right (the power icon and a chevron, as Googlebook) opens a menu: Lock
+(`loginctl lock-session`), Sign out (`niri msg action quit --skip-confirmation`), Restart (`systemctl reboot`)
+and Shut down (`systemctl poweroff`), from `shell/quicksettings/PowerActions.js`. A choice runs at once (no
+confirmation, as Googlebook) and closes the panel.
 Clicking empty desktop or another program's bar does not close it: those clicks do not move focus on niri.
 
 A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM
@@ -39,7 +46,9 @@ any wallpaper (the maintainer asked for a colored pill). It does nothing on clic
 | `shell/bar/StatusIcons.js` | no | which Material Symbol for which state |
 | `shell/quicksettings/QuickSettingsWindow.qml` | yes | a `PanelWindow` (layer shell) at the top right, `ExclusionMode.Ignore`, keyboard focus for Escape |
 | `shell/quicksettings/QuickSettingsBackend.qml` | yes (through `qs.services`) | the panel's backend interface on top of the services |
-| `shell/quicksettings/QuickSettingsPanel.qml` | no | header, brightness and volume sliders, tiles on the `EditableGrid` |
+| `shell/quicksettings/QuickSettingsPanel.qml` | no | header, brightness and volume sliders, tiles on the `EditableGrid`, the open and close motion |
+| `shell/quicksettings/PowerMenu.qml` | no | the power menu: a segmented list of `ListItem`s, created only while open |
+| `shell/quicksettings/PowerActions.js` | no | the power menu's entries and their commands (run by the backend with `Quickshell.execDetached`) |
 | `shell/services/AudioService.qml` | yes | default output and input: volume, mute (`Pipewire`, `PwObjectTracker`) |
 | `shell/services/NetworkService.qml` | yes | Wi-Fi on/off, connected network (`Networking`, NetworkManager) |
 | `shell/services/BluetoothService.qml` | yes | adapter on/off, a connected device (`Bluetooth`, BlueZ) |
@@ -86,7 +95,10 @@ window (`niri msg action focus-column-right`) closed the panel.
 - Closing on a click on empty desktop or another bar (D41); per-tile detail pages (Wi-Fi networks, Bluetooth devices); the
   available-tiles list in edit mode; saving the tile layout and the dark theme (plan 2.5).
 - Blur behind the panel (`BackgroundEffect`, D38): the panel is opaque like Googlebook's for now.
-- Power menu, settings and sound settings buttons only emit signals: nothing opens yet.
+- Settings and sound settings buttons only emit signals: nothing opens yet.
+- The power menu is a small dropdown for now. Planned (maintainer's request): a full-screen power menu over the
+  blurred desktop, replacing it (plan 2.8). Lock runs `loginctl lock-session`, which locks nothing until a lock
+  screen listens (plan 2.8) or e.g. swayidle runs one. Clicking elsewhere in the panel does not close the menu.
 - More tiles: Do not disturb (needs the notification server, 2.8), Night light, Power saver (`PowerProfiles`,
   needs power-profiles-daemon and a way to tell it is missing).
 - **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path

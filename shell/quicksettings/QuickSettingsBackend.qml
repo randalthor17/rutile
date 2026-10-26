@@ -2,8 +2,10 @@
 // StatusPill.qml list, on top of the Quickshell services in shell/services. The shell makes one; tests and the
 // gallery use fakes with the same names.
 import QtQuick
+import Quickshell
 import qs.common
 import qs.services
+import "PowerActions.js" as PowerActions
 
 QtObject {
     readonly property bool brightnessAvailable: BrightnessService.available
@@ -33,6 +35,11 @@ QtObject {
     function setWifiEnabled(on) { NetworkService.setWifiEnabled(on); }
     function setBluetoothEnabled(on) { BluetoothService.setEnabled(on); }
     function setDarkTheme(on) { Colors.mode = on ? "dark" : "light"; }
+    // Lock, sign out, restart or shut down (PowerActions.js), detached so it outlives the shell.
+    function powerAction(id) {
+        const command = PowerActions.command(id);
+        if (command) Quickshell.execDetached(command);
+    }
     // Airplane mode turns every radio off; turning it off turns them back on.
     function setAirplaneMode(on) {
         NetworkService.setWifiEnabled(!on);

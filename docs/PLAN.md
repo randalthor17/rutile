@@ -101,7 +101,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **2.7** Launcher: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
-- [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM). Types: `NotificationServer`, `WlSessionLock`,
+- [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
+  (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
 ## Phase 3: windows on niri
