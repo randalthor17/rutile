@@ -533,6 +533,8 @@ Rectangle {
                         id: demoPanel
                         objectName: "galleryQuickSettings"
                         backend: demoBackend
+                        // a power choice hides the panel; here the pill brings it back
+                        onHidden: { visible = false; shown = true; }
                     }
                     Text {
                         text: "The shell's status pill and panel with a demo backend; click the pill. In the shell: "

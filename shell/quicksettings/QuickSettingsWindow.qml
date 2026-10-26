@@ -45,7 +45,6 @@ PanelWindow {
         backend: root.backend
         focus: true
         onWindowFocusLost: root.close()
-        onPowerActionTaken: root.close()
         onHidden: root.closeRequested()
         Keys.onEscapePressed: root.close()
     }

@@ -41,7 +41,6 @@ Rectangle {
 
     signal tilesEdited(var tiles)
     signal settingsRequested()
-    signal powerActionTaken(string id)
     signal hidden()
     signal soundSettingsRequested()
     signal detailsRequested(string tileId)
@@ -99,11 +98,15 @@ Rectangle {
         }
     }
 
+    // A power action waits until the panel has gone (menu and panel play their closing motion first), so a lock
+    // screen or a shutdown never shows the panel. Opening it again before then cancels the action.
+    property string pendingPower: ""
     function choosePower(id) {
         powerMenuOpen = false;
-        backend.powerAction(id);
-        powerActionTaken(id);
+        pendingPower = id;
+        shown = false;
     }
+    onShownChanged: if (shown) pendingPower = ""
 
     function removeSelected() {
         if (grid.selectedIndex < 0) return;
@@ -126,7 +129,12 @@ Rectangle {
         target: root
         shown: root.shown
         origin: Item.TopRight
-        onHidden: root.hidden()
+        onHidden: {
+            const id = root.pendingPower;
+            root.pendingPower = "";
+            if (id !== "") root.backend.powerAction(id);
+            root.hidden();
+        }
     }
 
     // The backend may arrive after creation (a binding through the window): refresh when it does.

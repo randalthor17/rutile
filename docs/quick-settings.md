@@ -22,8 +22,9 @@ at once; opening again mid-close grows it back).
 
 The power button at the panel's top right (the power icon and a chevron, as Googlebook) opens a menu: Lock
 (`loginctl lock-session`), Sign out (`niri msg action quit --skip-confirmation`), Restart (`systemctl reboot`)
-and Shut down (`systemctl poweroff`), from `shell/quicksettings/PowerActions.js`. A choice runs at once (no
-confirmation, as Googlebook) and closes the panel. The menu opens with the same popup motion from under the
+and Shut down (`systemctl poweroff`), from `shell/quicksettings/PowerActions.js`. A choice closes the menu and the
+panel first and runs once the panel has gone (no confirmation, as Googlebook), so a lock screen or shutdown never
+shows it; opening the panel again before then cancels it. The menu opens with the same popup motion from under the
 button, and the chevron turns to point up while it is open.
 Clicking empty desktop or another program's bar does not close it: those clicks do not move focus on niri.
 

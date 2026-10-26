@@ -222,7 +222,7 @@ TestCase {
 
     function test_power_button_opens_the_power_menu() {
         var t = make();
-        var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "powerActionTaken" });
+        var hidden = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "hidden" });
         var button = findChild(t.panel, "qsPower");
         var chevron = findChild(t.panel, "qsPowerChevron");
         compare(chevron.name, "expand_more", "power and a chevron");
@@ -246,12 +246,26 @@ TestCase {
         var reopened = findChild(t.panel, "qsPowerMenu").item;
         tryCompare(reopened, "scale", 1, 2000);
         clickItem(findChild(reopened, "qsPower_reboot"));
-        compare(t.backend.calls[t.backend.calls.length - 1], "power reboot");
-        compare(spy.count, 1);
-        compare(spy.signalArguments[0][0], "reboot");
         verify(!t.panel.powerMenuOpen, "choosing closes the menu");
-        tryCompare(chevron, "rotation", 0, 2000, "and turns the chevron back");
-        tryCompare(findChild(t.panel, "qsPowerMenu"), "item", null, 2000, "and the menu goes away");
+        verify(!t.panel.shown, "and the panel");
+        compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "first hide, then run");
+        tryCompare(hidden, "count", 1, 2000);
+        compare(t.backend.calls[t.backend.calls.length - 1], "power reboot", "run once the panel has gone");
+        compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 1);
+        compare(chevron.rotation, 0, "the chevron turned back");
+        compare(findChild(t.panel, "qsPowerMenu").item, null, "the menu has gone");
+        // opened again before it has gone: the action is cancelled
+        var u = make();
+        var uh = createTemporaryObject(spyComp, root, { target: u.panel, signalName: "hidden" });
+        clickItem(findChild(u.panel, "qsPower"));
+        tryCompare(u.panel.powerMenu, "scale", 1, 2000);
+        clickItem(findChild(u.panel.powerMenu, "qsPower_poweroff"));
+        u.panel.shown = true;
+        wait(500);
+        compare(uh.count, 0);
+        u.panel.shown = false;
+        tryCompare(uh, "count", 1, 2000);
+        compare(u.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "never shut down");
         // the menu can reach below a short panel (no brightness, no volume); the window grows to menuBottom
         var short = make({ brightnessAvailable: false, volumeAvailable: false });
         compare(short.panel.menuBottom, 0, "no menu, nothing to fit");
@@ -262,10 +276,9 @@ TestCase {
         compare(short.panel.menuBottom, m.mapToItem(short.panel, 0, m.height).y);
         verify(short.panel.menuBottom > short.panel.height, "taller than the panel here");
         // edit mode hides the button and the menu
-        clickItem(button);
-        t.panel.editMode = true;
-        verify(!button.visible);
-        tryCompare(findChild(t.panel, "qsPowerMenu"), "item", null, 2000);
+        short.panel.editMode = true;
+        verify(!findChild(short.panel, "qsPower").visible);
+        tryCompare(findChild(short.panel, "qsPowerMenu"), "item", null, 2000);
     }
 
     function test_power_commands() {

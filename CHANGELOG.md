@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Power actions wait for Quick Settings to close** (maintainer's request): choosing Lock, Sign out, Restart or
+  Shut down closes the menu and the panel first, and runs the action once they have gone; reopening the panel
+  before then cancels it.
 - **One popup motion, one animation speed** (D43, maintainer's rule): every popup, dropdown and menu grows and
   fades in from where it opens and plays it backwards on close (`PopupMotion`, `PopupLoader`); the power menu
   now does, and the power button's chevron turns. Every animation follows `Motion.speed`: start the shell with
