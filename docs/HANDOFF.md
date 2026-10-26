@@ -33,7 +33,7 @@ Unreleased. There is no shell UI yet: what exists is the foundation and the firs
 | Fonts: Google Sans Flex (text), Material Symbols Rounded (icons) | done |
 | Components: Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem, ShapeMorph | done, in the gallery |
 | Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
-| Shell entry (`shell/shell.qml`) with Quick Settings: tiles, brightness and volume, IPC toggle | first version; runs under a headless sway in tests, not yet tried on the maintainer's niri (`docs/quick-settings.md`) |
+| Shell entry (`shell/shell.qml`) with Quick Settings: tiles, brightness and volume, IPC toggle | first version; tested under a headless sway, and opened on the maintainer's niri (volume live; no Wi-Fi, Bluetooth or backlight there) (`docs/quick-settings.md`) |
 | Remaining components, rest of the shell, widget renderer, settings, distro | not started (see plan) |
 | Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
 | `tools/widget_check.py` (widget schema and widget checker, stdlib) | done; the acceptance check of the widget tasks |

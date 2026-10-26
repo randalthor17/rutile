@@ -8,7 +8,8 @@ quickshell -p shell/shell.qml                                          # run the
 quickshell -p shell/shell.qml ipc call quicksettings toggle            # open or close Quick Settings
 ```
 
-`quicksettings` also has `open`, `close` and `isOpen`. A niri keybind runs the `toggle` line (with the
+The shell starts with the panel closed and shows nothing else yet; `qs -p shell` works the same from the repo
+root. `quicksettings` also has `open`, `close` and `isOpen`. A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 Escape closes the panel.
 
@@ -39,6 +40,11 @@ by `tilesEdited(tiles)` and kept in memory until settings persistence (plan 2.5)
 Memory: an open panel is about 1.4 MiB (5 tiles, 2 sliders, the grid, 4 icon buttons); closed, nothing but the
 services remains.
 
+To check a change in the live niri session: start the shell, `ipc call quicksettings open`, then
+`niri msg action screenshot-screen -p false --path FILE` (niri's own screenshot; it also copies to the clipboard).
+First run on the maintainer's niri (October 2026): the panel opened at the top right, volume followed PipeWire;
+Wi-Fi and Bluetooth showed unavailable on that machine (no Wi-Fi device reported, BlueZ not running).
+
 ## Tests
 
 - `tests/qml/tst_quick_settings.qml` (offscreen, `make check`): the panel against a fake backend, every tile,
@@ -58,5 +64,6 @@ services remains.
 - Power menu, settings and sound settings buttons only emit signals: nothing opens yet.
 - More tiles: Do not disturb (needs the notification server, 2.8), Night light, Power saver (`PowerProfiles`,
   needs power-profiles-daemon and a way to tell it is missing).
-- **Not verified:** any of it on the maintainer's machine in niri, with real Wi-Fi, Bluetooth, PipeWire and a
-  backlight. The services were only loaded where those daemons were missing; their setters have not run.
+- **Not verified:** the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real
+  hardware; Wi-Fi, Bluetooth and a backlight have not been seen working at all (the machine it ran on has none
+  of them active).
