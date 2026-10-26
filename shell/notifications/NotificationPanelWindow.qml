@@ -29,7 +29,14 @@ PanelWindow {
     WlrLayershell.namespace: "rutile-notification-list"
     implicitWidth: panel.width
     implicitHeight: panel.maxHeight
-    mask: Region { item: panel }
+    // From the geometry, not `item`: Quickshell measures an item with its scale and does not follow the scale as
+    // it changes, so the mask stayed at the panel's opening size and Clear all, at the bottom, took no clicks.
+    mask: Region {
+        x: panel.x
+        y: panel.y
+        width: panel.width
+        height: panel.height
+    }
     color: "transparent"
 
     // ticks the cards' "5 min"

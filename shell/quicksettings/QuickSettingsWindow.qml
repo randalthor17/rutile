@@ -33,9 +33,20 @@ PanelWindow {
     // Tall enough for the power menu where it reaches below the panel; the mask keeps the empty part
     // click-through.
     implicitHeight: Math.max(panel.height, panel.menuBottom)
+    // From the geometry, not `item`: Quickshell measures an item with its scale and does not follow the scale as
+    // it changes, so a mask taken while the popup motion grew the panel stayed at 0.85 of its size, and clicks
+    // went through its left and bottom edges (seen with Quickshell 0.3.2).
     mask: Region {
-        item: panel
-        Region { item: panel.powerMenu }
+        x: panel.x
+        y: panel.y
+        width: panel.width
+        height: panel.height
+        Region {
+            x: panel.x + panel.menuRect.x
+            y: panel.y + panel.menuRect.y
+            width: panel.menuRect.width
+            height: panel.menuRect.height
+        }
     }
     color: "transparent"
 

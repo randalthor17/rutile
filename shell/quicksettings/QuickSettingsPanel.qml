@@ -37,6 +37,9 @@ Rectangle {
     // shorter than the menu), so the window grows to fit it.
     readonly property Item powerMenu: powerMenuLoader.item as Item
     readonly property real menuBottom: powerMenu ? powerMenuLoader.y + powerMenu.height : 0
+    // where the power menu is when fully open, for the window's input mask
+    readonly property rect menuRect: powerMenu ? Qt.rect(powerMenuLoader.x, powerMenuLoader.y, powerMenu.width, powerMenu.height)
+                                               : Qt.rect(0, 0, 0, 0)
     readonly property bool brightnessShown: brightnessRow.visible
     readonly property real panelWidth: 412
 

@@ -11,6 +11,7 @@ normally registers them itself.
     qtws.py test-wayland [--screenshot FILE]
                      start the real shell (shell/shell.qml) under a headless sway, open Quick Settings over
                      IPC and check it loads cleanly; FILE gets a screenshot (needs grim)
+                     and check how the popup windows use their surfaces (run_wayland_surfaces)
     qtws.py test-qs  run tests/qs/tst_*.qml as shells under `quickshell`, offscreen (code that needs
                      Quickshell types, which qmltestrunner cannot load)
     qtws.py render [--mode dark|light] [--out DIR]
@@ -249,6 +250,7 @@ class PrivateBus:
                 self.proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.proc.kill()
+            self.proc.stdout.close()
 
 
 def run_qs_tests(timeout=60):
@@ -697,6 +699,113 @@ def run_wayland_smoke(screenshot=None):
     return (1 if problems else 0), "\n".join(problems + notes)
 
 
+def layer_surface_requests(text):
+    """What the shell asked of each layer surface, from a WAYLAND_DEBUG=1 log: {namespace: {"sizes": [(w, h)],
+    "inputs": [[(x, y, w, h)]]}}. Object ids are reused once a surface goes, so each is mapped by the order of
+    its creation."""
+    names, layers, regions, out = {}, {}, {}, {}
+    pat = (r"get_layer_surface\(new id zwlr_layer_surface_v1#(\d+), wl_surface#(\d+), [^\n]*?\"([\w-]+)\"\)"
+           r"|-> zwlr_layer_surface_v1#(\d+)\.set_size\((\d+), (\d+)\)"
+           r"|-> wl_region#(\d+)\.add\((-?\d+), (-?\d+), (\d+), (\d+)\)"
+           r"|-> wl_surface#(\d+)\.set_input_region\((?:wl_region#(\d+)|nil)\)")
+    for m in re.finditer(pat, text):
+        if m.group(1):
+            layers[m.group(1)] = names[m.group(2)] = m.group(3)
+            out.setdefault(m.group(3), {"sizes": [], "inputs": []})
+        elif m.group(4) and m.group(4) in layers:
+            out[layers[m.group(4)]]["sizes"].append((int(m.group(5)), int(m.group(6))))
+        elif m.group(7):
+            regions.setdefault(m.group(7), []).append(tuple(int(m.group(i)) for i in range(8, 12)))
+        elif m.group(12) and m.group(12) in names:
+            out[names[m.group(12)]]["inputs"].append(regions.pop(m.group(13), []) if m.group(13) else None)
+    return out
+
+
+def run_wayland_surfaces():
+    """Start the shell under headless sway with WAYLAND_DEBUG=1, pop up three notifications, open the list and
+    Quick Settings, and check what the shell asked of their surfaces: the popups' surface is resized only as
+    cards come and go, not on every frame of their motion (each resize is a compositor round trip, and the
+    motion stuttered); the list's never; and a popup window's input mask covers the whole panel, not the panel
+    as its opening motion had scaled it (Quickshell's Region measures an item with its scale and keeps that).
+    Returns (code, report)."""
+    qs, sway = shutil.which("quickshell"), shutil.which("sway")
+    if not qs or not sway:
+        return SKIPPED, "needs quickshell and sway"
+    if not shutil.which("busctl"):
+        return SKIPPED, "needs busctl to send notifications"
+    shell = ROOT / "shell" / "shell.qml"
+    problems = []
+    with HeadlessSway() as comp, PrivateBus() as bus:
+        env = comp.env({
+            "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
+            "FAKE_BRIGHTNESS": str(comp.runtime / "fake-brightness"),
+            "DBUS_SESSION_BUS_ADDRESS": bus.address,
+            "WAYLAND_DEBUG": "1",
+            "XDG_CONFIG_HOME": str(comp.runtime / "config"),
+            "XDG_STATE_HOME": str(comp.runtime / "state"),
+            "RUTILE_PALETTE": str(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json"),
+        })
+        log_path = comp.runtime / "shell.log"
+        with open(log_path, "w") as log:
+            shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                def ipc(*args):
+                    subprocess.run([qs, "-p", str(shell), "ipc", "call", *args], env=env, capture_output=True,
+                                   timeout=10)
+                deadline = time.time() + 15
+                while "Configuration Loaded" not in log_path.read_text(errors="replace") and time.time() < deadline:
+                    if shell_proc.poll() is not None:
+                        break
+                    time.sleep(0.1)
+                if "Configuration Loaded" not in log_path.read_text(errors="replace"):
+                    return 1, "the shell did not load"
+                for i in range(3):
+                    # Notify(app, replaces, icon, summary, body, actions, hints, timeout ms)
+                    subprocess.run(["busctl", "--user", "--", "call", "org.freedesktop.Notifications",
+                                    "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
+                                    "susssasa{sv}i", f"App{i}", "0", "", f"Hello {i}", "body", "0", "0", "800"],
+                                   env=env, capture_output=True, timeout=10)
+                    time.sleep(0.3)
+                time.sleep(3)
+                ipc("notifications", "toggle")
+                time.sleep(2)
+                ipc("notifications", "dismiss", "2")    # the list closes up, in a window that keeps its size
+                time.sleep(1.5)
+                ipc("notifications", "toggle")
+                time.sleep(1.5)
+                ipc("quicksettings", "toggle")
+                time.sleep(2)
+            finally:
+                shell_proc.terminate()
+                try:
+                    shell_proc.wait(5)
+                except subprocess.TimeoutExpired:
+                    shell_proc.kill()
+        surfaces = layer_surface_requests(log_path.read_text(errors="replace"))
+    popups = surfaces.get("rutile-notifications", {"sizes": []})["sizes"]
+    if not popups:
+        problems.append("no notification popups appeared")
+    elif len(popups) > 3 * 3:
+        problems.append(f"the popups' surface was resized {len(popups)} times for 3 notifications (heights "
+                        f"{[h for _, h in popups]}): it follows their motion")
+    for name in ("rutile-notification-list", "rutile-quicksettings"):
+        got = surfaces.get(name)
+        if not got or not got["sizes"]:
+            problems.append(f"{name}: no surface")
+            continue
+        if name == "rutile-notification-list" and len(set(got["sizes"])) > 1:
+            problems.append(f"{name}: resized while open: {got['sizes']}")
+        width = got["sizes"][-1][0]
+        for rects in got["inputs"]:
+            if not rects or rects[0][0] != 0 or rects[0][1] != 0 or rects[0][2] != width:
+                problems.append(f"{name}: input mask {rects} does not cover the panel ({width} wide)")
+                break
+        else:
+            if not got["inputs"]:
+                problems.append(f"{name}: no input mask")
+    return (1 if problems else 0), "\n".join(problems)
+
+
 def render_gallery(out_dir, mode="dark", width=1180):
     """Render shell/gallery/GalleryContent offscreen as scrolled slices out_dir/gallery-<mode>-N.png.
 
@@ -774,7 +883,12 @@ def main(argv):
             print(f"wayland smoke test: SKIPPED, {out}")
             return 0
         print(out if out else "wayland smoke test passed")
-        return code
+        code2, out2 = run_wayland_surfaces()
+        if code2 == SKIPPED:
+            print(f"wayland surfaces test: SKIPPED, {out2}")
+            return code
+        print(out2 if out2 else "wayland surfaces test passed")
+        return code or code2
     if argv and argv[0] == "test-qs":
         code, out, counts = run_qs_tests()
         if code == SKIPPED:

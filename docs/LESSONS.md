@@ -60,6 +60,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   clicks through the empty part. Count resizes under headless sway with `WAYLAND_DEBUG=1`
   (`zwlr_layer_surface_v1.set_size`), mapping each surface by the order of its creation: ids are reused.
 
+- **Build a window's input mask from geometry, not `Region { item }`.** Quickshell 0.3.2 measures the item with
+  its scale and does not update when the scale changes, so a mask taken while PopupMotion grew a panel from 0.85
+  stayed at 0.85 of its size: Clear all at the bottom of the notification list, the left and bottom edges of
+  Quick Settings and the power menu's lower part took no clicks. Bind the Region's x, y, width and height to the
+  item's. Headless QML tests cannot see this (the mask exists only under a compositor); `qtws.py
+  run_wayland_surfaces` checks the masks and sizes the shell sends under headless sway.
+
 ## Testing method
 
 - **A test that cannot fail proves nothing.** Mutate the code and watch the test fail. Several guards turned out

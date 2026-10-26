@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Clicks reach the whole panel** (fix): Clear all at the bottom of the notification list took no clicks, nor
+  did the left and bottom edges of Quick Settings or the part of its power menu below the panel; clicks went
+  to the window behind. The windows' click areas had been measured mid-opening, at 85% of the panel's size.
 - **Clear all is animated** (plan 2.8): the notifications sweep off to the side one after another from the top,
   then the list closes up and "No notifications" fades in. One that arrives during the sweep stays.
 - **Smoother notification motion** (plan 2.8): popups coming and going, and the list closing up or opening a
