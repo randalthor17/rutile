@@ -27,6 +27,8 @@ TestCase {
             property bool batteryAvailable: true
             property real battery: 0.82
             property bool charging: false
+            property var calls: []
+            function setVolume(v) { calls = calls.concat(["volume " + v.toFixed(2)]); volume = v; muted = false; }
         }
     }
     Component { id: pillComp; StatusPill {} }
@@ -91,6 +93,55 @@ TestCase {
         t.backend.wifiAvailable = false;
         compare(icons.name, "tune", "nothing to report: still something to click");
         compare(icons.fill, 0);
+    }
+
+    // Scrolls over the middle of glyph `i` (of `n` shown) in the pill's icons.
+    function wheelOver(pill, i, n, notches) {
+        var icons = findChild(pill, "statusIcons");
+        var p = icons.mapToItem(pill, (i + 0.5) * icons.width / n, icons.height / 2);
+        mouseWheel(pill, p.x, p.y, 0, 120 * notches);
+    }
+
+    function test_scrolling_over_the_volume_glyph_changes_the_volume() {
+        var t = make();
+        var spy = createTemporaryObject(spyComp, root, { target: t.pill, signalName: "clicked" });
+        wheelOver(t.pill, 1, 3, 1);
+        compare(t.backend.calls.join(), "volume 0.75", "up a notch: 5%");
+        wheelOver(t.pill, 1, 3, -2);
+        compare(t.backend.calls[1], "volume 0.65", "down two notches");
+        wheelOver(t.pill, 0, 3, 1);
+        wheelOver(t.pill, 2, 3, 1);
+        compare(t.backend.calls.length, 2, "the network and battery glyphs do not scroll the volume");
+        compare(spy.count, 0, "scrolling does not open the panel");
+        mouseClick(t.pill, t.pill.width / 2, t.pill.height / 2);
+        compare(spy.count, 1, "a click over the volume glyph still opens it");
+        // clamped to 0..1
+        t.backend.volume = 0.98;
+        wheelOver(t.pill, 1, 3, 1);
+        compare(t.backend.calls[2], "volume 1.00");
+        // muted counts as 0: up unmutes from the bottom, down stays at 0
+        t.backend.muted = true;
+        wheelOver(t.pill, 1, 3, -1);
+        compare(t.backend.calls[3], "volume 0.00");
+        t.backend.muted = true;
+        wheelOver(t.pill, 1, 3, 1);
+        compare(t.backend.calls[4], "volume 0.05");
+    }
+
+    function test_volume_glyph_moves_with_the_others() {
+        var t = make({ wifiAvailable: false, batteryAvailable: false });
+        wheelOver(t.pill, 0, 1, 1);
+        compare(t.backend.calls.join(), "volume 0.75", "the only glyph");
+        t.backend.wifiAvailable = true;
+        waitForRendering(t.pill);       // the row relayouts on the next polish
+        wheelOver(t.pill, 0, 2, 1);
+        compare(t.backend.calls.length, 1, "network first now");
+        wheelOver(t.pill, 1, 2, 1);
+        compare(t.backend.calls[1], "volume 0.80");
+        t.backend.volumeAvailable = false;
+        verify(!findChild(t.pill, "statusVolumeZone").visible, "no audio: nothing to scroll");
+        wheelOver(t.pill, 0, 1, 1);
+        compare(t.backend.calls.length, 2);
     }
 
     function test_click_and_open_state() {

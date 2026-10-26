@@ -56,7 +56,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | ListItem | | 85.1 | includes its shape spring |
 | Tile | | 101.6 | one icon for both layouts; a dual-target tile adds a state layer (about 160) |
 | ShapeMorph | | 47 to 418 | QtQuick.Shapes' curve renderer; grows with the curve count: circle 47, cookie9Sided 115, softBoom (192 curves) 418. Idle state is the name only (D37) |
-| StatusPill | 122.8 | 58.3 | always on screen (one per screen): one `Icon` with three ligatures instead of three (93.2), then no container while closed and 16 px icons |
+| StatusPill | 122.8 | 58.3 | always on screen (one per screen): one `Icon` with three ligatures instead of three (93.2), then no container while closed and 16 px icons. Scrolling the volume (an Item with a WheelHandler over the volume glyph) added 5.2, measured with a backend passed in (95.0 to 100.2 including it) |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 

@@ -9,7 +9,8 @@ quickshell -p shell/shell.qml ipc call quicksettings toggle            # open or
 ```
 
 The shell shows a status pill at the top right of every screen (network, volume, battery); clicking it opens
-Quick Settings below it on that screen, and clicking it again closes it. `qs -p shell` works the same from the
+Quick Settings below it on that screen, and clicking it again closes it. Scrolling
+over its volume glyph changes the volume by 5% a notch without opening anything. `qs -p shell` works the same from the
 repo root. `quicksettings` also has `open`, `close`, `isOpen` and `state` (JSON of what the windows see: open,
 whether the panel and pills reached the backend, whether brightness shows, which pill is marked open, the pills'
 layer and the space reserved per screen). A niri keybind runs the `toggle` line (with the
@@ -80,7 +81,7 @@ window (`niri msg action focus-column-right`) closed the panel.
 - Power menu, settings and sound settings buttons only emit signals: nothing opens yet.
 - More tiles: Do not disturb (needs the notification server, 2.8), Night light, Power saver (`PowerProfiles`,
   needs power-profiles-daemon and a way to tell it is missing).
-- **Not verified:** clicking the pill on a real screen (only its signal is tested offscreen, and the IPC path
+- **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path
   live), several screens; the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real
   hardware; Wi-Fi, Bluetooth and a backlight have not been seen working at all (the machine it ran on has none
   of them active).

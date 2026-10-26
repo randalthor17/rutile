@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Scroll the volume on the status pill** (maintainer's request): scrolling over the pill's volume glyph
+  changes the volume by 5% a notch, without opening Quick Settings. Muted counts as 0: scrolling up unmutes from
+  the bottom. The other glyphs and a click behave as before.
 - **The top edge stays visible; windows keep clear of it** (D42, maintainer's design): the status pill is back
   on the top layer, and each screen reserves 32 px at the top through a 1 px transparent, click-through layer
   surface with an exclusive zone (as DankMaterialShell and Caelestia do), so windows are laid out below the pill
