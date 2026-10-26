@@ -80,7 +80,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   merged when this item starts: pin the PR commit as a flake input (maintainer's approval) or a small `Socket`
   client on `$NIRI_SOCKET`, behind a thin `Niri` singleton either way. `IpcHandler` for keybinds into the shell.
 - [ ] **2.3** Started: the status pill at the top right of every screen (network, volume, battery; opens Quick
-  Settings, D41; scrolling over the volume glyph changes the volume). Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
+  Settings, D41; scrolling over the volume glyph changes the volume) and the
+  clock at the top left (time and date). Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
   floating time/date top-left, status icons top-right, no top bar. Types: `PanelWindow` on `WlrLayer.Background`,
   `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
 - [ ] **2.4** Shelf: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators

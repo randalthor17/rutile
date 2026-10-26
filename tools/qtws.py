@@ -348,6 +348,17 @@ def run_wayland_smoke(screenshot=None):
                     except ValueError as e:
                         state = {}
                         problems.append(f"ipc state: {e}")
+                    # the clock shows the time and date from SystemClock ("8:55 Fri, Oct 9"; the minute varies)
+                    clocks = state.pop("clocks", None)
+                    if not (isinstance(clocks, list) and len(clocks) == 1
+                            and re.fullmatch(r"\d{1,2}:\d\d \S+, \S+ \d{1,2}", clocks[0])):
+                        problems.append(f"ipc state: clocks {clocks!r}, expected one time and date")
+                    else:
+                        # and it is now (12- or 24-hour, either of the last two minutes)
+                        h, m = map(int, clocks[0].split()[0].split(":"))
+                        nows = [time.localtime(time.time() - d) for d in (0, 60)]
+                        if not any(h % 12 == t.tm_hour % 12 and m == t.tm_min for t in nows):
+                            problems.append(f"ipc state: clock {clocks[0]!r} is not the current time")
                     want = {"open": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:

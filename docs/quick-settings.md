@@ -13,18 +13,26 @@ Quick Settings below it on that screen, and clicking it again closes it. Scrolli
 over its volume glyph changes the volume by 5% a notch without opening anything. `qs -p shell` works the same from the
 repo root. `quicksettings` also has `open`, `close`, `isOpen` and `state` (JSON of what the windows see: open,
 whether the panel and pills reached the backend, whether brightness shows, which pill is marked open, the pills'
-layer and the space reserved per screen). A niri keybind runs the `toggle` line (with the
+layer, the space reserved per screen and the clocks' text). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
 (D41); clicks inside the panel do not.
 Clicking empty desktop or another program's bar does not close it: those clicks do not move focus on niri.
+
+A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM
+as Googlebook shows it, or 24-hour when the locale's short time format is), from Quickshell's `SystemClock`.
+Googlebook draws it straight on the wallpaper; Rutile gives it the status pill's tonal container so it reads on
+any wallpaper (the maintainer asked for a colored pill). It does nothing on click yet.
 
 ## How it is built
 
 | File | Needs Quickshell | What it does |
 |---|---|---|
 | `shell/shell.qml` | yes | `ShellRoot`, `PaletteWatcher`, the one backend, a status pill per screen (`Variants`), a `LazyLoader` with the Quick Settings window, the `IpcHandler` |
-| `shell/bar/ScreenStatus.qml` | yes | one screen's top edge: the pill's window and the space it reserves |
+| `shell/bar/ScreenStatus.qml` | yes | one screen's top edge: the clock's and the pill's windows and the space they reserve |
+| `shell/bar/ClockWindow.qml` | yes | the clock's `PanelWindow` at the top left, top layer, with a `SystemClock` ticking each minute |
+| `shell/bar/ClockPill.qml` | no | the time and date in one `Text` on the pill's container (`now` passed in, so tests use fixed dates) |
+| `shell/bar/ClockText.js` | no | the time ("8:55", "20:55") and date ("Fri, Oct 9") strings, and whether a locale uses a 24-hour clock |
 | `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen, on the top layer: always visible |
 | `shell/bar/EdgeExclusion.qml` | yes | a 1 px transparent, click-through surface whose exclusive zone keeps windows below the pill (32 px; niri adds its gap) (D42) |
 | `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage, 24 px tall with 16 px icons on a tonal container (`surfaceContainer`; `secondaryContainer` while Quick Settings is open). Ethernet is `settings_ethernet`, Android's icon: Material Symbols has no RJ45 jack |

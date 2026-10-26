@@ -1,5 +1,5 @@
-// What the shell shows on one screen's top edge: the status pill (top layer, always visible) and the space it
-// reserves, so windows stay below it (niri adds its own gap). The shell makes one per screen.
+// What the shell shows on one screen's top edge: the clock at the left, the status pill at the right (top layer,
+// always visible) and the space they reserve, so windows stay below it (niri adds its own gap). The shell makes one per screen.
 import QtQuick
 import Quickshell
 import qs.common
@@ -11,6 +11,7 @@ Scope {
     required property var backend
     property bool open: false
     readonly property alias pill: pillWindow
+    readonly property alias clock: clockWindow
     readonly property real reserved: exclusion.size
 
     signal clicked()
@@ -21,6 +22,11 @@ Scope {
         backend: root.backend
         open: root.open
         onClicked: root.clicked()
+    }
+
+    ClockWindow {
+        id: clockWindow
+        screen: root.screen
     }
 
     EdgeExclusion {

@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Clock** (plan 2.3): every screen shows the time and date at the top left ("8:55  Fri, Oct 9"), on the same
+  tonal container as the status pill; 24-hour when the locale uses it. The Wayland smoke test checks that it
+  shows the current time.
 - **Scroll the volume on the status pill** (maintainer's request): scrolling over the pill's volume glyph
   changes the volume by 5% a notch, without opening Quick Settings. Muted counts as 0: scrolling up unmutes from
   the bottom. The other glyphs and a click behave as before.
