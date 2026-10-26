@@ -3,3 +3,4 @@ Type=Application
 Name=Firefox
 Icon=firefox
 Exec=true
+Categories=Network;WebBrowser;

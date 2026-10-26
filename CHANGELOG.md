@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Launcher chips and list view** (plan 2.7, maintainer's request): chips under the search field filter the
+  apps by category (from the desktop files; only categories that have apps; Tab and Shift+Tab step through them),
+  and a button in the search field switches between the grid and a list that shows each app's description. The
+  choice holds until the shell restarts (saving it needs settings, plan 2.5). Search also matches a name's
+  letters in order from a word start, so "nvi" finds Neovide as well as Neovim.
 - **Launcher** (plan 2.7, first part): the shelf's launcher button, or `quickshell -p shell/shell.qml ipc call
   launcher toggle` from a niri keybind, opens a panel above the shelf: type to search the installed apps (ranked
   by a port of DankMaterialShell's scorer, typos included), arrows to move, Enter to open, Escape to close.

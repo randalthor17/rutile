@@ -108,8 +108,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   panel above the shelf with a search field and a 5-column grid of the desktop entries, ranked by DMS's
   `Scorer.js` (ported: exact, prefix, word starts, substring, typos, then subtitle, keywords, generic name, id);
   the keyboard stays in the field (arrows move through the grid, Enter opens, Escape closes); shared popup motion;
-  closes on focus loss like Quick Settings. Not done: frecency (needs saved state, 2.5), category chips,
-  grid/list toggle, settings provider, app context menu. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  closes on focus loss like Quick Settings. Category chips from the desktop files' `Categories` (Internet, Media,
+  Graphics, Office, Development, Games, Education, System, Utilities; only those with apps; Tab and Shift+Tab
+  step through them), a grid/list toggle (the list shows each app's generic name or description; kept until the
+  shell restarts), and an in-order letter match on names ("nvi" finds Neovide). Not done: frecency and saving
+  the view (need saved state, 2.5), settings provider, app context menu. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop

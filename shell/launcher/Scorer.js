@@ -1,7 +1,8 @@
 // Ranks launcher results for a query. Ported from DankMaterialShell's quickshell/Modals/DLauncherV2/Scorer.js
 // (MIT, Copyright (c) 2025 Avenge Media LLC; see NOTICE): exact, prefix, word-start and substring matches, a
 // typo-tolerant fuzzy match, then the subtitle, keywords, generic name and desktop id at lower weights. Rutile's
-// changes: no sections or pre-scored items, and usage counts (frecency) come later with saved settings (plan 2.5).
+// changes: no sections or pre-scored items, an in-order letter match on the name ("nvi" finds Neovide), and usage
+// counts (frecency) come later with saved settings (plan 2.5).
 .pragma library
 
 var Weights = {
@@ -9,6 +10,7 @@ var Weights = {
     prefixMatch: 5000,
     wordBoundary: 3000,
     substring: 500,
+    subsequence: 250,
     genericPrefix: 800,
     generic: 400,
     id: 350,
@@ -68,6 +70,22 @@ function fuzzyScore(text, query) {
     return best;
 }
 
+// 0..1: the query's letters appear in order in the text, the first at a word start, within three times the
+// query's length ("nvi" in "neovide"); denser is closer to 1. 0 when they do not.
+function subsequenceScore(text, query) {
+    if (query.length < 2) return 0;
+    var best = 0;
+    for (var start = 0; start < text.length; start++) {
+        if (text[start] !== query[0] || (start > 0 && !/[\s\-_.]/.test(text[start - 1]))) continue;
+        var at = start;
+        for (var i = 1; i < query.length && at >= 0; i++) at = text.indexOf(query[i], at + 1);
+        if (at < 0) break;
+        var span = at - start + 1;
+        if (span <= 3 * query.length) best = Math.max(best, query.length / span);
+    }
+    return best;
+}
+
 function textScore(name, query) {
     if (name === query) return Weights.exactMatch;
     if (name.startsWith(query)) return Weights.prefixMatch;
@@ -87,7 +105,8 @@ function score(item, query, usageCount) {
     var uses = usageCount || 0;
     if (!query) return typeBonus + uses * 100;
     var q = query.toLowerCase();
-    var s = textScore((item.name || "").toLowerCase(), q);
+    var name = (item.name || "").toLowerCase();
+    var s = Math.max(textScore(name, q), subsequenceScore(name, q) * Weights.subsequence);
     if (s === 0 && item.subtitle) s = textScore(item.subtitle.toLowerCase(), q) * 0.5;
     if (s === 0 && item.keywords) {
         for (var i = 0; i < item.keywords.length && s === 0; i++)

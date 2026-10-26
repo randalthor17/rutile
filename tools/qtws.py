@@ -412,8 +412,17 @@ def run_wayland_smoke(screenshot=None):
                         launcher = json.loads(ipc("state", target="launcher"))
                     except ValueError:
                         launcher = {}
-                    if launcher != {"open": True, "loaded": True, "apps": 3}:
-                        problems.append(f"ipc launcher state: {launcher}, expected open with the 3 fixture apps")
+                    want = {"open": True, "loaded": True, "apps": 3, "listView": False,
+                            "categories": ["internet", "system", "utilities"]}
+                    if launcher != want:
+                        problems.append(f"ipc launcher state: {launcher}, expected {want} (the 3 fixture apps)")
+                    # the chips: the desktop files' Categories
+                    for args, want in [(("category", "system"), "foot"), (("category", "internet"), "firefox"),
+                                       (("category", ""), "org.gnome.Nautilus,firefox,foot")]:
+                        ipc("search", "", target="launcher")
+                        got = ipc(*args, target="launcher")
+                        if got != want:
+                            problems.append(f"ipc launcher {' '.join(args)}: got {got!r}, expected {want!r}")
                     # slow motion, so the launcher is still on screen when asked: closing, not open
                     ipc("setSpeed", "0.1", target="motion")
                     ipc("close", target="launcher")

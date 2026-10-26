@@ -27,6 +27,7 @@ ShellRoot {
 
     // The launcher, as Quick Settings: open on a screen (null: the compositor's choice), closing plays its motion.
     property var launcherScreen: null
+    property bool launcherListView: false
     readonly property bool launcherOpen: launcher.active && !(launcher.item?.closing ?? false)
     function closeLauncher() {
         if (launcher.item) launcher.item.close();
@@ -109,6 +110,9 @@ ShellRoot {
         id: launcher
         LauncherWindow {
             screen: shell.launcherScreen
+            // grid or list stays as last chosen until the shell restarts (saved settings: plan 2.5)
+            listView: shell.launcherListView
+            onListViewChanged: shell.launcherListView = listView
             onCloseRequested: launcher.active = false
         }
     }
@@ -127,9 +131,19 @@ ShellRoot {
             p.query = query;
             return p.results.slice(0, 5).map(a => a.id).join(",");
         }
+        // Show the launcher's apps as a list (true) or a grid; it stays so until the shell restarts.
+        function setListView(list: bool): void { shell.launcherListView = list; }
+        // Choose a category chip ("" is All) in the open launcher; returns the first results' ids.
+        function category(id: string): string {
+            const p = launcher.item?.panel;
+            if (!p) return "";
+            p.category = id;
+            return p.results.slice(0, 5).map(a => a.id).join(",");
+        }
         function state(): string {
             return JSON.stringify({ open: shell.launcherOpen, loaded: launcher.active,
-                                    apps: launcher.item?.panel.apps.length ?? 0 });
+                                    apps: launcher.item?.panel.apps.length ?? 0, listView: shell.launcherListView,
+                                    categories: (launcher.item?.panel.categories ?? []).map(c => c.id) });
         }
     }
 

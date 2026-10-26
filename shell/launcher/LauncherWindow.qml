@@ -12,6 +12,7 @@ PanelWindow {
 
     readonly property bool closing: !panel.shown
     readonly property alias panel: panel
+    property alias listView: panel.listView
 
     signal closeRequested()
 
@@ -33,7 +34,7 @@ PanelWindow {
         objectName: "launcherPanel"
         apps: DesktopEntries.applications.values.map(e => ({
             type: "app", id: e.id, name: e.name, genericName: e.genericName, subtitle: e.comment,
-            keywords: e.keywords, icon: e.icon ? Quickshell.iconPath(e.icon, true) : ""
+            keywords: e.keywords, categories: e.categories, icon: e.icon ? Quickshell.iconPath(e.icon, true) : ""
         }))
         onLaunched: app => {
             const e = DesktopEntries.byId(app.id);

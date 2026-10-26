@@ -3,3 +3,4 @@ Type=Application
 Name=Files
 Icon=org.gnome.Nautilus
 Exec=true
+Categories=GNOME;GTK;Utility;Core;FileManager;
