@@ -14,6 +14,7 @@ values (D32).
 | `googlebook-settings-1.jpg` | Settings: single-choice dialog ("Choose modifier key") |
 | `googlebook-settings-2.jpg` | Settings: home list and a sub-page list |
 | `googlebook-settings-3.jpg` | Settings: radio-button dialog ("Customize corner shortcuts") |
+| `android-17-slider-almost-full.png` | Android 17 Quick Settings (supplied by the maintainer): brightness slider near full |
 
 ## What they show, per part
 
@@ -24,6 +25,9 @@ Quick Settings panel (plan 2.6):
 - Brightness and volume: thick expressive sliders (about 40 px) with the icon inside the inactive track end,
   each followed by an icon button (dark theme, sound settings). Rutile's Slider `size: "m"` with an `endIcon`
   (D36); the gallery shows the pair under "Slider sizes and track icons".
+- Near full (Android 17, `android-17-slider-almost-full.png`): the end icon moves to the end of the active
+  track, just before the handle, in the color of what sits on the active track. No stop dot shows in either
+  capture while the slider has an icon.
 - Tiles are Android 16's (D32): 4 columns; large tiles span 2 and small tiles are icon-only. Inactive tiles are
   pills; active ones are rounded squares filled with the primary color; a dual-target tile (Wi-Fi, Bluetooth)
   keeps a surface body and a primary icon box when on, and a slightly lighter round icon box when off.

@@ -197,3 +197,5 @@ Compose's default slider. From them: track height, outer corner, handle height a
 icon padding, and the icon colors (the colors MDC uses for what sits on each part of the track). From Compose's
 `Slider.kt`: the larger sizes shrink their corners on a short part instead of hiding it, but stepped sliders do
 not. The end icon replacing the stop dot is from the Googlebook screenshots, which show no dot beside it.
+Near full, the end icon moves to the end of the active part instead of hiding, as Android 17's brightness slider
+does (maintainer's reference, `docs/reference/android-17-slider-almost-full.png`); MDC would hide it.

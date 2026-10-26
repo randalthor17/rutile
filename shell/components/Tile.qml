@@ -129,8 +129,11 @@ Item {
         anchors.rightMargin: root.spec.tilePadding
         anchors.verticalCenter: parent.verticalCenter
 
+        // Alignment set explicitly so LayoutMirroring flips it: left to right by default, Qt aligns text by its
+        // own script, which left Latin labels at the far edge of a right-to-left tile instead of by the icon.
         Text {
             width: parent.width
+            horizontalAlignment: Text.AlignLeft
             text: root.text
             elide: Text.ElideRight
             color: Colors[root.colors.labelColor]
@@ -139,6 +142,7 @@ Item {
         Text {
             visible: root.secondaryText !== ""
             width: parent.width
+            horizontalAlignment: Text.AlignLeft
             text: root.secondaryText
             elide: Text.ElideRight
             color: Colors[root.colors.secondaryLabelColor]

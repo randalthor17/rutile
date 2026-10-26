@@ -48,8 +48,10 @@ the wave thresholds and the progress spring); the generator fails if those sourc
   `xl` 96 px tracks, with taller handles and larger outer corners, from Material Components Android's tokens
   (`impl.sizes`). On the larger sizes a part of the track shorter than its corners shrinks its corners instead
   of disappearing, except on stepped sliders. `startIcon` sits at the start of the active part and `endIcon`
-  at the end of the inactive part, each only while its part has room for the icon plus 10 px on both sides;
-  the end icon replaces the stop dot. Icons are created only when set. Under `LayoutMirroring` the track fills
+  at the end of the inactive part, each only while its part has room for the icon plus 10 px on both sides.
+  When the inactive part gets too short, the end icon moves to the end of the active part, beside the handle,
+  in the active part's icon color (Android 17); it hides only if the active part has no room for it too (next to
+  a start icon, room for both). A slider with an end icon shows no stop dot. Icons are created only when set. Under `LayoutMirroring` the track fills
   from the right and the left arrow key increases.
 - ProgressBar: the wave fades in over `Motion.long2` with the standard easing and out with emphasized
   accelerate; it only animates while visible.

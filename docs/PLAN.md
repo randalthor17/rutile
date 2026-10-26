@@ -47,8 +47,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   same tile (D32). Switch, Tile and filter Chip have a `controlled` mode: they change only when the applied
   setting does (D33, unreleased).
 - [x] **1.5e** Expressive slider sizes and track icons (unreleased, D36): `size` xs, s, m, l, xl from Material
-  Components Android's tokens, `startIcon`/`endIcon` inside the track on m and up, corners that shrink on a short
-  part, right to left. In the gallery as Quick Settings' brightness and volume rows. Not done: vertical, range,
+  Components Android's tokens, `startIcon`/`endIcon` inside the track on m and up (the end icon moves beside the
+  handle near full, as in Android 17), corners that shrink on a short part, right to left. In the gallery as Quick Settings' brightness and volume rows. Not done: vertical, range,
   centered, the value label, the other two icon slots.
 - [ ] **1.5** Component kit, remaining: FAB, Card, TextField, Menu, Dialog, NavRail, ShapeMorph
   (cookie/scallop shapes), GeminiGlow gradient border, and the 1.5c leftovers when something needs them.

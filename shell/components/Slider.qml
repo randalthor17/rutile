@@ -3,7 +3,8 @@
 // The handle narrows to 2 px while pressed or focused. `size` picks one of the five expressive sizes
 // (xs is Compose's default slider; s, m, l, xl are taller, for Quick Settings and media). Sizes m and up
 // take track icons: `startIcon` at the start of the active track, `endIcon` at the end of the inactive one,
-// each shown only while its part of the track has room for it; the end icon replaces the stop dot.
+// each shown only while its part of the track has room for it. Near full, the end icon moves to the end of
+// the active track, beside the handle, as Android 17's brightness slider does; an end icon replaces the stop dot.
 // Under LayoutMirroring (right to left) the track fills from the right. Sizes and colors come from
 // ControlSpec.sliderSpec, the drawing from Compose's Slider.kt; the sizes, the icon padding and the icon
 // colors come from Material Components Android, which has tokens for them (Compose does not yet).
@@ -41,12 +42,16 @@ Item {
     readonly property real handleCenter: trackStart + position * trackLength
 
     // The track icons that are showing. An icon needs its size plus the padding on both sides of it in its
-    // part of the track, or it is hidden (as in MDC).
+    // part of the track, or it is hidden (as in MDC). When the inactive part is too short for the end icon,
+    // the icon moves to the end of the active part, if that has room beside a start icon.
     readonly property real iconRoom: sizeSpec.iconSize + 2 * spec.impl.trackIconPadding
+    readonly property bool hasEndIcon: endIcon !== "" && sizeSpec.iconSize > 0
     readonly property bool startIconShown: startIcon !== "" && sizeSpec.iconSize > 0 && track.showActive
         && track.activeLength >= iconRoom
-    readonly property bool endIconShown: endIcon !== "" && sizeSpec.iconSize > 0 && track.showInactive
-        && track.inactiveLength >= iconRoom
+    readonly property bool endIconMoved: hasEndIcon && !(track.showInactive && track.inactiveLength >= iconRoom)
+        && track.showActive && track.activeLength >= iconRoom * (startIconShown ? 2 : 1)
+    readonly property bool endIconShown: hasEndIcon && (endIconMoved
+        || track.showInactive && track.inactiveLength >= iconRoom)
 
     function snapped(v) {
         v = Math.max(from, Math.min(to, v));
@@ -197,10 +202,11 @@ Item {
                 color: cx < track.center ? root.inactiveShown : root.activeShown
             }
         }
-        // The end stop shows with the inactive track, unless the end icon takes its place.
+        // The end stop shows with the inactive track, unless there is an end icon: neither Googlebook nor
+        // Android shows the dot then, even while the icon has moved to the active part.
         Rectangle {
             objectName: "sliderStop"
-            visible: track.showInactive && !root.endIconShown
+            visible: track.showInactive && !root.hasEndIcon
             width: root.spec.stopIndicatorSize
             height: width
             radius: width / 2
@@ -229,9 +235,11 @@ Item {
                     name: root.endIcon
                     size: root.sizeSpec.iconSize
                     visible: root.endIconShown
-                    x: track.visualX(track.width - root.spec.impl.trackIconPadding - size, size)
+                    x: track.visualX((root.endIconMoved ? track.activeLength : track.width)
+                                     - root.spec.impl.trackIconPadding - size, size)
                     anchors.verticalCenter: parent.verticalCenter
-                    color: root.enabled ? Colors[root.spec.impl.inactiveIconColor] : root.disabledIconColor
+                    color: !root.enabled ? root.disabledIconColor
+                        : Colors[root.endIconMoved ? root.spec.impl.activeIconColor : root.spec.impl.inactiveIconColor]
                 }
             }
         }

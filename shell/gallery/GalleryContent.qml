@@ -323,7 +323,7 @@ Rectangle {
                             spacing: Spacing.sm
                             Repeater {
                                 model: [
-                                    { icon: "brightness_medium", button: "dark_mode", value: 0.8 },
+                                    { icon: "brightness_medium", button: "dark_mode", value: 0.95 },
                                     { icon: "music_note", button: "tune", value: 0.7 }
                                 ]
                                 delegate: Row {

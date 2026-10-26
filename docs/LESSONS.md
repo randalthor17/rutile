@@ -39,6 +39,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   its own meta object: an inline `TrackPart` component with five properties added about 11 KiB per slider. Plain
   Rectangles binding to properties on their parent cost a fraction of that. An idle `Loader` is about 4 KiB, as
   much as the icon it would load, so one Loader for two icons beats two. Measure with `tools/dev/memcost.py`.
+- **LayoutMirroring does not flip text that never set an alignment.** A `Text` without `horizontalAlignment`
+  aligns by its own script, so Latin labels stayed left in a right-to-left tile. Set `Text.AlignLeft`
+  explicitly and mirroring turns it into right; check `effectiveHorizontalAlignment` in tests. Anchors mirror,
+  alignment only when set.
 - **`qmltestrunner` needs a visible `TestCase`** (`width`, `height`, `visible: true`, `when: windowShown`) for any pixel check.
 
 ## Testing method

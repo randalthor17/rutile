@@ -165,7 +165,8 @@ Dragging items in from outside (the Add sheet) is not built yet.
 The grid reads `LayoutMirroring.enabled`, which the shell sets once at its root (with `childrenInherit`) for a
 right-to-left locale. Then column 0 is on the right, dragging toward the left moves toward the end of the row, and
 the left handle moves the end edge. Rows still go top to bottom. The Tile lays out with anchors, so under the same
-mirroring its icon sits on the right and its labels to the left of it. Only the Tile and the grid mirror so far.
+mirroring its icon sits on the right and its labels to the left of it, aligned to the right so they start beside
+the icon (Latin text included). Only the Tile, the grid and the Slider mirror so far.
 Tests: `test_right_to_left_mirrors_columns_drags_and_handles`, `test_tile_mirrors_for_right_to_left`.
 
 ## Sizes of tiles in the Quick Settings grid

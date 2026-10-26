@@ -154,6 +154,10 @@ TestCase {
         var iconTarget = t.children[2], labels = t.children[5];
         compare(iconTarget.x, t.width - spec.tilePadding - spec.toggleTargetSize, "the icon is on the right");
         compare(labels.x + labels.width, iconTarget.x - spec.tileArrangementPadding, "the labels end before it");
+        compare(labels.children[0].effectiveHorizontalAlignment, Text.AlignRight, "Latin labels sit by the icon");
+        compare(labels.children[1].effectiveHorizontalAlignment, Text.AlignRight);
+        compare(make(tileComp, { secondaryText: "Home" }).children[5].children[1].effectiveHorizontalAlignment,
+                Text.AlignLeft, "and on the left otherwise");
         var ltr = make(tileComp);
         compare(ltr.children[2].x, spec.tilePadding, "and on the left otherwise");
         var tall = make(tileComp, { height: 150 });

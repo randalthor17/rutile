@@ -5,6 +5,13 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Slider end icon near full** (maintainer's Android 17 reference): when the inactive part of the track gets
+  too short, the end icon moves to the end of the active part, beside the handle, in the active icon color,
+  instead of disappearing. A slider with an end icon no longer shows the stop dot at all. The gallery's
+  brightness row sits near full to show it.
+- **Fix:** right to left, a Tile's Latin labels sat against the far edge of the tile (8 px) instead of beside
+  the icon. Qt aligns unaligned text by its script, which LayoutMirroring does not flip; the labels now set
+  their alignment, so it mirrors.
 - **Expressive slider sizes and track icons** (plan 1.5e, D36): `Slider` takes `size` (`xs` default, `s`, `m`,
   `l`, `xl`: 16 to 96 px tracks) and, from `m` up, `startIcon` and `endIcon` inside the track, each shown only
   while its part of the track has room; the end icon replaces the stop dot. Larger sizes shrink their corners on

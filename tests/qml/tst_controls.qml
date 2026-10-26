@@ -285,12 +285,8 @@ TestCase {
         verify(!s.startIconShown, "not enough room");
         verify(!findChild(s, "sliderStartIcon").visible, "and the icon is hidden");
         verify(findChild(s, "sliderEndIcon").visible, "the end icon still has room");
-        s.value = 1 - (need + gap - 0.5) / s.trackLength;
-        verify(!s.endIconShown, "the end icon needs room too");
-        verify(!findChild(s, "sliderEndIcon").visible);
-        verify(stop.visible, "then the stop is back");
-        s.value = 1 - (need + gap + 0.5) / s.trackLength;
-        verify(s.endIconShown);
+        s.value = 1 - (need + gap) / s.trackLength;
+        verify(s.endIconShown && !s.endIconMoved, "exactly enough room at the end");
         s.value = 0.5;
         var startIcon = findChild(s, "sliderStartIcon");
         compare(startIcon.x, spec.impl.trackIconPadding, "start icon at the start of the track");
@@ -303,6 +299,41 @@ TestCase {
         verify(findChild(xs, "sliderStop").visible);
     }
 
+    function test_slider_end_icon_moves_beside_the_handle_near_full() {
+        // Android 17's brightness slider (docs/reference/android-17-slider-almost-full.png).
+        var spec = ControlSpec.sliderSpec;
+        var gap = spec.handleWidth / 2 + spec.impl.handleGap;
+        var need = spec.impl.sizes.m.iconSize + 2 * spec.impl.trackIconPadding;
+        var s = make(sliderComp, { size: "m", endIcon: "settings" });
+        var icon = findChild(s, "sliderEndIcon"), track = findChild(s, "sliderTrack"), stop = findChild(s, "sliderStop");
+        s.value = 1 - (need + gap - 0.5) / s.trackLength;
+        verify(s.endIconMoved && s.endIconShown && icon.visible, "too little room at the end: it moves");
+        compare(icon.x, track.activeLength - spec.impl.trackIconPadding - icon.size, "to the end of the active part");
+        compare(icon.color.toString(), Colors[spec.impl.activeIconColor].toString(), "in the active part's color");
+        verify(!stop.visible, "no stop dot with an end icon");
+        s.value = 1;
+        verify(s.endIconMoved && icon.visible, "and stays there at full");
+        compare(icon.x, track.activeLength - spec.impl.trackIconPadding - icon.size);
+        s.value = 0.5;
+        verify(!s.endIconMoved);
+        compare(icon.x, track.width - spec.impl.trackIconPadding - icon.size, "back at the end");
+        compare(icon.color.toString(), Colors[spec.impl.inactiveIconColor].toString());
+        verify(!stop.visible);
+        // A narrow slider: the active part fits the start icon but not both.
+        var n = make(sliderComp, { size: "m", width: 100, startIcon: "brightness_low", endIcon: "settings", value: 0.8 });
+        var a = findChild(n, "sliderTrack").activeLength;
+        verify(a >= need && a < 2 * need, "active " + a);
+        verify(n.startIconShown && !n.endIconShown && !findChild(n, "sliderEndIcon").visible, "no room for both");
+        n.value = 58 / n.trackLength;     // inactive part 30 px: too short, and no room to move
+        verify(findChild(n, "sliderTrack").inactiveLength < need && !n.endIconMoved);
+        verify(!n.endIconShown && !findChild(n, "sliderEndIcon").visible, "so it hides");
+        n.value = 0.8;
+        n.width = 240;
+        verify(n.startIconShown && n.endIconShown, "room for both again");
+        var plain = make(sliderComp, { size: "m", value: 0.5 });
+        verify(findChild(plain, "sliderStop").visible, "the stop shows without an end icon");
+    }
+
     Component {
         id: mirroredSliderComp
         Item {
@@ -310,7 +341,7 @@ TestCase {
             LayoutMirroring.enabled: true
             LayoutMirroring.childrenInherit: true
             x: 40; y: 300; width: 240; height: 44
-            Slider { id: ms; width: 240; size: "m"; startIcon: "brightness_low" }
+            Slider { id: ms; width: 240; size: "m"; startIcon: "brightness_low"; endIcon: "settings" }
         }
     }
 
@@ -336,6 +367,11 @@ TestCase {
         verify(s.value > 0, "left moves toward the end");
         keyClick(Qt.Key_Right);
         compare(s.value, 0);
+        s.value = 1;
+        var end = findChild(s, "sliderEndIcon");
+        verify(s.endIconMoved);
+        compare(end.x, track.width - track.activeLength + spec.impl.trackIconPadding,
+                "a moved end icon sits left of the handle");
     }
 
     function test_slider_large_pixels() {
