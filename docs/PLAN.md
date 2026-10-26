@@ -144,7 +144,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   dismissed. Inline replies: a Reply button opens a field (the popup takes the keyboard only then); the reply
   reaches the sender (NotificationReplied, checked on the bus). The windows are not resized while things move
   (the popups' grows when a card comes and shrinks once it has gone, the list's is fixed), which made the
-  motion stutter. Not done: sounds (needs a player such as
+  motion stutter. Clear all sweeps the cards off to the side, the top one first, and dismisses only those
+  it swept. Not done: sounds (needs a player such as
   pw-play or canberra-gtk-play: a dependency to decide), per-app settings. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.

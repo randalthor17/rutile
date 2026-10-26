@@ -48,7 +48,7 @@ PanelWindow {
         dnd: NotificationService.dnd
         onDndToggled: on => NotificationService.setDnd(on)
         onDismissed: id => NotificationService.dismiss(id)
-        onCleared: NotificationService.dismissAll()
+        onCleared: ids => ids.forEach(id => NotificationService.dismiss(id))
         onActivated: id => {
             NotificationService.popupDone(id);
             root.close();

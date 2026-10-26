@@ -2,8 +2,8 @@ pragma ComponentBehavior: Bound
 // The notification list (D47), opened from the bell left of the status pill: a header with Do not disturb, the
 // notifications newest first, grouped by app (an app's newest card, and "Show N more" to see the rest), as
 // NotificationCards created only as they scroll into view (one that goes fades out and the rest close up), and
-// Clear all. It grows
-// in from the top right with the shared popup motion (D43) and closes when another window takes the keyboard,
+// Clear all, which sweeps the cards off to the side, the top one first, and only then reports the ones it
+// took (`cleared(ids)`), so one that comes meanwhile stays. It grows in from the top right with the shared popup motion (D43) and closes when another window takes the keyboard,
 // like Quick Settings (D41). Plain QtQuick on `notifications` (NotificationModel's data), so it tests offscreen.
 import QtQuick
 import qs.common
@@ -26,7 +26,7 @@ Rectangle {
 
     signal dndToggled(bool on)
     signal dismissed(int id)
-    signal cleared()
+    signal cleared(var ids)
     signal activated(int id)
     signal actionInvoked(int id, string action)
     signal replied(int id, string text)
@@ -56,9 +56,37 @@ Rectangle {
         // from the inputs, not groupRows: in a change handler that binding may not have caught up
         NotificationRows.sync(rows, NotificationModel.groupRows(notifications, expanded).map(r => r.key));
     }
-    onNotificationsChanged: syncRows()
+    onNotificationsChanged: {
+        syncRows();
+        if (clearing && !clearSweep.running) Qt.callLater(endClear);
+    }
     onExpandedChanged: syncRows()
     Component.onCompleted: syncRows()
+
+    // Clear all: the rows it sweeps away (their keys) and the notifications it reports when the sweep is done
+    property var clearingKeys: []
+    property var clearingIds: []
+    readonly property bool clearing: clearingKeys.length > 0
+    function clearAll() {
+        if (clearing || notifications.length === 0) return;
+        const keys = [];
+        for (let i = 0; i < rows.count; i++) keys.push(rows.get(i).key);
+        clearingIds = notifications.map(n => n.id);
+        clearingKeys = keys;
+        clearSweep.restart();
+    }
+    // the last row starts a short4 after the first, and each takes a medium2 to go
+    SequentialAnimation {
+        id: clearSweep
+        PauseAnimation { duration: Motion.duration(Motion.short4 + Motion.medium2) }
+        ScriptAction { script: root.cleared(root.clearingIds) }
+    }
+    // Called once the list has changed after the sweep (onNotificationsChanged): a swept row that is still there
+    // (it was not dismissed) comes back; the rows that went stay swept while they fade out.
+    function endClear() {
+        clearingKeys = [];
+        clearingIds = [];
+    }
 
     property bool windowActive: Window.active   // not readonly: the offscreen tests cannot move window focus
     property bool hadWindowFocus: false
@@ -127,7 +155,7 @@ Rectangle {
             width: parent.width
             height: Math.min(list.contentHeight, root.maxListHeight)
             Behavior on height { EffectsNumber {} }
-            visible: list.count > 0
+            visible: height > 0                 // it closes up after the last card has gone
             clip: true
             ListView {
                 id: list
@@ -150,6 +178,39 @@ Rectangle {
                     objectName: "notificationRow_" + key
                     width: list.width
                     sourceComponent: row.kind === "more" ? moreRow : cardRow
+                    // Clear all sweeps it off to the side after a delay that grows down the view
+                    readonly property bool swept: root.clearingKeys.indexOf(key) >= 0
+                    property real sweep: 0
+                    property real lag: 0
+                    onSweptChanged: {
+                        if (swept) {
+                            lag = Math.max(0, Math.min(1, (y - list.contentY) / list.height));
+                            sweepOut.restart();
+                        } else if (key in root.rowByKey) {
+                            sweepOut.stop();
+                            sweep = 0;
+                        }
+                    }
+                    transform: Translate { x: rowItem.sweep * (rowItem.width + Spacing.lg) }
+                    // on the loaded item: the view's own add and remove transitions animate this Loader's opacity
+                    Binding {
+                        when: !!rowItem.item
+                        target: rowItem.item
+                        property: "opacity"
+                        value: 1 - rowItem.sweep
+                    }
+                    SequentialAnimation {
+                        id: sweepOut
+                        PauseAnimation { duration: Math.round(Motion.duration(Motion.short4) * rowItem.lag) }
+                        NumberAnimation {      // motion-speed: duration through Motion.duration() below
+                            target: rowItem
+                            property: "sweep"
+                            to: 1
+                            duration: Motion.duration(Motion.medium2)
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Motion.easing.emphasizedAccelerate
+                        }
+                    }
                     Component {
                         id: cardRow
                         NotificationCard {
@@ -190,7 +251,9 @@ Rectangle {
 
         Item {
             objectName: "notificationEmpty"
-            visible: root.notifications.length === 0
+            opacity: root.notifications.length === 0 ? 1 : 0
+            Behavior on opacity { EffectsNumber {} }
+            visible: opacity > 0
             width: parent.width
             height: Spacing.xxxl * 2
             Column {
@@ -223,7 +286,8 @@ Rectangle {
                 type: "tonal"
                 size: "s"
                 text: "Clear all"
-                onClicked: root.cleared()
+                enabled: !root.clearing
+                onClicked: root.clearAll()
             }
         }
     }

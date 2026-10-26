@@ -5,6 +5,8 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Clear all is animated** (plan 2.8): the notifications sweep off to the side one after another from the top,
+  then the list closes up and "No notifications" fades in. One that arrives during the sweep stays.
 - **Smoother notification motion** (plan 2.8): popups coming and going, and the list closing up or opening a
   group, no longer stutter. Their windows were resized on every frame of the motion; now they change size only
   when a notification comes or has gone (the list's not at all).

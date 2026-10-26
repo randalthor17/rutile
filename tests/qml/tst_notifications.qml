@@ -239,7 +239,7 @@ TestCase {
         p.notifications = [note(3, { appName: "A", actions: [{ id: "default", text: "" }] }), note(2, { appName: "B" }),
                            note(1, { appName: "C" })];
         waitForRendering(p);
-        verify(!findChild(p, "notificationEmpty").visible);
+        tryVerify(() => !findChild(p, "notificationEmpty").visible, 2000, "No notifications fades out");
         const items = [3, 2, 1].map(id => findChild(p, "notificationItem_" + id));
         verify(items.every(i => !!i), "all three");
         const clipBox = findChild(p, "notificationListClip");
@@ -260,7 +260,8 @@ TestCase {
         compare(activated.signalArguments[0][0], 3);
         const clear = findChild(p, "notificationClearAll");
         mouseClick(clear, clear.width / 2, clear.height / 2);
-        compare(cleared.count, 1);
+        tryCompare(cleared, "count", 1, 2000);
+        compare(cleared.signalArguments[0][0].join(), "3,2,1", "what it cleared");
         const sw = findChild(p, "notificationDnd");
         mouseClick(sw, sw.width / 2, sw.height / 2);
         compare(dnd.signalArguments[0][0], true);
@@ -291,6 +292,59 @@ TestCase {
         const hidden = createTemporaryObject(spyComp, root, { target: p, signalName: "hidden" });
         p.shown = false;
         tryCompare(hidden, "count", 1, 3000);
+    }
+
+    // Clear all sweeps the rows off to the side, the top one first, and then reports what it took.
+    function test_panel_clear_all() {
+        Motion.speed = 0.5;
+        const p = createTemporaryObject(panelComp, root, { notifications: [
+            note(4, { appName: "A" }), note(3, { appName: "B" }), note(2, { appName: "C" }), note(1, { appName: "A" })] });
+        waitForRendering(p);
+        const cleared = createTemporaryObject(spyComp, root, { target: p, signalName: "cleared" });
+        const none = createTemporaryObject(panelComp, root);
+        const noneCleared = createTemporaryObject(spyComp, root, { target: none, signalName: "cleared" });
+        none.clearAll();
+        verify(!none.clearing, "nothing to clear");
+        const row = key => findChild(p, "notificationRow_" + key);
+        const top = row("n4"), more = row("more:A"), bottom = row("n2");
+        verify(top && more && bottom, "the rows");
+        const clear = findChild(p, "notificationClearAll");
+        mouseClick(clear, clear.width / 2, clear.height / 2);
+        verify(p.clearing);
+        compare(cleared.count, 0, "not before the sweep");
+        verify(!clear.enabled, "no second Clear all meanwhile");
+        tryVerify(() => top.sweep > 0.3, 2000, "the top row goes");
+        verify(bottom.sweep < top.sweep, "before the bottom one: " + bottom.sweep + " < " + top.sweep);
+        verify(top.item.opacity < 1, "fading");
+        // one that comes meanwhile stays
+        p.notifications = [note(5, { appName: "D" })].concat(p.notifications);
+        p.clearAll();
+        verify(p.clearingIds.indexOf(5) < 0, "one sweep at a time");
+        tryCompare(cleared, "count", 1, 4000);
+        compare(noneCleared.count, 0, "and nothing reported");
+        compare(cleared.signalArguments[0][0].join(), "4,3,2,1", "it reports what it swept, not the new one");
+        verify(more.sweep === 1 && more.item.opacity === 0, "a group's row goes too");
+        tryVerify(() => findChild(p, "notificationRow_n5"), 2000);
+        compare(row("n5").sweep, 0, "the new one is not swept");
+        // the sender keeps one: it comes back
+        p.notifications = [note(5, { appName: "D" }), note(3, { appName: "B" })];
+        tryVerify(() => !p.clearing, 2000, "done");
+        verify(findChild(p, "notificationRow_n4"), "the swept ones still fading out");
+        compare(top.item.opacity, 0, "stay swept: no flash back");
+        tryCompare(row("n3"), "sweep", 0, 2000);
+        compare(row("n3").item.opacity, 1, "shown again");
+        verify(clear.enabled);
+        // the rest go: the list closes up while No notifications fades in
+        const clipBox = findChild(p, "notificationListClip");
+        const empty = findChild(p, "notificationEmpty");
+        mouseClick(clear, clear.width / 2, clear.height / 2);
+        tryCompare(cleared, "count", 2, 4000);
+        p.notifications = [];
+        wait(30);
+        verify(clipBox.visible && clipBox.height > 0, "closing, not closed");
+        tryVerify(() => empty.opacity > 0 && empty.opacity < 1, 2000, "fading in");
+        tryCompare(clipBox, "visible", false, 3000);
+        tryCompare(empty, "opacity", 1, 2000);
     }
 
     function test_rows_sync() {
