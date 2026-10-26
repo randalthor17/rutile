@@ -248,7 +248,9 @@ the dev shell; the test skips without sway. niri would be the better test compos
 is internal to its own tests. Revisit if niri gains a headless mode.
 
 **D41. Quick Settings opens from a status pill and closes when it loses keyboard focus.** Googlebook has no top
-bar: a pill at the top right shows network, volume and battery and opens the panel below it. The shell makes one
+bar: a pill at the top right shows network, volume and battery and opens the panel below it. The pill is part of
+the desktop: layer shell's bottom layer, under windows (the maintainer's choice; the background layer is the
+wallpaper's, where stacking is not reliable). The panel is on the top layer. The shell makes one
 pill per screen (`Variants` over `Quickshell.screens`) and one backend for pills and panel. To close on an outside
 click, the panel closes when its keyboard focus leaves, but only after it had focus (so a compositor that never
 gives it focus cannot close it at once). On niri a focusable layer surface gets focus when it opens and loses it

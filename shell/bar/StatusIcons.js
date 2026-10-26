@@ -3,7 +3,7 @@
 
 // "" means no network icon (no Wi-Fi device and no cable).
 function network(b) {
-    if (b.wiredConnected) return "lan";
+    if (b.wiredConnected) return "settings_ethernet";      // Android's ethernet icon; Material Symbols has no RJ45 jack
     if (!b.wifiAvailable) return "";
     if (!b.wifiEnabled) return "wifi_off";
     if (!b.wifiName) return "signal_wifi_0_bar";

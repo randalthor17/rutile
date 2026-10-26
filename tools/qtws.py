@@ -342,7 +342,7 @@ def run_wayland_smoke(screenshot=None):
                         state = {}
                         problems.append(f"ipc state: {e}")
                     want = {"open": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
-                            "pillsHaveBackend": [True]}
+                            "pillsHaveBackend": [True], "pillsBelowWindows": [True]}
                     if state != want:
                         problems.append(f"ipc state: got {state}, expected {want}")
                     if screenshot:

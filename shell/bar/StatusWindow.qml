@@ -19,6 +19,9 @@ PanelWindow {
     margins.right: Spacing.sm
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.namespace: "rutile-status"
+    // Above the wallpaper, below windows: part of the desktop, not a bar over apps (maintainer's choice).
+    // Not WlrLayer.Background: that is the wallpaper's layer, where stacking between surfaces is not reliable.
+    WlrLayershell.layer: WlrLayer.Bottom
     implicitWidth: pill.width
     implicitHeight: pill.height
     color: "transparent"

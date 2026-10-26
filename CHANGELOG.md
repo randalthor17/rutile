@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Status pill on the desktop layer, with a container** (maintainer's requests): the pill now sits on layer
+  shell's bottom layer, above the wallpaper and below windows, and always has a tonal container
+  (`surfaceContainer`). Ethernet shows Android's `settings_ethernet` icon (Material Symbols has no RJ45 jack), and
+  Quick Settings' edit-tiles button is a pen (`edit`). `ipc call quicksettings state` reports the pill's layer.
 - **Fix** (maintainer's report): pressing the volume slider closed Quick Settings. The panel closed when its own
   item lost focus, and a click gives focus to the slider inside it; it now closes only when its window loses
   keyboard focus. A test clicks a slider and a tile inside the panel.

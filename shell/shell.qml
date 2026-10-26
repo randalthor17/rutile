@@ -4,6 +4,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import qs.common
 import qs.bar
 import qs.quicksettings
@@ -65,7 +66,8 @@ ShellRoot {
                 panelHasBackend: !!w && w.panelHasBackend,
                 brightnessShown: !!w && w.brightnessShown,
                 pillsOpen: statusWindows.instances.map(p => p.open),
-                pillsHaveBackend: statusWindows.instances.map(p => !!p.backend)
+                pillsHaveBackend: statusWindows.instances.map(p => !!p.backend),
+                pillsBelowWindows: statusWindows.instances.map(p => p.WlrLayershell.layer === WlrLayer.Bottom)
             });
         }
     }

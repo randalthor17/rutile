@@ -48,7 +48,7 @@ TestCase {
         b.wifiName = ""; compare(StatusIcons.network(b), "signal_wifi_0_bar", "on, not connected");
         b.wifiEnabled = false; compare(StatusIcons.network(b), "wifi_off");
         b.wifiAvailable = false; compare(StatusIcons.network(b), "", "no Wi-Fi, no cable: nothing");
-        b.wiredConnected = true; compare(StatusIcons.network(b), "lan", "a cable wins");
+        b.wiredConnected = true; compare(StatusIcons.network(b), "settings_ethernet", "a cable wins");
     }
 
     function test_volume_icon() {
@@ -107,6 +107,7 @@ TestCase {
         compare(t.pill.color.a, 1, "a container while open");
         compare(t.pill.contentColor, Colors.secondaryContainerOn);
         t.pill.open = false;
-        tryVerify(function () { return t.pill.color.a === 0; }, 2000, "closed: icons on the wallpaper, no container");
+        tryVerify(function () { return Qt.colorEqual(t.pill.color, Colors.surfaceContainer); }, 2000,
+                  "closed: a tonal container");
     }
 }

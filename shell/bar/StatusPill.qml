@@ -22,13 +22,13 @@ Rectangle {
     // With nothing to report (no network, audio or battery) the pill still needs something to click.
     readonly property bool empty: networkIcon === "" && volumeIcon === "" && batteryIcon === ""
 
-    // Googlebook's status icons sit on the wallpaper, small and close; only the open state has a container.
+    // Googlebook's status icons are small and close; a tonal container keeps them readable on any wallpaper.
     implicitWidth: row.implicitWidth + 2 * Spacing.sm
     implicitHeight: Spacing.xl
     width: implicitWidth
     height: implicitHeight
     radius: height / 2
-    color: open ? Colors.secondaryContainer : "transparent"
+    color: open ? Colors.secondaryContainer : Colors.surfaceContainer
     Behavior on color { EffectsColor {} }
 
     readonly property color contentColor: open ? Colors.secondaryContainerOn : Colors.surfaceOn

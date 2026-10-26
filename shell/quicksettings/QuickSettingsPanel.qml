@@ -124,7 +124,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 IconButton {
                     objectName: "qsEditTiles"
-                    iconName: "dashboard_customize"
+                    iconName: "edit"
                     onClicked: root.editMode = true
                 }
                 IconButton {

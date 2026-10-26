@@ -22,8 +22,8 @@ Clicking empty desktop or another program's bar does not close it: those clicks 
 | File | Needs Quickshell | What it does |
 |---|---|---|
 | `shell/shell.qml` | yes | `ShellRoot`, `PaletteWatcher`, the one backend, a status pill per screen (`Variants`), a `LazyLoader` with the Quick Settings window, the `IpcHandler` |
-| `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen |
-| `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage, 24 px tall with 16 px icons on the wallpaper; a container only while Quick Settings is open (as Googlebook) |
+| `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen, on the bottom layer: above the wallpaper, below windows, so a window over the top right hides it (open Quick Settings with the keybind then). The panel itself is on the top layer |
+| `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage, 24 px tall with 16 px icons on a tonal container (`surfaceContainer`; `secondaryContainer` while Quick Settings is open). Ethernet is `settings_ethernet`, Android's icon: Material Symbols has no RJ45 jack |
 | `shell/bar/StatusIcons.js` | no | which Material Symbol for which state |
 | `shell/quicksettings/QuickSettingsWindow.qml` | yes | a `PanelWindow` (layer shell) at the top right, `ExclusionMode.Ignore`, keyboard focus for Escape |
 | `shell/quicksettings/QuickSettingsBackend.qml` | yes (through `qs.services`) | the panel's backend interface on top of the services |

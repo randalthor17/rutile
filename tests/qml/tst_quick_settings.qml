@@ -222,6 +222,7 @@ TestCase {
     function test_edit_mode_removes_tiles() {
         var t = make();
         var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "tilesEdited" });
+        compare(findChild(t.panel, "qsEditTiles").iconName, "edit", "a pen");
         clickItem(findChild(t.panel, "qsEditTiles"));
         verify(t.panel.editMode);
         verify(!findChild(t.panel, "qsBrightness").visible, "sliders make way for editing");
