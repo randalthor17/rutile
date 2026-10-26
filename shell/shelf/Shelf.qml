@@ -1,7 +1,9 @@
 pragma ComponentBehavior: Bound
-// The shelf (plan 2.4) as Googlebook shows it: a bar along the bottom with the launcher button, the pinned apps,
-// and, after a divider, apps that run without being pinned. Plain QtQuick on `items` from ShelfApps.build() (with
-// an icon URL each), so it tests offscreen; ShelfWindow.qml gives it the real apps.
+// The shelf (plan 2.4): a bar along the bottom with the launcher button, the pinned apps, and, after a divider,
+// the open windows grouped by workspace: a capsule per workspace with its number and one icon per window, the
+// active workspace's capsule tinted, the focused window marked (as Noctalia's taskbar groups them). The wheel over
+// the shelf moves between workspaces, one per notch (touchpads add up to a notch). Plain QtQuick
+// on data from ShelfApps.js (icons as URLs), so it tests offscreen; ShelfWindow.qml gives it the real ones.
 import QtQuick
 import qs.common
 import qs.components
@@ -9,12 +11,30 @@ import qs.components
 Rectangle {
     id: root
 
-    property var items: []
-    readonly property var pinnedItems: items.filter(it => it.pinned)
-    readonly property var otherItems: items.filter(it => !it.pinned)
+    property var pinned: []         // [{id, name, icon}]
+    property var groups: []         // ShelfApps.decorate() / ungrouped()
 
-    signal opened(var item)
+    signal launched(var app)
+    signal windowClicked(var window)
     signal launcherClicked()
+    signal workspaceScrolled(int delta)     // +1: the next workspace (down), -1: the previous
+
+    // Wheel deltas add up until a notch (120), so a touchpad's small steps move one workspace at a time.
+    property real wheelRest: 0
+    function scrollBy(angleDeltaY) {
+        wheelRest += angleDeltaY;
+        while (Math.abs(wheelRest) >= 120) {
+            const up = wheelRest > 0;
+            wheelRest -= up ? 120 : -120;
+            workspaceScrolled(up ? -1 : 1);
+        }
+    }
+    WheelHandler {
+        objectName: "shelfWheel"
+        // Qt's Wayland plugin may report a wheel as a touchpad; the default is Mouse only (LESSONS).
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => root.scrollBy(event.angleDelta.y)
+    }
 
     implicitHeight: Spacing.xxxl + Spacing.sm
     height: implicitHeight
@@ -48,37 +68,65 @@ Rectangle {
         }
 
         Repeater {
-            model: root.pinnedItems
+            model: root.pinned
             ShelfButton {
                 required property var modelData
-                objectName: "shelfApp_" + modelData.id
+                objectName: "shelfPin_" + modelData.id
                 name: modelData.name
                 iconSource: modelData.icon
-                running: modelData.running
-                active: modelData.active
-                onClicked: root.opened(modelData)
+                onClicked: root.launched(modelData)
             }
         }
 
         Rectangle {
             objectName: "shelfDivider"
             anchors.verticalCenter: parent.verticalCenter
-            visible: root.otherItems.length > 0
+            visible: root.groups.length > 0
             width: 1
             height: Spacing.xl
             color: Colors.outlineVariant
         }
 
         Repeater {
-            model: root.otherItems
-            ShelfButton {
+            model: root.groups
+            Rectangle {
+                id: group
                 required property var modelData
-                objectName: "shelfApp_" + modelData.id
-                name: modelData.name
-                iconSource: modelData.icon
-                running: modelData.running
-                active: modelData.active
-                onClicked: root.opened(modelData)
+                objectName: "shelfWorkspace_" + modelData.idx
+                anchors.verticalCenter: parent.verticalCenter
+                width: groupRow.width + 2 * Spacing.xs
+                height: Spacing.xxxl
+                radius: height / 2
+                color: modelData.active ? Colors.secondaryContainer : Colors.surfaceContainer
+                Behavior on color { EffectsColor {} }
+
+                Row {
+                    id: groupRow
+                    x: Spacing.xs
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text {
+                        objectName: "shelfWorkspaceLabel"
+                        visible: group.modelData.idx > 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        leftPadding: Spacing.sm
+                        rightPadding: Spacing.xs
+                        text: group.modelData.name || String(group.modelData.idx)
+                        color: group.modelData.active ? Colors.secondaryContainerOn : Colors.surfaceVariantOn
+                        font: Type.font(Type.labelLarge)
+                    }
+                    Repeater {
+                        model: group.modelData.windows
+                        ShelfButton {
+                            required property var modelData
+                            objectName: "shelfWindow_" + modelData.id
+                            name: modelData.name
+                            iconSource: modelData.icon
+                            running: modelData.focused
+                            active: modelData.focused
+                            onClicked: root.windowClicked(modelData)
+                        }
+                    }
+                }
             }
         }
     }

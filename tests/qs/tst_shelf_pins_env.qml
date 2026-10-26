@@ -14,7 +14,7 @@ ShellRoot {
         running: true
         onTriggered: {
             t.compare(backend.pinnedIds.join(), "foot,not-installed,firefox", "pins from the environment");
-            t.compare(backend.items.map(i => i.id).join(), "foot,firefox", "only installed ones show");
+            t.compare(backend.pinned.map(i => i.id).join(), "foot,firefox", "only installed ones show");
             t.done();
         }
     }

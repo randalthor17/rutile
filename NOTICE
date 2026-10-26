@@ -41,7 +41,9 @@ Ported code
     FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
     THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  Code ported from Noctalia (MIT, noctalia-dev) will be listed here the same way.
+  Code ported from Noctalia (MIT, noctalia-dev) will be listed here the same way. Noctalia's niri workspace
+  backend (C++) was read as a reference for which niri IPC events to follow (shell/services/NiriState.js); no
+  code was copied.
 
 Reference only, no code copied
   Caelestia shell (GPL-3.0) is studied as a design reference and must not be

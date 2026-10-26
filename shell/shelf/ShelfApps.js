@@ -1,6 +1,6 @@
-// What the shelf shows: pinned apps in order, then running apps that are not pinned, each with whether it runs
-// and whether one of its windows is active. Plain data in and out, so it is tested offscreen; ShelfBackend.qml
-// feeds it Quickshell's desktop entries and toplevels.
+// What the shelf shows, as plain data so it is tested offscreen: the pinned apps (launchers), and the open
+// windows grouped by workspace, one entry per window (as Noctalia's taskbar does). ShelfBackend.qml feeds it
+// desktop entries and niri's workspaces (NiriState.groups), or Quickshell's toplevels where niri is not running.
 .pragma library
 
 // Default pins until saved settings (plan 2.5): the first installed app of each group.
@@ -22,48 +22,23 @@ function pins(override, exists) {
     return out;
 }
 
-function norm(s) {
-    return String(s || "").toLowerCase().replace(/\.desktop$/, "");
+// niri's groups ([{id, idx, name, active, windows: [{id, appId, title, focused}]}]) with each window's name and
+// icon from its desktop entry: lookup(appId) gives {name, icon} or null (then the app id names it, no icon).
+function decorate(groups, lookup) {
+    return groups.map(g => ({
+        id: g.id, idx: g.idx, name: g.name, active: g.active,
+        windows: g.windows.map(w => {
+            var e = lookup(w.appId);
+            return { id: w.id, appId: w.appId, title: w.title, focused: w.focused,
+                     name: e && e.name ? e.name : (w.appId || w.title), icon: e && e.icon ? e.icon : "" };
+        })
+    }));
 }
 
-// Whether a window's app id belongs to a desktop entry {id, startupClass}: the id, the startup class, or the last
-// part of a reverse-DNS id ("org.gnome.Nautilus" for "nautilus").
-function matches(entry, appId) {
-    var a = norm(appId);
-    if (a === "") return false;
-    var id = norm(entry.id);
-    return a === id || a === norm(entry.startupClass) || a === id.split(".").pop();
-}
-
-// pinned: [{id, name, icon, startupClass}] in order; windows: [{appId, activated}]; lookup(appId) gives the entry
-// for a window no pinned app claims (or null: it is shown under its app id). Returns
-// [{id, name, icon, pinned, running, active, windows: [indices into `windows`]}].
-function build(pinned, windows, lookup) {
-    var items = pinned.map(e => ({ id: e.id, name: e.name, icon: e.icon, pinned: true, running: false,
-                                   active: false, windows: [], entry: e }));
-    for (var w = 0; w < windows.length; w++) {
-        var win = windows[w];
-        var item = items.find(it => matches(it.entry, win.appId));
-        if (!item) {
-            var e = lookup(win.appId) || { id: win.appId, name: win.appId, icon: "", startupClass: win.appId };
-            item = items.find(it => !it.pinned && it.id === e.id);
-            if (!item) {
-                item = { id: e.id, name: e.name, icon: e.icon, pinned: false, running: false, active: false,
-                         windows: [], entry: e };
-                items.push(item);
-            }
-        }
-        item.running = true;
-        item.active = item.active || !!win.activated;
-        item.windows.push(w);
-    }
-    return items.map(it => ({ id: it.id, name: it.name, icon: it.icon, pinned: it.pinned, running: it.running,
-                              active: it.active, windows: it.windows }));
-}
-
-// Which window a click on a running app brings forward: the one after the active one (cycling), else the first.
-function nextWindow(item, windows) {
-    if (item.windows.length === 0) return -1;
-    var at = item.windows.findIndex(i => windows[i].activated);
-    return item.windows[(at + 1) % item.windows.length];
+// Without niri (another compositor): every toplevel in one group without a workspace number.
+// windows: [{appId, title, activated}]; the window id is its index.
+function ungrouped(windows) {
+    if (windows.length === 0) return [];
+    return [{ id: -1, idx: 0, name: "", active: false,
+              windows: windows.map((w, i) => ({ id: i, appId: w.appId, title: w.title, focused: !!w.activated })) }];
 }

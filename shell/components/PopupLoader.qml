@@ -8,13 +8,13 @@ Loader {
 
     property bool open: false
     property int origin: Item.Top
-    readonly property alias motion: motion
+    readonly property alias motion: popupMotion
 
-    active: open || motion.visible
+    active: open || popupMotion.visible
 
     PopupMotion {
-        id: motion
-        target: root.item
+        id: popupMotion
+        target: root.item as Item
         shown: root.open
         origin: root.origin
     }

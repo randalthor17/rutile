@@ -286,3 +286,18 @@ line says how it applies the speed (`// motion-speed: ...`; ProgressBar's wave a
 `RUTILE_ANIMATION_SPEED` at start and takes `ipc call motion setSpeed <n>`; it moves into the settings store
 with plan 2.5. Rejected: per-component speed properties (the speed would drift between components), Qt's
 global animation driver rate (does not reach our frame-driven springs).
+
+**D44. The shelf shows windows by workspace, from our own small niri client.** The maintainer (October 2026):
+one icon per app hides how many windows there are, and a click that cycles through an app's windows is
+guesswork, so the shelf groups the open windows by workspace and shows one icon per window, as Noctalia's taskbar
+does (its niri backend was read for the events it handles; no code copied, it is C++). Workspaces are only in
+niri's IPC, and Quickshell PR #949 has not merged, so this takes D38's fallback: `NiriService` (a singleton in
+`shell/services/`) on Quickshell's `Socket` at `$NIRI_SOCKET`, the event stream folded into plain data by
+`NiriState.js`, requests one per connection; no new dependency, and switching to `Quickshell.Niri` later
+touches that one file. Pinned apps stay as launchers before the workspaces (a click starts the app); a window's
+icon focuses that window (niri's `FocusWindow`). Each screen's shelf shows that output's workspaces that have
+windows, the active one tinted, the focused window marked. Without niri the windows come from `ToplevelManager`,
+in one group without a number. The wheel over a shelf moves one workspace per notch on that output (niri's
+`FocusWorkspace` by id), stopping at the first and at niri's blank last workspace; the active workspace shows
+even when empty, so the blank one appears as an empty capsule (maintainer's request). Supersedes the shelf's
+per-app running marks from the first shelf commit.

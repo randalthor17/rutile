@@ -109,7 +109,8 @@ ShellRoot {
                 pillsOnTop: statusWindows.instances.map(s => s.pill.WlrLayershell.layer === WlrLayer.Top),
                 reserved: statusWindows.instances.map(s => s.reserved),
                 clocks: statusWindows.instances.map(s => s.clock.pill.timeText + " " + s.clock.pill.dateText),
-                shelves: shelves.instances.map(s => s.shelf.items.map(i => i.id))
+                shelves: shelves.instances.map(s => ({ pinned: s.shelf.pinned.map(p => p.id),
+                                                       workspaces: s.shelf.groups.map(g => [g.idx].concat(g.windows.map(w => w.appId))) }))
             });
         }
     }

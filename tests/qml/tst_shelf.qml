@@ -7,17 +7,24 @@ import "../qs/shelf/ShelfApps.js" as ShelfApps
 TestCase {
     id: root
     name: "Shelf"
-    width: 800
+    width: 900
     height: 200
     visible: true
     when: windowShown
 
-    Component { id: shelfComp; Shelf { width: 800 } }
+    Component { id: shelfComp; Shelf { width: 900 } }
     Component { id: spyComp; SignalSpy {} }
 
-    readonly property var files: ({ id: "org.gnome.Nautilus", name: "Files", icon: "org.gnome.Nautilus", startupClass: "" })
-    readonly property var firefox: ({ id: "firefox", name: "Firefox", icon: "firefox", startupClass: "firefox" })
-    readonly property var gimp: ({ id: "gimp", name: "GIMP", icon: "gimp", startupClass: "Gimp-2.10" })
+    readonly property var pinned: [{ id: "org.gnome.Nautilus", name: "Files", icon: "" }, { id: "firefox", name: "Firefox", icon: "" }]
+    readonly property var niriGroups: [
+        { id: 1, idx: 1, name: "", active: true, windows: [{ id: 11, appId: "firefox", title: "a", focused: false },
+                                                        { id: 10, appId: "kitty", title: "b", focused: true },
+                                                        { id: 14, appId: "kitty", title: "c", focused: false }] },
+        { id: 2, idx: 2, name: "web", active: false, windows: [{ id: 12, appId: "mystery", title: "d", focused: false }] }
+    ]
+    function lookup(appId) {
+        return appId === "kitty" ? { name: "kitty", icon: "" } : appId === "firefox" ? { name: "Firefox", icon: "" } : null;
+    }
 
     function test_pins() {
         compare(ShelfApps.pins("", id => ["thunar", "firefox", "chromium", "kitty"].indexOf(id) >= 0).join(),
@@ -26,90 +33,105 @@ TestCase {
         compare(ShelfApps.pins(" a, b ,,c", id => false).join(), "a,b,c", "an override wins, as given");
     }
 
-    function test_matching_windows_to_apps() {
-        verify(ShelfApps.matches(firefox, "firefox"));
-        verify(ShelfApps.matches(firefox, "Firefox"), "case does not matter");
-        verify(ShelfApps.matches(files, "org.gnome.Nautilus"));
-        verify(ShelfApps.matches(files, "nautilus"), "the last part of a reverse-DNS id");
-        verify(ShelfApps.matches(gimp, "gimp-2.10"), "the startup class");
-        verify(!ShelfApps.matches(firefox, "foot"));
-        verify(!ShelfApps.matches(firefox, ""), "a window without an app id matches nothing");
-        verify(ShelfApps.matches({ id: "foot.desktop", startupClass: "" }, "foot"), "a .desktop suffix is ignored");
+    function test_decorate_and_ungrouped() {
+        var g = ShelfApps.decorate(niriGroups, lookup);
+        compare(g[0].windows.map(w => w.name).join(), "Firefox,kitty,kitty", "one per window, named by its app");
+        compare(g[1].windows[0].name, "mystery", "no entry: its app id");
+        compare(g[1].name, "web");
+        compare(g[0].windows[1].id, 10);
+        verify(g[0].windows[1].focused);
+        var u = ShelfApps.ungrouped([{ appId: "a", title: "x", activated: false }, { appId: "b", title: "y", activated: true }]);
+        compare(u.length, 1, "one group");
+        compare(u[0].idx, 0, "without a number");
+        compare(u[0].windows.map(w => w.id).join(), "0,1", "ids are the toplevel indices");
+        verify(u[0].windows[1].focused);
+        compare(ShelfApps.ungrouped([]).length, 0);
     }
 
-    function test_build() {
-        var lookup = appId => appId === "gimp-2.10" ? gimp : null;
-        var windows = [
-            { appId: "firefox", activated: false },
-            { appId: "gimp-2.10", activated: true },
-            { appId: "firefox", activated: false },
-            { appId: "mystery", activated: false },
-            { appId: "gimp-2.10", activated: false }
-        ];
-        var items = ShelfApps.build([files, firefox], windows, lookup);
-        compare(items.map(i => i.id).join(), "org.gnome.Nautilus,firefox,gimp,mystery", "pinned, then running in order");
-        compare(items.map(i => i.pinned).join(), "true,true,false,false");
-        verify(!items[0].running, "Files is pinned but not running");
-        verify(items[1].running && !items[1].active);
-        compare(items[1].windows.join(), "0,2", "both Firefox windows");
-        verify(items[2].running && items[2].active, "GIMP has the active window");
-        compare(items[2].windows.join(), "1,4", "grouped under one app");
-        compare(items[3].name, "mystery", "no entry: shown by its app id");
-        compare(items[3].icon, "");
-        compare(ShelfApps.build([], [], lookup).length, 0);
-    }
-
-    function test_next_window_cycles() {
-        var windows = [{ activated: false }, { activated: true }, { activated: false }];
-        compare(ShelfApps.nextWindow({ windows: [0, 1, 2] }, windows), 2, "the one after the active window");
-        compare(ShelfApps.nextWindow({ windows: [0, 2] }, windows), 0, "none active: the first");
-        compare(ShelfApps.nextWindow({ windows: [2, 1] }, windows), 2, "wraps around");
-        compare(ShelfApps.nextWindow({ windows: [] }, windows), -1);
-    }
-
-    function test_shelf_shows_items() {
-        var items = ShelfApps.build([files, firefox], [{ appId: "firefox", activated: true }, { appId: "gimp-2.10" }],
-                                    appId => gimp).map(it => Object.assign(it, { icon: "" }));
-        var shelf = createTemporaryObject(shelfComp, root, { items: items });
+    function test_shelf_shows_pins_and_workspaces() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, groups: ShelfApps.decorate(niriGroups, lookup) });
         waitForRendering(shelf);
-        var opened = createTemporaryObject(spyComp, root, { target: shelf, signalName: "opened" });
-        var launcher = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launcherClicked" });
+        var launched = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launched" });
+        var focused = createTemporaryObject(spyComp, root, { target: shelf, signalName: "windowClicked" });
         compare(shelf.height, Spacing.xxxl + Spacing.sm);
-        verify(findChild(shelf, "shelfDivider").visible, "a divider before the running unpinned app");
-        var ff = findChild(shelf, "shelfApp_firefox");
-        var fm = findChild(shelf, "shelfApp_org.gnome.Nautilus");
-        var gp = findChild(shelf, "shelfApp_gimp");
-        verify(ff && fm && gp);
-        verify(fm.x < ff.x && ff.x < gp.x, "in order");
-        verify(!findChild(fm, "shelfRunningMark").visible, "not running: no mark");
-        var mark = findChild(ff, "shelfRunningMark");
-        verify(mark.visible);
-        tryCompare(mark, "width", Spacing.lg, 2000, "active: the long mark");
-        verify(Qt.colorEqual(mark.color, Colors.primary));
-        compare(findChild(gp, "shelfRunningMark").width, Spacing.xs, "running: a dot");
-        var fallback = findChild(fm, "shelfFallbackIcon");
-        verify(fallback.visible, "no icon: the app's initial");
-        compare(fallback.children[0].text, "F");
-        mouseClick(ff, ff.width / 2, ff.height / 2);
-        compare(opened.count, 1);
-        compare(opened.signalArguments[0][0].id, "firefox");
+        verify(findChild(shelf, "shelfDivider").visible);
+        var ws1 = findChild(shelf, "shelfWorkspace_1");
+        var ws2 = findChild(shelf, "shelfWorkspace_2");
+        verify(ws1 && ws2);
+        verify(ws1.x < ws2.x);
+        compare(findChild(ws1, "shelfWorkspaceLabel").text, "1");
+        compare(findChild(ws2, "shelfWorkspaceLabel").text, "web", "a named workspace shows its name");
+        verify(Qt.colorEqual(ws1.color, Colors.secondaryContainer), "the active workspace is tinted");
+        var w11 = findChild(ws1, "shelfWindow_11"), w10 = findChild(ws1, "shelfWindow_10"), w14 = findChild(ws1, "shelfWindow_14");
+        verify(w11 && w10 && w14, "one icon per window, two kitty windows included");
+        verify(w11.x < w10.x && w10.x < w14.x, "in layout order");
+        verify(findChild(w10, "shelfRunningMark").visible, "the focused window is marked");
+        tryCompare(findChild(w10, "shelfRunningMark"), "width", Spacing.lg, 2000);
+        verify(!findChild(w14, "shelfRunningMark").visible, "the others are not");
+        mouseClick(w14, w14.width / 2, w14.height / 2);
+        compare(focused.count, 1);
+        compare(focused.signalArguments[0][0].id, 14, "that exact window");
+        var pin = findChild(shelf, "shelfPin_firefox");
+        verify(pin.x < ws1.x, "pins first");
+        verify(!findChild(pin, "shelfRunningMark").visible, "pins are launchers, without marks");
+        mouseClick(pin, pin.width / 2, pin.height / 2);
+        compare(launched.count, 1);
+        compare(launched.signalArguments[0][0].id, "firefox");
+        // without niri: one group without a number
+        shelf.groups = ShelfApps.decorate(ShelfApps.ungrouped([{ appId: "kitty", title: "t", activated: true }]), lookup);
+        waitForRendering(shelf);
+        verify(!findChild(findChild(shelf, "shelfWorkspace_0"), "shelfWorkspaceLabel").visible);
+        shelf.groups = [];
+        verify(!findChild(shelf, "shelfDivider").visible, "no windows: no divider");
+    }
+
+    function test_wheel_moves_between_workspaces() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, groups: ShelfApps.decorate(niriGroups, lookup) });
+        waitForRendering(shelf);
+        var spy = createTemporaryObject(spyComp, root, { target: shelf, signalName: "workspaceScrolled" });
+        mouseWheel(shelf, 450, shelf.height / 2, 0, -120);
+        compare(spy.count, 1);
+        compare(spy.signalArguments[0][0], 1, "down: the next workspace");
+        mouseWheel(shelf, 450, shelf.height / 2, 0, 240);
+        compare(spy.count, 3, "two notches, two workspaces");
+        compare(spy.signalArguments[2][0], -1, "up: the previous");
+        // a touchpad's small steps add up to a notch
+        shelf.scrollBy(-50);
+        shelf.scrollBy(-50);
+        compare(spy.count, 3, "not a notch yet");
+        shelf.scrollBy(-30);
+        compare(spy.count, 4);
+        compare(spy.signalArguments[3][0], 1);
+        compare(shelf.wheelRest, -10, "the rest carries over");
+        var wheel = findChild(shelf, "shelfWheel");
+        compare(wheel.acceptedDevices & PointerDevice.TouchPad, PointerDevice.TouchPad, "niri reports wheels as touchpads");
+    }
+
+    function test_blank_workspace_capsule() {
+        var groups = [{ id: 3, idx: 3, name: "", active: true, windows: [] }];
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, groups: groups });
+        waitForRendering(shelf);
+        var ws3 = findChild(shelf, "shelfWorkspace_3");
+        verify(ws3 && ws3.visible, "the blank workspace has a capsule");
+        compare(findChild(ws3, "shelfWorkspaceLabel").text, "3");
+        verify(Qt.colorEqual(ws3.color, Colors.secondaryContainer), "tinted: it is the active one");
+    }
+
+    function test_launcher_and_press() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned });
+        waitForRendering(shelf);
+        var launcher = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launcherClicked" });
         var l = findChild(shelf, "shelfLauncher");
         mouseClick(l, l.width / 2, l.height / 2);
         compare(launcher.count, 1);
-        // only pinned apps: no divider
-        shelf.items = items.filter(i => i.pinned);
-        verify(!findChild(shelf, "shelfDivider").visible);
-    }
-
-    function test_press_shrinks_and_springs_back() {
-        var shelf = createTemporaryObject(shelfComp, root, { items: [{ id: "a", name: "A", icon: "", pinned: true,
-                                                                       running: false, active: false, windows: [] }] });
-        waitForRendering(shelf);
-        var b = findChild(shelf, "shelfApp_a");
+        var b = findChild(shelf, "shelfPin_firefox");
         var face = b.children[0];
         mousePress(b, b.width / 2, b.height / 2);
         tryVerify(function () { return face.scale < 0.95; }, 2000, "pressed: smaller");
         mouseRelease(b, b.width / 2, b.height / 2);
         tryCompare(face, "scale", 1, 2000, "released: back");
+        var fallback = findChild(b, "shelfFallbackIcon");
+        verify(fallback.visible, "no icon: the app's initial");
+        compare(fallback.children[0].text, "F");
     }
 }

@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""A stand-in for niri's IPC socket (tests/qs/tst_niri_service.qml). `fake-niri SOCKET LOG`: an EventStream
+request gets {"Ok":"Handled"} and two snapshots (workspaces, windows), then a window opening after a moment;
+any other request is appended to LOG and answered {"Ok":"Handled"}. Exits after 20 s."""
+import json
+import os
+import socket
+import sys
+import threading
+import time
+
+path, log = sys.argv[1], sys.argv[2]
+
+EVENTS = [
+    {"WorkspacesChanged": {"workspaces": [
+        {"id": 1, "idx": 1, "name": None, "output": "DP-1", "is_urgent": False, "is_active": True, "is_focused": True,
+         "active_window_id": 10},
+        {"id": 2, "idx": 2, "name": None, "output": "DP-1", "is_urgent": False, "is_active": False,
+         "is_focused": False, "active_window_id": None},
+        {"id": 3, "idx": 3, "name": None, "output": "DP-1", "is_urgent": False, "is_active": False,
+         "is_focused": False, "active_window_id": None}]}},
+    {"WindowsChanged": {"windows": [
+        {"id": 10, "title": "t", "app_id": "kitty", "pid": 1, "workspace_id": 1, "is_focused": True,
+         "is_floating": False, "is_urgent": False, "layout": {"pos_in_scrolling_layout": [2, 1]}},
+        {"id": 11, "title": "t", "app_id": "firefox", "pid": 2, "workspace_id": 1, "is_focused": False,
+         "is_floating": False, "is_urgent": False, "layout": {"pos_in_scrolling_layout": [1, 1]}}]}},
+]
+LATER = {"WindowOpenedOrChanged": {"window": {
+    "id": 12, "title": "t", "app_id": "foot", "pid": 3, "workspace_id": 2, "is_focused": False, "is_floating": False,
+    "is_urgent": False, "layout": {"pos_in_scrolling_layout": [1, 1]}}}}
+
+
+def serve(conn):
+    with conn:
+        f = conn.makefile("rwb")
+        line = f.readline().decode().strip()
+        if line == '"EventStream"':
+            f.write(b'{"Ok":"Handled"}\n')
+            for e in EVENTS:
+                f.write((json.dumps(e) + "\n").encode())
+            f.flush()
+            time.sleep(0.5)
+            f.write((json.dumps(LATER) + "\n").encode())
+            f.flush()
+            time.sleep(30)
+        else:
+            with open(log, "a") as out:
+                out.write(line + "\n")
+            f.write(b'{"Ok":"Handled"}\n')
+            f.flush()
+
+
+if os.path.exists(path):
+    os.unlink(path)
+srv = socket.socket(socket.AF_UNIX)
+srv.bind(path)
+srv.listen()
+srv.settimeout(20)
+deadline = time.time() + 20
+while time.time() < deadline:
+    try:
+        c, _ = srv.accept()
+    except socket.timeout:
+        break
+    threading.Thread(target=serve, args=(c,), daemon=True).start()

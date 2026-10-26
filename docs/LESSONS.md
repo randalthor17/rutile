@@ -117,6 +117,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 
 ## Process
 
+- **Tests must not inherit the session's niri.** `NIRI_SOCKET` reached the offscreen and sway tests from the
+  maintainer's session, and the shelf backend test talked to the real niri. `tools/qtws.py` now drops
+  `NIRI_SOCKET` and `SWAYSOCK` from test environments; a test that needs niri starts `tests/qs/bin/fake-niri`.
+  Unix socket paths must stay under 108 bytes, so the scratchpad is too deep for one; the qs workspace is not.
+- **qmllint exits 0 on some warnings** (`id-shadows-member`, `incompatible-type`), so two warnings sat on main
+  with `make check` green. `qtws.py lint` now fails on any `Warning:` line.
+
 - **The maintainer's shell hot-reloads this checkout.** Mutation testing by editing files in place shows every
   mutant on their screen; mutate in a copy. A new module directory under `shell/` can make the reload fail with
   `module "qs.common" is not installed`; `touch shell/shell.qml` reloads it. `qs log -p shell/shell.qml` prints the

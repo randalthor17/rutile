@@ -74,11 +74,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   MPRIS, tray); a small daemon only for real gaps (settings persistence, widget validation, Ollama bridge).
   Types: `Pipewire`, `UPower`/`PowerProfiles`, `Networking`, `Bluetooth`, `NotificationServer`, `Mpris`,
   `SystemTray` (the table in `docs/HANDOFF.md`, "Quickshell types and where they go").
-- [ ] **2.2** niri integration: IPC (workspaces, windows, focus events); the shell ships a generated niri config
-  module (window rules, keybinds, startup). Waiting (D38) for Quickshell's `Quickshell.Niri` module
-  (quickshell-mirror/quickshell PR #949, open in October 2026); not `Quickshell.WindowManager`. If it has not
-  merged when this item starts: pin the PR commit as a flake input (maintainer's approval) or a small `Socket`
-  client on `$NIRI_SOCKET`, behind a thin `Niri` singleton either way. `IpcHandler` for keybinds into the shell.
+- [ ] **2.2** Started (D44): `shell/services/NiriService.qml` follows niri's event stream (workspaces, windows,
+  focus) over its socket with Quickshell's `Socket` (D38's fallback; PR #949 for `Quickshell.Niri` is still open
+  in October 2026) and sends `FocusWindow`. Still to do: more actions as needed, and the generated niri config
+  module the shell ships (window rules, keybinds, startup); `IpcHandler` for keybinds into the shell. Switch
+  `NiriService` to `Quickshell.Niri` when #949 merges; not `Quickshell.WindowManager`.
 - [ ] **2.3** Started: the status pill at the top right of every screen (network, volume, battery; opens Quick
   Settings, D41; scrolling over the volume glyph changes the volume) and the
   clock at the top left (time and date). Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
@@ -86,9 +86,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
 - [ ] **2.4** Started (`shell/shelf/`): a full-width bar along the bottom of every screen that reserves its
   height; a launcher button (emits only, until 2.7), pinned apps (default: the first installed file manager,
-  browser and terminal; `RUTILE_SHELF_PINS` until 2.5) that start on click, running apps from `ToplevelManager`
-  (wlr-foreign-toplevel; niri has it, so no wait for PR #949) with a dot, a primary dash while active, and a click
-  cycling their windows; unpinned running apps after a divider; press motion. Not done: tooltips, context menu
+  browser and terminal; `RUTILE_SHELF_PINS` until 2.5) that start on click, then the screen's workspaces with
+  windows, one icon per window in layout order, the active workspace tinted and the focused window marked; a click
+  focuses that window, and the wheel moves between workspaces down to niri's blank one (D44, niri through
+  `NiriService`; without niri, `ToplevelManager` ungrouped); press motion. Not done: tooltips, context menu
   (pin, close), special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
   via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.

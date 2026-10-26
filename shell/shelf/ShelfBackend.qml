@@ -1,9 +1,11 @@
-// The shelf's apps on this system: the pinned desktop entries (ShelfApps.pins; RUTILE_SHELF_PINS="id,id" sets
-// them until saved settings, plan 2.5) and the compositor's windows from Quickshell's ToplevelManager
-// (wlr-foreign-toplevel, which niri has), combined by ShelfApps.build(). The shell makes one for all screens.
+// The shelf's data on this system: the pinned desktop entries (ShelfApps.pins; RUTILE_SHELF_PINS="id,id" sets
+// them until saved settings, plan 2.5) and the open windows by workspace from niri (NiriService). Without niri,
+// Quickshell's ToplevelManager (wlr-foreign-toplevel) gives the windows ungrouped. The shell makes one for all
+// screens; each shelf asks groupsFor() its own output.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.services
 import "ShelfApps.js" as ShelfApps
 
 QtObject {
@@ -13,34 +15,43 @@ QtObject {
         void DesktopEntries.applications.values;        // look again when the installed apps change
         return ShelfApps.pins(Quickshell.env("RUTILE_SHELF_PINS") ?? "", id => !!DesktopEntries.byId(id));
     }
-    readonly property var toplevels: ToplevelManager.toplevels.values
-    readonly property var windows: toplevels.map(t => ({ appId: t.appId, activated: t.activated }))
-
-    function entryData(e) {
-        return { id: e.id, name: e.name, icon: e.icon, startupClass: e.startupClass };
-    }
-
-    // ShelfApps.build() items, with the icon as an image URL ("" when the theme has none).
-    readonly property var items: {
+    // [{id, name, icon}], the icon as an image URL ("" when the theme has none)
+    readonly property var pinned: {
         void DesktopEntries.applications.values;
-        const pinned = pinnedIds.map(id => DesktopEntries.byId(id)).filter(e => !!e).map(e => entryData(e));
-        const lookup = appId => {
-            const e = DesktopEntries.heuristicLookup(appId);
-            return e ? entryData(e) : null;
-        };
-        return ShelfApps.build(pinned, windows, lookup).map(it => Object.assign(it, {
-            icon: it.icon ? Quickshell.iconPath(it.icon, true) : ""
-        }));
+        return pinnedIds.map(id => DesktopEntries.byId(id)).filter(e => !!e)
+                        .map(e => ({ id: e.id, name: e.name, icon: iconUrl(e.icon) }));
+    }
+    readonly property bool niri: NiriService.available
+    readonly property var toplevels: ToplevelManager.toplevels.values
+
+    function iconUrl(name) {
+        return name ? Quickshell.iconPath(name, true) : "";
     }
 
-    // A running app: bring its next window forward. Otherwise start it.
-    function open(item) {
-        if (item.running) {
-            const i = ShelfApps.nextWindow(item, windows);
-            if (i >= 0) toplevels[i].activate();
-            return;
-        }
-        const e = DesktopEntries.byId(item.id);
+    function lookup(appId) {
+        const e = appId ? DesktopEntries.heuristicLookup(appId) : null;
+        return e ? { name: e.name, icon: iconUrl(e.icon) } : null;
+    }
+
+    // One output's workspaces with their windows (ShelfApps.decorate); all windows in one group without niri.
+    function groupsFor(output) {
+        const groups = niri ? NiriService.groups(output)
+                            : ShelfApps.ungrouped(toplevels.map(t => ({ appId: t.appId, title: t.title, activated: t.activated })));
+        return ShelfApps.decorate(groups, appId => lookup(appId));
+    }
+
+    function launch(app) {
+        const e = DesktopEntries.byId(app.id);
         if (e) e.execute();
+    }
+
+    // The wheel over a screen's shelf: niri's workspaces on that output (nothing without niri).
+    function scrollWorkspace(output, delta) {
+        if (niri) NiriService.scrollWorkspace(output, delta);
+    }
+
+    function focusWindow(window) {
+        if (niri) NiriService.focusWindow(window.id);
+        else if (toplevels[window.id]) toplevels[window.id].activate();
     }
 }

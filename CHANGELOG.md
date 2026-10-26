@@ -5,6 +5,13 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **The shelf shows windows by workspace** (D44, maintainer's request, as Noctalia does): after the pinned apps,
+  each workspace on that screen gets a capsule with its number and one icon per window in layout order; the
+  active workspace is tinted and the focused window marked, and a click focuses that window. Pinned apps start
+  the app. The wheel over the shelf moves to the previous or next workspace on that screen; past the last one is
+  niri's blank workspace, shown as an empty numbered capsule. The data comes from niri's IPC socket
+  (`NiriService`, Quickshell's `Socket`); other compositors get the windows in one group.
+- **Fix:** `make check` let qmllint warnings through (qmllint exits 0 on some); two had slipped in and are fixed.
 - **Shelf** (plan 2.4, first part): a bar along the bottom of every screen that keeps windows above it, with a
   launcher button (does nothing until the launcher, plan 2.7), pinned apps (the first installed file manager,
   browser and terminal, or `RUTILE_SHELF_PINS=id,id`) that start on click, and running apps from the compositor

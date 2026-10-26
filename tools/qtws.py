@@ -216,7 +216,8 @@ def qs_workspace(test):
 def qs_test_env(test, ws):
     """Offscreen, never the session's compositor. `// env NAME=value` lines in the test add variables;
     @WS@ is the shell directory and @PATH@ the current PATH. No braces there: a `{` above the imports stops Quickshell resolving qs.*."""
-    env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY")}
+    # never the session's compositor or niri
+    env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY", "NIRI_SOCKET", "SWAYSOCK")}
     env["QT_QPA_PLATFORM"] = "offscreen"
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
         env[name] = value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
@@ -261,7 +262,7 @@ class HeadlessSway:
         self.runtime = Path(tempfile.mkdtemp(prefix="rtl.", dir=uid_dir if uid_dir.is_dir() else None))
         conf = self.runtime / "sway.conf"
         conf.write_text(f"output HEADLESS-1 resolution {self.size[0]}x{self.size[1]}\n")
-        env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY", "SWAYSOCK")}
+        env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY", "SWAYSOCK", "NIRI_SOCKET")}
         env.update(XDG_RUNTIME_DIR=str(self.runtime), WLR_BACKENDS="headless", WLR_RENDERER="pixman",
                    WLR_LIBINPUT_NO_DEVICES="1")
         self.log = open(self.runtime / "sway.log", "w")
@@ -279,7 +280,7 @@ class HeadlessSway:
         raise RuntimeError("headless sway did not start: " + (self.runtime / "sway.log").read_text()[-500:])
 
     def env(self, extra=None):
-        env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "SWAYSOCK")}
+        env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "SWAYSOCK", "NIRI_SOCKET")}
         env.update(XDG_RUNTIME_DIR=str(self.runtime), WAYLAND_DISPLAY=self.display, QT_QPA_PLATFORM="wayland")
         env.update(extra or {})
         return env
@@ -370,7 +371,8 @@ def run_wayland_smoke(screenshot=None):
                         if not any(h % 12 == t.tm_hour % 12 and m == t.tm_min for t in nows):
                             problems.append(f"ipc state: clock {clocks[0]!r} is not the current time")
                     shelves = state.pop("shelves", None)
-                    if shelves != [["org.gnome.Nautilus", "firefox", "foot"]]:
+                    # the fixture's default pins; no niri and no windows here, so no workspace groups
+                    if shelves != [{"pinned": ["org.gnome.Nautilus", "firefox", "foot"], "workspaces": []}]:
                         problems.append(f"ipc state: shelves {shelves!r}, expected the fixture's default pins")
                     want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
@@ -472,7 +474,9 @@ def run_lint():
         proc = subprocess.run([linter, *incs, *files], capture_output=True, text=True,
                               env=qml_env(qml_import_dirs(linter), dict(os.environ)))
         out = (proc.stdout + proc.stderr).replace(str(ws) + "/", "")
-        return proc.returncode, out + (hint(out) if proc.returncode else "")
+        # qmllint exits 0 on some warnings (id-shadows-member, incompatible-type); any warning fails the gate
+        code = proc.returncode or (1 if "Warning:" in out else 0)
+        return code, out + (hint(out) if code else "")
     finally:
         shutil.rmtree(ws, ignore_errors=True)
 

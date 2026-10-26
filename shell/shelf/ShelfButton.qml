@@ -1,6 +1,6 @@
-// One app on the shelf: its icon (or its initial on a tonal circle when the icon theme has none), a state layer, a press that shrinks it
-// on the spatial spring, and the running mark under it: a dot while the app runs, a longer primary dash while one
-// of its windows is active.
+// One app or window on the shelf: its icon (or its initial on a tonal circle when the icon theme has none), a state
+// layer, a press that shrinks it on the spatial spring, and a mark under it: a dot for `running`, a longer primary
+// dash for `active` (the shelf marks the focused window).
 import QtQuick
 import qs.common
 import qs.components

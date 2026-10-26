@@ -14,11 +14,11 @@ ShellRoot {
         running: true
         onTriggered: {
             t.compare(backend.pinnedIds.join(), "org.gnome.Nautilus,firefox,foot", "default pins");
-            t.compare(backend.items.map(i => i.id).join(), "org.gnome.Nautilus,firefox,foot", "items");
-            t.compare(backend.items[1].name, "Firefox", "name from the entry");
-            t.verify(backend.items.every(i => i.pinned && !i.running), "pinned, not running (no compositor)");
-            t.verify(backend.items.every(i => typeof i.icon === "string"), "icon URLs");
-            t.compare(backend.windows.length, 0, "no windows offscreen");
+            t.compare(backend.pinned.map(i => i.id).join(), "org.gnome.Nautilus,firefox,foot", "pinned apps");
+            t.compare(backend.pinned[1].name, "Firefox", "name from the entry");
+            t.verify(backend.pinned.every(i => typeof i.icon === "string"), "icon URLs");
+            t.verify(!backend.niri, "no niri here");
+            t.compare(backend.groupsFor("").length, 0, "no windows offscreen");
             t.done();
         }
     }
