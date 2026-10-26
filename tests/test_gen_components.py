@@ -110,6 +110,30 @@ class Committed(unittest.TestCase):
         self.assertEqual((pr["impl"]["wave_on_above"], pr["impl"]["wave_off_from"]), (0.1, 0.95))
         self.assertEqual(pr["impl"]["amplitude_out"], {"duration": "long2", "easing": "emphasizedAccelerate"})
 
+    def test_material_shapes_spot_values(self):
+        ms = self.data["material_shapes"]
+        self.assertEqual(len(ms["names"]), 35)
+        self.assertEqual(ms["names"][:3], ["circle", "square", "slanted"])
+        self.assertEqual(ms["names"][-1], "heart")
+        self.assertEqual(sorted(ms["names"]), sorted(ms["shapes"]))
+        shapes = ms["shapes"]
+        self.assertEqual(shapes["circle"], {"kind": "circle", "n": 10})
+        self.assertEqual(shapes["oval"], {"kind": "circle", "n": 8,
+                                          "transform": [["scale", 1.0, 0.64], ["rotate", -45.0]]})
+        self.assertEqual(shapes["cookie9Sided"], {"kind": "star", "n": 9, "inner": 0.8, "rounding": [0.5, 0.0],
+                                                  "transform": [["rotate", -90.0]]})
+        self.assertEqual(shapes["square"]["rounding"], [[0.3, 0.0]] * 4)
+        self.assertEqual(shapes["semiCircle"], {"kind": "rect", "w": 1.6, "h": 1.0,
+                                                "rounding": [[0.2, 0.0], [0.2, 0.0], [1.0, 0.0], [1.0, 0.0]]})
+        self.assertEqual(shapes["arch"]["kind"], "regular")
+        self.assertEqual(shapes["arch"]["transform"], [["rotate", -135.0]])
+        self.assertEqual(shapes["softBurst"], {"kind": "custom", "reps": 10, "mirror": False, "points": [
+            [0.193, 0.277, 0.053, 0.0], [0.176, 0.055, 0.053, 0.0]]})
+        self.assertEqual(shapes["gem"]["points"][0], [0.499, 1.023, 0.241, 0.778])
+        self.assertTrue(shapes["heart"]["mirror"])
+        self.assertEqual(shapes["puffy"]["transform"], [["scale", 1.0, 0.742]])
+        self.assertEqual(len(shapes["puffy"]["points"]), 11)
+
     def test_chip_list_tile_spot_values(self):
         chip, lst, tile = self.data["chip"], self.data["list"], self.data["tile"]
         self.assertEqual((chip["filter"]["container_height"], chip["filter"]["icon_size"]), (32, 18))
@@ -229,6 +253,29 @@ class FailsLoudly(unittest.TestCase):
             self.with_modified_source(name, lambda t: t.replace(old, new))
             with self.assertRaises(gc.ComponentError, msg=f"{name}: {old}"):
                 gc.slider_sizes(tokens)
+            shutil.rmtree(self.tmp / "src")
+
+    def test_changed_material_shapes_force_a_review(self):
+        cases = [
+            # A builder this parser does not know, a new argument, a moved center, a new matrix op.
+            ("return RoundedPolygon.star(\n                    numVerticesPerRadius = 9,",
+             "return RoundedPolygon.pillStar(\n                    numVerticesPerRadius = 9,"),
+            ("innerRadius = .8f,\n                    rounding = cornerRound50,\n                )\n"
+             "                .transformed(rotateNeg90)\n        }\n\n        internal fun cookie12",
+             "innerRadius = .8f,\n                    rounding = cornerRound50,\n                    "
+             "innerRounding = cornerRound15,\n                )\n                .transformed(rotateNeg90)\n"
+             "        }\n\n        internal fun cookie12"),
+            ("                reps = 12,\n", "                reps = 12,\n                center = Offset(0.4f, 0.5f),\n"),
+            ("rotateZ(-45f)", "rotateX(-45f)"),
+            ("PointNRound(Offset(0.500f, 0.268f), CornerRounding(0.016f))",
+             "PointNRound(Offset(0.500f, 0.268f), CornerRounding(0.016f) * 2)"),
+            ("internal fun heart(): RoundedPolygon {\n            return",
+             "internal fun heart(): RoundedPolygon {\n            val x = 1\n            return"),
+        ]
+        for old, new in cases:
+            self.with_modified_source("MaterialShapes.kt", lambda t: (self.assertIn(old, t), t.replace(old, new))[1])
+            with self.assertRaises(gc.ComponentError, msg=old):
+                gc.material_shapes()
             shutil.rmtree(self.tmp / "src")
 
     def test_parsers_reject_unexpected_expressions(self):

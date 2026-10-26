@@ -9,6 +9,9 @@ Material 3 token sources (tokens/sources/)
   tokens/sources/Mdc*.xml are from Material Components for Android
   (github.com/material-components/material-components-android), Copyright The Android
   Open Source Project, Apache License 2.0, vendored the same way.
+  tokens/sources/MaterialShapes.kt (Compose Material3) and tokens/sources/GraphicsShapes*.kt (androidx
+  graphics-shapes, Copyright The Android Open Source Project, Apache License 2.0) are vendored the same way;
+  shell/common/ShapeMath.js and tests/shape_ref.py are ports of their algorithms (rounded polygons, morphing).
 
 Fonts (not vendored; installed by nix packages)
   Google Sans Flex, SIL Open Font License 1.1, packaged by nix/googlesans-flex.nix.

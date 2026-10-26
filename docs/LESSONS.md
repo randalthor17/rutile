@@ -138,6 +138,18 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   file between two function names also deleted a test that had been inserted in between; two mutants it had
   caught came back, which is how it was noticed. List the test functions before committing.
 
+- **`Spring.snap()` settles the spring before it returns.** Handlers on `settled` (or anything bound to it) run in
+  the middle of a restart: ShapeMorph cleared its morph data when the spring reported settled, so a morph started
+  with `snap(0)` lost the data it had just been given. Set the data after `snap()` and the new `target`.
+
+- **Measure with the plugins the session has.** An SVG image looked half the memory of a vector shape until the
+  render showed blank squares: the test environment has no qtsvg plugin, so nothing was drawn or held.
+  Look at the render before trusting a memory number.
+
+- **A surviving mutant may be equivalent; prove it before adding tests.** Rounding a decagon of radius 1 instead of
+  1/cos(18°) still gives a circle once normalized. When a mutant survives a strong check, search for inputs that
+  tell the two versions apart (a script over all 35 x 35 morph pairs found cases for three mutants) and add those.
+
 - **Write down interaction rules with examples as they are decided.** The grid's gap, resize and drop rules took
   three rounds with the maintainer; `docs/editable-grid.md` holds them with diagrams and the test for each, so
   nobody has to rediscover them from the code.

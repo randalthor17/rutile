@@ -56,6 +56,7 @@ Desktop (plans 2.3 and 4.x):
 
 - Widgets are cards with large corners (about 28 px) on a tinted container; inner rows (calendar events,
   scores) are smaller rounded rows on a darker or tonal fill.
+- The "Up next" widget clips its picture to a cookie (an M3 Expressive library shape; `ShapeMorph`, D37).
 - A column of desktop icons on the right: tonal circles with a label underneath.
 - Top right: a media pill, notification and do-not-disturb icons, and a status pill (Wi-Fi, battery).
 - The shelf: a "G" pill, pinned apps with running dots, a divider, the assistant button.

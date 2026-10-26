@@ -119,7 +119,7 @@ class Guards(unittest.TestCase):
 
 class HandWrittenFiles(unittest.TestCase):
     def test_expected_files_exist(self):
-        for name in ("Spacing.qml", "Spring.qml", "SpringMath.js", "PaletteWatcher.qml"):
+        for name in ("Spacing.qml", "Spring.qml", "SpringMath.js", "ShapeMath.js", "PaletteWatcher.qml"):
             self.assertTrue((COMMON / name).exists(), name)
 
     def test_only_palette_watcher_needs_quickshell(self):

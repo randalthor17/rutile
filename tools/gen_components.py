@@ -337,6 +337,162 @@ TILE_STATES = {"active": "activeTileColors", "active_dual": "activeDualTargetTil
                "inactive": "inactiveTileColors", "inactive_dual": "inactiveDualTargetTileColors",
                "unavailable": "unavailableTileColors"}
 
+# MaterialShapes.kt builds each shape with a few Kotlin calls. They are parsed into plain
+# definitions (vertices before rounding); shell/common/ShapeMath.js turns them into curves.
+SHAPE_CALLS = {
+    "customPolygon": ("pnr", "reps", "center", "mirroring"),
+    "RoundedPolygon.star": ("numVerticesPerRadius", "radius", "innerRadius", "rounding", "innerRounding",
+                            "perVertexRounding", "centerX", "centerY"),
+    "RoundedPolygon.circle": ("numVertices", "radius", "centerX", "centerY"),
+    "RoundedPolygon.rectangle": ("width", "height", "rounding", "perVertexRounding", "centerX", "centerY"),
+    "RoundedPolygon": ("numVertices", "radius", "centerX", "centerY", "rounding", "perVertexRounding"),
+    "CornerRounding": ("radius", "smoothing"),
+    "Offset": ("x", "y"),
+    "PointNRound": ("o", "r"),
+    "listOf": None,
+}
+
+
+def kotlin_call(text, names):
+    """Parse one Kotlin call expression (nested calls, float literals, names from `names`) into
+    (callee, positional args, named args); the transformed(...) chain is returned separately."""
+    tokens = re.findall(r"\.?[A-Za-z_][\w.]*|-?\d*\.?\d+f?|[(),=]", text)
+    if "".join(tokens) != re.sub(r"\s+", "", text):
+        raise ComponentError(f"material shapes: cannot tokenize {text!r}")
+    pos = 0
+
+    def take(want=None):
+        nonlocal pos
+        if pos >= len(tokens) or (want and tokens[pos] != want):
+            raise ComponentError(f"material shapes: expected {want or 'more'} in {text!r}")
+        pos += 1
+        return tokens[pos - 1]
+
+    def value():
+        tok = take()
+        if re.fullmatch(r"-?\d*\.?\d+f?", tok):
+            return float(tok.rstrip("f"))
+        if pos < len(tokens) and tokens[pos] == "(":
+            take("(")
+            args, named = [], {}
+            while tokens[pos] != ")":
+                if re.fullmatch(r"[A-Za-z_]\w*", tokens[pos]) and tokens[pos + 1] == "=":
+                    key = take()
+                    take("=")
+                    named[key] = value()
+                else:
+                    args.append(value())
+                if tokens[pos] == ",":
+                    take(",")
+            take(")")
+            return ("call", tok, args, named)
+        if tok not in names:
+            raise ComponentError(f"material shapes: unknown name {tok!r}")
+        return names[tok]
+
+    expr = value()
+    chain = []
+    while pos < len(tokens):
+        if take() != ".transformed":
+            raise ComponentError(f"material shapes: unexpected chain in {text!r}")
+        take("(")
+        chain.append(value())
+        take(")")
+    return expr, chain
+
+
+def shape_eval(node):
+    """Evaluate a parsed call into plain values; shape calls become definitions."""
+    if not (isinstance(node, tuple) and node[0] == "call"):
+        return node
+    _, callee, args, named = node
+    if callee not in SHAPE_CALLS:
+        raise ComponentError(f"material shapes: unknown call {callee}")
+    if SHAPE_CALLS[callee] is None:
+        return [shape_eval(a) for a in args]
+    params = SHAPE_CALLS[callee]
+    if len(args) > len(params) or set(named) - set(params):
+        raise ComponentError(f"material shapes: unexpected arguments to {callee}")
+    a = {**dict(zip(params, map(shape_eval, args))), **{k: shape_eval(v) for k, v in named.items()}}
+    unround = [0.0, 0.0]
+    if callee == "CornerRounding":
+        return [a["radius"], a.get("smoothing", 0.0)]
+    if callee == "Offset":
+        return [a["x"], a["y"]]
+    if callee == "PointNRound":
+        return a["o"] + a.get("r", unround)
+    if any(k in a for k in ("centerX", "centerY", "center", "innerRounding")) or a.get("radius", 1.0) != 1.0:
+        raise ComponentError(f"material shapes: {callee} with a center, radius or inner rounding is not supported")
+    if callee == "customPolygon":
+        return {"kind": "custom", "points": a["pnr"], "reps": int(a["reps"]), "mirror": a.get("mirroring", False)}
+    if callee == "RoundedPolygon.star":
+        if "perVertexRounding" in a:
+            raise ComponentError("material shapes: star with per-vertex rounding is not supported")
+        return {"kind": "star", "n": int(a["numVerticesPerRadius"]), "inner": a.get("innerRadius", 0.5),
+                "rounding": a.get("rounding", unround)}
+    if callee == "RoundedPolygon.circle":
+        return {"kind": "circle", "n": int(a.get("numVertices", 8))}
+    n = 4 if callee == "RoundedPolygon.rectangle" else int(a["numVertices"])
+    rounding = a.get("perVertexRounding") or [a.get("rounding", unround)] * n
+    if len(rounding) != n:
+        raise ComponentError(f"material shapes: {callee} needs {n} roundings")
+    if callee == "RoundedPolygon.rectangle":
+        return {"kind": "rect", "w": a.get("width", 2.0), "h": a.get("height", 2.0), "rounding": rounding}
+    return {"kind": "regular", "n": n, "rounding": rounding}
+
+
+def material_shapes():
+    """The M3 Expressive shape library: {"names": in MaterialShapes.kt's order, "shapes": name -> definition}."""
+    text = (SRC / "MaterialShapes.kt").read_text()
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    text = re.sub(r"//[^\n]*", "", text)
+    names = {"CornerRounding.Unrounded": [0.0, 0.0], "true": True, "false": False}
+    for name, call in re.findall(r"private val (cornerRound\d+) = (CornerRounding\([^)]*\))", text):
+        names[name] = shape_eval(kotlin_call(call, {})[0])
+
+    def matrix(body):
+        m = re.fullmatch(r"\s*(rotateZ|scale)\(([^)]*)\)\s*", body)
+        if not m:
+            raise ComponentError(f"material shapes: unsupported matrix {body!r}")
+        vals = [float(v.strip().rstrip("f")) for v in m.group(2).split(",")]
+        if m.group(1) == "rotateZ" and len(vals) == 1:
+            return ["rotate", vals[0]]
+        if m.group(1) == "scale" and len(vals) == 2:
+            return ["scale", *vals]
+        raise ComponentError(f"material shapes: unsupported matrix {body!r}")
+
+    for name, body in re.findall(r"private val (rotate\w+) = Matrix\(\)\.apply \{([^}]*)\}", text):
+        names[name] = matrix(body)
+    public = re.findall(r"public val (\w+): RoundedPolygon\s+get\(\) = _\w+ \?: (\w+)\(\)\.normalized\(\)", text)
+    funs = {m.group(1): m for m in re.finditer(
+        r"internal fun (\w+)\(([^)]*)\): RoundedPolygon \{(.*?)\n        \}", text, flags=re.S)}
+    if len(public) < 30:
+        raise ComponentError(f"material shapes: found only {len(public)} shapes")
+    shapes = {}
+    for public_name, fun in public:
+        if fun not in funs:
+            raise ComponentError(f"material shapes: no builder {fun}() for {public_name}")
+        local = dict(names)
+        default = re.fullmatch(r"\s*numVertices: Int = (\d+)\s*", funs[fun].group(2))
+        if funs[fun].group(2).strip() and not default:
+            raise ComponentError(f"material shapes: {fun}() has unsupported parameters")
+        if default:
+            local["numVertices"] = float(default.group(1))
+        body = funs[fun].group(3)
+        for var, mbody in re.findall(r"val (\w+) = Matrix\(\)\.apply \{([^}]*)\}", body):
+            local[var] = matrix(mbody)
+        ret = re.search(r"return (.*)\Z", body, flags=re.S)
+        if not ret or re.sub(r"val \w+ = Matrix\(\)\.apply \{[^}]*\}", "", body[:ret.start()]).strip():
+            raise ComponentError(f"material shapes: {fun}() is not a single return")
+        expr, chain = kotlin_call(re.sub(r",\s*\)", ")", ret.group(1)), local)
+        definition = shape_eval(expr)
+        if not isinstance(definition, dict):
+            raise ComponentError(f"material shapes: {fun}() does not build a polygon")
+        if chain:
+            definition["transform"] = chain
+        shapes[public_name[0].lower() + public_name[1:]] = definition
+    return {"names": list(shapes), "shapes": shapes}
+
 
 def tile_spec():
     """Android 16 Quick Settings tile (SystemUI, Apache-2.0): sizes from CommonTileDefaults, corner radii
@@ -491,6 +647,7 @@ def build():
             "circular": token_table("CircularProgressIndicatorTokens.kt", corners),
             "impl": progress_impl(),
         },
+        "material_shapes": material_shapes(),
     }
 
 

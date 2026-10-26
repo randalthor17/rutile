@@ -152,7 +152,9 @@ def workspace(tests_dir="qml"):
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", data / "palette.json")
     sys.path.insert(0, str(ROOT / "tests"))
     import spring_ref
+    import shape_ref
     (data / "spring_cases.json").write_text(json.dumps(spring_ref.cases()))
+    (data / "shape_cases.json").write_text(json.dumps(shape_ref.cases()))
     return ws
 
 

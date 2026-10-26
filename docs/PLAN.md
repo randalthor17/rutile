@@ -50,9 +50,12 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Components Android's tokens, `startIcon`/`endIcon` inside the track on m and up (the end icon moves beside the
   handle near full, as in Android 17), corners that shrink on a short part, right to left. In the gallery as Quick Settings' brightness and volume rows. Not done: vertical, range,
   centered, the value label, the other two icon slots.
-- [ ] **1.5** Component kit, remaining: FAB, Card, TextField, Menu, Dialog, NavRail, ShapeMorph
-  (cookie/scallop shapes), GeminiGlow gradient border, and the 1.5c leftovers when something needs them.
-  Likely next: ShapeMorph and GeminiGlow, or what Quick Settings (2.6) needs first (the slider is done, 1.5e).
+- [x] **1.5f** ShapeMorph (unreleased, D37): the 35 shapes of Compose's `MaterialShapes` and morphing between
+  them, ported from androidx graphics-shapes and checked against an independent Python port; in the gallery.
+  Not done: a picture clipped to a shape, rotation while morphing, outlines.
+- [ ] **1.5** Component kit, remaining: FAB, Card, TextField, Menu, Dialog, NavRail, GeminiGlow gradient border,
+  and the 1.5c leftovers when something needs them. Likely next: GeminiGlow, or what Quick Settings (2.6) needs
+  first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
   sizes clamped to columns/rows, edit mode; used by both Quick Settings tiles and the desktop widget grid
   (unreleased). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that

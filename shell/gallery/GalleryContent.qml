@@ -4,6 +4,7 @@ import QtQuick
 import qs.common
 import qs.components
 import "GalleryHelpers.js" as Helpers
+import "../common/MaterialShapes.js" as MaterialShapes
 
 Rectangle {
     id: root
@@ -116,6 +117,70 @@ Rectangle {
                             }
                             Text {
                                 text: shapeItem.modelData + "\n" + (Shapes[shapeItem.modelData] === 9999 ? "full" : Shapes[shapeItem.modelData])
+                                color: Colors.surfaceVariantOn
+                                font: Type.font(Type.labelSmall)
+                            }
+                        }
+                    }
+                }
+            }
+
+            GallerySection {
+                title: "Shape library and morph"
+                width: parent.width
+                Row {
+                    spacing: Spacing.xl
+                    ShapeMorph {
+                        id: morphDemo
+                        objectName: "galleryMorph"
+                        property int step: 0
+                        readonly property var cycle: ["cookie9Sided", "softBurst", "heart", "pill", "clover4Leaf", "circle"]
+                        width: 160
+                        height: 160
+                        shape: cycle[step % cycle.length]
+                        color: Colors.primaryContainer
+                    }
+                    Column {
+                        spacing: Spacing.sm
+                        anchors.verticalCenter: parent.verticalCenter
+                        Button {
+                            objectName: "galleryMorphNext"
+                            text: "Morph"
+                            type: "tonal"
+                            size: "s"
+                            iconName: "auto_awesome"
+                            onClicked: morphDemo.step++
+                        }
+                        Text {
+                            text: morphDemo.shape
+                            color: Colors.surfaceVariantOn
+                            font: Type.font(Type.labelMedium)
+                        }
+                    }
+                }
+                Flow {
+                    width: parent.width
+                    spacing: Spacing.lg
+                    Repeater {
+                        model: MaterialShapes.names
+                        delegate: Column {
+                            id: libraryItem
+                            required property string modelData
+                            width: 72
+                            spacing: Spacing.xs
+                            ShapeMorph {
+                                objectName: "galleryShape"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                width: 56
+                                height: 56
+                                shape: libraryItem.modelData
+                                color: Colors.secondary
+                            }
+                            Text {
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                elide: Text.ElideRight
+                                text: libraryItem.modelData
                                 color: Colors.surfaceVariantOn
                                 font: Type.font(Type.labelSmall)
                             }

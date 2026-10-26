@@ -3,6 +3,7 @@ import QtTest
 import qs.common
 import qs.components
 import qs.gallery
+import "../qs/common/MaterialShapes.js" as MaterialShapes
 
 TestCase {
     id: root
@@ -81,6 +82,24 @@ TestCase {
         var qs = byName(g, "galleryQsSlider");
         compare(qs.length, 2, "brightness and volume");
         verify(qs.every(function (s) { return s.size === "m" && s.endIconShown && !s.startIconShown; }));
+    }
+
+    function test_gallery_shows_every_shape_and_morphs_on_click() {
+        var g = createTemporaryObject(galleryComp, root);
+        wait(200);
+        var shapes = byName(g, "galleryShape");
+        compare(shapes.map(function (s) { return s.shape; }).join(), MaterialShapes.names.join());
+        compare(shapes.length, 35);
+        var morph = byName(g, "galleryMorph")[0];
+        var next = byName(g, "galleryMorphNext")[0];
+        compare(morph.shape, "cookie9Sided");
+        g.flickable.contentY = Math.max(0, next.mapToItem(g.flickable.contentItem, 0, 0).y - 100);
+        wait(50);
+        var p = next.mapToItem(g, next.width / 2, next.height / 2);
+        mouseClick(g, p.x, p.y);
+        compare(morph.shape, "softBurst");
+        verify(morph.morphing);
+        tryVerify(function () { return !morph.morphing; }, 3000);
     }
 
     function test_gallery_grid_edits_quick_settings_tiles() {

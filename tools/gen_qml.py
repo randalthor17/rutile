@@ -220,6 +220,20 @@ def gen_control_spec(c):
     return "\n".join(out) + "\n"
 
 
+def gen_material_shapes(c):
+    shapes = c["material_shapes"]
+    out = [MARK,
+           "// The M3 Expressive shape library from tokens/components.json (MaterialShapes.kt): vertices and",
+           "// roundings before rounding is applied; ShapeMath.build() turns one into curves.",
+           ".pragma library", "",
+           f"var names = {json.dumps(shapes['names'])};",
+           "var shapes = {"]
+    for name in shapes["names"]:
+        out.append(f"    {name}: {json.dumps(shapes['shapes'][name], separators=(',', ':'))},")
+    out.append("};")
+    return "\n".join(out) + "\n"
+
+
 def gen_colors(roles, fallback):
     dark = {r: fallback["colors"]["dark"][r] for r in roles}
     light = {r: fallback["colors"]["light"][r] for r in roles}
@@ -294,6 +308,7 @@ def build():
         "Type.qml": gen_type(tokens, fonts),
         "Fonts.qml": gen_fonts(fonts),
         "ControlSpec.qml": gen_control_spec(components),
+        "MaterialShapes.js": gen_material_shapes(components),
         "Colors.qml": gen_colors(roles, fallback),
     }
 

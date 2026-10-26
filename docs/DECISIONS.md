@@ -199,3 +199,16 @@ icon padding, and the icon colors (the colors MDC uses for what sits on each par
 not. The end icon replacing the stop dot is from the Googlebook screenshots, which show no dot beside it.
 Near full, the end icon moves to the end of the active part instead of hiding, as Android 17's brightness slider
 does (maintainer's reference, `docs/reference/android-17-slider-almost-full.png`); MDC would hide it.
+
+**D37. Shapes come from Compose's `MaterialShapes`, built at run time and drawn with QtQuick.Shapes.** The M3
+Expressive shape library (Googlebook's "Up next" widget clips its picture to a cookie) is 35 shapes, each a few
+vertices with roundings, repeated and mirrored, then rounded, normalized and morphed by androidx graphics-shapes.
+`MaterialShapes.kt` and the graphics-shapes files are vendored and checksummed; the generator parses the shape
+definitions (and fails on any construct it does not know), and `ShapeMath.js` ports the algorithms. Rejected:
+precomputing every shape's curves into the generated file (about 150 KB of JavaScript held by every user, D31);
+the definitions are 5 KB and a shape is built in well under a millisecond when needed. Drawing: QtQuick.Shapes'
+curve renderer (Qt 6.7) costs 47 KiB for a circle, 115 for a cookie and 418 for the spikiest shape, the same at
+any size; an SVG image rasterized per change was measured at 54 to 103, 93 and 193 (a cookie at 160 px), needs
+the qtsvg plugin and the screen's pixel ratio, and blurs when scaled. The geometry renderer is lighter (77 for a
+cookie) but not antialiased. Revisit if many shapes end up on screen at once (then the image path), or if Qt
+gains a lighter antialiased path renderer.

@@ -5,6 +5,13 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **ShapeMorph and the M3 Expressive shape library** (plan 1.5f, D37): `ShapeMorph { shape: "cookie9Sided" }`
+  draws any of the 35 shapes of Compose's `MaterialShapes` (circle, cookies, bursts, clovers, pixel shapes,
+  heart and the rest), and changing `shape` morphs to the new one on the fast spatial spring. The shape
+  definitions are parsed from the vendored `MaterialShapes.kt`; rounding, normalizing and morphing are ported
+  from androidx graphics-shapes (vendored for review) into `shell/common/ShapeMath.js`, and checked against an
+  independent Python port (`tests/shape_ref.py`). The gallery shows every shape and a morph you can click
+  through. A shape costs 47 KiB (circle) to 418 KiB (the 192-curve soft boom).
 - **Slider end icon near full** (maintainer's Android 17 reference): when the inactive part of the track gets
   too short, the end icon moves to the end of the active part, beside the handle, in the active icon color,
   instead of disappearing. A slider with an end icon no longer shows the stop dot at all. The gallery's

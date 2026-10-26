@@ -55,6 +55,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | Chip | | 71.1 | icons only when shown |
 | ListItem | | 85.1 | includes its shape spring |
 | Tile | | 101.6 | one icon for both layouts; a dual-target tile adds a state layer (about 160) |
+| ShapeMorph | | 47 to 418 | QtQuick.Shapes' curve renderer; grows with the curve count: circle 47, cookie9Sided 115, softBoom (192 curves) 418. Idle state is the name only (D37) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 
 For scale: an empty `Item` is about 3 KiB, a `Rectangle` 2, a `Text` 6, a `MouseArea` 2, a `Behavior` with

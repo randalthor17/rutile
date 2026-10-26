@@ -17,6 +17,7 @@ directory containing the entry file, so run things from `shell/`.
 | `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`, `controlled`; `clicked()`, `toggled(bool)` |
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
+| `ShapeMorph` | a shape from the M3 Expressive shape library (`MaterialShapes.names`: `circle`, `cookie9Sided`, `softBurst`, ... 35 in all), filled with `color`; changing `shape` morphs to it; `morphing`, `progress` |
 | `EditableGrid` | `items` ({id, w, h, col, row, minW, maxW, minH, maxH}), `columns`, `rowHeight`, `gap`, `maxRows`, `gravity`, `delegate` (gets `modelData`, `index`), `editMode`, `selectedIndex`, `commitHandler(items)`, `canResize(index, edge)`, `fitNew(item)` |
 
 ```qml
@@ -75,6 +76,21 @@ Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
   a segmented group the first item keeps 16 px top corners and the last 16 px bottom corners
   (`ListItemDefaults.segmentedShapes`); put items 2 px apart (`listSpec.segmentedGap`) on a container.
 
+ShapeMorph (D37) draws Compose's `MaterialShapes` with the androidx graphics-shapes algorithms, ported:
+`tools/gen_components.py` parses each shape's vertices and roundings from the vendored `MaterialShapes.kt`
+into `tokens/components.json`; `gen_qml.py` writes them to `shell/common/MaterialShapes.js` (5 KB);
+`shell/common/ShapeMath.js` rounds the corners (`RoundedPolygon`), fits the result to the unit square
+(`normalized()`) and matches two shapes' curves for a morph (`Morph`). `tests/shape_ref.py` is an independent
+Python port; the QML tests check every shape and nine morphs against it to 1e-9, and its own tests check the
+geometry (closed, symmetric, a round circle, morphs that start and end exactly on the two shapes).
+
+- The shape stretches to the item's size, as Compose's `RoundedPolygon.toShape()` does: give it a square size
+  to keep its proportions. Like Compose, it is centered by its control points' bounds, so a circle sits a
+  fraction of a pixel off center.
+- A morph runs on the fast spatial spring, which overshoots: past 1 the outline extrapolates, as Compose's
+  does (a heart's tip crosses itself for a moment). A new shape mid-morph starts from the shape being left.
+- Idle, it keeps only the shape's name; the matched curves exist only while a morph runs.
+
 EditableGrid (plan 1.6) is the grid under Quick Settings tiles and, later, desktop widgets (D17). Its behavior
 (layout without gaps, select, drag, resize with shrinking neighbors, row limit, right to left, commits through
 the owner) is described with examples in `docs/editable-grid.md`.
@@ -92,6 +108,8 @@ override, records it in `components.json`, and fails if the upstream TODOs disap
 
 - **Slider:** vertical and range sliders, the value label above the handle, centered sliders, icons in the
   other two track slots (end of the active part, start of the inactive part) that MDC also offers.
+- **ShapeMorph:** filling a shape with an image (the cookie-shaped picture in Googlebook's "Up next" widget),
+  rotation while morphing (Compose's loading indicator), outlines.
 - **Progress:** indeterminate (flat and wavy) and circular indicators. The tokens for circular are generated.
 
 - **Ripple:** state layers only. Rounded clipping of a ripple needs masking; decide from the gallery.
