@@ -33,7 +33,7 @@ ShellRoot {
     Variants {
         id: statusWindows
         model: Quickshell.screens
-        StatusWindow {
+        ScreenStatus {
             required property var modelData
             screen: modelData
             backend: shellBackend
@@ -65,9 +65,10 @@ ShellRoot {
                 open: quickSettings.active,
                 panelHasBackend: !!w && w.panelHasBackend,
                 brightnessShown: !!w && w.brightnessShown,
-                pillsOpen: statusWindows.instances.map(p => p.open),
-                pillsHaveBackend: statusWindows.instances.map(p => !!p.backend),
-                pillsBelowWindows: statusWindows.instances.map(p => p.WlrLayershell.layer === WlrLayer.Bottom)
+                pillsOpen: statusWindows.instances.map(s => s.pill.open),
+                pillsHaveBackend: statusWindows.instances.map(s => !!s.pill.backend),
+                pillsOnTop: statusWindows.instances.map(s => s.pill.WlrLayershell.layer === WlrLayer.Top),
+                reserved: statusWindows.instances.map(s => s.reserved)
             });
         }
     }

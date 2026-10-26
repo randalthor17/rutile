@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **The top edge stays visible; windows keep clear of it** (D42, maintainer's design): the status pill is back
+  on the top layer, and each screen reserves 32 px at the top through a 1 px transparent, click-through layer
+  surface with an exclusive zone (as DankMaterialShell and Caelestia do), so windows are laid out below the pill
+  with niri's gap. The Wayland smoke test checks that sway's workspace starts below the reserved space.
 - **Status pill on the desktop layer, with a container** (maintainer's requests): the pill now sits on layer
   shell's bottom layer, above the wallpaper and below windows, and always has a tonal container
   (`surfaceContainer`). Ethernet shows Android's `settings_ethernet` icon (Material Symbols has no RJ45 jack), and

@@ -120,7 +120,8 @@ Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the
 | Need | Quickshell type | Plan |
 |---|---|---|
 | Shell root, windows | `ShellRoot`, `FloatingWindow` (in use: gallery), `PanelWindow` (in use: Quick Settings), `PopupWindow`, `PopupAnchor`, `QsWindow` | 2.3 to 2.8 |
-| Layer-shell surfaces (desktop, shelf, panels) | `WlrLayershell`, `WlrLayer`, `ExclusionMode`, `WlrKeyboardFocus` | 2.3, 2.4, 2.6 |
+| Layer-shell surfaces (desktop, shelf, panels) | `WlrLayershell`, `WlrLayer`, `ExclusionMode`, `WlrKeyboardFocus` (in use: status pill, Quick Settings) | 2.3, 2.4, 2.6 |
+| Keep windows clear of shell UI | `PanelWindow.exclusiveZone` on a 1 px click-through surface (`mask: Region {}`) (in use: `shell/bar/EdgeExclusion.qml`, D42) | 2.3, 2.4 |
 | One surface per monitor | `Variants` over `Quickshell.screens`, `ShellScreen` | 2.3, 2.4 |
 | Load windows and popups only while open (D31) | `LazyLoader` (in use: Quick Settings; windows and popups; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
 | Files and config, watched | `FileView` (in use: PaletteWatcher), `JsonAdapter`, `JsonObject` | 2.5, 4.2 |

@@ -11,7 +11,8 @@ quickshell -p shell/shell.qml ipc call quicksettings toggle            # open or
 The shell shows a status pill at the top right of every screen (network, volume, battery); clicking it opens
 Quick Settings below it on that screen, and clicking it again closes it. `qs -p shell` works the same from the
 repo root. `quicksettings` also has `open`, `close`, `isOpen` and `state` (JSON of what the windows see: open,
-whether the panel and pills reached the backend, whether brightness shows, which pill is marked open). A niri keybind runs the `toggle` line (with the
+whether the panel and pills reached the backend, whether brightness shows, which pill is marked open, the pills'
+layer and the space reserved per screen). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
 (D41); clicks inside the panel do not.
@@ -22,7 +23,9 @@ Clicking empty desktop or another program's bar does not close it: those clicks 
 | File | Needs Quickshell | What it does |
 |---|---|---|
 | `shell/shell.qml` | yes | `ShellRoot`, `PaletteWatcher`, the one backend, a status pill per screen (`Variants`), a `LazyLoader` with the Quick Settings window, the `IpcHandler` |
-| `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen, on the bottom layer: above the wallpaper, below windows, so a window over the top right hides it (open Quick Settings with the keybind then). The panel itself is on the top layer |
+| `shell/bar/ScreenStatus.qml` | yes | one screen's top edge: the pill's window and the space it reserves |
+| `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen, on the top layer: always visible |
+| `shell/bar/EdgeExclusion.qml` | yes | a 1 px transparent, click-through surface whose exclusive zone keeps windows below the pill (32 px; niri adds its gap) (D42) |
 | `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage, 24 px tall with 16 px icons on a tonal container (`surfaceContainer`; `secondaryContainer` while Quick Settings is open). Ethernet is `settings_ethernet`, Android's icon: Material Symbols has no RJ45 jack |
 | `shell/bar/StatusIcons.js` | no | which Material Symbol for which state |
 | `shell/quicksettings/QuickSettingsWindow.qml` | yes | a `PanelWindow` (layer shell) at the top right, `ExclusionMode.Ignore`, keyboard focus for Escape |
@@ -63,7 +66,8 @@ window (`niri msg action focus-column-right`) closed the panel.
   `brightnessctl` (`tests/qs/bin/`), including how quick changes are queued.
 - `tools/qtws.py test-wayland [--screenshot FILE]` (in `make check` when sway is installed): the real
   `shell/shell.qml` under a headless sway with its own runtime directory, opened and closed over IPC, checking
-  `state` (the panel and the pill reached the backend, brightness shows, the pill is marked), and failing on any
+  `state` (the panel and the pill reached the backend, brightness shows, the pill is marked and on the top layer,
+  32 px reserved), that sway's workspace really starts 32 px down, and failing on any
   QML error or warning (D40). Headless sway has no pointer, so clicking the pill is not tested there (a
   `wlrctl` virtual pointer exists only for one command, too briefly for the shell to bind it). There is no PipeWire or session there, and brightness is the fake, so it
   cannot change the machine's settings.

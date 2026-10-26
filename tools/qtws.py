@@ -283,6 +283,13 @@ class HeadlessSway:
         env.update(extra or {})
         return env
 
+    def msg(self, *args):
+        """swaymsg output parsed as JSON."""
+        sock = next(self.runtime.glob("sway-ipc.*.sock"))
+        r = subprocess.run([shutil.which("swaymsg"), *args], env=dict(self.env(), SWAYSOCK=str(sock)),
+                           capture_output=True, text=True, timeout=5)
+        return json.loads(r.stdout or "null")
+
     def __exit__(self, *exc):
         if self.proc.poll() is None:
             self.proc.terminate()
@@ -342,9 +349,14 @@ def run_wayland_smoke(screenshot=None):
                         state = {}
                         problems.append(f"ipc state: {e}")
                     want = {"open": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
-                            "pillsHaveBackend": [True], "pillsBelowWindows": [True]}
+                            "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:
                         problems.append(f"ipc state: got {state}, expected {want}")
+                    # the compositor keeps windows out of the reserved strip: sway's workspace starts below it
+                    spaces = comp.msg("-t", "get_workspaces") or []
+                    tops = [w["rect"]["y"] for w in spaces]
+                    if tops != [32]:
+                        problems.append(f"workspace area starts at {tops}, expected [32] (the pill's reserved space)")
                     if screenshot:
                         grim = shutil.which("grim")
                         if grim:

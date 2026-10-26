@@ -261,3 +261,13 @@ so it does not close the panel; Escape and the pill do. Revisit if that annoys i
 window's (`Window.active`), not an item's `activeFocus`, which moves to a slider or tile inside the panel on a
 click (the first version closed the panel when the maintainer pressed the volume slider). sway gives an on-demand
 layer surface focus only on a click, so there the panel never had focus and never closes this way.
+
+**D42. The top edge stays visible and windows keep clear of it.** Supersedes D41's layer choice (maintainer,
+October 2026: "we don't want 1:1 Googlebook always; keeping the top always visible is our design"). The status
+pill is on the top layer, and each screen gets a 1 px transparent, click-through layer surface whose exclusive
+zone reserves the pill's margin and height (32 px), so the compositor lays windows out below it and niri's own
+gap separates them. This is how DankMaterialShell (`EdgeExclusion.qml`, MIT) and Caelestia (`Exclusions.qml`)
+reserve space: the zone does not depend on the surface's size, so the cost is a 1 px buffer per screen instead of
+a full-width transparent strip. Rejected: a full-width strip around the pill (screen-wide buffer, and it would
+need a click-through mask for its empty part anyway); the bottom layer (windows hid the pill). Gaps between
+windows remain niri's setting (`layout { gaps }`), part of the niri config the shell will ship (2.2).
