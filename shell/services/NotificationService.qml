@@ -73,6 +73,11 @@ Singleton {
         for (let i = 0; i < kept.length - maxKept; i++) kept[i].expire();
     }
 
+    // Every popup is done (the list has opened, and shows them).
+    function endPopups() {
+        popupIds.slice().forEach(id => popupDone(id));
+    }
+
     function forget(id) {
         popupIds = popupIds.filter(x => x !== id);
         const t = Object.assign({}, times);

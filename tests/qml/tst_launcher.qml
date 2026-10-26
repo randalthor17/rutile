@@ -184,6 +184,11 @@ TestCase {
         tryVerify(() => chips.contentX === chips.contentWidth - chips.width, 3000, "the last chip in view, not past it");
         keyClick(Qt.Key_Tab);
         tryCompare(chips, "contentX", 0, 3000, "All back in view");
+        // the row's layout from that step must be done, or its late reveal of All pulls the row back (seen under load)
+        tryVerify(() => all.leadingShown === 1 && last.leadingShown === 0
+                  && Math.abs(all.width - all.implicitWidth) < 0.01 && Math.abs(last.width - last.implicitWidth) < 0.01,
+                  3000, "the check marks settle again");
+        waitForRendering(chips);
         chips.contentX = 200;               // as the wheel would
         keyClick(Qt.Key_Backtab);
         var lowest = 1e9;

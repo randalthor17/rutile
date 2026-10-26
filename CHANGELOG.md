@@ -12,6 +12,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
   while the pointer is over them; critical ones stay. `ipc call notifications setDnd true` turns on Do not
   disturb (only critical ones pop up). While another notification daemon runs (Noctalia, mako, dunst), it keeps
   the notifications and the shell waits; the shell takes over when it stops.
+- **Notification list** (plan 2.8, D47): a bell left of the status pill shows whether there are notifications
+  (a dot) or Do not disturb is on (crossed out). Clicking it opens the list under it: a Do not disturb switch,
+  every notification newest first with its buttons and a close button, and Clear all. Opening it clears the
+  popups; Escape or a click elsewhere closes it. `ipc call notifications toggle` does the same from a keybind.
 - **Quick Settings in launcher search** (plan 2.7, maintainer's choice): typing "wifi", "dark", "mute" or
   "brightness" also finds the Quick Settings controls this system has, shown with their symbol and, in the list,
   their state. Choosing Wi-Fi, Bluetooth, Microphone, Dark theme or Airplane mode switches it at once; Brightness

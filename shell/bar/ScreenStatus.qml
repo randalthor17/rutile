@@ -10,18 +10,22 @@ Scope {
     required property var screen
     required property var backend
     property bool open: false
+    property bool notificationsOpen: false
     readonly property alias pill: pillWindow
     readonly property alias clock: clockWindow
     readonly property real reserved: exclusion.size
 
     signal clicked()
+    signal bellClicked()
 
     StatusWindow {
         id: pillWindow
         screen: root.screen
         backend: root.backend
         open: root.open
+        notificationsOpen: root.notificationsOpen
         onClicked: root.clicked()
+        onBellClicked: root.bellClicked()
     }
 
     ClockWindow {

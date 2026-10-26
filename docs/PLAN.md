@@ -137,8 +137,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   is the default action), a close button; it goes after the sender's timeout or 6 s, paused while the pointer is
   over it, and critical ones stay. Do not disturb (`ipc call notifications setDnd true`, remembered in
   state.json) keeps them from popping up, except critical ones. A replaced notification updates in place.
-  Not done: the bell left of the status pill and its panel (the list, Clear all, Do not disturb), grouping by
-  app, inline reply, sounds. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
+  A bell left of the status pill (a dot while there are notifications, crossed out in Do not disturb) opens
+  the list under it: Do not disturb, the cards newest first, Clear all; opening it ends the popups, and it
+  closes like Quick Settings (Escape, focus loss). Not done: grouping by app, inline reply, sounds, swipe to
+  dismiss, a motion for a card leaving the list. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 

@@ -608,10 +608,41 @@ def run_wayland_smoke(screenshot=None):
                             shot = Path(screenshot).with_name(Path(screenshot).stem + "-notification.png")
                             subprocess.run([grim, str(shot)], env=comp.env(), timeout=10)
                             notes.append(f"screenshot: {shot}")
+                    # the bell shows there is one; it opens the list, and Do not disturb crosses it out (D47)
+                    if n.get("bells") != ["notifications_unread"]:
+                        problems.append(f"notification bell: {n.get('bells')}, expected ['notifications_unread']")
+                    ipc("toggle", target="notifications")
+                    time.sleep(0.5)
+                    n = notification_state()
+                    if not n.get("listOpen") or n.get("listShown") != [1] or n.get("popups") != [] or n.get("bellsOpen") != [True]:
+                        problems.append(f"ipc notifications toggle: {n}, expected the list open with notification 1, "
+                                        "and no popups")
+                    if screenshot and shutil.which("grim"):
+                        time.sleep(1)
+                        shot = Path(screenshot).with_name(Path(screenshot).stem + "-notification-list.png")
+                        subprocess.run([shutil.which("grim"), str(shot)], env=comp.env(), timeout=10)
+                        notes.append(f"screenshot: {shot}")
+                    # toggled again while it closes, it grows back
+                    ipc("setSpeed", "0.2", target="motion")
+                    ipc("toggle", target="notifications")
+                    ipc("toggle", target="notifications")
+                    time.sleep(0.3)
+                    n = notification_state()
+                    ipc("setSpeed", "2", target="motion")
+                    if not n.get("listOpen") or not n.get("listLoaded"):
+                        problems.append(f"ipc notifications toggle while closing: {n}, expected it open again")
+                    ipc("toggle", target="notifications")
+                    time.sleep(1.5)
+                    if notification_state().get("listLoaded") is not False:
+                        problems.append("ipc notifications toggle again: the list stayed loaded")
+                    ipc("setDnd", "true", target="notifications")
+                    if notification_state().get("bells") != ["notifications_off"]:
+                        problems.append(f"Do not disturb: bell {notification_state().get('bells')}, expected notifications_off")
+                    ipc("setDnd", "false", target="notifications")
                     ipc("dismissAll", target="notifications")
                     time.sleep(1.5)
                     n = notification_state()
-                    if n.get("list") != [] or n.get("windowLoaded") is not False:
+                    if n.get("list") != [] or n.get("windowLoaded") is not False or n.get("bells") != ["notifications"]:
                         problems.append(f"notification dismissed: state {n}, expected none and the window unloaded")
                     # Closing when another window takes focus (D41) cannot be tested here: sway gives an
                     # on-demand layer surface focus only when it is clicked, and there is no pointer.

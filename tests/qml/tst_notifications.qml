@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import qs.common
 import qs.notifications
+import qs.bar
 import "../qs/notifications/NotificationModel.js" as Model
 
 TestCase {
@@ -23,6 +24,8 @@ TestCase {
     Component { id: cardComp; NotificationCard { width: 360 } }
     Component { id: popupsComp; NotificationPopups { width: 360 } }
     Component { id: spyComp; SignalSpy {} }
+    Component { id: bellComp; NotificationBell {} }
+    Component { id: panelComp; NotificationPanel {} }
 
     function test_plain() {
         compare(Model.plain(""), "");
@@ -202,5 +205,78 @@ TestCase {
         p.popups = [note(6, { timeout: 0 })];
         wait(400);
         compare(timedOut.count, 1, "0 stays");
+    }
+
+    function test_bell() {
+        const b = createTemporaryObject(bellComp, root);
+        compare(b.iconName, "notifications");
+        compare(findChild(b, "bellIcon").fill, 0);
+        b.count = 2;
+        compare(b.iconName, "notifications_unread", "a dot while there are some");
+        compare(findChild(b, "bellIcon").fill, 1);
+        b.dnd = true;
+        compare(b.iconName, "notifications_off", "Do not disturb wins");
+        compare(findChild(b, "bellIcon").fill, 0);
+        compare(String(b.color), String(Colors.surfaceContainer));
+        b.open = true;
+        tryCompare(b, "color", Colors.secondaryContainer, 2000, "tinted while the list is open");
+        compare(String(findChild(b, "bellIcon").color), String(Colors.secondaryContainerOn));
+        const clicked = createTemporaryObject(spyComp, root, { target: b, signalName: "clicked" });
+        mouseClick(b);
+        compare(clicked.count, 1);
+    }
+
+    function test_panel() {
+        Motion.speed = 4;
+        const p = createTemporaryObject(panelComp, root);
+        waitForRendering(p);
+        verify(findChild(p, "notificationEmpty").visible, "empty: says so");
+        verify(!findChild(p, "notificationList").visible);
+        verify(!findChild(p, "notificationClearAll").parent.visible, "nothing to clear");
+        p.notifications = [note(3, { actions: [{ id: "default", text: "" }] }), note(2), note(1)];
+        waitForRendering(p);
+        verify(!findChild(p, "notificationEmpty").visible);
+        const items = [3, 2, 1].map(id => findChild(p, "notificationItem_" + id));
+        verify(items.every(i => !!i), "all three");
+        verify(items[0].y < items[1].y && items[1].y < items[2].y, "in the given order (newest first)");
+        compare(items[0].timeout, 0, "no timeout in the list");
+        const dismissed = createTemporaryObject(spyComp, root, { target: p, signalName: "dismissed" });
+        const cleared = createTemporaryObject(spyComp, root, { target: p, signalName: "cleared" });
+        const dnd = createTemporaryObject(spyComp, root, { target: p, signalName: "dndToggled" });
+        const invoked = createTemporaryObject(spyComp, root, { target: p, signalName: "actionInvoked" });
+        const activated = createTemporaryObject(spyComp, root, { target: p, signalName: "activated" });
+        const close = findChild(items[1], "notificationClose");
+        mouseClick(close, close.width / 2, close.height / 2);
+        compare(dismissed.signalArguments[0][0], 2);
+        mouseClick(items[0], Spacing.lg, items[0].height - Spacing.sm);
+        compare(invoked.signalArguments[0][0] + "," + invoked.signalArguments[0][1], "3,default");
+        compare(activated.signalArguments[0][0], 3);
+        const clear = findChild(p, "notificationClearAll");
+        mouseClick(clear, clear.width / 2, clear.height / 2);
+        compare(cleared.count, 1);
+        const sw = findChild(p, "notificationDnd");
+        mouseClick(sw, sw.width / 2, sw.height / 2);
+        compare(dnd.signalArguments[0][0], true);
+        verify(!sw.checked, "the switch waits for the state (controlled)");
+        p.dnd = true;
+        verify(sw.checked);
+        // a long list scrolls instead of growing past the screen
+        const many = [];
+        for (let i = 0; i < 20; i++) many.push(note(100 + i));
+        p.notifications = many;
+        waitForRendering(p);
+        compare(findChild(p, "notificationList").height, p.maxListHeight);
+        verify(!findChild(p, "notificationItem_119"), "cards far below are not created");
+        // losing the keyboard after having had it closes (the window's own activation cannot move offscreen)
+        const lost = createTemporaryObject(spyComp, root, { target: p, signalName: "windowFocusLost" });
+        p.windowActive = false;
+        p.windowActive = true;
+        lost.clear();
+        p.windowActive = false;
+        compare(lost.count, 1, "lost after having it");
+        // closing plays the motion, then hidden
+        const hidden = createTemporaryObject(spyComp, root, { target: p, signalName: "hidden" });
+        p.shown = false;
+        tryCompare(hidden, "count", 1, 3000);
     }
 }

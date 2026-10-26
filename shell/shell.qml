@@ -55,6 +55,29 @@ ShellRoot {
         launcher.active = true;
     }
 
+    // The notification list (D47), as Quick Settings: on a screen (null: the compositor's choice).
+    property var notificationListScreen: null
+    readonly property bool notificationListOpen: notificationList.active && !(notificationList.item?.closing ?? false)
+    function closeNotificationList() {
+        if (notificationList.item) notificationList.item.close();
+        else notificationList.active = false;
+    }
+    function toggleNotificationList(screen) {
+        const here = screen === null || screen === notificationListScreen;
+        if (notificationListOpen && here) {
+            closeNotificationList();
+            return;
+        }
+        if (notificationList.item?.closing && here) {
+            notificationList.item.reopen();
+            return;
+        }
+        notificationList.active = false;
+        notificationListScreen = screen;
+        notificationList.active = true;
+        NotificationService.endPopups();        // they are in the list now
+    }
+
     function toggleQuickSettings(screen) {
         const here = screen === null || screen === quickSettingsScreen;
         if (quickSettingsOpen && here) {
@@ -104,7 +127,9 @@ ShellRoot {
             backend: shellBackend
             // the screen the panel is on, also when the compositor chose it (opened over IPC)
             open: shell.quickSettingsOpen && quickSettings.item?.screen === modelData
+            notificationsOpen: shell.notificationListOpen && notificationList.item?.screen === modelData
             onClicked: shell.toggleQuickSettings(modelData)
+            onBellClicked: shell.toggleNotificationList(modelData)
         }
     }
 
@@ -216,8 +241,18 @@ ShellRoot {
             onFinished: shell.notificationPopupsShown = false
         }
     }
+    LazyLoader {
+        id: notificationList
+        NotificationPanelWindow {
+            screen: shell.notificationListScreen
+            onCloseRequested: notificationList.active = false
+        }
+    }
     IpcHandler {
         target: "notifications"
+        // the list, from a niri keybind: quickshell -p <path>/shell/shell.qml ipc call notifications toggle
+        function toggle(): void { shell.toggleNotificationList(null); }
+        function isOpen(): bool { return shell.notificationListOpen; }
         function dnd(): bool { return NotificationService.dnd; }
         function setDnd(on: bool): void { NotificationService.setDnd(on); }
         function dismiss(id: int): void { NotificationService.dismiss(id); }
@@ -230,6 +265,11 @@ ShellRoot {
                 list: NotificationService.list.map(n => ({ id: n.id, app: n.appName, summary: n.summary, body: n.body })),
                 popups: NotificationService.popups.map(n => n.id),
                 windowLoaded: notificationPopups.active,
+                listOpen: shell.notificationListOpen,
+                listLoaded: notificationList.active,
+                listShown: notificationList.item ? notificationList.item.panel.notifications.map(n => n.id) : [],
+                bells: statusWindows.instances.map(s => s.pill.bell.iconName),
+                bellsOpen: statusWindows.instances.map(s => s.pill.bell.open),
                 shown: notificationPopups.item ? notificationPopups.item.popups.popups.map(n => n.id) : []
             });
         }
