@@ -327,3 +327,15 @@ The shell keeps every key it does not know when it rewrites `settings.json` (a n
 note), so it parses and writes the text itself. Quickshell's `JsonAdapter` was rejected for this: in a probe
 with Quickshell 0.3.2 it dropped unknown keys on `writeAdapter()`. A file that does not parse is never
 overwritten; the shell keeps the last good values and refuses changes until it is fixed.
+
+**D46. Usage ranks search results only; the grid keeps name order.** Plan 2.7's frecency, after saved state
+(D45). Each app opened from the launcher (Open, Enter, a click, or one of its desktop actions) adds one use with
+its time to `launcher.usage` in state.json. A use counts fully for four days, then 0.7 to two weeks, 0.5 to a
+month, 0.3 to three months, 0.1 after (Firefox's frecency buckets), and the result is the usage count DMS's
+scorer already took: up to 2000 points on top of the match, so a used app passes others in its match tier
+(prefix, word start, substring) without lifting a typo match over a prefix one. Without a query the grid stays
+in name order: positions that move with use are hard to find by memory, and the launcher has no "recent" row
+yet. At most 200 apps are kept, so the file stays small. The panel reads the usage once when it opens, so a
+launch does not reorder the results under the closing motion. Rejected: ordering the grid by use (the maintainer
+can still ask for it; it is one line in `Scorer.rank`), counting launches from the shelf (those are pinned apps
+already one click away).

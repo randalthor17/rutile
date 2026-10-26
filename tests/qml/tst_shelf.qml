@@ -34,6 +34,16 @@ TestCase {
         compare(ShelfApps.pins([], id => true).length, 0, "an empty setting pins nothing");
     }
 
+    function test_toggle_pin() {
+        compare(ShelfApps.togglePin(["a", "b"], "c").join(), "a,b,c", "pins at the end");
+        compare(ShelfApps.togglePin(["a", "b", "c"], "b").join(), "a,c", "unpins in place");
+        compare(ShelfApps.togglePin([], "a").join(), "a");
+        compare(ShelfApps.togglePin(["a", "b"], "a").join(), "b", "the first one too");
+        const ids = ["a"];
+        ShelfApps.togglePin(ids, "b");
+        compare(ids.join(), "a", "the given list is not changed");
+    }
+
     function test_decorate_and_ungrouped() {
         var g = ShelfApps.decorate(niriGroups, lookup);
         compare(g[0].windows.map(w => w.name).join(), "Firefox,kitty,kitty", "one per window, named by its app");

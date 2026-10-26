@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Launcher remembers what you use** (plan 2.7, D46): apps opened from the launcher rank higher in search,
+  more so when used lately (kept in `~/.local/state/rutile/state.json`). The grid without a search stays in name
+  order, so apps do not move around.
+- **Pin and unpin from the launcher** (plan 2.7): the app menu has Pin to shelf or Unpin from shelf, saved in
+  the `shelf.pins` setting. Not offered when the pins are set in Nix.
 - **Saved settings** (plan 2.5, D45): the shell keeps its settings in `~/.config/rutile/settings.json` and what it
   remembers in `~/.local/state/rutile/state.json` (the XDG directories). The launcher's grid or list view and
   the animation speed (`ipc call motion setSpeed`) now survive a restart, and the shelf's pins are the

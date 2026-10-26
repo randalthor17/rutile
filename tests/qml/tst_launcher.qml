@@ -4,6 +4,7 @@ import qs.common
 import qs.launcher
 import "../qs/launcher/Scorer.js" as Scorer
 import "../qs/launcher/Categories.js" as Categories
+import "../qs/launcher/Usage.js" as Usage
 
 TestCase {
     id: root
@@ -290,7 +291,7 @@ TestCase {
         compare(launched.count, 0, "a right click does not launch");
         compare(p.currentIndex, 1, "and makes it the current app");
         compare(p.menuItems[0].icon, "", "no icons: the entries line up");
-        compare(p.menuItems.map(i => i.text).join(), "Open,New Window,New Private Window");
+        compare(p.menuItems.map(i => i.text).join(), "Open,New Window,New Private Window,Pin to shelf");
         tryVerify(() => p.menu && p.menu.scale === 1, 2000, "grows in");
         var loader = findChild(p, "launcherMenu");
         verify(loader.below, "under a top-row app");
@@ -315,12 +316,89 @@ TestCase {
         compare(launched.count, 0, "the press only closed the menu");
         // Open launches the app
         mouseClick(other, other.width / 2, other.height / 2, Qt.RightButton);
-        compare(p.menuItems.map(i => i.text).join(), "Open", "no desktop actions");
+        compare(p.menuItems.map(i => i.text).join(), "Open,Pin to shelf", "no desktop actions");
         tryVerify(() => p.menu && p.menu.scale === 1, 2000);
         item = findChild(p.menu, "launcherMenu_");
         mouseClick(item, item.width / 2, item.height / 2);
         compare(launched.count, 1);
         compare(launched.signalArguments[0][0].id, "foot");
+    }
+
+    function test_usage_record() {
+        const day = 24 * 60 * 60 * 1000;
+        let u = Usage.record({}, "foot", 1000);
+        compare(JSON.stringify(u), '{"foot":{"count":1,"last":1000}}');
+        const before = u;
+        u = Usage.record(u, "foot", 2000);
+        compare(u.foot.count + "," + u.foot.last, "2,2000", "counts up, last is the latest");
+        compare(before.foot.count, 1, "the original is not changed");
+        u = Usage.record(u, "firefox", 3000);
+        compare(u.foot.count + "," + u.firefox.count, "2,1", "apps apart");
+        compare(Usage.record({ x: { count: "bad" } }, "x", 1).x.count, 1, "a bad count starts over");
+        compare(Usage.record({ x: { count: -3 } }, "x", 1).x.count, 1);
+        // past the limit the least recently used go
+        let many = {};
+        for (let i = 0; i < Usage.maxApps; i++) many["a" + i] = { count: 5, last: 100 + i };
+        u = Usage.record(many, "new", 10 * day);
+        compare(Object.keys(u).length, Usage.maxApps);
+        verify(!("a0" in u), "the oldest went");
+        verify("a1" in u && "new" in u, "the rest stay");
+        compare(Object.keys(Usage.record(many, "a5", 10 * day)).length, Usage.maxApps, "a known app adds none");
+    }
+
+    function test_usage_score() {
+        const day = 24 * 60 * 60 * 1000;
+        const now = 1000 * day;
+        compare(Usage.score(undefined, now), 0);
+        compare(Usage.score({ count: 0, last: now }, now), 0);
+        compare(Usage.score({ count: "x", last: now }, now), 0);
+        compare(Usage.score({ count: 10, last: now }, now), 10, "today: full");
+        compare(Usage.score({ count: 10, last: now - 4 * day + 1 }, now), 10);
+        compare(Usage.score({ count: 10, last: now - 4 * day }, now), 7, "from four days");
+        compare(Usage.score({ count: 10, last: now - 14 * day }, now), 5, "two weeks");
+        compare(Usage.score({ count: 10, last: now - 31 * day }, now), 3, "a month");
+        compare(Usage.score({ count: 10, last: now - 90 * day }, now), 1, "three months and older");
+        compare(Usage.score({ count: 10 }, now), 1, "no date: old");
+    }
+
+    function test_usage_ranks_search_results() {
+        const now = Date.now();
+        var p = createTemporaryObject(panelComp, root, { now: now });
+        p.query = "fire";
+        compare(ids(p.results).split(",").slice(0, 2).join(), "firefox,firewall", "without usage: in given order");
+        p.usage = { firewall: { count: 3, last: now } };
+        compare(p.results[0].id, "firewall", "the used one first");
+        p.usage = { firewall: { count: 3, last: now - 400 * 24 * 60 * 60 * 1000 } };
+        compare(p.results[0].id, "firewall", "an old use still counts a little");
+        p.usage = { "org.gnome.Nautilus": { count: 1000, last: now } };
+        compare(p.results[0].id, "firefox", "usage does not lift a typo match over a prefix match");
+        p.query = "";
+        p.usage = { foot: { count: 50, last: now } };
+        compare(ids(p.results), "org.gnome.Nautilus,firefox,firewall,foot,code", "no query: name order, usage or not");
+    }
+
+    function test_app_menu_pin() {
+        var p = createTemporaryObject(panelComp, root, { pinnedIds: ["foot"] });
+        waitForRendering(p);
+        var pin = createTemporaryObject(spyComp, root, { target: p, signalName: "pinToggled" });
+        var launched = createTemporaryObject(spyComp, root, { target: p, signalName: "launched" });
+        var tile = findChild(p, "launcherApp_foot");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        compare(p.menuItems.map(i => i.text).join(), "Open,Unpin from shelf", "a pinned app");
+        tryVerify(() => p.menu && p.menu.scale === 1, 2000);
+        var item = findChild(p.menu, "launcherMenu_rutile:pin");
+        mouseClick(item, item.width / 2, item.height / 2);
+        compare(pin.count, 1);
+        compare(pin.signalArguments[0][0].id, "foot");
+        compare(launched.count, 0, "pinning does not launch");
+        verify(!p.menuOpen);
+        tile = findChild(p, "launcherApp_firefox");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        compare(p.menuItems[p.menuItems.length - 1].text, "Pin to shelf", "an app not pinned");
+        p.menuOpen = false;
+        p.pinsEditable = false;
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        compare(p.menuItems.map(i => i.text).join(), "Open,New Window,New Private Window", "pins set in Nix: no entry");
     }
 
     function test_app_menu_by_keyboard() {
@@ -337,10 +415,10 @@ TestCase {
         keyClick(Qt.Key_Right); keyClick(Qt.Key_Left); keyClick(Qt.Key_Tab); keyClick(Qt.Key_Backtab);
         compare(p.currentIndex, 1, "the arrows and Tab stay in the menu");
         compare(p.category, "");
-        keyClick(Qt.Key_Down); keyClick(Qt.Key_Down); keyClick(Qt.Key_Down);
-        compare(p.menuIndex, 2, "down to the last, no further");
+        keyClick(Qt.Key_Down); keyClick(Qt.Key_Down); keyClick(Qt.Key_Down); keyClick(Qt.Key_Down);
+        compare(p.menuIndex, 3, "down to the last (Pin to shelf), no further");
         keyClick(Qt.Key_Up);
-        compare(p.menuIndex, 1);
+        compare(p.menuIndex, 2);
         keyClick(Qt.Key_Escape);
         verify(!p.menuOpen, "Escape closes the menu");
         compare(close.count, 0, "but not the launcher");

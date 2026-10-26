@@ -4,14 +4,16 @@ pragma ComponentBehavior: Bound
 // it tests offscreen; LauncherWindow.qml gives it the desktop entries. The keyboard stays in the field: the arrows
 // move through the results (in the list, Left and Right move the text cursor, as do Home and End), Tab and
 // Shift+Tab step through the chips, Enter opens the current app, Escape closes. A right click on an app, or the
-// Menu key or Shift+F10 on the current one, opens its menu: Open and the desktop file's actions (`actions`:
-// [{id, name}]); while it is open the arrows and Enter work in it and Escape closes only it. It grows in and out
+// Menu key or Shift+F10 on the current one, opens its menu: Open, the desktop file's actions (`actions`:
+// [{id, name}]), and Pin to shelf or Unpin from shelf (`pinnedIds`; left out while `pinsEditable` is false, as
+// when Nix sets the pins); while it is open the arrows and Enter work in it and Escape closes only it. It grows in and out
 // with the shared popup motion (D43), then reports `hidden`.
 import QtQuick
 import qs.common
 import qs.components
 import "Scorer.js" as Scorer
 import "Categories.js" as Categories
+import "Usage.js" as Usage
 
 Rectangle {
     id: root
@@ -21,7 +23,12 @@ Rectangle {
     property string category: ""            // a Categories.js chip id; "" is All
     property bool listView: false           // the toggle sets it; the shell keeps it between openings
     readonly property var categories: Categories.present(apps)
-    readonly property var results: Scorer.rank(Categories.filter(apps, category), query)
+    property var usage: ({})                // Usage.js's {appId: {count, last}}: a search ranks used apps higher
+    property real now: Date.now()           // when the usage is weighed: the opening is close enough
+    property var pinnedIds: []              // the shelf's pins
+    property bool pinsEditable: true
+    readonly property var results: Scorer.rank(Categories.filter(apps, category), query,
+                                               app => Usage.score(usage[app.id], now))
     readonly property alias currentIndex: grid.currentIndex
     readonly property int columns: 5
     readonly property real cell: Spacing.xxxl * 2 + Spacing.sm
@@ -30,6 +37,7 @@ Rectangle {
 
     signal launched(var app)
     signal actionChosen(var app, string actionId)
+    signal pinToggled(var app)
     signal closeRequested()
     signal hidden()
 
@@ -47,8 +55,11 @@ Rectangle {
     property int menuIndex: 0
     property point menuBelow: Qt.point(0, 0)   // where it hangs from the app: under it, or above it near the bottom
     property real menuAboveY: 0
+    readonly property string pinItem: "rutile:pin"     // desktop action ids cannot hold a colon
     readonly property var menuItems: menuApp ? [{ id: "", text: "Open", icon: "" }]
-        .concat((menuApp.actions || []).map(a => ({ id: a.id, text: a.name, icon: "" }))) : []
+        .concat((menuApp.actions || []).map(a => ({ id: a.id, text: a.name, icon: "" })))
+        .concat(pinsEditable ? [{ id: pinItem, text: pinnedIds.indexOf(menuApp.id) >= 0 ? "Unpin from shelf" : "Pin to shelf",
+                                  icon: "" }] : []) : []
     readonly property Item menu: menuLoader.item as Item
 
     function openMenu(app, tile) {
@@ -62,6 +73,7 @@ Rectangle {
         const app = menuApp;
         menuOpen = false;
         if (id === "") launched(app);
+        else if (id === pinItem) pinToggled(app);
         else actionChosen(app, id);
     }
     // the arrows, Tab, Enter and Escape while the menu is open; true when it took the key

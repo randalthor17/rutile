@@ -120,8 +120,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Graphics, Office, Development, Games, Education, System, Utilities; only those with apps; Tab and Shift+Tab
   step through them), a grid/list toggle (the list shows each app's generic name or description; remembered in
   state.json, 2.5; the check mark, the chip row's scroll and the results animate), and an in-order letter match on names ("nvi" finds Neovide). An app menu (right
-  click, Menu key or Shift+F10): Open and the desktop file's actions. Not done: frecency and pin/unpin in the app menu
-  (the store is there now, 2.5), settings provider (needs the 2.5 registry). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  click, Menu key or Shift+F10): Open, the desktop file's actions, and Pin to shelf or Unpin from shelf (saves
+  `shelf.pins`; left out when Nix sets the pins). Usage (frecency, D46): each app opened from the launcher counts,
+  weighed by how lately (state.json), and ranks search results; the grid without a query stays in name order. Not
+  done: settings provider (needs the 2.5 registry). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop

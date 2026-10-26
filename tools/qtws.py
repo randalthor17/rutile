@@ -429,7 +429,7 @@ def run_wayland_smoke(screenshot=None):
                     except ValueError:
                         launcher = {}
                     want = {"open": True, "loaded": True, "apps": 3, "listView": False,
-                            "categories": ["internet", "system", "utilities"]}
+                            "categories": ["internet", "system", "utilities"], "used": []}
                     if launcher != want:
                         problems.append(f"ipc launcher state: {launcher}, expected {want} (the 3 fixture apps)")
                     # grid or list is remembered in state.json (D45)
@@ -468,6 +468,42 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"launcher action: ran {ran!r}, expected 'firefox --private-window'")
                     if ipc("isOpen", target="launcher") != "false":
                         problems.append("launcher action: the launcher stayed open")
+                    time.sleep(1.5)
+                    # what was opened counts toward its usage, in state.json (Usage.js)
+                    try:
+                        uses = json.loads(state_file.read_text())["launcher"]["usage"]["firefox"]["count"]
+                    except (OSError, ValueError, KeyError) as e:
+                        uses = repr(e)
+                    if uses != 1:
+                        problems.append(f"launcher usage of firefox after its action: {uses}, expected 1")
+                    ipc("open", target="launcher")
+                    # Unpin saves the pins shown (the fixture's defaults) without that app (D45)
+                    got = ipc("togglePin", "foot", target="launcher")
+                    for _ in range(20):                     # the write is asynchronous
+                        try:
+                            pins = json.loads(saved.read_text())["shelf"]["pins"]
+                        except (OSError, ValueError, KeyError) as e:
+                            pins = repr(e)
+                        if pins == ["org.gnome.Nautilus", "firefox"]:
+                            break
+                        time.sleep(0.1)
+                    if got != "true" or pins != ["org.gnome.Nautilus", "firefox"]:
+                        problems.append(f"ipc launcher togglePin foot: {got}, pins {pins}, expected Nautilus and firefox")
+                    # the reopened launcher ranks with the usage; opening an app by click counts too
+                    try:
+                        used = json.loads(ipc("state", target="launcher")).get("used")
+                    except ValueError:
+                        used = None
+                    if used != ["firefox"]:
+                        problems.append(f"ipc launcher state: used {used!r} after reopening, expected ['firefox']")
+                    got = ipc("launch", "foot", target="launcher")
+                    time.sleep(0.5)
+                    try:
+                        foot = json.loads(state_file.read_text())["launcher"]["usage"]["foot"]["count"]
+                    except (OSError, ValueError, KeyError) as e:
+                        foot = repr(e)
+                    if got != "true" or foot != 1 or ipc("isOpen", target="launcher") != "false":
+                        problems.append(f"ipc launcher launch foot: {got}, usage {foot}, expected 1 and the launcher closed")
                     time.sleep(1.5)
                     ipc("open", target="launcher")
                     # slow motion, so the launcher is still on screen when asked: closing, not open

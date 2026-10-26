@@ -22,6 +22,11 @@ function pins(saved, exists) {
     return out;
 }
 
+// `ids` with `id` added at the end, or without it if it is there: what Pin and Unpin in the launcher save.
+function togglePin(ids, id) {
+    return ids.indexOf(id) >= 0 ? ids.filter(x => x !== id) : ids.concat([id]);
+}
+
 // niri's groups ([{id, idx, name, active, windows: [{id, appId, title, focused}]}]) with each window's name and
 // icon from its desktop entry: lookup(appId) gives {name, icon} or null (then the app id names it, no icon).
 function decorate(groups, lookup) {

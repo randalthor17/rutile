@@ -125,6 +125,9 @@ ShellRoot {
             screen: shell.launcherScreen
             listView: shell.launcherListView
             onListViewChanged: shell.setLauncherListView(listView)
+            pinnedIds: shelfBackend.pinnedIds
+            pinsEditable: shelfBackend.pinsEditable
+            onPinToggled: app => shelfBackend.togglePin(app.id)
             onCloseRequested: launcher.active = false
         }
     }
@@ -155,6 +158,22 @@ ShellRoot {
             p.actionChosen(app, actionId);
             return true;
         }
+        // Open an app as a click in the open launcher would (the smoke test).
+        function launch(appId: string): bool {
+            const p = launcher.item?.panel;
+            const app = p?.apps.find(a => a.id === appId);
+            if (!app) return false;
+            p.launched(app);
+            return true;
+        }
+        // Pin or unpin an app as its menu in the open launcher would; false when the pins are set in Nix.
+        function togglePin(appId: string): bool {
+            const p = launcher.item?.panel;
+            const app = p?.apps.find(a => a.id === appId);
+            if (!app || !p.pinsEditable) return false;
+            p.pinToggled(app);
+            return true;
+        }
         // Show the launcher's apps as a list (true) or a grid; remembered across restarts.
         function setListView(list: bool): void { shell.setLauncherListView(list); }
         // Choose a category chip ("" is All) in the open launcher; returns the first results' ids.
@@ -167,7 +186,8 @@ ShellRoot {
         function state(): string {
             return JSON.stringify({ open: shell.launcherOpen, loaded: launcher.active,
                                     apps: launcher.item?.panel.apps.length ?? 0, listView: shell.launcherListView,
-                                    categories: (launcher.item?.panel.categories ?? []).map(c => c.id) });
+                                    categories: (launcher.item?.panel.categories ?? []).map(c => c.id),
+                                    used: Object.keys(launcher.item?.panel.usage ?? {}) });
         }
     }
 

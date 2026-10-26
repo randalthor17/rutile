@@ -69,6 +69,15 @@ Only the options you set go into `managed.json`; the rest stay the shell's to ch
 Shell state that is not a setting (usage, the last view) goes through `Settings.stateValue(key, fallback)` and
 `Settings.setState(key, value)`, with no schema. It is not configuration and Nix does not touch it.
 
+## State
+
+| Key | Holds |
+|---|---|
+| `launcher.view` | `"grid"` or `"list"`, as last chosen |
+| `launcher.usage` | `{appId: {count, last}}`: apps opened from the launcher, `last` in ms since the epoch; at most 200 apps, the least recently used dropped (`shell/launcher/Usage.js`, D46) |
+
+Deleting `state.json` forgets all of it; nothing else depends on it.
+
 ## Not done
 
 - The registry's search fields (icon, aliases, children, advanced/hidden) and settings search: with the settings

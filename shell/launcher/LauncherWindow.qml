@@ -1,11 +1,14 @@
 // The launcher's layer-shell surface: centered above the shelf (it keeps clear of the shelf's and the status
 // strip's exclusive zones), keyboard focus on open. The shell creates it in a LazyLoader only while open (D31);
 // close() plays the closing motion, then closeRequested asks the shell to unload it. The apps are the desktop
-// entries Quickshell finds (DesktopEntries.applications: not hidden, not NoDisplay).
+// entries Quickshell finds (DesktopEntries.applications: not hidden, not NoDisplay). Each app opened from here
+// counts toward its usage (state.json's `launcher.usage`, Usage.js); Pin and Unpin go to the shell (`pinToggled`).
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.common
+import qs.services
+import "Usage.js" as Usage
 
 PanelWindow {
     id: root
@@ -13,8 +16,15 @@ PanelWindow {
     readonly property bool closing: !panel.shown
     readonly property alias panel: panel
     property alias listView: panel.listView
+    property alias pinnedIds: panel.pinnedIds
+    property alias pinsEditable: panel.pinsEditable
 
     signal closeRequested()
+    signal pinToggled(var app)
+
+    function used(app) {
+        Settings.setState("launcher.usage", Usage.record(Settings.stateValue("launcher.usage", {}), app.id, Date.now()));
+    }
 
     function close() { panel.shown = false; }
     function reopen() { panel.shown = true; }
@@ -37,16 +47,25 @@ PanelWindow {
             keywords: e.keywords, categories: e.categories,
             actions: e.actions.map(a => ({ id: a.id, name: a.name })), icon: e.icon ? Quickshell.iconPath(e.icon, true) : ""
         }))
+        // read once on opening, so the results do not move under the closing motion after a launch counts
+        Component.onCompleted: usage = Settings.stateValue("launcher.usage", {})
         onLaunched: app => {
             const e = DesktopEntries.byId(app.id);
-            if (e) e.execute();
+            if (e) {
+                e.execute();
+                root.used(app);
+            }
             root.close();
         }
         onActionChosen: (app, actionId) => {
             const action = DesktopEntries.byId(app.id)?.actions.find(a => a.id === actionId);
-            if (action) action.execute();
+            if (action) {
+                action.execute();
+                root.used(app);
+            }
             root.close();
         }
+        onPinToggled: app => root.pinToggled(app)
         onCloseRequested: root.close()
         onHidden: root.closeRequested()
     }

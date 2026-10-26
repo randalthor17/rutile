@@ -20,6 +20,12 @@ QtObject {
         return pinnedIds.map(id => DesktopEntries.byId(id)).filter(e => !!e)
                         .map(e => ({ id: e.id, name: e.name, icon: iconUrl(e.icon) }));
     }
+    // Pin and Unpin save the shelf.pins setting, starting from the pins shown; not while Nix sets them (D45).
+    readonly property bool pinsEditable: !Settings.isManaged("shelf.pins")
+    function togglePin(id) {
+        return Settings.set("shelf.pins", ShelfApps.togglePin(pinnedIds, id));
+    }
+
     readonly property bool niri: NiriService.available
     readonly property var toplevels: ToplevelManager.toplevels.values
 

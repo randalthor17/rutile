@@ -1,8 +1,8 @@
 // Ranks launcher results for a query. Ported from DankMaterialShell's quickshell/Modals/DLauncherV2/Scorer.js
 // (MIT, Copyright (c) 2025 Avenge Media LLC; see NOTICE): exact, prefix, word-start and substring matches, a
 // typo-tolerant fuzzy match, then the subtitle, keywords, generic name and desktop id at lower weights. Rutile's
-// changes: no sections or pre-scored items, an in-order letter match on the name ("nvi" finds Neovide), and usage
-// counts (frecency) come later with saved settings (plan 2.5).
+// changes: no sections or pre-scored items, an in-order letter match on the name ("nvi" finds Neovide), and the
+// usage (Usage.js) only ranks search results: without a query the apps stay in name order.
 .pragma library
 
 var Weights = {
@@ -98,7 +98,8 @@ function textScore(name, query) {
     return 0;
 }
 
-// item: {type, id, name, subtitle, keywords: [], genericName}; usageCount: how often it was opened (0 for now).
+// item: {type, id, name, subtitle, keywords: [], genericName}; usageCount: how often it was opened, weighed by
+// how lately (Usage.score).
 // 0 means "not a result" when there is a query.
 function score(item, query, usageCount) {
     var typeBonus = Weights.typeBonus[item.type] || 0;
