@@ -224,12 +224,15 @@ TestCase {
         var t = make();
         var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "powerActionTaken" });
         var button = findChild(t.panel, "qsPower");
-        compare(findChild(t.panel, "qsPowerChevron").name, "expand_more", "power and a chevron");
+        var chevron = findChild(t.panel, "qsPowerChevron");
+        compare(chevron.name, "expand_more", "power and a chevron");
+        compare(chevron.rotation, 0);
         compare(findChild(t.panel, "qsPowerMenu").item, null, "the menu exists only while open");
         clickItem(button);
         verify(t.panel.powerMenuOpen);
-        compare(findChild(t.panel, "qsPowerChevron").name, "expand_less");
+        tryCompare(chevron, "rotation", 180, 2000, "the chevron turns to point up");
         var menu = findChild(t.panel, "qsPowerMenu").item;
+        tryCompare(menu, "scale", 1, 2000, "the menu grows in like every popup");
         verify(menu);
         ["lock", "logout", "reboot", "poweroff"].forEach(id => verify(findChild(menu, "qsPower_" + id), id));
         compare(findChild(menu, "qsPower_lock").position, "first");
@@ -237,8 +240,12 @@ TestCase {
         compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "opening the menu does nothing yet");
         clickItem(button);
         verify(!t.panel.powerMenuOpen, "the button closes it again");
+        tryCompare(chevron, "rotation", 0, 2000);
+        tryCompare(findChild(t.panel, "qsPowerMenu"), "item", null, 2000, "unloaded once it has closed");
         clickItem(button);
-        clickItem(findChild(findChild(t.panel, "qsPowerMenu").item, "qsPower_reboot"));
+        var reopened = findChild(t.panel, "qsPowerMenu").item;
+        tryCompare(reopened, "scale", 1, 2000);
+        clickItem(findChild(reopened, "qsPower_reboot"));
         compare(t.backend.calls[t.backend.calls.length - 1], "power reboot");
         compare(spy.count, 1);
         compare(spy.signalArguments[0][0], "reboot");
@@ -249,13 +256,14 @@ TestCase {
         clickItem(findChild(short.panel, "qsPower"));
         var m = short.panel.powerMenu;
         verify(m);
+        tryCompare(m, "scale", 1, 2000);
         compare(short.panel.menuBottom, m.mapToItem(short.panel, 0, m.height).y);
         verify(short.panel.menuBottom > short.panel.height, "taller than the panel here");
         // edit mode hides the button and the menu
         clickItem(button);
         t.panel.editMode = true;
         verify(!button.visible);
-        compare(findChild(t.panel, "qsPowerMenu").item, null);
+        tryCompare(findChild(t.panel, "qsPowerMenu"), "item", null, 2000);
     }
 
     function test_power_commands() {

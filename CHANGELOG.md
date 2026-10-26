@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **One popup motion, one animation speed** (D43, maintainer's rule): every popup, dropdown and menu grows and
+  fades in from where it opens and plays it backwards on close (`PopupMotion`, `PopupLoader`); the power menu
+  now does, and the power button's chevron turns. Every animation follows `Motion.speed`: start the shell with
+  `RUTILE_ANIMATION_SPEED=0.5` (or 2, or 0 for no motion), or change it live with
+  `quickshell -p shell/shell.qml ipc call motion setSpeed 2`. The lint rejects animations that would ignore it.
 - **Quick Settings opens and closes with motion** (maintainer's request): the panel grows in from the corner
   under the status pill on the spatial spring and fades in; closing (pill, Escape, focus leaving, IPC) shrinks and
   fades it before the window is unloaded. Opening again mid-close grows it back.

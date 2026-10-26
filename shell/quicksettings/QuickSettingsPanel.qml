@@ -4,7 +4,8 @@ pragma ComponentBehavior: Bound
 // and does goes through `backend` (QuickSettingsBackend.qml in the shell; a fake in tests and the gallery),
 // so it renders and tests offscreen. Tiles are controlled (D33): a toggle asks the backend, and the tile
 // changes when the system does. The sliders follow the backend except while dragged. It grows in from the top
-// right when created and shrinks away when `shown` turns false, then reports `hidden` (the window unloads then).
+// right when created and shrinks away when `shown` turns false, then reports `hidden` (the window unloads then),
+// with the PopupMotion every popup uses (D43).
 //
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
@@ -30,7 +31,7 @@ Rectangle {
     property bool powerMenuOpen: false
     // Open and close motion: false shrinks and fades the panel away, then `hidden` fires.
     property bool shown: true
-    readonly property real appearProgress: appear.value
+    readonly property real appearProgress: appear.progress
     // The open power menu and where it ends: it can reach below the panel (with no brightness row the panel is
     // shorter than the menu), so the window grows to fit it.
     readonly property Item powerMenu: powerMenuLoader.item as Item
@@ -119,18 +120,13 @@ Rectangle {
     radius: Shapes.extraLarge
     color: Colors.surfaceContainer
 
-    // Grows from the corner under the status pill on the spatial spring; the fade uses the effects curve so it
-    // does not overshoot. Input is off while it goes away.
-    transformOrigin: Item.TopRight
-    scale: 0.85 + 0.15 * appear.value
-    opacity: shown ? 1 : 0
-    Behavior on opacity { EffectsNumber {} }
-    enabled: shown
-    Spring {
+    // Grows from the corner under the status pill; no input while it goes away.
+    PopupMotion {
         id: appear
-        value: 0        // created at 0 with target 1: it grows in
-        target: root.shown ? 1 : 0
-        onSettledChanged: if (settled && !root.shown) root.hidden()
+        target: root
+        shown: root.shown
+        origin: Item.TopRight
+        onHidden: root.hidden()
     }
 
     // The backend may arrive after creation (a binding through the window): refresh when it does.
@@ -189,9 +185,16 @@ Rectangle {
                     Icon {
                         objectName: "qsPowerChevron"
                         anchors.verticalCenter: parent.verticalCenter
-                        name: root.powerMenuOpen ? "expand_less" : "expand_more"
+                        name: "expand_more"
                         size: Spacing.lg
                         color: powerButton.contentColor
+                        rotation: 180 * chevronTurn.value     // turns to point up while the menu is open
+                        Spring {
+                            id: chevronTurn
+                            target: root.powerMenuOpen ? 1 : 0
+                            stiffness: Motion.spring("spatial", "fast").stiffness
+                            dampingRatio: Motion.spring("spatial", "fast").dampingRatio
+                        }
                     }
                 }
                 StateLayer {
@@ -338,11 +341,13 @@ Rectangle {
         }
     }
 
-    // The power menu over the tiles, under the power button; created only while open (D31).
-    Loader {
+    // The power menu over the tiles, under the power button; created only while it shows (D31), and it grows
+    // from the button like every popup (D43).
+    PopupLoader {
         id: powerMenuLoader
         objectName: "qsPowerMenu"
-        active: root.powerMenuOpen && !root.editMode
+        open: root.powerMenuOpen && !root.editMode
+        origin: Item.TopRight
         z: 1
         anchors.right: parent.right
         anchors.rightMargin: Spacing.lg

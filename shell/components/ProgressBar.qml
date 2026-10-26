@@ -44,21 +44,21 @@ Item {
         const ease = waveOn ? spec.impl.amplitudeIn : spec.impl.amplitudeOut;
         amplitudeAnim.stop();
         amplitudeAnim.to = waveOn ? 1 : 0;
-        amplitudeAnim.duration = Motion[ease.duration];
+        amplitudeAnim.duration = Motion.duration(Motion[ease.duration]);
         amplitudeAnim.easing.bezierCurve = Motion.easing[ease.easing];
         amplitudeAnim.start();
     }
-    NumberAnimation {
+    NumberAnimation {      // motion-speed: duration set through Motion.duration() above
         id: amplitudeAnim
         target: root
         property: "amplitude"
         easing.type: Easing.BezierSpline
     }
 
-    // One wavelength per second, only while a wave is visible.
-    FrameAnimation {
+    // One wavelength per second at Motion.speed 1, only while a wave is visible.
+    FrameAnimation {      // motion-speed: the phase advances by frameTime * Motion.speed
         running: root.wavy && root.amplitude > 0 && root.visible
-        onTriggered: root.phase = (root.phase + frameTime * root.spec.impl.wavelengthsPerSecond) % 1
+        onTriggered: root.phase = (root.phase + frameTime * Motion.speed * root.spec.impl.wavelengthsPerSecond) % 1
     }
 
     property color indicatorShown: Colors[root.spec.activeIndicatorColor]

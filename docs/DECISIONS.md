@@ -271,3 +271,18 @@ reserve space: the zone does not depend on the surface's size, so the cost is a 
 a full-width transparent strip. Rejected: a full-width strip around the pill (screen-wide buffer, and it would
 need a click-through mask for its empty part anyway); the bottom layer (windows hid the pill). Gaps between
 windows remain niri's setting (`layout { gaps }`), part of the niri config the shell will ship (2.2).
+
+**D43. One motion for every popup, and one speed for every animation.** The maintainer's rule (October 2026):
+every dropdown and popup, now and later, opens and closes with the same motion, and every animation (the
+chevron, the panel, the slider, all future ones) follows one speed setting kept in one place. Popups use
+`PopupMotion` (`shell/components/`): grow from the corner or edge they open from, scale 0.85 to 1 on the default
+spatial spring, fade on the effects curve, no input while closing, then `hidden` so the owner unloads; a popup
+created on demand uses `PopupLoader`, which keeps it loaded until it has closed. The speed is `Motion.speed`
+(generated into `Motion.qml` next to the motion tokens): 1 is Material's speed, 2 twice as fast, 0 no motion.
+It is applied in the few places all motion goes through: `Spring.step` scales time (stiffness times speed
+squared, same damping, so the shape of the motion is kept), `EffectsNumber`/`EffectsColor` and
+`Motion.duration(ms)` divide durations. Outside `shell/common`, a raw Qt animation fails the lint unless its
+line says how it applies the speed (`// motion-speed: ...`; ProgressBar's wave and amplitude). The shell reads
+`RUTILE_ANIMATION_SPEED` at start and takes `ipc call motion setSpeed <n>`; it moves into the settings store
+with plan 2.5. Rejected: per-component speed properties (the speed would drift between components), Qt's
+global animation driver rate (does not reach our frame-driven springs).

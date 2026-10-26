@@ -7,6 +7,16 @@ QtObject {
     // "expressive" (default) or "standard"; selects which spring set spring() returns.
     property string scheme: "expressive"
 
+    // The one animation speed for the whole shell (D43): 1 is Material's speed, 2 twice as fast, 0.5 half,
+    // 0 no motion (everything jumps to its end). Spring, EffectsNumber, EffectsColor and duration() apply it,
+    // and every animation goes through them (tools/lint_hardcoded.py checks).
+    property real speed: 1
+
+    // A token duration (ms) at the current speed.
+    function duration(ms) {
+        return speed > 0 ? Math.round(ms / speed) : 0;
+    }
+
     readonly property int extraLong1: 700
     readonly property int extraLong2: 800
     readonly property int extraLong3: 900

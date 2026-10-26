@@ -22,10 +22,15 @@ QtObject {
     // Longest step integrated at once, so a stalled frame does not make a visible jump.
     readonly property real maxStep: 0.064
 
-    // Advance by dt seconds. Exposed so tests (and non-frame drivers) can step deterministically.
+    // Advance by dt seconds of wall time, at Motion.speed (D43); speed 0 jumps to the target. Exposed so tests
+    // (and non-frame drivers) can step deterministically.
     function step(dt) {
         if (settled) return;
-        var s = SpringMath.evaluate(Math.min(dt, maxStep), value, velocity, target, stiffness, dampingRatio);
+        if (!(Motion.speed > 0)) {
+            rest();
+            return;
+        }
+        var s = SpringMath.evaluate(Math.min(dt, maxStep) * Motion.speed, value, velocity, target, stiffness, dampingRatio);
         value = s.x;
         velocity = s.v;
         if (Math.abs(value - target) < restDelta && Math.abs(velocity) < restVelocity) {

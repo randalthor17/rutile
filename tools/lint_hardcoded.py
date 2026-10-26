@@ -5,8 +5,10 @@ Design values must come from the token singletons (Colors, Shapes, Motion,
 Type, ...). The memory rules (D31): a Canvas holds a pixel buffer and repaints in
 JavaScript, so it is only created on demand (as a Loader's sourceComponent or inside a
 Component); an Image decodes at full size unless it sets sourceSize; a FrameAnimation
-must not run unconditionally. Append `// lint-ignore` to a line to allow a deliberate
-exception.
+must not run unconditionally. Motion (D43): outside shell/common, animations go through
+Spring, EffectsNumber, EffectsColor or PopupMotion, which apply Motion.speed; a raw Qt
+animation needs a `// motion-speed: <how it applies Motion.speed>` note on its line.
+Append `// lint-ignore` to a line to allow a deliberate exception.
 
     lint_hardcoded.py [root]     root defaults to the repo root
 """
@@ -22,6 +24,12 @@ RULES = (
     ("numeric radius", re.compile(r"\bradius\s*:\s*\d")),
     ("numeric duration", re.compile(r"\bduration\s*:\s*\d")),
 )
+# Qt's own animation types; shell/common wraps them so Motion.speed applies everywhere (D43).
+RAW_ANIMATION = re.compile(r"\b(NumberAnimation|ColorAnimation|PropertyAnimation|RotationAnimation|SmoothedAnimation|"
+                           r"SpringAnimation|AnchorAnimation|ParentAnimation|PathAnimation|Vector3dAnimation|"
+                           r"FrameAnimation|RotationAnimator|ScaleAnimator|OpacityAnimator|XAnimator|YAnimator|"
+                           r"UniformAnimator)\s*\{")
+MOTION_HOME = "shell/common/"
 
 
 def block(text, start):
@@ -79,6 +87,10 @@ def scan(root):
                 for label, rx in RULES:
                     if rx.search(code):
                         problems.append(f"{path.relative_to(root)}:{no}: {label}: {line.strip()}")
+                rel = path.relative_to(root).as_posix()
+                if RAW_ANIMATION.search(code) and not rel.startswith(MOTION_HOME) and "motion-speed:" not in line:
+                    problems.append(f"{rel}:{no}: raw animation (use Spring, EffectsNumber, EffectsColor or "
+                                    f"PopupMotion so Motion.speed applies, D43): {line.strip()}")
             for no, label in memory_problems(text):
                 problems.append(f"{path.relative_to(root)}:{no}: {label}")
     return problems
@@ -90,7 +102,8 @@ def main(argv):
     for p in problems:
         print(p, file=sys.stderr)
     if problems:
-        print(f"{len(problems)} problem(s): use tokens for design values; see D31 for memory", file=sys.stderr)
+        print(f"{len(problems)} problem(s): use tokens for design values; see D31 for memory, D43 for motion",
+              file=sys.stderr)
         return 1
     print("lint: no hardcoded design values or memory traps")
     return 0

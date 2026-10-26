@@ -16,14 +16,15 @@ whether the panel and pills reached the backend, whether brightness shows, which
 layer, the space reserved per screen and the clocks' text). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
-(D41); clicks inside the panel do not. The panel grows in from the corner under the pill on the spatial spring
-and fades in; closing shrinks and fades it, and the window is unloaded once the motion ends (`isOpen` turns false
+(D41); clicks inside the panel do not. The panel grows in from the corner under the pill (`PopupMotion`, the motion
+every popup shares, D43) and fades in; closing shrinks and fades it, and the window is unloaded once the motion ends (`isOpen` turns false
 at once; opening again mid-close grows it back).
 
 The power button at the panel's top right (the power icon and a chevron, as Googlebook) opens a menu: Lock
 (`loginctl lock-session`), Sign out (`niri msg action quit --skip-confirmation`), Restart (`systemctl reboot`)
 and Shut down (`systemctl poweroff`), from `shell/quicksettings/PowerActions.js`. A choice runs at once (no
-confirmation, as Googlebook) and closes the panel.
+confirmation, as Googlebook) and closes the panel. The menu opens with the same popup motion from under the
+button, and the chevron turns to point up while it is open.
 Clicking empty desktop or another program's bar does not close it: those clicks do not move focus on niri.
 
 A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM

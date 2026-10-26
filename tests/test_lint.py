@@ -19,7 +19,7 @@ def project(files):
 
 class Lint(unittest.TestCase):
     def test_flags_hex_radius_duration(self):
-        root = project({"shell/A.qml": "Rectangle {\n color: \"#ff00aa\"\n radius: 12\n}\nNumberAnimation { duration: 200 }\n"})
+        root = project({"shell/A.qml": "Rectangle {\n color: \"#ff00aa\"\n radius: 12\n}\nNumberAnimation { duration: 200 } // motion-speed: n/a\n"})
         kinds = [p.split(": ")[1] for p in lint.scan(root)]
         self.assertEqual(sorted(kinds), ["hex color", "numeric duration", "numeric radius"])
 
@@ -42,11 +42,23 @@ class Lint(unittest.TestCase):
         flagged = {p.split(":")[0] for p in lint.scan(root)}
         self.assertEqual(flagged, {"shell/common/Hand.qml"})
 
+    def test_raw_animations_must_apply_the_speed(self):
+        files = {
+            "shell/bar/Raw.qml": "Item {\n    Behavior on x { NumberAnimation { duration: Motion.medium1 } }\n}\n",
+            "shell/bar/Noted.qml": "Item {\n    FrameAnimation { // motion-speed: frameTime * Motion.speed\n"
+                                   "        running: root.moving }\n}\n",
+            "shell/bar/Ours.qml": "Item {\n    Behavior on x { EffectsNumber {} }\n    Spring { target: 1 }\n}\n",
+            "shell/common/Effects.qml": "NumberAnimation {\n    duration: Motion.duration(Motion.medium1)\n}\n",
+        }
+        found = lint.scan(project(files))
+        self.assertEqual(len(found), 1, found)
+        self.assertTrue(found[0].startswith("shell/bar/Raw.qml:2: raw animation"), found)
+
     def test_memory_traps(self):
         bad = {
             "shell/Eager.qml": "Item {\n    Canvas {\n        onPaint: {}\n    }\n}\n",
             "shell/Img.qml": "Item {\n    Image {\n        source: \"a.png\"\n    }\n}\n",
-            "shell/Frame.qml": "Item {\n    FrameAnimation { running: true; onTriggered: {} }\n}\n",
+            "shell/Frame.qml": "Item {\n    FrameAnimation { running: true; onTriggered: {} } // motion-speed: n/a\n}\n",
         }
         found = lint.scan(project(bad))
         self.assertEqual(len(found), 3, found)
@@ -57,7 +69,7 @@ class Lint(unittest.TestCase):
             "shell/Lazy.qml": "Item {\n    Loader { sourceComponent: Canvas {\n        onPaint: {}\n    } }\n"
                               "    Component {\n        id: c\n        Canvas {}\n    }\n}\n",
             "shell/Img.qml": "Item {\n    Image {\n        source: \"a.png\"\n        sourceSize.width: 64\n    }\n}\n",
-            "shell/Frame.qml": "Item {\n    FrameAnimation { running: root.moving }\n}\n",
+            "shell/Frame.qml": "Item {\n    FrameAnimation { running: root.moving } // motion-speed: n/a\n}\n",
         }
         self.assertEqual(lint.scan(project(good)), [])
 

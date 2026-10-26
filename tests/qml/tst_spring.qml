@@ -18,7 +18,7 @@ TestCase {
     Spring { id: sp }
 
     function init() { sp.snap(0); sp.stiffness = 380; sp.dampingRatio = 0.8; }
-    function cleanup() { sp.snap(0); }
+    function cleanup() { sp.snap(0); Motion.speed = 1; }
 
     // Run synchronously so the frame driver cannot interleave with manual steps.
     function simulate(target, seconds, dt) {
@@ -31,6 +31,40 @@ TestCase {
         }
         return { peak: peak, steps: steps };
     }
+
+    // Motion.speed (D43) scales time: a step at speed 2 is a step twice as long at speed 1; 0 jumps.
+    function test_speed_scales_time() {
+        sp.target = 1;
+        sp.step(0.02);
+        var normal = { x: sp.value, v: sp.velocity };
+        sp.snap(0);
+        Motion.speed = 2;
+        sp.target = 1;
+        sp.step(0.01);
+        compare(sp.value, normal.x, "half the wall time at twice the speed");
+        compare(sp.velocity, normal.v);
+        sp.snap(0);
+        Motion.speed = 0;
+        sp.target = 1;
+        sp.step(0.001);
+        compare(sp.value, 1, "speed 0: no motion, straight to the target");
+        verify(sp.settled);
+    }
+
+    function test_durations_follow_the_speed() {
+        compare(Motion.duration(300), 300);
+        Motion.speed = 2;
+        compare(Motion.duration(300), 150);
+        compare(effectsComp.createObject(null).duration, Math.round(Motion.effects("default").duration / 2));
+        compare(colorComp.createObject(null).duration, Math.round(Motion.effects("default").duration / 2));
+        Motion.speed = 0.5;
+        compare(Motion.duration(300), 600);
+        Motion.speed = 0;
+        compare(Motion.duration(300), 0);
+        compare(effectsComp.createObject(null).duration, 0);
+    }
+    Component { id: effectsComp; EffectsNumber {} }
+    Component { id: colorComp; EffectsColor {} }
 
     function test_js_matches_python_reference() {
         compare(cases.length, 240);

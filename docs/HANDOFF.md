@@ -97,6 +97,10 @@ skip means that tool was missing, not that the behavior was checked.
 - **Never edit generated files.** Change the source and run `make generate` (and `tools/gen_tokens.py`,
   `tools/gen_components.py` for tokens). `make check` fails on stale output.
 - **No hardcoded design values in QML** (colors, radii, durations): use the singletons. A lint enforces it.
+- **Every popup animates the same way, and every animation follows `Motion.speed`** (D43, the maintainer's
+  rule). Dropdowns, menus and panels use `PopupMotion` or `PopupLoader`; motion goes through `Spring`,
+  `EffectsNumber`, `EffectsColor` or `Motion.duration()`. The lint rejects raw Qt animations outside
+  `shell/common`.
 - **Light on memory, always** (D31, `docs/memory.md`): create things when they are needed and unload them when
   closed, animate on the property, prefer Rectangles to Canvas, nothing runs while idle. Measure new components
   with `tools/dev/memcost.py`. The lint catches the mechanical cases.
@@ -239,6 +243,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_FONT_DIRS` | tests, `tools/fontconf.py`, flake | font directories; the font tests run only if they find the real files |
 | `RUTILE_OPENCODE` | tests | opencode binary for the real-config checks |
 | `RUTILE_OPENCODE_STALL` | tests | seconds without a model request before a real-opencode run counts as hung (default 20) |
+| `RUTILE_ANIMATION_SPEED` | `shell/shell.qml` | animation speed at start (D43): 1 normal, 2 twice as fast, 0 no motion; live: `ipc call motion setSpeed 2` |
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |

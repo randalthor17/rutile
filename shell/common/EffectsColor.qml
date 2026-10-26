@@ -6,7 +6,7 @@ import QtQuick
 
 ColorAnimation {
     property string speed: "default"     // fast | default | slow
-    duration: Motion.effects(speed).duration
+    duration: Motion.duration(Motion.effects(speed).duration)     // at Motion.speed (D43)
     easing.type: Easing.BezierSpline
     easing.bezierCurve: Motion.effects(speed).bezier
 }

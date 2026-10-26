@@ -18,6 +18,8 @@ directory containing the entry file, so run things from `shell/`.
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 | `ShapeMorph` | a shape from the M3 Expressive shape library (`MaterialShapes.names`: `circle`, `cookie9Sided`, `softBurst`, ... 35 in all), filled with `color`; changing `shape` morphs to it; `morphing`, `progress` |
+| `PopupMotion` | the open and close motion every popup, dropdown and menu uses (D43): `target`, `shown`, `origin` (an `Item.TransformOrigin`); `hidden()` after closing |
+| `PopupLoader` | a `Loader` for a popup created only while it shows: `open`, `origin`; it stays loaded until its closing motion ends |
 | `EditableGrid` | `items` ({id, w, h, col, row, minW, maxW, minH, maxH}), `columns`, `rowHeight`, `gap`, `maxRows`, `gravity`, `delegate` (gets `modelData`, `index`), `editMode`, `selectedIndex`, `commitHandler(items)`, `canResize(index, edge)`, `fitNew(item)` |
 
 ```qml

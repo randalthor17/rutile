@@ -40,6 +40,18 @@ ShellRoot {
 
     PaletteWatcher {}
 
+    // The animation speed (D43): RUTILE_ANIMATION_SPEED=0.5 halves it, 0 turns motion off; `ipc call motion
+    // setSpeed 2` changes it live. Saved with the other settings once plan 2.5 lands.
+    Component.onCompleted: {
+        const speed = parseFloat(Quickshell.env("RUTILE_ANIMATION_SPEED"));
+        if (speed >= 0) Motion.speed = speed;
+    }
+    IpcHandler {
+        target: "motion"
+        function setSpeed(speed: real): void { Motion.speed = Math.max(0, speed); }
+        function speed(): real { return Motion.speed; }
+    }
+
     // Not named `backend`: inside a window, `backend: backend` would bind the property to itself.
     QuickSettingsBackend { id: shellBackend }
 

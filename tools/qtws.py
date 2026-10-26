@@ -316,14 +316,15 @@ def run_wayland_smoke(screenshot=None):
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
+            "RUTILE_ANIMATION_SPEED": "1.5",
             "RUTILE_PALETTE": str(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json"),
         })
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
-                def ipc(*args):
-                    r = subprocess.run([qs, "-p", str(shell), "ipc", "call", "quicksettings", *args],
+                def ipc(*args, target="quicksettings"):
+                    r = subprocess.run([qs, "-p", str(shell), "ipc", "call", target, *args],
                                        env=env, capture_output=True, text=True, timeout=10)
                     return (r.stdout + r.stderr).strip()
                 deadline = time.time() + 15
@@ -334,6 +335,11 @@ def run_wayland_smoke(screenshot=None):
                 if "Configuration Loaded" not in log_path.read_text():
                     problems.append("the shell did not load")
                 else:
+                    # the animation speed (D43) comes from the environment and changes over IPC
+                    for args, want in [(("speed",), "1.5"), (("setSpeed", "2"), ""), (("speed",), "2")]:
+                        got = ipc(*args, target="motion")
+                        if got != want:
+                            problems.append(f"ipc motion {' '.join(args)}: got {got!r}, expected {want!r}")
                     steps = [("isOpen", "false"), ("toggle", ""), ("isOpen", "true")]
                     for call, want in steps:
                         got = ipc(call)
