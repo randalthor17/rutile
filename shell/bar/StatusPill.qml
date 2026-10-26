@@ -66,6 +66,9 @@ Rectangle {
                 width: count > 0 ? parent.width / count : 0
                 height: parent.height
                 WheelHandler {
+                    objectName: "statusVolumeWheel"
+                    // The default is Mouse only, and Qt's Wayland plugin reports the wheel as a TouchPad on niri.
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                     onWheel: event => root.scrollVolume(event.angleDelta.y)
                 }
             }

@@ -142,6 +142,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   loses focus" written on the panel item closed it as soon as a slider inside was pressed. For "the user went
   elsewhere", watch the window (`Window.active`); and test a click inside, not only a focus change outside.
 
+- **`WheelHandler` accepts only `PointerDevice.Mouse` by default, and Qt's Wayland plugin may report a wheel as
+  a `TouchPad`.** Scrolling the pill's volume passed every offscreen test (QtTest's wheel is a mouse) and did
+  nothing on niri: the handler declined each event. Set `acceptedDevices: PointerDevice.Mouse |
+  PointerDevice.TouchPad`. To see why an input does nothing, run with
+  `QT_LOGGING_RULES="qt.quick.handler.dispatch=true"`; it prints each handler that DECLINES. On niri,
+  `nix shell nixpkgs#wlrctl -c wlrctl pointer move|scroll` drives the real pointer (the position persists).
+
 - **`prop: prop` binds a property to itself.** In `QuickSettingsWindow { backend: backend }` the right-hand
   `backend` is the window's own property, not the id outside, so the panel got `undefined` and nothing failed
   loudly: tiles showed "Unavailable", which looked like a machine without hardware. Never give an id the name of a

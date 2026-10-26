@@ -126,6 +126,9 @@ TestCase {
         t.backend.muted = true;
         wheelOver(t.pill, 1, 3, 1);
         compare(t.backend.calls[4], "volume 0.05");
+        // QtTest's wheel comes from a mouse; on niri Qt reports it as a touchpad, which WheelHandler declines by default
+        var wheel = findChild(t.pill, "statusVolumeWheel");
+        compare(wheel.acceptedDevices & PointerDevice.TouchPad, PointerDevice.TouchPad);
     }
 
     function test_volume_glyph_moves_with_the_others() {
