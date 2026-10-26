@@ -16,9 +16,11 @@ tokens-check:
 # Regenerate the QML token singletons after changing tokens or roles.
 generate:
 	$(PY) tools/gen_qml.py
+	$(PY) tools/gen_settings.py
 
 generate-check:
 	$(PY) tools/gen_qml.py --check
+	$(PY) tools/gen_settings.py --check
 
 test:
 	$(PY) -m unittest discover -s tests -v

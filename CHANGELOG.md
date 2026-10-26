@@ -5,6 +5,14 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Saved settings** (plan 2.5, D45): the shell keeps its settings in `~/.config/rutile/settings.json` and what it
+  remembers in `~/.local/state/rutile/state.json` (the XDG directories). The launcher's grid or list view and
+  the animation speed (`ipc call motion setSpeed`) now survive a restart, and the shelf's pins are the
+  `shelf.pins` setting (replacing `RUTILE_SHELF_PINS`). Editing the file applies at once; a file with a mistake
+  is left alone and the last good values stay. Every setting is described in `settings/schema.json`.
+- **Home-manager module** (`homeManagerModules.default`): `programs.rutile.settings.motion.speed = 1.5;` and the
+  like, type-checked against the same schema, are written to `~/.config/rutile/managed.json`. Settings from Nix
+  win over the shell's own and cannot be changed from the shell.
 - **App menu in the launcher** (plan 2.7): right-click an app, or press the Menu key or Shift+F10 on the current
   one, for Open and the actions its desktop file lists (Firefox's New Private Window, say). The arrows and Enter
   work in it, Escape closes only the menu, and a click outside closes it without doing anything else. It uses the

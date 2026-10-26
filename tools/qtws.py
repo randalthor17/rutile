@@ -208,6 +208,7 @@ def qs_workspace(test):
     shutil.copy(ROOT / "tests" / "qs" / "QsTest.qml", ws)
     shutil.copytree(ROOT / "tests" / "qs" / "bin", ws / "bin")
     shutil.copytree(ROOT / "tests" / "qs" / "apps", ws / "apps")
+    shutil.copytree(ROOT / "tests" / "qs" / "config", ws / "config")
     shutil.copy(test, ws / "shell.qml")
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
     return ws
@@ -219,6 +220,9 @@ def qs_test_env(test, ws):
     # never the session's compositor or niri
     env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY", "NIRI_SOCKET", "SWAYSOCK")}
     env["QT_QPA_PLATFORM"] = "offscreen"
+    # never the user's settings or state (D45); a test's `// env XDG_CONFIG_HOME=@WS@/config/<name>` picks a fixture
+    env["XDG_CONFIG_HOME"] = str(ws / "home" / "config")
+    env["XDG_STATE_HOME"] = str(ws / "home" / "state")
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
         env[name] = value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
     return env
@@ -320,6 +324,9 @@ def run_wayland_smoke(screenshot=None):
             "FAKE_BRIGHTNESS": str(fake),
             "FAKE_APP_LOG": str(comp.runtime / "apps.log"),
             "RUTILE_ANIMATION_SPEED": "1.5",
+            # never the user's settings or state (D45)
+            "XDG_CONFIG_HOME": str(comp.runtime / "config"),
+            "XDG_STATE_HOME": str(comp.runtime / "state"),
             # only the fixture apps, so the shelf's default pins are known
             "XDG_DATA_DIRS": str(ROOT / "tests" / "qs" / "apps"),
             "XDG_DATA_HOME": str(ROOT / "tests" / "qs" / "apps" / "no-user-apps"),
@@ -341,11 +348,19 @@ def run_wayland_smoke(screenshot=None):
                 if "Configuration Loaded" not in log_path.read_text():
                     problems.append("the shell did not load")
                 else:
-                    # the animation speed (D43) comes from the environment and changes over IPC
-                    for args, want in [(("speed",), "1.5"), (("setSpeed", "2"), ""), (("speed",), "2")]:
+                    # the animation speed (D43) comes from the environment; setSpeed saves the setting (D45)
+                    for args, want in [(("speed",), "1.5"), (("setSpeed", "2"), "true"), (("speed",), "2"),
+                                       (("setSpeed", "9"), "false"), (("speed",), "2")]:
                         got = ipc(*args, target="motion")
                         if got != want:
                             problems.append(f"ipc motion {' '.join(args)}: got {got!r}, expected {want!r}")
+                    saved = comp.runtime / "config" / "rutile" / "settings.json"
+                    try:
+                        speed = json.loads(saved.read_text())["motion"]["speed"]
+                    except (OSError, ValueError, KeyError) as e:
+                        speed = repr(e)
+                    if speed != 2:
+                        problems.append(f"settings.json after setSpeed 2: motion.speed is {speed}, expected 2")
                     steps = [("isOpen", "false"), ("toggle", ""), ("isOpen", "true")]
                     for call, want in steps:
                         got = ipc(call)
@@ -417,6 +432,20 @@ def run_wayland_smoke(screenshot=None):
                             "categories": ["internet", "system", "utilities"]}
                     if launcher != want:
                         problems.append(f"ipc launcher state: {launcher}, expected {want} (the 3 fixture apps)")
+                    # grid or list is remembered in state.json (D45)
+                    ipc("setListView", "true", target="launcher")
+                    state_file = comp.runtime / "state" / "rutile" / "state.json"
+                    for _ in range(20):
+                        if state_file.exists():
+                            break
+                        time.sleep(0.1)
+                    try:
+                        view = json.loads(state_file.read_text())["launcher"]["view"]
+                    except (OSError, ValueError, KeyError) as e:
+                        view = repr(e)
+                    if view != "list" or json.loads(ipc("state", target="launcher") or "{}").get("listView") is not True:
+                        problems.append(f"ipc launcher setListView true: state.json has {view}, expected list")
+                    ipc("setListView", "false", target="launcher")
                     # the chips: the desktop files' Categories
                     for args, want in [(("category", "system"), "foot"), (("category", "internet"), "firefox"),
                                        (("category", ""), "org.gnome.Nautilus,firefox,foot")]:

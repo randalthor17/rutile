@@ -9,6 +9,7 @@ import qs.common
 import qs.bar
 import qs.launcher
 import qs.quicksettings
+import qs.services
 import qs.shelf
 
 ShellRoot {
@@ -27,7 +28,11 @@ ShellRoot {
 
     // The launcher, as Quick Settings: open on a screen (null: the compositor's choice), closing plays its motion.
     property var launcherScreen: null
-    property bool launcherListView: false
+    // grid or list, as last chosen (remembered in state.json, D45)
+    readonly property bool launcherListView: Settings.stateValue("launcher.view", "grid") === "list"
+    function setLauncherListView(list) {
+        Settings.setState("launcher.view", list ? "list" : "grid");
+    }
     readonly property bool launcherOpen: launcher.active && !(launcher.item?.closing ?? false)
     function closeLauncher() {
         if (launcher.item) launcher.item.close();
@@ -65,15 +70,23 @@ ShellRoot {
 
     PaletteWatcher {}
 
-    // The animation speed (D43): RUTILE_ANIMATION_SPEED=0.5 halves it, 0 turns motion off; `ipc call motion
-    // setSpeed 2` changes it live. Saved with the other settings once plan 2.5 lands.
-    Component.onCompleted: {
-        const speed = parseFloat(Quickshell.env("RUTILE_ANIMATION_SPEED"));
-        if (speed >= 0) Motion.speed = speed;
+    // The animation speed (D43) is the motion.speed setting (D45). RUTILE_ANIMATION_SPEED overrides it for this
+    // run (0.5 halves it, 0 turns motion off) until `ipc call motion setSpeed 2` saves a new speed.
+    readonly property real envSpeed: parseFloat(Quickshell.env("RUTILE_ANIMATION_SPEED"))
+    property bool speedFromEnv: envSpeed >= 0
+    Binding {
+        target: Motion
+        property: "speed"
+        value: shell.speedFromEnv ? shell.envSpeed : Settings.value("motion.speed")
     }
     IpcHandler {
         target: "motion"
-        function setSpeed(speed: real): void { Motion.speed = Math.max(0, speed); }
+        // false when the speed is out of range (0 to 4) or set in Nix
+        function setSpeed(speed: real): bool {
+            if (!Settings.set("motion.speed", speed)) return false;
+            shell.speedFromEnv = false;
+            return true;
+        }
         function speed(): real { return Motion.speed; }
     }
 
@@ -110,9 +123,8 @@ ShellRoot {
         id: launcher
         LauncherWindow {
             screen: shell.launcherScreen
-            // grid or list stays as last chosen until the shell restarts (saved settings: plan 2.5)
             listView: shell.launcherListView
-            onListViewChanged: shell.launcherListView = listView
+            onListViewChanged: shell.setLauncherListView(listView)
             onCloseRequested: launcher.active = false
         }
     }
@@ -143,8 +155,8 @@ ShellRoot {
             p.actionChosen(app, actionId);
             return true;
         }
-        // Show the launcher's apps as a list (true) or a grid; it stays so until the shell restarts.
-        function setListView(list: bool): void { shell.launcherListView = list; }
+        // Show the launcher's apps as a list (true) or a grid; remembered across restarts.
+        function setListView(list: bool): void { shell.setLauncherListView(list); }
         // Choose a category chip ("" is All) in the open launcher; returns the first results' ids.
         function category(id: string): string {
             const p = launcher.item?.panel;

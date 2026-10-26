@@ -301,3 +301,29 @@ in one group without a number. The wheel over a shelf moves one workspace per no
 `FocusWorkspace` by id), stopping at the first and at niri's blank last workspace; the active workspace shows
 even when empty, so the blank one appears as an empty capsule (maintainer's request). Supersedes the shelf's
 per-app running marks from the first shelf commit.
+
+**D45. Settings are JSON in the XDG directories, in layers, and Nix can own any of them.** The maintainer
+(October 2026): follow the XDG base directories, and save everything in one format that Quickshell and Nix both
+handle, so home-manager modules are easy. That format is JSON: Quickshell reads and writes it with `FileView`,
+Nix with `builtins.fromJSON` and `pkgs.formats.json`. TOML and INI were rejected: Nix reads them, but Quickshell
+has no reader, so they would need a parser or a daemon. The files:
+
+| Path | Holds | Written by |
+|---|---|---|
+| `settings/schema.json` (repo) | every setting: type, limits, default, title | us; generated into `shell/services/SettingsSchema.js` |
+| `$XDG_CONFIG_HOME/rutile/settings.json` | the user's settings | the shell (settings UI, IPC) |
+| `$XDG_CONFIG_HOME/rutile/managed.json` | settings set in Nix | home-manager, read-only |
+| `$XDG_STATE_HOME/rutile/state.json` | what the shell remembers: launcher view, usage | the shell, never Nix |
+| `$XDG_CACHE_HOME/rutile/palette.json` | the generated palette (already there) | matugen |
+
+A key in `managed.json` beats `settings.json`, which beats the schema's default. A managed key cannot be changed
+from the shell (the settings UI will show it as managed by Nix), and the shell never writes `managed.json`. This
+is why there are two files: home-manager links its files read-only from the Nix store, so a settings UI writing
+to the file Nix owns would fail. State is not configuration: usage counts and the last view do not belong in a
+Nix module, so they live apart. The home-manager module (`homeManagerModules.default`, `nix/home-manager.nix`)
+builds `programs.rutile.settings` from the same schema, so the shell and Nix cannot drift apart.
+
+The shell keeps every key it does not know when it rewrites `settings.json` (a newer or older shell, a user's
+note), so it parses and writes the text itself. Quickshell's `JsonAdapter` was rejected for this: in a probe
+with Quickshell 0.3.2 it dropped unknown keys on `writeAdapter()`. A file that does not parse is never
+overwritten; the shell keeps the last good values and refuses changes until it is fixed.

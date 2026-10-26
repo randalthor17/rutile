@@ -27,10 +27,11 @@ TestCase {
     }
 
     function test_pins() {
-        compare(ShelfApps.pins("", id => ["thunar", "firefox", "chromium", "kitty"].indexOf(id) >= 0).join(),
+        compare(ShelfApps.pins(undefined, id => ["thunar", "firefox", "chromium", "kitty"].indexOf(id) >= 0).join(),
                 "thunar,firefox,kitty", "the first installed app of each group");
-        compare(ShelfApps.pins("", id => false).length, 0);
-        compare(ShelfApps.pins(" a, b ,,c", id => false).join(), "a,b,c", "an override wins, as given");
+        compare(ShelfApps.pins(undefined, id => false).length, 0);
+        compare(ShelfApps.pins(["a", "b", "", "c"], id => false).join(), "a,b,c", "the setting wins, as given");
+        compare(ShelfApps.pins([], id => true).length, 0, "an empty setting pins nothing");
     }
 
     function test_decorate_and_ungrouped() {

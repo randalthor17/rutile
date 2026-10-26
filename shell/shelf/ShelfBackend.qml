@@ -1,5 +1,4 @@
-// The shelf's data on this system: the pinned desktop entries (ShelfApps.pins; RUTILE_SHELF_PINS="id,id" sets
-// them until saved settings, plan 2.5) and the open windows by workspace from niri (NiriService). Without niri,
+// The shelf's data on this system: the pinned desktop entries (ShelfApps.pins, from the shelf.pins setting) and the open windows by workspace from niri (NiriService). Without niri,
 // Quickshell's ToplevelManager (wlr-foreign-toplevel) gives the windows ungrouped. The shell makes one for all
 // screens; each shelf asks groupsFor() its own output.
 import QtQuick
@@ -13,7 +12,7 @@ QtObject {
 
     readonly property var pinnedIds: {
         void DesktopEntries.applications.values;        // look again when the installed apps change
-        return ShelfApps.pins(Quickshell.env("RUTILE_SHELF_PINS") ?? "", id => !!DesktopEntries.byId(id));
+        return ShelfApps.pins(Settings.value("shelf.pins"), id => !!DesktopEntries.byId(id));
     }
     // [{id, name, icon}], the icon as an image URL ("" when the theme has none)
     readonly property var pinned: {

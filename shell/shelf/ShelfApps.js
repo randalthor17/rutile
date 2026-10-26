@@ -3,17 +3,17 @@
 // desktop entries and niri's workspaces (NiriState.groups), or Quickshell's toplevels where niri is not running.
 .pragma library
 
-// Default pins until saved settings (plan 2.5): the first installed app of each group.
+// Default pins while the shelf.pins setting is unset: the first installed app of each group.
 var defaultPinGroups = [
     ["org.gnome.Nautilus", "thunar", "org.kde.dolphin", "nemo", "pcmanfm"],
     ["firefox", "chromium-browser", "chromium", "google-chrome", "brave-browser"],
     ["com.mitchellh.ghostty", "foot", "kitty", "Alacritty", "org.wezfurlong.wezterm", "org.gnome.Console"]
 ];
 
-// The ids to pin: `override` ("a,b,c", e.g. from RUTILE_SHELF_PINS) if set, else the first id of each default
+// The ids to pin: `saved` (the shelf.pins setting, a list of ids) if set, else the first id of each default
 // group that `exists(id)` says is installed.
-function pins(override, exists) {
-    if (override) return override.split(",").map(s => s.trim()).filter(s => s !== "");
+function pins(saved, exists) {
+    if (Array.isArray(saved)) return saved.filter(s => s !== "");
     var out = [];
     for (var g = 0; g < defaultPinGroups.length; g++) {
         var hit = defaultPinGroups[g].find(id => exists(id));

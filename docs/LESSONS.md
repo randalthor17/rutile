@@ -196,6 +196,17 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   `{ws}` made `import qs.common` fail with "module is not installed"; the same file without the brace loaded.
   Quickshell seems to read a file's header only up to the first brace. Keep braces out of leading comments.
 
+- **`JsonAdapter` drops keys it does not declare when it writes** (Quickshell 0.3.2, probed). A settings file
+  written back through it loses whatever a newer shell or the user added. The settings store (D45) parses and
+  writes the text itself. Other `FileView` facts from the same probe: a missing file gives `loadFailed` with
+  `FileViewError.FileNotFound` (and a warning unless `printErrors: false`); `setText` creates missing parent
+  directories; a write to a read-only home-manager link fails with `PermissionDenied` through `saveFailed`; a
+  `setText` issued inside `onLoaded` can be dropped ("got operation finished from dropped operation").
+
+- **`FileView` writes are asynchronous, and two views on one file race.** In the settings test, the store's
+  reset and the test's own edit landed in either order. Wait for one write to show on disk before the next.
+  `watchChanges` on a file that does not exist yet never fires when it is created; read it again instead.
+
 - **Quickshell runs headless.** `QT_QPA_PLATFORM=offscreen quickshell -p file.qml` (with WAYLAND_DISPLAY unset)
   loads a shell, runs FileView and timers, and exits on `Qt.exit()`; that is how tests/qs/ runs.
 

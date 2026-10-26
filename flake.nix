@@ -18,6 +18,9 @@
       # Ollama as a NixOS service on the AMD GPU (see nix/local-ai-module.nix and docs/sidework.md).
       nixosModules.local-ai = import ./nix/local-ai-module.nix;
 
+      # programs.rutile.settings, written to $XDG_CONFIG_HOME/rutile/managed.json (D45, nix/home-manager.nix).
+      homeManagerModules.default = import ./nix/home-manager.nix;
+
       packages = forAllSystems (pkgs: {
         google-sans-flex = googleSansFlex pkgs;
       });

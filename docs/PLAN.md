@@ -86,14 +86,22 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
 - [ ] **2.4** Started (`shell/shelf/`): a full-width bar along the bottom of every screen that reserves its
   height; a launcher button (emits only, until 2.7), pinned apps (default: the first installed file manager,
-  browser and terminal; `RUTILE_SHELF_PINS` until 2.5) that start on click, then the screen's workspaces with
+  browser and terminal; the `shelf.pins` setting, 2.5) that start on click, then the screen's workspaces with
   windows, one icon per window in layout order, the active workspace tinted and the focused window marked; a click
   focuses that window, and the wheel moves between workspaces down to niri's blank one (D44, niri through
   `NiriService`; without niri, `ToplevelManager` ungrouped); press motion. Not done: tooltips, context menu
   (pin, close), special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
   via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
-- [ ] **2.5** Settings registry and search: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
+- [ ] **2.5** Started (D45, `docs/settings.md`): the config store. `settings/schema.json` describes every setting
+  (type, limits, default, title); `Settings` (`shell/services/`) reads `$XDG_CONFIG_HOME/rutile/settings.json`
+  under `managed.json` (home-manager's, read-only, wins) over the defaults, watches both, saves changes keeping
+  unknown keys, and refuses changes to managed keys or while a file does not parse; shell state (the launcher's
+  view) goes to `$XDG_STATE_HOME/rutile/state.json`. Settings so far: `motion.speed`, `shelf.pins`. The
+  home-manager module (`homeManagerModules.default`, `nix/home-manager.nix`) builds `programs.rutile.settings`
+  from the same schema. Not done: the registry's search fields (icon, aliases, children, advanced/hidden) and
+  the settings search service, both with the settings app (5.1); a home-manager option to install the shell
+  (needs the package, 6.1). The whole item: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
 - [ ] **2.6a** Done (unreleased, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
   while open, toggled with `quickshell -p shell/shell.qml ipc call quicksettings toggle`: header, brightness and
@@ -110,10 +118,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   the keyboard stays in the field (arrows move through the grid, Enter opens, Escape closes); shared popup motion;
   closes on focus loss like Quick Settings. Category chips from the desktop files' `Categories` (Internet, Media,
   Graphics, Office, Development, Games, Education, System, Utilities; only those with apps; Tab and Shift+Tab
-  step through them), a grid/list toggle (the list shows each app's generic name or description; kept until the
-  shell restarts; the check mark, the chip row's scroll and the results animate), and an in-order letter match on names ("nvi" finds Neovide). An app menu (right
-  click, Menu key or Shift+F10): Open and the desktop file's actions. Not done: frecency, saving the view and
-  pin/unpin in the app menu (need saved state, 2.5), settings provider (needs the 2.5 registry). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  step through them), a grid/list toggle (the list shows each app's generic name or description; remembered in
+  state.json, 2.5; the check mark, the chip row's scroll and the results animate), and an in-order letter match on names ("nvi" finds Neovide). An app menu (right
+  click, Menu key or Shift+F10): Open and the desktop file's actions. Not done: frecency and pin/unpin in the app menu
+  (the store is there now, 2.5), settings provider (needs the 2.5 registry). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
