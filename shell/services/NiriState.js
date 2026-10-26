@@ -79,6 +79,13 @@ function apply(state, event) {
     return state;
 }
 
+// The output of the focused workspace (where the keyboard is), or "" before niri has said.
+function focusedOutput(state) {
+    for (var k in state.workspaces)
+        if (state.workspaces[k].focused) return state.workspaces[k].output;
+    return "";
+}
+
 // One output's workspaces that have windows, and the active one even when empty (niri's blank workspace past the
 // last, reached by scrolling), by index, each with its windows in layout order (columns left to right, top to
 // bottom within a column, floating windows last):

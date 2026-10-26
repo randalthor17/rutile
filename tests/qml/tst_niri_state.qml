@@ -102,4 +102,14 @@ TestCase {
         compare(Niri.neighbourWorkspace(s, "HDMI-A-1", 1), null, "one workspace there");
         compare(Niri.neighbourWorkspace(s, "nope", 1), null, "unknown output");
     }
+
+    function test_focused_output() {
+        compare(Niri.focusedOutput(Niri.empty()), "", "nothing yet");
+        let s = Niri.apply(Niri.empty(), { WorkspacesChanged: { workspaces: [ws(1, 1, "DP-1", true), ws(2, 1, "HDMI-A-1", true)] } });
+        s.workspaces[2].focused = false;
+        compare(Niri.focusedOutput(s), "DP-1");
+        s.workspaces[1].focused = false;
+        s.workspaces[2].focused = true;
+        compare(Niri.focusedOutput(s), "HDMI-A-1");
+    }
 }

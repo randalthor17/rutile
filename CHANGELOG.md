@@ -5,6 +5,13 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Notifications** (plan 2.8, first part, D47): the shell is now a notification server. Notifications pop up
+  under the status pill on the screen you are using, newest on top, at most three: the app, when it came, the
+  summary and text, a picture when the sender gives one, and its buttons; a click on the card does the app's
+  default action, the close button dismisses it. They go after a few seconds (the sender's time, or 6 s), not
+  while the pointer is over them; critical ones stay. `ipc call notifications setDnd true` turns on Do not
+  disturb (only critical ones pop up). While another notification daemon runs (Noctalia, mako, dunst), it keeps
+  the notifications and the shell waits; the shell takes over when it stops.
 - **Quick Settings in launcher search** (plan 2.7, maintainer's choice): typing "wifi", "dark", "mute" or
   "brightness" also finds the Quick Settings controls this system has, shown with their symbol and, in the list,
   their state. Choosing Wi-Fi, Bluetooth, Microphone, Dark theme or Airplane mode switches it at once; Brightness

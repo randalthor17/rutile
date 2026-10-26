@@ -130,7 +130,15 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Not done: settings from the schema (`motion.speed`, `shelf.pins`) as results, once the settings app has pages. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
-- [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
+- [ ] **2.8** Started (D47, `shell/notifications/`): notifications. `NotificationService` (Quickshell's
+  `NotificationServer`) keeps each notification for the list (newest first, at most 50) and pops it up under the
+  status pill on the screen the keyboard is on, newest on top, at most 3, with the shared popup motion: app icon
+  and name, time, summary and body as plain text, the sender's image, its actions as buttons (a click on the card
+  is the default action), a close button; it goes after the sender's timeout or 6 s, paused while the pointer is
+  over it, and critical ones stay. Do not disturb (`ipc call notifications setDnd true`, remembered in
+  state.json) keeps them from popping up, except critical ones. A replaced notification updates in place.
+  Not done: the bell left of the status pill and its panel (the list, Clear all, Do not disturb), grouping by
+  app, inline reply, sounds. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 

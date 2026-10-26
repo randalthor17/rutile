@@ -207,6 +207,21 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   reset and the test's own edit landed in either order. Wait for one write to show on disk before the next.
   `watchChanges` on a file that does not exist yet never fires when it is created; read it again instead.
 
+- **An `on<Property>Changed` handler can run before bindings that depend on the same property.** The popup
+  stack's `onPopupsChanged` read `byId` (a binding on `popups`) and saw the old map, so a leaving card was never
+  marked. In a change handler, compute from the property itself. Likewise Quickshell's
+  `trackedNotifications` takes in a notification only after the `notification` handler that tracks it returns:
+  work on the whole list (the cap on kept notifications) goes in `Qt.callLater`.
+
+- **QtTest can leave a MouseArea hovered.** After `mouseClick` on a button and then elsewhere, the button's
+  `containsMouse` stayed true even after `mouseMove` away. Test hover-dependent behavior on a fresh object.
+
+- **`busctl` takes a `-1` argument for an option.** Put `--` before `call` when sending a notification with
+  the default timeout.
+
+- **Quickshell does not re-emit `notification` for a replaced notification** (same id): the object updates in
+  place. And `Notification.expireTimeout` is in ms, though documented as seconds (0.3.2, probed).
+
 - **Quickshell runs headless.** `QT_QPA_PLATFORM=offscreen quickshell -p file.qml` (with WAYLAND_DISPLAY unset)
   loads a shell, runs FileView and timers, and exits on `Qt.exit()`; that is how tests/qs/ runs.
 

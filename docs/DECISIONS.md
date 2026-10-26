@@ -339,3 +339,22 @@ yet. At most 200 apps are kept, so the file stays small. The panel reads the usa
 launch does not reorder the results under the closing motion. Rejected: ordering the grid by use (the maintainer
 can still ask for it; it is one line in `Scorer.rank`), counting launches from the shelf (those are pinned apps
 already one click away).
+
+**D47. Notifications: popups under the pill, the list behind a bell, plain text.** The maintainer chose (October
+2026): popups at the top right under the status pill, next to where the Googlebook capture has its notification
+and do-not-disturb icons, newest on top; the list (history, Clear all, Do not disturb) in its own panel opened
+from a bell left of the pill, not in Quick Settings. Built on Quickshell's `NotificationServer`; the service keeps
+Quickshell's objects and hands the UI plain data, so the cards test offscreen. Choices made here:
+
+- Body text is shown as plain text: markup is dropped (a `<br>` is a line break) and entities decoded. Senders
+  send markup even when the server does not ask for it, and Qt's rich text would load `<img>` sources.
+- A popup stays for the sender's timeout, or 6 s when the sender leaves it to us, and not while the pointer is
+  over it; critical ones and those asking for 0 stay until dismissed. Quickshell reports the timeout in ms
+  (its documentation says seconds). At most three popups show; the rest are in the list.
+- A replaced notification (same id) updates in place and does not pop up again: Quickshell does not report a
+  replacement as a new notification, and progress updates would otherwise pop up every second.
+- Do not disturb is state (state.json), not a setting: it is switched often, and Nix should not pin it.
+- Another daemon may own `org.freedesktop.Notifications`; Quickshell then waits and registers when it is
+  released (probed), so the shell never takes notifications from a running daemon.
+- Tests run the shell on a private session bus (`tools/qtws.py` `PrivateBus`), so a test's server never meets
+  the user's session.

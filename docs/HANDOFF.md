@@ -191,6 +191,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`), niri; `Settings` (the settings and state files, `docs/settings.md`) |
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
+| `shell/notifications/` | notification cards, the popup stack and its window (D47); the server is `shell/services/NotificationService.qml` |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |

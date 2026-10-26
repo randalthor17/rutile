@@ -27,6 +27,7 @@ import qs.quicksettings
 import qs.bar
 import qs.shelf
 import qs.launcher
+import qs.notifications
 
 Window {
     width: 1200; height: 900; visible: true

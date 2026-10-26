@@ -14,6 +14,9 @@ Singleton {
     readonly property bool available: events.connected
     property var state: NiriState.empty()
 
+    // The output the keyboard is on ("" without niri): where popups such as notifications go.
+    readonly property string focusedOutput: NiriState.focusedOutput(state)
+
     // One output's workspaces with their windows (NiriState.groups); "" for all outputs.
     function groups(output) {
         return NiriState.groups(state, output);

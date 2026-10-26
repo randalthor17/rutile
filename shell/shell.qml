@@ -8,6 +8,7 @@ import Quickshell.Wayland
 import qs.common
 import qs.bar
 import qs.launcher
+import qs.notifications
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -195,6 +196,42 @@ ShellRoot {
                                     apps: launcher.item?.panel.apps.length ?? 0, listView: shell.launcherListView,
                                     categories: (launcher.item?.panel.categories ?? []).map(c => c.id),
                                     used: Object.keys(launcher.item?.panel.usage ?? {}) });
+        }
+    }
+
+    // Notification popups (plan 2.8), on the screen the keyboard is on; loaded while there are any, and until the
+    // last has played its closing motion.
+    property bool notificationPopupsShown: false
+    Connections {
+        target: NotificationService
+        function onPopupsChanged() {
+            if (NotificationService.popups.length > 0) shell.notificationPopupsShown = true;
+        }
+    }
+    LazyLoader {
+        id: notificationPopups
+        active: shell.notificationPopupsShown
+        NotificationPopupWindow {
+            screen: Quickshell.screens.find(s => s.name === NiriService.focusedOutput) ?? Quickshell.screens[0]
+            onFinished: shell.notificationPopupsShown = false
+        }
+    }
+    IpcHandler {
+        target: "notifications"
+        function dnd(): bool { return NotificationService.dnd; }
+        function setDnd(on: bool): void { NotificationService.setDnd(on); }
+        function dismiss(id: int): void { NotificationService.dismiss(id); }
+        function dismissAll(): void { NotificationService.dismissAll(); }
+        function invoke(id: int, action: string): void { NotificationService.invoke(id, action); }
+        // What is kept and what pops up, as JSON: for diagnostics and the smoke test.
+        function state(): string {
+            return JSON.stringify({
+                dnd: NotificationService.dnd,
+                list: NotificationService.list.map(n => ({ id: n.id, app: n.appName, summary: n.summary, body: n.body })),
+                popups: NotificationService.popups.map(n => n.id),
+                windowLoaded: notificationPopups.active,
+                shown: notificationPopups.item ? notificationPopups.item.popups.popups.map(n => n.id) : []
+            });
         }
     }
 

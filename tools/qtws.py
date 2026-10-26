@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -228,6 +228,29 @@ def qs_test_env(test, ws):
     return env
 
 
+class PrivateBus:
+    """A session D-Bus of the test's own, so the shell's notification server (plan 2.8) never meets the user's
+    (or takes over theirs). Without dbus-daemon the address points nowhere: nothing reaches the session either."""
+
+    def __enter__(self):
+        exe = shutil.which("dbus-daemon")
+        self.proc = None
+        self.address = "unix:path=/nonexistent/rutile-no-bus"
+        if exe:
+            self.proc = subprocess.Popen([exe, "--session", "--nofork", "--print-address=1"],
+                                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+            self.address = self.proc.stdout.readline().strip() or self.address
+        return self
+
+    def __exit__(self, *exc):
+        if self.proc:
+            self.proc.terminate()
+            try:
+                self.proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+
+
 def run_qs_tests(timeout=60):
     """(code, output, (passed, failed)); code is SKIPPED without the quickshell binary."""
     qs = shutil.which("quickshell")
@@ -237,8 +260,10 @@ def run_qs_tests(timeout=60):
     for test in sorted((ROOT / "tests" / "qs").glob("tst_*.qml")):
         ws = qs_workspace(test)
         try:
-            r = subprocess.run([qs, "-p", str(ws / "shell.qml")], env=qs_test_env(test, ws),
-                               capture_output=True, text=True, timeout=timeout)
+            with PrivateBus() as bus:
+                env = dict(qs_test_env(test, ws), DBUS_SESSION_BUS_ADDRESS=bus.address)
+                r = subprocess.run([qs, "-p", str(ws / "shell.qml")], env=env,
+                                   capture_output=True, text=True, timeout=timeout)
             text = r.stdout + r.stderr
         except subprocess.TimeoutExpired as e:
             text, r = f"timed out after {timeout} s\n{e.stdout or ''}", None
@@ -317,13 +342,14 @@ def run_wayland_smoke(screenshot=None):
         return SKIPPED, "needs quickshell and sway"
     shell = ROOT / "shell" / "shell.qml"
     problems, notes = [], []
-    with HeadlessSway() as comp:
+    with HeadlessSway() as comp, PrivateBus() as bus:
         fake = comp.runtime / "fake-brightness"
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
             "FAKE_APP_LOG": str(comp.runtime / "apps.log"),
             "RUTILE_ANIMATION_SPEED": "1.5",
+            "DBUS_SESSION_BUS_ADDRESS": bus.address,
             # never the user's settings or state (D45)
             "XDG_CONFIG_HOME": str(comp.runtime / "config"),
             "XDG_STATE_HOME": str(comp.runtime / "state"),
@@ -556,6 +582,37 @@ def run_wayland_smoke(screenshot=None):
                         launcher_loaded = None
                     if launcher_loaded is not False:
                         problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
+                    # a notification (plan 2.8) on the private bus: kept, popped up in its window, gone when dismissed
+                    notify = [shutil.which("busctl") or "busctl", "--user", "--", "call", "org.freedesktop.Notifications",
+                              "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
+                              "susssasa{sv}i", "Mail", "0", "", "Hello", "<b>from</b> the smoke test", "0", "0", "0"]
+                    sent = subprocess.run(notify, env=env, capture_output=True, text=True, timeout=10)
+                    def notification_state():
+                        try:
+                            return json.loads(ipc("state", target="notifications"))
+                        except ValueError:
+                            return {}
+                    for _ in range(20):
+                        n = notification_state()
+                        if n.get("shown"):
+                            break
+                        time.sleep(0.1)
+                    want_list = [{"id": 1, "app": "Mail", "summary": "Hello", "body": "from the smoke test"}]
+                    if sent.returncode != 0 or n.get("list") != want_list or n.get("shown") != [1] or not n.get("windowLoaded"):
+                        problems.append(f"notification: busctl {sent.returncode} {sent.stderr.strip()!r}, state {n}, "
+                                        f"expected {want_list} shown in a loaded window")
+                    if screenshot:
+                        grim = shutil.which("grim")
+                        if grim:
+                            time.sleep(1)               # the popup's motion
+                            shot = Path(screenshot).with_name(Path(screenshot).stem + "-notification.png")
+                            subprocess.run([grim, str(shot)], env=comp.env(), timeout=10)
+                            notes.append(f"screenshot: {shot}")
+                    ipc("dismissAll", target="notifications")
+                    time.sleep(1.5)
+                    n = notification_state()
+                    if n.get("list") != [] or n.get("windowLoaded") is not False:
+                        problems.append(f"notification dismissed: state {n}, expected none and the window unloaded")
                     # Closing when another window takes focus (D41) cannot be tested here: sway gives an
                     # on-demand layer surface focus only when it is clicked, and there is no pointer.
                     calls = (fake.parent / (fake.name + ".log"))
