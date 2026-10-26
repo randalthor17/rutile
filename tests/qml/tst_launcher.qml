@@ -5,6 +5,7 @@ import qs.launcher
 import "../qs/launcher/Scorer.js" as Scorer
 import "../qs/launcher/Categories.js" as Categories
 import "../qs/launcher/Usage.js" as Usage
+import "../qs/quicksettings/Controls.js" as Controls
 
 TestCase {
     id: root
@@ -26,6 +27,33 @@ TestCase {
     function cleanup() { Motion.speed = 1; }   // a test that slows the motion and fails leaves it as it was
 
     Component { id: panelComp; LauncherPanel { apps: root.apps } }
+
+    // A Quick Settings backend as Controls.js reads it: records what it is asked.
+    Component {
+        id: backendComp
+        QtObject {
+            property bool wifiAvailable: true
+            property bool wifiEnabled: true
+            property string wifiName: "home"
+            property bool bluetoothAvailable: false
+            property bool bluetoothEnabled: false
+            property string bluetoothDevice: ""
+            property bool micAvailable: true
+            property bool micMuted: true
+            property bool darkTheme: false
+            property bool brightnessAvailable: true
+            property real brightness: 0.404
+            property bool volumeAvailable: true
+            property real volume: 0.5
+            property bool muted: false
+            property var asked: []
+            function setWifiEnabled(on) { asked.push("wifi " + on); wifiEnabled = on; }
+            function setBluetoothEnabled(on) { asked.push("bluetooth " + on); }
+            function setMicMuted(m) { asked.push("micMuted " + m); micMuted = m; }
+            function setDarkTheme(on) { asked.push("dark " + on); darkTheme = on; }
+            function setAirplaneMode(on) { asked.push("airplane " + on); }
+        }
+    }
     Component { id: spyComp; SignalSpy {} }
 
     function test_ranking() {
@@ -491,5 +519,87 @@ TestCase {
         waitForRendering(none);
         compare(none.results.length, 0);
         compare(none.currentIndex, -1);
+    }
+
+    function test_controls_search_items() {
+        const b = createTemporaryObject(backendComp, root);
+        let items = Controls.searchItems(b);
+        compare(items.map(i => i.id).join(), "qs:wifi,qs:mic,qs:dark,qs:airplane,qs:brightness,qs:volume",
+                "only what this system has (no Bluetooth)");
+        const wifi = items[0];
+        compare(wifi.type, "setting");
+        compare(wifi.control + "," + wifi.action + "," + wifi.name, "wifi,toggle,Wi-Fi");
+        compare(wifi.symbol + "," + wifi.status, "wifi,home", "on: its icon and the network");
+        verify(wifi.keywords.indexOf("wireless") >= 0);
+        const mic = items[1];
+        compare(mic.symbol + "," + mic.status, "mic_off,Muted", "off: the off icon");
+        compare(items[3].status, "Off", "airplane mode is off while Wi-Fi is on");
+        compare(items[4].action + "," + items[4].status + "," + items[4].symbol, "open,40%,brightness_medium");
+        compare(items[5].action + "," + items[5].status + "," + items[5].symbol, "open,50%,music_note");
+        b.muted = true;
+        b.brightnessAvailable = false;
+        b.volumeAvailable = false;
+        b.wifiAvailable = false;
+        items = Controls.searchItems(b);
+        compare(items.map(i => i.id).join(), "qs:mic,qs:dark", "no radios, no backlight, no audio");
+        b.volumeAvailable = true;
+        compare(Controls.searchItems(b).pop().status + "," + Controls.searchItems(b).pop().symbol, "Muted,music_off");
+        compare(Controls.searchItems(null).length, 0);
+    }
+
+    function test_controls_choose() {
+        const b = createTemporaryObject(backendComp, root);
+        const items = Controls.searchItems(b);
+        compare(Controls.choose(items[0], b), "toggled");
+        compare(b.asked.join(), "wifi false", "Wi-Fi was on: off");
+        compare(Controls.choose(items[1], b), "toggled");
+        compare(b.asked[1], "micMuted false", "the muted microphone: on");
+        compare(Controls.choose(items[2], b), "toggled");
+        compare(b.asked[2], "dark true");
+        compare(Controls.choose(items[4], b), "open", "a slider: Quick Settings opens");
+        compare(Controls.choose(items[5], b), "open");
+        compare(b.asked.length, 3, "and nothing else was asked");
+    }
+
+    function test_settings_results() {
+        const b = createTemporaryObject(backendComp, root);
+        var p = createTemporaryObject(panelComp, root, { settings: Controls.searchItems(b) });
+        waitForRendering(p);
+        var chosen = createTemporaryObject(spyComp, root, { target: p, signalName: "settingChosen" });
+        var launched = createTemporaryObject(spyComp, root, { target: p, signalName: "launched" });
+        compare(ids(p.results), "org.gnome.Nautilus,firefox,firewall,foot,code", "no query: apps only");
+        p.query = "wifi";
+        compare(p.results[0].id, "qs:wifi", "found by name");
+        p.query = "wireless";
+        compare(p.results[0].id, "qs:wifi", "and by keyword");
+        p.query = "home";
+        verify(p.results.every(r => r.id !== "qs:wifi"), "not by its status");
+        p.query = "fire";
+        compare(ids(p.results).split(",").slice(0, 2).join(), "firefox,firewall", "apps as before");
+        p.query = "dark";
+        p.category = "system";
+        compare(p.results.length, 0, "a category shows only apps");
+        p.category = "";
+        compare(p.results[0].id, "qs:dark");
+        // Enter chooses it; the app menu is not offered
+        keyClick(Qt.Key_Return);
+        compare(chosen.count, 1);
+        compare(chosen.signalArguments[0][0].id, "qs:dark");
+        compare(launched.count, 0, "not launched as an app");
+        p.toggleMenu();
+        verify(!p.menuOpen, "no menu for a setting");
+        var tile = findChild(p, "launcherApp_qs:dark");
+        verify(findChild(tile, "launcherTileSymbol").item, "a symbol");
+        verify(!findChild(tile, "launcherTileInitial").visible, "not an initial");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        verify(!p.menuOpen, "a right click neither");
+        mouseClick(tile, tile.width / 2, tile.height / 2);
+        compare(chosen.count, 2, "a click chooses it too");
+        p.listView = true;
+        tryVerify(() => findChild(findChild(p, "launcherApp_qs:dark"), "launcherTileSubtitle")?.text === "Off", 2000,
+                  "the list shows its state");
+        p.query = "fire";
+        var app = findChild(p, "launcherApp_firefox");
+        verify(!findChild(app, "launcherTileSymbol").item, "an app has no symbol");
     }
 }

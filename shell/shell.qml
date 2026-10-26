@@ -11,6 +11,7 @@ import qs.launcher
 import qs.quicksettings
 import qs.services
 import qs.shelf
+import "quicksettings/Controls.js" as Controls
 
 ShellRoot {
     id: shell
@@ -128,6 +129,12 @@ ShellRoot {
             pinnedIds: shelfBackend.pinnedIds
             pinsEditable: shelfBackend.pinsEditable
             onPinToggled: app => shelfBackend.togglePin(app.id)
+            // Quick Settings' controls as search results: a toggle flips, a slider opens Quick Settings
+            settings: Controls.searchItems(shellBackend)
+            onSettingChosen: item => {
+                if (Controls.choose(item, shellBackend) === "open" && !shell.quickSettingsOpen)
+                    shell.toggleQuickSettings(shell.launcherScreen);
+            }
             onCloseRequested: launcher.active = false
         }
     }
@@ -158,12 +165,12 @@ ShellRoot {
             p.actionChosen(app, actionId);
             return true;
         }
-        // Open an app as a click in the open launcher would (the smoke test).
-        function launch(appId: string): bool {
+        // Open an app, or choose a setting ("qs:dark"), as a click in the open launcher would (the smoke test).
+        function launch(id: string): bool {
             const p = launcher.item?.panel;
-            const app = p?.apps.find(a => a.id === appId);
-            if (!app) return false;
-            p.launched(app);
+            const item = p?.apps.concat(p.settings).find(a => a.id === id);
+            if (!item) return false;
+            p.choose(item);
             return true;
         }
         // Pin or unpin an app as its menu in the open launcher would; false when the pins are set in Nix.
@@ -214,6 +221,7 @@ ShellRoot {
                 loaded: quickSettings.active,
                 panelHasBackend: !!w && w.panelHasBackend,
                 brightnessShown: !!w && w.brightnessShown,
+                darkTheme: shellBackend.darkTheme,
                 pillsOpen: statusWindows.instances.map(s => s.pill.open),
                 pillsHaveBackend: statusWindows.instances.map(s => !!s.pill.backend),
                 pillsOnTop: statusWindows.instances.map(s => s.pill.WlrLayershell.layer === WlrLayer.Top),

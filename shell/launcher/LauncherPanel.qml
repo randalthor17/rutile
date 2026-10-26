@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 // Menu key or Shift+F10 on the current one, opens its menu: Open, the desktop file's actions (`actions`:
 // [{id, name}]), and Pin to shelf or Unpin from shelf (`pinnedIds`; left out while `pinsEditable` is false, as
 // when Nix sets the pins); while it is open the arrows and Enter work in it and Escape closes only it. It grows in and out
-// with the shared popup motion (D43), then reports `hidden`.
+// with the shared popup motion (D43), then reports `hidden`. A search in All also finds the Quick Settings
+// controls (`settings`), which `settingChosen` hands to the shell.
 import QtQuick
 import qs.common
 import qs.components
@@ -27,8 +28,12 @@ Rectangle {
     property real now: Date.now()           // when the usage is weighed: the opening is close enough
     property var pinnedIds: []              // the shelf's pins
     property bool pinsEditable: true
-    readonly property var results: Scorer.rank(Categories.filter(apps, category), query,
-                                               app => Usage.score(usage[app.id], now))
+    // Quick Settings controls a search also finds (Controls.searchItems: type "setting", a `symbol`, a `status`);
+    // only while typing in All, and choosing one asks `settingChosen` instead of opening an app.
+    property var settings: []
+    readonly property var results: Scorer.rank(Categories.filter(apps, category)
+                                                   .concat(category === "" && query.trim() !== "" ? settings : []),
+                                               query, item => Usage.score(usage[item.id], now))
     readonly property alias currentIndex: grid.currentIndex
     readonly property int columns: 5
     readonly property real cell: Spacing.xxxl * 2 + Spacing.sm
@@ -38,6 +43,7 @@ Rectangle {
     signal launched(var app)
     signal actionChosen(var app, string actionId)
     signal pinToggled(var app)
+    signal settingChosen(var item)
     signal closeRequested()
     signal hidden()
 
@@ -63,6 +69,7 @@ Rectangle {
     readonly property Item menu: menuLoader.item as Item
 
     function openMenu(app, tile) {
+        if (app.type === "setting") return;     // a setting has nothing more to offer
         menuApp = app;
         menuBelow = tile.mapToItem(root, Math.min(tile.width / 2, cell / 2), tile.height - Spacing.md);
         menuAboveY = tile.mapToItem(root, 0, Spacing.md).y;
@@ -101,8 +108,12 @@ Rectangle {
         category = ids[(at + delta + ids.length) % ids.length];
     }
 
+    function choose(item) {
+        if (item.type === "setting") settingChosen(item);
+        else launched(item);
+    }
     function launchCurrent() {
-        if (grid.currentIndex >= 0 && grid.currentIndex < results.length) launched(results[grid.currentIndex]);
+        if (grid.currentIndex >= 0 && grid.currentIndex < results.length) choose(results[grid.currentIndex]);
     }
 
     implicitWidth: columns * cell + 2 * Spacing.lg
@@ -294,10 +305,11 @@ Rectangle {
                 height: grid.cellHeight
                 row: root.listView
                 name: modelData.name
-                subtitle: modelData.genericName || modelData.subtitle || ""
+                subtitle: modelData.status || modelData.genericName || modelData.subtitle || ""
                 iconSource: modelData.icon || ""
+                symbol: modelData.symbol || ""
                 current: index === grid.currentIndex
-                onClicked: root.launched(modelData)
+                onClicked: root.choose(modelData)
                 onMenuRequested: {
                     grid.currentIndex = index;      // the app the menu is for is the current one
                     root.openMenu(modelData, tile);
@@ -307,7 +319,7 @@ Rectangle {
             Text {
                 anchors.centerIn: parent
                 visible: root.results.length === 0
-                text: root.apps.length === 0 ? "No apps found" : "No apps match"
+                text: root.apps.length === 0 ? "No apps found" : "Nothing matches"
                 color: Colors.surfaceVariantOn
                 font: Type.font(Type.bodyLarge)
             }

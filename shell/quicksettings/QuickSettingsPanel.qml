@@ -14,6 +14,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
 import qs.components
+import "Controls.js" as Controls
 
 Rectangle {
     id: root
@@ -55,47 +56,13 @@ Rectangle {
         else if (hadWindowFocus) windowFocusLost();
     }
 
-    // What each tile id shows. The state comes from tileState(), so a binding on it follows the backend.
-    readonly property var catalog: ({
-        wifi: { text: "Wi-Fi", icon: "wifi", offIcon: "wifi_off", dualTarget: true },
-        bluetooth: { text: "Bluetooth", icon: "bluetooth", offIcon: "bluetooth_disabled", dualTarget: true },
-        mic: { text: "Microphone", icon: "mic", offIcon: "mic_off" },
-        dark: { text: "Dark theme", icon: "contrast", offIcon: "contrast" },
-        airplane: { text: "Airplane mode", icon: "flight", offIcon: "flight" }
-    })
-
+    // What each tile id shows (Controls.js). The state comes from tileState(), so a binding on it follows the backend.
+    readonly property var catalog: Controls.catalog
     function tileState(id) {
-        var b = backend;
-        if (!b) return { active: false, available: false, secondary: "" };
-        switch (id) {
-        case "wifi":
-            return { active: b.wifiEnabled, available: b.wifiAvailable,
-                     secondary: !b.wifiAvailable ? "Unavailable" : !b.wifiEnabled ? "Off" : (b.wifiName || "On") };
-        case "bluetooth":
-            return { active: b.bluetoothEnabled, available: b.bluetoothAvailable,
-                     secondary: !b.bluetoothAvailable ? "Unavailable" : !b.bluetoothEnabled ? "Off" : (b.bluetoothDevice || "On") };
-        case "mic":
-            return { active: !b.micMuted, available: b.micAvailable,
-                     secondary: !b.micAvailable ? "Unavailable" : b.micMuted ? "Muted" : "On" };
-        case "dark":
-            return { active: b.darkTheme, available: true, secondary: b.darkTheme ? "On" : "Off" };
-        case "airplane": {
-            const radios = b.wifiAvailable || b.bluetoothAvailable;
-            const on = radios && !(b.wifiAvailable && b.wifiEnabled) && !(b.bluetoothAvailable && b.bluetoothEnabled);
-            return { active: on, available: radios, secondary: on ? "On" : "Off" };
-        }
-        }
-        return { active: false, available: false, secondary: "" };
+        return Controls.state(id, backend);
     }
-
     function toggleTile(id, wanted) {
-        switch (id) {
-        case "wifi": backend.setWifiEnabled(wanted); break;
-        case "bluetooth": backend.setBluetoothEnabled(wanted); break;
-        case "mic": backend.setMicMuted(!wanted); break;
-        case "dark": backend.setDarkTheme(wanted); break;
-        case "airplane": backend.setAirplaneMode(wanted); break;
-        }
+        Controls.toggle(id, wanted, backend);
     }
 
     // A power action waits until the panel has gone (menu and panel play their closing motion first), so a lock

@@ -390,7 +390,7 @@ def run_wayland_smoke(screenshot=None):
                     # the fixture's default pins; no niri and no windows here, so no workspace groups
                     if shelves != [{"pinned": ["org.gnome.Nautilus", "firefox", "foot"], "workspaces": []}]:
                         problems.append(f"ipc state: shelves {shelves!r}, expected the fixture's default pins")
-                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
+                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "darkTheme": True, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:
                         problems.append(f"ipc state: got {state}, expected {want}")
@@ -504,6 +504,34 @@ def run_wayland_smoke(screenshot=None):
                         foot = repr(e)
                     if got != "true" or foot != 1 or ipc("isOpen", target="launcher") != "false":
                         problems.append(f"ipc launcher launch foot: {got}, usage {foot}, expected 1 and the launcher closed")
+                    time.sleep(1.5)
+                    # Quick Settings' controls are search results: a toggle flips, a slider opens Quick Settings
+                    def qs_state():
+                        try:
+                            return json.loads(ipc("state"))
+                        except ValueError:
+                            return {}
+                    dark = qs_state().get("darkTheme")
+                    ipc("open", target="launcher")
+                    found = ipc("search", "dark theme", target="launcher").split(",")[0]
+                    got = ipc("launch", "qs:dark", target="launcher")
+                    time.sleep(0.3)
+                    if found != "qs:dark" or got != "true" or qs_state().get("darkTheme") is not (not dark):
+                        problems.append(f"launcher setting qs:dark: found {found!r}, launch {got}, dark theme "
+                                        f"{qs_state().get('darkTheme')!r}, expected it flipped from {dark!r}")
+                    if ipc("isOpen", target="launcher") != "false":
+                        problems.append("launcher setting qs:dark: the launcher stayed open")
+                    if ipc("isOpen") != "false":
+                        problems.append("launcher setting qs:dark: a toggle opened Quick Settings")
+                    time.sleep(1.5)
+                    ipc("open", target="launcher")
+                    found = ipc("search", "backlight", target="launcher").split(",")[0]
+                    ipc("launch", "qs:brightness", target="launcher")
+                    time.sleep(0.3)
+                    if found != "qs:brightness" or ipc("isOpen") != "true":
+                        problems.append(f"launcher setting qs:brightness: found {found!r}, Quick Settings open "
+                                        f"{ipc('isOpen')!r}, expected it opened")
+                    ipc("close")
                     time.sleep(1.5)
                     ipc("open", target="launcher")
                     # slow motion, so the launcher is still on screen when asked: closing, not open

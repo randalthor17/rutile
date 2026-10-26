@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Quick Settings in launcher search** (plan 2.7, maintainer's choice): typing "wifi", "dark", "mute" or
+  "brightness" also finds the Quick Settings controls this system has, shown with their symbol and, in the list,
+  their state. Choosing Wi-Fi, Bluetooth, Microphone, Dark theme or Airplane mode switches it at once; Brightness
+  and Volume open Quick Settings. Apps rank ahead of a setting on an equal match, and a category chip shows apps
+  only.
 - **Launcher remembers what you use** (plan 2.7, D46): apps opened from the launcher rank higher in search,
   more so when used lately (kept in `~/.local/state/rutile/state.json`). The grid without a search stays in name
   order, so apps do not move around.

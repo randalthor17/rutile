@@ -100,7 +100,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   view) goes to `$XDG_STATE_HOME/rutile/state.json`. Settings so far: `motion.speed`, `shelf.pins`. The
   home-manager module (`homeManagerModules.default`, `nix/home-manager.nix`) builds `programs.rutile.settings`
   from the same schema. Not done: the registry's search fields (icon, aliases, children, advanced/hidden) and
-  the settings search service, both with the settings app (5.1); a home-manager option to install the shell
+  the settings search service, both with the settings app (5.1; until then the launcher finds the Quick Settings
+  controls, 2.7); a home-manager option to install the shell
   (needs the package, 6.1). The whole item: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
 - [ ] **2.6a** Done (unreleased, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
@@ -122,8 +123,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   state.json, 2.5; the check mark, the chip row's scroll and the results animate), and an in-order letter match on names ("nvi" finds Neovide). An app menu (right
   click, Menu key or Shift+F10): Open, the desktop file's actions, and Pin to shelf or Unpin from shelf (saves
   `shelf.pins`; left out when Nix sets the pins). Usage (frecency, D46): each app opened from the launcher counts,
-  weighed by how lately (state.json), and ranks search results; the grid without a query stays in name order. Not
-  done: settings provider (needs the 2.5 registry). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  weighed by how lately (state.json), and ranks search results; the grid without a query stays in name order.
+  Settings in search (maintainer's choice, until the settings app): typing in All also finds the Quick Settings
+  controls (`Controls.js`: Wi-Fi, Bluetooth, Microphone, Dark theme, Airplane mode, Brightness, Volume, those the
+  system has, by name or keyword); a toggle flips at once and closes the launcher, a slider opens Quick Settings.
+  Not done: settings from the schema (`motion.speed`, `shelf.pins`) as results, once the settings app has pages. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop

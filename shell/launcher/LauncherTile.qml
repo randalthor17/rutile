@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
-// One app in the launcher: its icon (or its initial on a tonal circle when the icon theme has none), a state
+// One result in the launcher: an app's icon (or its initial on a tonal circle when the icon theme has none; a
+// setting's Material symbol, `symbol`, on the same circle), a state
 // layer, and a tonal background while it is the keyboard's current item. A right click asks for its menu. As a grid tile the name sits under the
 // icon; as a list row (`row`) a smaller icon leads and the name has the description under it.
 import QtQuick
@@ -12,6 +13,7 @@ Item {
     property string name: ""
     property string subtitle: ""
     property string iconSource: ""
+    property string symbol: ""
     property bool current: false
     property bool row: false
 
@@ -50,10 +52,22 @@ Item {
             radius: width / 2
             color: Colors.secondaryContainer
             Text {
+                objectName: "launcherTileInitial"
                 anchors.centerIn: parent
+                visible: root.symbol === ""
                 text: root.name.charAt(0).toUpperCase()
                 color: Colors.secondaryContainerOn
                 font: Type.font(root.row ? Type.titleMedium : Type.titleLarge)
+            }
+            Loader {
+                objectName: "launcherTileSymbol"
+                anchors.centerIn: parent
+                active: root.symbol !== ""
+                sourceComponent: Icon {
+                    name: root.symbol
+                    size: root.row ? Spacing.lg + Spacing.xs : Spacing.xl     // 20 in a 32 circle, 24 in 48
+                    color: Colors.secondaryContainerOn
+                }
             }
         }
     }

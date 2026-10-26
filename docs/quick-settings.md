@@ -52,6 +52,7 @@ any wallpaper (the maintainer asked for a colored pill). It does nothing on clic
 | `shell/quicksettings/QuickSettingsWindow.qml` | yes | a `PanelWindow` (layer shell) at the top right, `ExclusionMode.Ignore`, keyboard focus for Escape |
 | `shell/quicksettings/QuickSettingsBackend.qml` | yes (through `qs.services`) | the panel's backend interface on top of the services |
 | `shell/quicksettings/QuickSettingsPanel.qml` | no | header, brightness and volume sliders, tiles on the `EditableGrid`, the open and close motion |
+| `shell/quicksettings/Controls.js` | no | the tiles' names, icons and search words, their state from the backend, what a toggle asks; the same controls as launcher search results (choosing a toggle flips it, a slider opens Quick Settings) |
 | `shell/quicksettings/PowerMenu.qml` | no | the power menu: a segmented list of `ListItem`s, created only while open |
 | `shell/quicksettings/PowerActions.js` | no | the power menu's entries and their commands (run by the backend with `Quickshell.execDetached`) |
 | `shell/services/AudioService.qml` | yes | default output and input: volume, mute (`Pipewire`, `PwObjectTracker`) |

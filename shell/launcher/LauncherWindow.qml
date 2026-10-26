@@ -18,9 +18,11 @@ PanelWindow {
     property alias listView: panel.listView
     property alias pinnedIds: panel.pinnedIds
     property alias pinsEditable: panel.pinsEditable
+    property alias settings: panel.settings
 
     signal closeRequested()
     signal pinToggled(var app)
+    signal settingChosen(var item)
 
     function used(app) {
         Settings.setState("launcher.usage", Usage.record(Settings.stateValue("launcher.usage", {}), app.id, Date.now()));
@@ -66,6 +68,10 @@ PanelWindow {
             root.close();
         }
         onPinToggled: app => root.pinToggled(app)
+        onSettingChosen: item => {
+            root.settingChosen(item);
+            root.close();
+        }
         onCloseRequested: root.close()
         onHidden: root.closeRequested()
     }
