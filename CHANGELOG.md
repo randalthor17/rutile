@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Decision D38** (maintainer): plan 2.2 waits for Quickshell's `Quickshell.Niri` module (PR #949) instead of
+  building Quickshell from git or using `Quickshell.WindowManager` (ext-workspace-v1, immature on niri); the
+  fallback is named. niri supports `ext-background-effect-v1`, so the shell's own surfaces may blur
+  (`BackgroundEffect`), superseding D4's no-blur part.
 - **Quickshell first** (maintainer's rule, plan H5): `docs/HANDOFF.md` now says to check the Quickshell docs for
   the installed version (0.3.2) before building anything, with a table mapping its types to plan items, and the
   plan names the types for each Phase 2 item. Code that needs Quickshell types can now be tested:

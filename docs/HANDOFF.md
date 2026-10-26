@@ -123,12 +123,12 @@ Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the
 | One surface per monitor | `Variants` over `Quickshell.screens`, `ShellScreen` | 2.3, 2.4 |
 | Load windows and popups only while open (D31) | `LazyLoader` (windows and popups; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
 | Files and config, watched | `FileView` (in use: PaletteWatcher), `JsonAdapter`, `JsonObject` | 2.5, 4.2 |
-| Commands, sockets | `Process`, `StdioCollector`, `SplitParser`, `Socket` | 2.2 (niri IPC socket), 4.2 |
+| Commands, sockets | `Process`, `StdioCollector`, `SplitParser`, `Socket` | 4.2; 2.2 only as the fallback (D38) |
 | Shell IPC and keybinds | `IpcHandler` (`qs ipc call ...` from niri binds) | 2.2 |
 | State kept across config reloads | `PersistentProperties` | 2.x |
 | Clock | `SystemClock` | 2.3, 4.2 |
 | Apps | `DesktopEntries`, `DesktopEntry`, `IconImage` | 2.4, 2.7 |
-| Running windows | `ToplevelManager`, `Toplevel` (wlr-foreign-toplevel); niri IPC for workspaces | 2.4 |
+| Running windows, workspaces | `Quickshell.Niri` once PR #949 merges (D38); `ToplevelManager`, `Toplevel` (wlr-foreign-toplevel) | 2.2, 2.4 |
 | Sound | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` | 2.1, 2.6 |
 | Network | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork` (NetworkManager backend) | 2.1, 2.6, 5.2 |
 | Bluetooth | `Bluetooth`, `BluetoothAdapter`, `BluetoothDevice` | 2.1, 2.6, 5.2 |
@@ -140,12 +140,12 @@ Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the
 | Greeter, polkit | `Greetd`, `PolkitAgent` | 6.2, 2.8 |
 | Rounded clipping of children (cards, pictures) | `ClippingRectangle` (rectangles only; a cookie needs ShapeMorph) | 2.3, 4.3 |
 | Wallpaper colors | `ColorQuantizer` (dominant colors only; matugen still makes the scheme) | 1.1b |
-| Blur behind a surface | `BackgroundEffect` (`ext-background-effect-v1`; niri support unverified, D4) | 3.1 |
+| Blur behind a surface | `BackgroundEffect` (`ext-background-effect-v1`, which niri supports; D38) | 2.3 to 2.8, 3.1 |
 | Screen preview | `ScreencopyView` | later |
 
-Not in Quickshell, so ours: the M3E controls and shapes (`shell/components/`), niri IPC (no niri module; use
-`Socket` on `$NIRI_SOCKET`), the widget renderer, settings registry and search. `Quickshell.WindowManager`
-(`WindowManager`, `Windowset`) does not say which compositors it supports; check against niri before 2.2.
+Not in Quickshell, so ours: the M3E controls and shapes (`shell/components/`), the widget renderer, settings
+registry and search. niri IPC: wait for `Quickshell.Niri` (D38). `Quickshell.WindowManager` only speaks
+ext-workspace-v1, which is immature, and niri's implementation of it is basic: do not use it for niri.
 
 ### Release protocol
 

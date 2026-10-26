@@ -212,3 +212,17 @@ any size; an SVG image rasterized per change was measured at 54 to 103, 93 and 1
 the qtsvg plugin and the screen's pixel ratio, and blurs when scaled. The geometry renderer is lighter (77 for a
 cookie) but not antialiased. Revisit if many shapes end up on screen at once (then the image path), or if Qt
 gains a lighter antialiased path renderer.
+
+**D38. niri IPC waits for Quickshell's niri module; our own surfaces may blur.** Supersedes D4's "upstream niri
+has no blur, so v1 uses solid tinted surfaces" (per the maintainer, October 2026). Blur: niri supports
+`ext-background-effect-v1`, so Quickshell's `BackgroundEffect` can blur behind the shell's own surfaces (panels,
+Quick Settings, shelf); third-party windows still get none. niri IPC: `Quickshell.WindowManager` only speaks
+ext-workspace-v1, which is not mature, and niri's implementation of it is basic. Quickshell PR #949
+(quickshell-mirror/quickshell, "niri/ipc: add niri IPC module") adds `Quickshell.Niri` on niri's own IPC socket:
+workspaces, windows, monitors, overview, keyboard layouts, actions, events. It is open and actively developed, so
+plan 2.2 waits for it rather than building Quickshell from git (an unreviewed, force-pushed branch to keep
+building against nixpkgs' Qt) or writing our own client now. Known limit: niri windows cannot be matched to
+Wayland toplevels (niri exposes no window ids over Wayland), so the shelf takes running apps from niri's window
+list. If 2.2 starts before it merges: pin the PR commit as a flake input (with the maintainer's approval) or a
+small `Socket` client on `$NIRI_SOCKET`, behind a thin `Niri` singleton so switching later touches one file.
+Revisit when #949 merges or stalls.

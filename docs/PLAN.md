@@ -73,8 +73,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Types: `Pipewire`, `UPower`/`PowerProfiles`, `Networking`, `Bluetooth`, `NotificationServer`, `Mpris`,
   `SystemTray` (the table in `docs/HANDOFF.md`, "Quickshell types and where they go").
 - [ ] **2.2** niri integration: IPC (workspaces, windows, focus events); the shell ships a generated niri config
-  module (window rules, keybinds, startup). Types: `Socket` on `$NIRI_SOCKET` (Quickshell has no niri module),
-  `IpcHandler` for keybinds into the shell; check `Quickshell.WindowManager` against niri first.
+  module (window rules, keybinds, startup). Waiting (D38) for Quickshell's `Quickshell.Niri` module
+  (quickshell-mirror/quickshell PR #949, open in October 2026); not `Quickshell.WindowManager`. If it has not
+  merged when this item starts: pin the PR commit as a flake input (maintainer's approval) or a small `Socket`
+  client on `$NIRI_SOCKET`, behind a thin `Niri` singleton either way. `IpcHandler` for keybinds into the shell.
 - [ ] **2.3** Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
   floating time/date top-left, status icons top-right, no top bar. Types: `PanelWindow` on `WlrLayer.Background`,
   `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
@@ -96,8 +98,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [ ] **3.1** Googlebook-like floating windows via niri window rules (default floating, corner radius, shadow,
   focus ring); our own apps draw M3E title bars with ChromeOS-style caption buttons; third-party apps get GTK/Qt
-  theming and rules (niri draws no title bars; upstream niri has no blur). Quickshell's `BackgroundEffect`
-  blurs behind our own surfaces where the compositor supports `ext-background-effect-v1`; check niri.
+  theming and rules (niri draws no title bars). Our own surfaces can blur with Quickshell's `BackgroundEffect`
+  (niri supports `ext-background-effect-v1`, D38); third-party windows get none.
 
 ## Phase 4: widget system (the core feature)
 
