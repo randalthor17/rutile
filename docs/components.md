@@ -15,6 +15,7 @@ directory containing the entry file, so run things from `shell/`.
 | `Slider` | horizontal; `from`, `to`, `value`, `stepSize` (0 = continuous), `moved(real)` when the user changes it; `size` `xs` (default) `s` `m` `l` `xl`; `startIcon`, `endIcon` track icons on `m` and up |
 | `ProgressBar` | linear, determinate; `value` 0..1, `wavy`, `animated` |
 | `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`, `controlled`; `clicked()`, `toggled(bool)` |
+| `Menu` | a segmented list of choices on a raised surface: `items` [{id, text, icon}], `currentIndex` (the keyboard's choice), `chosen(id)`; as wide as its widest item, at least `minimumWidth`; open it with a `PopupLoader` |
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 | `ShapeMorph` | a shape from the M3 Expressive shape library (`MaterialShapes.names`: `circle`, `cookie9Sided`, `softBurst`, ... 35 in all), filled with `color`; changing `shape` morphs to it; `morphing`, `progress` |

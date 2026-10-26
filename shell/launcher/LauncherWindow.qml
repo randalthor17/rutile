@@ -34,11 +34,17 @@ PanelWindow {
         objectName: "launcherPanel"
         apps: DesktopEntries.applications.values.map(e => ({
             type: "app", id: e.id, name: e.name, genericName: e.genericName, subtitle: e.comment,
-            keywords: e.keywords, categories: e.categories, icon: e.icon ? Quickshell.iconPath(e.icon, true) : ""
+            keywords: e.keywords, categories: e.categories,
+            actions: e.actions.map(a => ({ id: a.id, name: a.name })), icon: e.icon ? Quickshell.iconPath(e.icon, true) : ""
         }))
         onLaunched: app => {
             const e = DesktopEntries.byId(app.id);
             if (e) e.execute();
+            root.close();
+        }
+        onActionChosen: (app, actionId) => {
+            const action = DesktopEntries.byId(app.id)?.actions.find(a => a.id === actionId);
+            if (action) action.execute();
             root.close();
         }
         onCloseRequested: root.close()

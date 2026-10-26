@@ -15,12 +15,14 @@ TestCase {
 
     readonly property var apps: [
         { type: "app", id: "org.gnome.Nautilus", name: "Files", genericName: "File Manager", keywords: ["folder", "explorer"], subtitle: "Access and organize files", icon: "", categories: ["GNOME", "Utility", "FileManager"] },
-        { type: "app", id: "firefox", name: "Firefox", genericName: "Web Browser", keywords: ["internet"], subtitle: "", icon: "", categories: ["Network", "WebBrowser"] },
+        { type: "app", id: "firefox", name: "Firefox", genericName: "Web Browser", keywords: ["internet"], subtitle: "", icon: "", categories: ["Network", "WebBrowser"],
+          actions: [{ id: "new-window", name: "New Window" }, { id: "new-private-window", name: "New Private Window" }] },
         { type: "app", id: "code", name: "Visual Studio Code", genericName: "Text Editor", keywords: [], subtitle: "", icon: "", categories: ["Development", "IDE"] },
         { type: "app", id: "foot", name: "Foot", genericName: "Terminal", keywords: ["shell"], subtitle: "", icon: "", categories: ["System", "TerminalEmulator"] },
         { type: "app", id: "firewall", name: "Firewall", genericName: "", keywords: [], subtitle: "Network rules", icon: "", categories: ["System", "Settings"] }
     ]
     function ids(list) { return list.map(a => a.id).join(); }
+    function cleanup() { Motion.speed = 1; }   // a test that slows the motion and fails leaves it as it was
 
     Component { id: panelComp; LauncherPanel { apps: root.apps } }
     Component { id: spyComp; SignalSpy {} }
@@ -138,11 +140,13 @@ TestCase {
         var chips = findChild(p, "launcherChips");
         verify(chips.contentWidth > chips.width, "nine chips overflow");
         compare(chips.contentX, 0);
+        Motion.speed = 0.2;
         keyClick(Qt.Key_Backtab);
         compare(p.category, "utilities");
         var last = findChild(p, "launcherChip_utilities");
-        wait(50);
-        verify(chips.contentX > 0 && chips.contentX < chips.contentWidth - chips.width - 1, "scrolls, not jumps");
+        tryVerify(() => chips.contentX > 0 && chips.contentX < chips.contentWidth - chips.width - 1, 2000,
+                  "scrolls, not jumps (in slow motion, so a busy machine still sees it in flight)");
+        Motion.speed = 1;
         var all = findChild(p, "launcherChip_all");
         tryVerify(() => Math.abs(last.width - last.implicitWidth) < 0.01 && last.leadingShown === 1
                   && all.leadingShown === 0, 3000, "the check marks settle");
@@ -273,6 +277,135 @@ TestCase {
         compare(close.count, 1);
         p.shown = false;
         tryCompare(hidden, "count", 1, 2000);
+    }
+
+    function test_app_menu_by_mouse() {
+        var p = createTemporaryObject(panelComp, root);
+        waitForRendering(p);
+        var launched = createTemporaryObject(spyComp, root, { target: p, signalName: "launched" });
+        var action = createTemporaryObject(spyComp, root, { target: p, signalName: "actionChosen" });
+        var tile = findChild(p, "launcherApp_firefox");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        verify(p.menuOpen);
+        compare(launched.count, 0, "a right click does not launch");
+        compare(p.currentIndex, 1, "and makes it the current app");
+        compare(p.menuItems[0].icon, "", "no icons: the entries line up");
+        compare(p.menuItems.map(i => i.text).join(), "Open,New Window,New Private Window");
+        tryVerify(() => p.menu && p.menu.scale === 1, 2000, "grows in");
+        var loader = findChild(p, "launcherMenu");
+        verify(loader.below, "under a top-row app");
+        compare(loader.origin, Item.TopLeft);
+        var tileTop = tile.mapToItem(p, 0, 0).y;
+        verify(loader.y > tileTop + tile.height / 2 && loader.y < tileTop + tile.height, "hangs from its lower part");
+        verify(loader.x >= Spacing.sm && loader.x + loader.width <= p.width - Spacing.sm, "inside the panel");
+        compare(findChild(p.menu, "launcherMenu_").selected, true, "Open is the keyboard's choice");
+        var item = findChild(p.menu, "launcherMenu_new-private-window");
+        mouseClick(item, item.width / 2, item.height / 2);
+        compare(action.count, 1);
+        compare(action.signalArguments[0][0].id, "firefox");
+        compare(action.signalArguments[0][1], "new-private-window");
+        verify(!p.menuOpen, "choosing closes it");
+        tryVerify(() => !findChild(p, "launcherMenu").item, 2000, "and unloads it after its motion");
+        // a press outside closes it and goes no further
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        verify(p.menuOpen);
+        var other = findChild(p, "launcherApp_foot");
+        mouseClick(other, other.width / 2, other.height / 2);
+        verify(!p.menuOpen);
+        compare(launched.count, 0, "the press only closed the menu");
+        // Open launches the app
+        mouseClick(other, other.width / 2, other.height / 2, Qt.RightButton);
+        compare(p.menuItems.map(i => i.text).join(), "Open", "no desktop actions");
+        tryVerify(() => p.menu && p.menu.scale === 1, 2000);
+        item = findChild(p.menu, "launcherMenu_");
+        mouseClick(item, item.width / 2, item.height / 2);
+        compare(launched.count, 1);
+        compare(launched.signalArguments[0][0].id, "foot");
+    }
+
+    function test_app_menu_by_keyboard() {
+        failOnWarning(/TypeError/);
+        var p = createTemporaryObject(panelComp, root);
+        waitForRendering(p);
+        var launched = createTemporaryObject(spyComp, root, { target: p, signalName: "launched" });
+        var action = createTemporaryObject(spyComp, root, { target: p, signalName: "actionChosen" });
+        var close = createTemporaryObject(spyComp, root, { target: p, signalName: "closeRequested" });
+        keyClick(Qt.Key_Right);             // Firefox
+        keyClick(Qt.Key_Menu);
+        verify(p.menuOpen);
+        compare(p.menuApp.id, "firefox", "the current app's menu");
+        keyClick(Qt.Key_Right); keyClick(Qt.Key_Left); keyClick(Qt.Key_Tab); keyClick(Qt.Key_Backtab);
+        compare(p.currentIndex, 1, "the arrows and Tab stay in the menu");
+        compare(p.category, "");
+        keyClick(Qt.Key_Down); keyClick(Qt.Key_Down); keyClick(Qt.Key_Down);
+        compare(p.menuIndex, 2, "down to the last, no further");
+        keyClick(Qt.Key_Up);
+        compare(p.menuIndex, 1);
+        keyClick(Qt.Key_Escape);
+        verify(!p.menuOpen, "Escape closes the menu");
+        compare(close.count, 0, "but not the launcher");
+        keyClick(Qt.Key_F10);
+        verify(!p.menuOpen, "F10 alone does not");
+        keyClick(Qt.Key_F10, Qt.ShiftModifier);
+        verify(p.menuOpen, "Shift+F10 opens it too");
+        compare(p.menuIndex, 0, "from the top again");
+        keyClick(Qt.Key_Up);
+        compare(p.menuIndex, 0, "no further up");
+        keyClick(Qt.Key_Down);
+        keyClick(Qt.Key_Return);
+        compare(action.count, 1);
+        compare(action.signalArguments[0][1], "new-window");
+        compare(launched.count, 0);
+        keyClick(Qt.Key_Menu);
+        keyClick(Qt.Key_Enter);
+        compare(launched.count, 1, "Open");
+        compare(launched.signalArguments[0][0].id, "firefox");
+        keyClick(Qt.Key_Menu);
+        keyClick(Qt.Key_Menu);
+        verify(!p.menuOpen, "the Menu key closes it again");
+        keyClick(Qt.Key_F10, Qt.ShiftModifier);
+        keyClick(Qt.Key_F10, Qt.ShiftModifier);
+        verify(!p.menuOpen, "so does Shift+F10");
+        keyClick(Qt.Key_Menu);
+        keyClick(Qt.Key_F);
+        verify(!p.menuOpen, "typing closes it");
+        compare(p.query, "f", "and goes into the field");
+        keyClick(Qt.Key_Menu);
+        p.listView = true;
+        verify(!p.menuOpen, "so does a view change");
+        keyClick(Qt.Key_Menu);
+        p.category = "system";
+        verify(!p.menuOpen, "and a chip");
+        p.query = "qqqq";
+        keyClick(Qt.Key_Menu);
+        verify(!p.menuOpen, "no app, no menu");
+    }
+
+    function test_app_menu_in_the_list() {
+        var p = createTemporaryObject(panelComp, root, { listView: true });
+        waitForRendering(p);
+        var row = findChild(p, "launcherApp_firefox");
+        mouseClick(row, row.width - 20, row.height / 2, Qt.RightButton);
+        tryVerify(() => p.menu && p.menu.scale === 1, 2000);
+        var loader = findChild(p, "launcherMenu");
+        compare(loader.x, row.mapToItem(p, p.cell / 2, 0).x, "near the row's icon, not its middle");
+    }
+
+    function test_app_menu_opens_above_the_bottom_rows() {
+        var many = [];
+        for (var i = 0; i < 20; i++) many.push({ type: "app", id: "a" + i, name: "App " + String(i).padStart(2, "0") });
+        var p = createTemporaryObject(panelComp, root, { apps: many });
+        waitForRendering(p);
+        var tile = findChild(p, "launcherApp_a19");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        tryVerify(() => p.menu && p.menu.scale === 1, 2000);
+        var loader = findChild(p, "launcherMenu");
+        verify(!loader.below, "no room under the last row");
+        compare(loader.origin, Item.BottomLeft);
+        var top = tile.mapToItem(p, 0, 0).y;
+        verify(loader.y + loader.height > top && loader.y + loader.height < top + tile.height / 2, "hangs above it");
+        verify(loader.x + loader.width <= p.width - Spacing.sm, "pulled in from the right edge");
+        verify(loader.x < tile.mapToItem(p, tile.width / 2, 0).x, "so it starts left of the app's middle");
     }
 
     function test_empty_states() {

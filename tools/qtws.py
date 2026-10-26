@@ -318,6 +318,7 @@ def run_wayland_smoke(screenshot=None):
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
+            "FAKE_APP_LOG": str(comp.runtime / "apps.log"),
             "RUTILE_ANIMATION_SPEED": "1.5",
             # only the fixture apps, so the shelf's default pins are known
             "XDG_DATA_DIRS": str(ROOT / "tests" / "qs" / "apps"),
@@ -423,6 +424,23 @@ def run_wayland_smoke(screenshot=None):
                         got = ipc(*args, target="launcher")
                         if got != want:
                             problems.append(f"ipc launcher {' '.join(args)}: got {got!r}, expected {want!r}")
+                    # a desktop action, as the app menu runs it: the launcher runs it and closes
+                    got = ipc("actions", "firefox", target="launcher")
+                    if got != "new-private-window":
+                        problems.append(f"ipc launcher actions firefox: got {got!r}, expected 'new-private-window'")
+                    ipc("chooseAction", "firefox", "new-private-window", target="launcher")
+                    app_log = comp.runtime / "apps.log"
+                    for _ in range(50):
+                        if app_log.exists():
+                            break
+                        time.sleep(0.1)
+                    ran = app_log.read_text().strip() if app_log.exists() else None
+                    if ran != "firefox --private-window":
+                        problems.append(f"launcher action: ran {ran!r}, expected 'firefox --private-window'")
+                    if ipc("isOpen", target="launcher") != "false":
+                        problems.append("launcher action: the launcher stayed open")
+                    time.sleep(1.5)
+                    ipc("open", target="launcher")
                     # slow motion, so the launcher is still on screen when asked: closing, not open
                     ipc("setSpeed", "0.1", target="motion")
                     ipc("close", target="launcher")

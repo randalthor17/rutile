@@ -17,6 +17,7 @@ TestCase {
     Component { id: chipComp; Chip { x: 40; y: 160; text: "Chip" } }
     Component { id: listComp; ListItem { x: 40; y: 240; width: 400; text: "Item" } }
     Component { id: spyComp; SignalSpy {} }
+    Component { id: menuComp; Menu { x: 40; y: 300 } }
     Component { id: switchComp; Switch {} }
 
     // A stand-in for a system setting: the controls bind to `on` and only `apply()` changes it, as a real
@@ -245,6 +246,33 @@ TestCase {
         compare(on.implicitWidth, w0 + icon - impl.gap + impl.compactGap);
         var own = make(chipComp, { type: "filter", iconName: "event" });
         compare(own.leadingShown, 1, "its own icon never moves");
+    }
+
+    // ---- Menu ----
+    function test_menu() {
+        var one = make(menuComp, { items: [{ id: "a", text: "A", icon: "lock" }] });
+        compare(one.width, one.minimumWidth + 2 * Spacing.sm, "at least the minimum");
+        var a = findChild(one, "menuItem_a");
+        compare(a.position, "single");
+        compare(a.iconName, "lock");
+        verify(!a.selected);
+        var long = make(menuComp, { items: [{ id: "x", text: "Short" },
+                                            { id: "y", text: "A much longer entry than the minimum width holds, really" },
+                                            { id: "z", text: "End" }], currentIndex: 2, itemPrefix: "m_" });
+        var y = findChild(long, "m_y");
+        tryVerify(() => long.width === y.implicitWidth + 2 * Spacing.sm, 2000, "as wide as the widest item");
+        verify(long.width > long.minimumWidth + 2 * Spacing.sm);
+        compare(y.width, long.width - 2 * Spacing.sm);
+        compare(findChild(long, "m_x").position, "first");
+        compare(y.position, "middle");
+        compare(findChild(long, "m_z").position, "last");
+        verify(findChild(long, "m_z").selected, "the keyboard's choice");
+        compare(findChild(long, "m_x").iconName, "", "no icon");
+        var spy = make(spyComp, { target: long, signalName: "chosen" });
+        mouseClick(y, 10, y.height / 2);
+        compare(spy.signalArguments[0][0], "y");
+        long.items = [{ id: "x", text: "Short" }];
+        tryCompare(long, "width", long.minimumWidth + 2 * Spacing.sm, 2000, "shrinks with its items");
     }
 
     function test_assist_chip_clicks_without_selecting() {

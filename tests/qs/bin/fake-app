@@ -1,0 +1,4 @@
+#!/bin/sh
+# A stand-in app for the fixture desktop files: records its arguments in $FAKE_APP_LOG.
+[ -n "$FAKE_APP_LOG" ] && echo "$*" >> "$FAKE_APP_LOG"
+exit 0

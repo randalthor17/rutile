@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **App menu in the launcher** (plan 2.7): right-click an app, or press the Menu key or Shift+F10 on the current
+  one, for Open and the actions its desktop file lists (Firefox's New Private Window, say). The arrows and Enter
+  work in it, Escape closes only the menu, and a click outside closes it without doing anything else. It uses the
+  shared popup motion. The menu is a shared `Menu` component, which Quick Settings' power menu now uses too.
 - **Launcher chips move** (maintainer's request): a filter chip's check mark grows in and out (the chip widens to
   make room; every filter chip, not only the launcher's), the chip row scrolls smoothly to the chosen chip, and
   the results fade and rise in when the chip or the grid/list view changes. All follow `Motion.speed` (D43).

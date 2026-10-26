@@ -15,7 +15,8 @@ repo root. `quicksettings` also has `open`, `close`, `isOpen` and `state` (JSON 
 whether the panel and pills reached the backend, whether brightness shows, which pill is marked open, the pills'
 layer, the space reserved per screen and the clocks' text). The launcher works the same way: `ipc call launcher toggle`, `open`, `close`, `isOpen`, `state`, and
 `search <query>` (types into the open launcher, returns the best ids), `category <id>` (chooses a chip, `""` for
-All, returns the best ids) and `setListView <true|false>`. A niri keybind runs the `toggle` line (with the
+All, returns the best ids), `setListView <true|false>`, `actions <appId>` (the desktop actions it found) and
+`chooseAction <appId> <actionId>` (runs one as the app menu would). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
 (D41); clicks inside the panel do not. The panel grows in from the corner under the pill (`PopupMotion`, the motion

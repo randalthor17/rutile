@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 // One app in the launcher: its icon (or its initial on a tonal circle when the icon theme has none), a state
-// layer, and a tonal background while it is the keyboard's current item. As a grid tile the name sits under the
+// layer, and a tonal background while it is the keyboard's current item. A right click asks for its menu. As a grid tile the name sits under the
 // icon; as a list row (`row`) a smaller icon leads and the name has the description under it.
 import QtQuick
 import qs.common
@@ -16,6 +16,7 @@ Item {
     property bool row: false
 
     signal clicked()
+    signal menuRequested()
 
     Rectangle {
         objectName: "launcherTileCurrent"
@@ -94,6 +95,13 @@ Item {
         radius: Shapes.large
         stateColor: Colors.surfaceOn
         onClicked: root.clicked()
+    }
+    // right clicks only: left presses go through to the state layer
+    MouseArea {
+        objectName: "launcherTileMenuArea"
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: root.menuRequested()
     }
 
     Accessible.role: Accessible.Button

@@ -3,8 +3,10 @@ pragma ComponentBehavior: Bound
 // as you type. Plain QtQuick on `apps` ([{id, name, icon (URL), genericName, keywords, subtitle, categories}]), so
 // it tests offscreen; LauncherWindow.qml gives it the desktop entries. The keyboard stays in the field: the arrows
 // move through the results (in the list, Left and Right move the text cursor, as do Home and End), Tab and
-// Shift+Tab step through the chips, Enter opens the current app, Escape closes. It grows in and out with the
-// shared popup motion (D43), then reports `hidden`.
+// Shift+Tab step through the chips, Enter opens the current app, Escape closes. A right click on an app, or the
+// Menu key or Shift+F10 on the current one, opens its menu: Open and the desktop file's actions (`actions`:
+// [{id, name}]); while it is open the arrows and Enter work in it and Escape closes only it. It grows in and out
+// with the shared popup motion (D43), then reports `hidden`.
 import QtQuick
 import qs.common
 import qs.components
@@ -27,6 +29,7 @@ Rectangle {
     property bool shown: true
 
     signal launched(var app)
+    signal actionChosen(var app, string actionId)
     signal closeRequested()
     signal hidden()
 
@@ -37,6 +40,47 @@ Rectangle {
         if (windowActive) hadWindowFocus = true;
         else if (hadWindowFocus) closeRequested();
     }
+
+    // The app menu. `menuApp` stays set while the menu plays its closing motion, so it keeps its items.
+    property bool menuOpen: false
+    property var menuApp: null
+    property int menuIndex: 0
+    property point menuBelow: Qt.point(0, 0)   // where it hangs from the app: under it, or above it near the bottom
+    property real menuAboveY: 0
+    readonly property var menuItems: menuApp ? [{ id: "", text: "Open", icon: "" }]
+        .concat((menuApp.actions || []).map(a => ({ id: a.id, text: a.name, icon: "" }))) : []
+    readonly property Item menu: menuLoader.item as Item
+
+    function openMenu(app, tile) {
+        menuApp = app;
+        menuBelow = tile.mapToItem(root, Math.min(tile.width / 2, cell / 2), tile.height - Spacing.md);
+        menuAboveY = tile.mapToItem(root, 0, Spacing.md).y;
+        menuIndex = 0;
+        menuOpen = true;
+    }
+    function chooseMenu(id) {
+        const app = menuApp;
+        menuOpen = false;
+        if (id === "") launched(app);
+        else actionChosen(app, id);
+    }
+    // the arrows, Tab, Enter and Escape while the menu is open; true when it took the key
+    function menuKey(event) {
+        if (!menuOpen) return false;
+        if (event.key === Qt.Key_Up) menuIndex = Math.max(0, menuIndex - 1);
+        else if (event.key === Qt.Key_Down) menuIndex = Math.min(menuItems.length - 1, menuIndex + 1);
+        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) chooseMenu(menuItems[menuIndex].id);
+        else if (event.key === Qt.Key_Escape) menuOpen = false;
+        return true;                // Left, Right, Tab and Shift+Tab do nothing in it
+    }
+    // the Menu key and Shift+F10: the current app's menu, or close it
+    function toggleMenu() {
+        if (menuOpen) menuOpen = false;
+        else if (grid.currentItem) openMenu(results[grid.currentIndex], grid.currentItem);
+    }
+    onQueryChanged: menuOpen = false
+    onCategoryChanged: menuOpen = false
+    onListViewChanged: menuOpen = false
 
     // Tab and Shift+Tab: the next or previous chip, All included, wrapping.
     function stepCategory(delta) {
@@ -106,21 +150,28 @@ Rectangle {
                 selectionColor: Colors.primary
                 selectedTextColor: Colors.primaryOn
                 font: Type.font(Type.bodyLarge)
-                Keys.onUpPressed: grid.moveCurrentIndexUp()
-                Keys.onDownPressed: grid.moveCurrentIndexDown()
+                // Qt runs a key's own handler before onPressed: each one asks the open menu first
+                Keys.onUpPressed: event => { if (!root.menuKey(event)) grid.moveCurrentIndexUp(); }
+                Keys.onDownPressed: event => { if (!root.menuKey(event)) grid.moveCurrentIndexDown(); }
                 Keys.onLeftPressed: event => {
+                    if (root.menuKey(event)) return;
                     if (root.listView) event.accepted = false;
                     else grid.moveCurrentIndexLeft();
                 }
                 Keys.onRightPressed: event => {
+                    if (root.menuKey(event)) return;
                     if (root.listView) event.accepted = false;
                     else grid.moveCurrentIndexRight();
                 }
-                Keys.onTabPressed: root.stepCategory(1)
-                Keys.onBacktabPressed: root.stepCategory(-1)
-                Keys.onReturnPressed: root.launchCurrent()
-                Keys.onEnterPressed: root.launchCurrent()
-                Keys.onEscapePressed: root.closeRequested()
+                Keys.onTabPressed: event => { if (!root.menuKey(event)) root.stepCategory(1); }
+                Keys.onBacktabPressed: event => { if (!root.menuKey(event)) root.stepCategory(-1); }
+                Keys.onReturnPressed: event => { if (!root.menuKey(event)) root.launchCurrent(); }
+                Keys.onEnterPressed: event => { if (!root.menuKey(event)) root.launchCurrent(); }
+                Keys.onEscapePressed: event => { if (!root.menuKey(event)) root.closeRequested(); }
+                Keys.onMenuPressed: root.toggleMenu()
+                Keys.onPressed: event => {
+                    if (event.key === Qt.Key_F10 && event.modifiers & Qt.ShiftModifier) root.toggleMenu();
+                }
             }
             IconButton {
                 id: viewToggle
@@ -223,6 +274,7 @@ Rectangle {
             keyNavigationWraps: false
             boundsBehavior: Flickable.StopAtBounds
             delegate: LauncherTile {
+                id: tile
                 required property var modelData
                 required property int index
                 objectName: "launcherApp_" + modelData.id
@@ -234,6 +286,10 @@ Rectangle {
                 iconSource: modelData.icon || ""
                 current: index === grid.currentIndex
                 onClicked: root.launched(modelData)
+                onMenuRequested: {
+                    grid.currentIndex = index;      // the app the menu is for is the current one
+                    root.openMenu(modelData, tile);
+                }
             }
 
             Text {
@@ -243,6 +299,33 @@ Rectangle {
                 color: Colors.surfaceVariantOn
                 font: Type.font(Type.bodyLarge)
             }
+        }
+    }
+
+    // A press outside the open menu closes it, and goes no further.
+    MouseArea {
+        objectName: "launcherMenuScrim"
+        anchors.fill: parent
+        z: 1
+        enabled: root.menuOpen
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onPressed: root.menuOpen = false
+    }
+
+    PopupLoader {
+        id: menuLoader
+        objectName: "launcherMenu"
+        readonly property bool below: root.menuBelow.y + height <= root.height - Spacing.sm
+        open: root.menuOpen
+        origin: below ? Item.TopLeft : Item.BottomLeft
+        z: 2
+        x: Math.max(Spacing.sm, Math.min(root.menuBelow.x, root.width - width - Spacing.sm))
+        y: below ? root.menuBelow.y : root.menuAboveY - height
+        sourceComponent: Menu {
+            items: root.menuItems
+            currentIndex: root.menuIndex
+            itemPrefix: "launcherMenu_"
+            onChosen: id => root.chooseMenu(id)
         }
     }
 }

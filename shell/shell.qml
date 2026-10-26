@@ -131,6 +131,18 @@ ShellRoot {
             p.query = query;
             return p.results.slice(0, 5).map(a => a.id).join(",");
         }
+        // An app's desktop actions as the open launcher knows them, and choosing one as its menu would (the smoke test).
+        function actions(appId: string): string {
+            const app = launcher.item?.panel.apps.find(a => a.id === appId);
+            return app ? app.actions.map(a => a.id).join(",") : "";
+        }
+        function chooseAction(appId: string, actionId: string): bool {
+            const p = launcher.item?.panel;
+            const app = p?.apps.find(a => a.id === appId);
+            if (!app) return false;
+            p.actionChosen(app, actionId);
+            return true;
+        }
         // Show the launcher's apps as a list (true) or a grid; it stays so until the shell restarts.
         function setListView(list: bool): void { shell.launcherListView = list; }
         // Choose a category chip ("" is All) in the open launcher; returns the first results' ids.

@@ -4,3 +4,8 @@ Name=Firefox
 Icon=firefox
 Exec=true
 Categories=Network;WebBrowser;
+Actions=new-private-window;
+
+[Desktop Action new-private-window]
+Name=New Private Window
+Exec=fake-app firefox --private-window

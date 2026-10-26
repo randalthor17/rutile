@@ -46,6 +46,9 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **A `Row` places its children later, not when a child resizes.** Scrolling a Flickable to a chip from the
   chip's `onSelectedChanged` used the old `x` (the check mark that changes the widths had not been laid out yet)
   and scrolled 14 px past the end. Reveal again on the Row's `positioningComplete`, and clamp to the row's width.
+- **`Keys` runs a key's own handler before `onPressed`.** `Keys.onUpPressed` fires first and accepts the key by
+  default, so an `onPressed` that should take the arrows first (an open menu) never sees them; ask the menu in
+  each key's own handler. `onPressed` does not accept by default, so typing still reaches the field.
 - **A deactivated `Loader` deletes its item later.** `findChild` still finds it right after `active` goes false;
   test its absence with `tryVerify`.
 - **`qmltestrunner` needs a visible `TestCase`** (`width`, `height`, `visible: true`, `when: windowShown`) for any pixel check.

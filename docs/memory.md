@@ -61,7 +61,8 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | PowerMenu | | 511 | 4 `ListItem`s with their shape springs; only while the menu is open, inside the open panel |
 | ShelfButton | | 76.5 | icon or initial, state layer, press spring, running mark |
 | Shelf, 3 pins and 2 workspaces with 3 windows | | 691.7 | always on screen (one per screen): bar, launcher, 6 ShelfButtons (about 77 each), 2 workspace capsules with labels, the wheel handler; app icons decode at 40 px (`sourceSize`). Grows by about 77 per open window |
-| LauncherPanel, open, 24 apps in 7 categories | | 3735 grid, 2645 list | the field, the view toggle, 8 chips (about 70 each) and a GridView: about 20 visible tiles plus the view's cache rows (the list shows fewer); a row's description loads only in the list; exists only while open (LazyLoader). Without chips and toggle it was 2627 on the same apps |
+| LauncherPanel, open, 24 apps in 7 categories | | 3825 grid, 2645 list | the field, the view toggle, 8 chips (about 70 each) and a GridView: about 20 visible tiles plus the view's cache rows (the list shows fewer); a row's description loads only in the list; each tile has a right-click area (about 4 each); exists only while open (LazyLoader). Without chips and toggle it was 2627 on the same apps |
+| Menu, 3 items (an app's menu) | | 347 | only while open (PopupLoader); the power menu has 4 |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 
