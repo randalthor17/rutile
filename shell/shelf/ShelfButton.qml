@@ -15,8 +15,8 @@ Item {
 
     signal clicked()
 
-    implicitWidth: Spacing.xxxl
-    implicitHeight: Spacing.xxxl
+    implicitWidth: Spacing.xxl + Spacing.sm
+    implicitHeight: Spacing.xxl + Spacing.sm
     width: implicitWidth
     height: implicitHeight
 
@@ -36,7 +36,7 @@ Item {
             anchors.centerIn: parent
             visible: root.iconSource !== "" && status === Image.Ready
             source: root.iconSource
-            width: Spacing.xxl + Spacing.sm
+            width: Spacing.xxl
             height: width
             sourceSize.width: width
             sourceSize.height: height
@@ -46,7 +46,7 @@ Item {
             objectName: "shelfFallbackIcon"
             anchors.centerIn: parent
             visible: root.iconSource === ""
-            width: Spacing.xxl + Spacing.sm
+            width: Spacing.xxl
             height: width
             radius: width / 2
             color: Colors.secondaryContainer

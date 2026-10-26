@@ -53,7 +53,7 @@ TestCase {
         waitForRendering(shelf);
         var launched = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launched" });
         var focused = createTemporaryObject(spyComp, root, { target: shelf, signalName: "windowClicked" });
-        compare(shelf.height, Spacing.xxxl + Spacing.sm);
+        compare(shelf.height, Spacing.xxxl);
         verify(findChild(shelf, "shelfDivider").visible);
         var ws1 = findChild(shelf, "shelfWorkspace_1");
         var ws2 = findChild(shelf, "shelfWorkspace_2");

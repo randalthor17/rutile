@@ -36,7 +36,7 @@ Rectangle {
         onWheel: event => root.scrollBy(event.angleDelta.y)
     }
 
-    implicitHeight: Spacing.xxxl + Spacing.sm
+    implicitHeight: Spacing.xxxl
     height: implicitHeight
     color: Colors.surfaceContainerLowest
 
@@ -49,14 +49,14 @@ Rectangle {
         Rectangle {
             objectName: "shelfLauncher"
             anchors.verticalCenter: parent.verticalCenter
-            width: Spacing.xxxl + Spacing.lg
-            height: Spacing.xxl + Spacing.sm
+            width: Spacing.xxxl + Spacing.sm
+            height: Spacing.xxl
             radius: height / 2
             color: Colors.surfaceContainerHigh
             Icon {
                 anchors.centerIn: parent
                 name: "apps"
-                size: Spacing.xl
+                size: Spacing.lg + Spacing.xs
                 color: Colors.surfaceOn
             }
             StateLayer {
@@ -95,7 +95,7 @@ Rectangle {
                 objectName: "shelfWorkspace_" + modelData.idx
                 anchors.verticalCenter: parent.verticalCenter
                 width: groupRow.width + 2 * Spacing.xs
-                height: Spacing.xxxl
+                height: Spacing.xxl + Spacing.sm
                 radius: height / 2
                 color: modelData.active ? Colors.secondaryContainer : Colors.surfaceContainer
                 Behavior on color { EffectsColor {} }

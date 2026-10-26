@@ -5,6 +5,7 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Smaller shelf** (maintainer's request): 48 px tall with 32 px icons in 40 px buttons (was 56, 40 and 48).
 - **The shelf shows windows by workspace** (D44, maintainer's request, as Noctalia does): after the pinned apps,
   each workspace on that screen gets a capsule with its number and one icon per window in layout order; the
   active workspace is tinted and the focused window marked, and a click focuses that window. Pinned apps start

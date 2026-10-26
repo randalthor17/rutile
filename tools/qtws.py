@@ -383,10 +383,10 @@ def run_wayland_smoke(screenshot=None):
                     tops = [w["rect"]["y"] for w in spaces]
                     if tops != [32]:
                         problems.append(f"workspace area starts at {tops}, expected [32] (the pill's reserved space)")
-                    # and ends above the shelf (56 px at the bottom of the 800 px output)
+                    # and ends above the shelf (48 px at the bottom of the 800 px output)
                     bottoms = [w["rect"]["y"] + w["rect"]["height"] for w in spaces]
-                    if bottoms != [800 - 56]:
-                        problems.append(f"workspace area ends at {bottoms}, expected [{800 - 56}] (above the shelf)")
+                    if bottoms != [800 - 48]:
+                        problems.append(f"workspace area ends at {bottoms}, expected [{800 - 48}] (above the shelf)")
                     if screenshot:
                         grim = shutil.which("grim")
                         if grim:
