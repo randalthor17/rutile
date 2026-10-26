@@ -13,7 +13,8 @@ Quick Settings below it on that screen, and clicking it again closes it. `qs -p 
 repo root. `quicksettings` also has `open`, `close`, `isOpen` and `state` (JSON of what the windows see: open,
 whether the panel and pills reached the backend, whether brightness shows, which pill is marked open). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
-Escape closes the panel, and so does moving keyboard focus elsewhere, e.g. clicking into a window (D41).
+Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
+(D41); clicks inside the panel do not.
 Clicking empty desktop or another program's bar does not close it: those clicks do not move focus on niri.
 
 ## How it is built
@@ -22,7 +23,7 @@ Clicking empty desktop or another program's bar does not close it: those clicks 
 |---|---|---|
 | `shell/shell.qml` | yes | `ShellRoot`, `PaletteWatcher`, the one backend, a status pill per screen (`Variants`), a `LazyLoader` with the Quick Settings window, the `IpcHandler` |
 | `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen |
-| `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage |
+| `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage, 24 px tall with 16 px icons on the wallpaper; a container only while Quick Settings is open (as Googlebook) |
 | `shell/bar/StatusIcons.js` | no | which Material Symbol for which state |
 | `shell/quicksettings/QuickSettingsWindow.qml` | yes | a `PanelWindow` (layer shell) at the top right, `ExclusionMode.Ignore`, keyboard focus for Escape |
 | `shell/quicksettings/QuickSettingsBackend.qml` | yes (through `qs.services`) | the panel's backend interface on top of the services |
@@ -45,7 +46,7 @@ its slider. "Edit tiles" (the header's first button) removes and rearranges tile
 by `tilesEdited(tiles)` and kept in memory until settings persistence (plan 2.5).
 
 Memory: an open panel is about 1.4 MiB (5 tiles, 2 sliders, the grid, 4 icon buttons); closed, nothing but the
-services and the pills remains. A pill is 93 KiB (one `Icon` for all its symbols; three `Icon`s were 123).
+services and the pills remains. A pill is 58 KiB (one `Icon` for all its symbols, no container while closed; the first version was 123).
 
 To check a change in the live niri session: start the shell, `ipc call quicksettings open`, then
 `niri msg action screenshot-screen -p false --path FILE` (niri's own screenshot; it also copies to the clipboard).

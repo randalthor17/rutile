@@ -19,7 +19,7 @@ PanelWindow {
 
     anchors.top: true
     anchors.right: true
-    margins.top: 2 * Spacing.sm + Spacing.xxl      // below the status pill
+    margins.top: 2 * Spacing.sm + Spacing.xl       // below the status pill
     margins.right: Spacing.sm
     exclusionMode: ExclusionMode.Ignore
     focusable: true
@@ -33,12 +33,7 @@ PanelWindow {
         objectName: "quickSettingsPanel"
         backend: root.backend
         focus: true
-        // Close when focus leaves, but only after it arrived: a compositor that never gives focus keeps it open.
-        property bool hadFocus: false
-        onActiveFocusChanged: {
-            if (activeFocus) hadFocus = true;
-            else if (hadFocus) root.closeRequested();
-        }
+        onWindowFocusLost: root.closeRequested()
         Keys.onEscapePressed: root.closeRequested()
     }
 }

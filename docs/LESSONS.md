@@ -138,6 +138,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   file between two function names also deleted a test that had been inserted in between; two mutants it had
   caught came back, which is how it was noticed. List the test functions before committing.
 
+- **An item loses `activeFocus` when a child takes focus** (unless it is a FocusScope). "Close when the panel
+  loses focus" written on the panel item closed it as soon as a slider inside was pressed. For "the user went
+  elsewhere", watch the window (`Window.active`); and test a click inside, not only a focus change outside.
+
 - **`prop: prop` binds a property to itself.** In `QuickSettingsWindow { backend: backend }` the right-hand
   `backend` is the window's own property, not the id outside, so the panel got `undefined` and nothing failed
   loudly: tiles showed "Unavailable", which looked like a machine without hardware. Never give an id the name of a

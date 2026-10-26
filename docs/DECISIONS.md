@@ -255,4 +255,7 @@ gives it focus cannot close it at once). On niri a focusable layer surface gets 
 when a window takes focus (checked live). Rejected: a full-screen transparent window behind the panel to catch
 clicks, which closes on any click but holds a screen-sized buffer while open (D31), and compositor-specific focus
 grabs (Hyprland's). Known gap: a click on empty desktop or on another program's bar does not move focus on niri,
-so it does not close the panel; Escape and the pill do. Revisit if that annoys in use.
+so it does not close the panel; Escape and the pill do. Revisit if that annoys in use. "Focus" here is the
+window's (`Window.active`), not an item's `activeFocus`, which moves to a slider or tile inside the panel on a
+click (the first version closed the panel when the maintainer pressed the volume slider). sway gives an on-demand
+layer surface focus only on a click, so there the panel never had focus and never closes this way.

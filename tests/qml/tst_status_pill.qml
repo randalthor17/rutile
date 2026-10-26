@@ -97,12 +97,16 @@ TestCase {
         var t = make();
         var spy = createTemporaryObject(spyComp, root, { target: t.pill, signalName: "clicked" });
         var closed = String(t.pill.color);     // a copy: reading a color property gives a live reference
+        compare(t.pill.height, Spacing.xl);
+        compare(findChild(t.pill, "statusIcons").size, Spacing.lg);
         mouseClick(t.pill, t.pill.width / 2, t.pill.height / 2);
         compare(spy.count, 1);
         t.pill.open = true;
         tryVerify(function () { return Qt.colorEqual(t.pill.color, Colors.secondaryContainer); }, 2000);
         verify(closed !== String(Colors.secondaryContainer));
-        compare(closed, String(Colors.surfaceContainerHigh));
+        compare(t.pill.color.a, 1, "a container while open");
         compare(t.pill.contentColor, Colors.secondaryContainerOn);
+        t.pill.open = false;
+        tryVerify(function () { return t.pill.color.a === 0; }, 2000, "closed: icons on the wallpaper, no container");
     }
 }

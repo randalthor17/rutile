@@ -22,12 +22,13 @@ Rectangle {
     // With nothing to report (no network, audio or battery) the pill still needs something to click.
     readonly property bool empty: networkIcon === "" && volumeIcon === "" && batteryIcon === ""
 
-    implicitWidth: row.implicitWidth + 2 * Spacing.md
-    implicitHeight: Spacing.xxl
+    // Googlebook's status icons sit on the wallpaper, small and close; only the open state has a container.
+    implicitWidth: row.implicitWidth + 2 * Spacing.sm
+    implicitHeight: Spacing.xl
     width: implicitWidth
     height: implicitHeight
     radius: height / 2
-    color: open ? Colors.secondaryContainer : Colors.surfaceContainerHigh
+    color: open ? Colors.secondaryContainer : "transparent"
     Behavior on color { EffectsColor {} }
 
     readonly property color contentColor: open ? Colors.secondaryContainerOn : Colors.surfaceOn
@@ -41,7 +42,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: implicitWidth        // several ligatures in one Text: one Icon instead of three (D31)
             name: root.empty ? "tune" : [root.networkIcon, root.volumeIcon, root.batteryIcon].filter(n => n !== "").join(" ")
-            size: Spacing.xl - Spacing.xs
+            size: Spacing.lg
             fill: root.empty ? 0 : 1
             color: root.contentColor
         }
@@ -51,7 +52,7 @@ Rectangle {
             visible: root.batteryText !== ""
             text: root.batteryText
             color: root.contentColor
-            font: Type.font(Type.labelLarge)
+            font: Type.font(Type.labelMedium)
         }
     }
 

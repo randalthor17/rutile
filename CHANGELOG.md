@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Fix** (maintainer's report): pressing the volume slider closed Quick Settings. The panel closed when its own
+  item lost focus, and a click gives focus to the slider inside it; it now closes only when its window loses
+  keyboard focus. A test clicks a slider and a tile inside the panel.
+- **The status pill is smaller** (maintainer's report): 24 px tall with 16 px icons sitting on the wallpaper, as
+  in the Googlebook screenshots; it gets its container only while Quick Settings is open.
 - **Status pill** (plan 2.3, D41): a pill at the top right of every screen shows the network (Wi-Fi strength or
   cable), volume and battery, and opens Quick Settings below it on that screen; it is marked while the panel is
   open. Quick Settings now closes when keyboard focus leaves it (a click into a window), as well as on Escape.

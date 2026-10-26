@@ -357,6 +357,8 @@ def run_wayland_smoke(screenshot=None):
                         got = ipc(call)
                         if got != want:
                             problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
+                    # Closing when another window takes focus (D41) cannot be tested here: sway gives an
+                    # on-demand layer surface focus only when it is clicked, and there is no pointer.
                     calls = (fake.parent / (fake.name + ".log"))
                     if not calls.exists() or "info" not in calls.read_text():
                         problems.append("opening the panel did not read the brightness")

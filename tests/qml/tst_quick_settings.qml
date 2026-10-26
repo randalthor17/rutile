@@ -183,6 +183,20 @@ TestCase {
         compare(v.endIcon, "music_off");
     }
 
+    function test_clicks_inside_do_not_count_as_losing_focus() {
+        var t = make();
+        var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "windowFocusLost" });
+        root.Window.window.requestActivate();
+        tryVerify(function () { return t.panel.windowActive; }, 2000);
+        var v = findChild(t.panel, "qsVolume");
+        mouseClick(v, v.width * 0.6, v.height / 2);
+        verify(v.activeFocus, "the slider took the item focus");
+        clickItem(tile(t.panel, "dark"));
+        compare(spy.count, 0, "focus moving inside the panel does not close it");
+        // Another window taking focus is tested under sway (tools/qtws.py test-wayland): the offscreen
+        // platform does not move window activation.
+    }
+
     function test_rows_hide_without_brightness_or_audio() {
         var t = make({ brightnessAvailable: false, volumeAvailable: false });
         verify(!findChild(t.panel, "qsBrightness").visible);

@@ -34,6 +34,16 @@ Rectangle {
     signal powerRequested()
     signal soundSettingsRequested()
     signal detailsRequested(string tileId)
+    // The window this panel is in lost keyboard focus (another window took it), after having had it. The
+    // window's state, not the item's activeFocus: that moves to a slider or tile inside the panel on a click.
+    signal windowFocusLost()
+
+    readonly property bool windowActive: Window.active
+    property bool hadWindowFocus: false
+    onWindowActiveChanged: {
+        if (windowActive) hadWindowFocus = true;
+        else if (hadWindowFocus) windowFocusLost();
+    }
 
     // What each tile id shows. The state comes from tileState(), so a binding on it follows the backend.
     readonly property var catalog: ({
