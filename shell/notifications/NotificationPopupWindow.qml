@@ -1,6 +1,6 @@
 // The notification popups' layer-shell surface: top right, under the status pill (it keeps clear of the pill's
 // exclusive zone), above windows, as big as the cards so the rest of the screen takes clicks. No keyboard
-// focus: a popup never takes typing away. The shell creates it in a LazyLoader only while there are popups
+// focus, so a popup never takes typing away, except while a reply field is open. The shell creates it in a LazyLoader only while there are popups
 // (D31) and drops it once the last one has played its closing motion (`finished`).
 import QtQuick
 import Quickshell
@@ -25,6 +25,7 @@ PanelWindow {
     exclusiveZone: 0
     WlrLayershell.namespace: "rutile-notifications"
     WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.keyboardFocus: popups.replyingId >= 0 ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     implicitWidth: popups.implicitWidth
     implicitHeight: Math.max(1, popups.implicitHeight)
     color: "transparent"
@@ -45,5 +46,6 @@ PanelWindow {
         onActionInvoked: (id, action) => NotificationService.invoke(id, action)
         onDismissed: id => NotificationService.dismiss(id)
         onTimedOut: id => NotificationService.popupDone(id)
+        onReplied: (id, text) => NotificationService.reply(id, text)
     }
 }

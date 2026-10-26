@@ -39,7 +39,8 @@ Singleton {
             id: n.id, appName: n.appName, appIcon: iconUrl(n.appIcon), image: iconUrl(n.image),
             summary: NotificationModel.plain(n.summary), body: NotificationModel.plain(n.body), urgency: n.urgency,
             critical: n.urgency === NotificationUrgency.Critical,
-            actions: n.actions.map(a => ({ id: a.identifier, text: a.text })), time: root.times[n.id] ?? 0
+            actions: n.actions.map(a => ({ id: a.identifier, text: a.text })), time: root.times[n.id] ?? 0,
+            reply: n.hasInlineReply ? (n.inlineReplyPlaceholder || "Reply") : ""
         };
     }
     function find(id) {
@@ -59,6 +60,12 @@ Singleton {
         const a = n?.actions.find(x => x.identifier === action);
         popupDone(id);
         if (a) a.invoke();
+    }
+    // An inline reply goes to the sender; its popup is done.
+    function reply(id, text) {
+        const n = find(id);
+        popupDone(id);
+        if (n?.hasInlineReply) n.sendInlineReply(text);
     }
     // Its popup is done (timed out, or clicked without an action): it stays in the list unless it is transient.
     function popupDone(id) {
@@ -88,6 +95,7 @@ Singleton {
     NotificationServer {
         id: server
         actionsSupported: true
+        inlineReplySupported: true
         imageSupported: true
         persistenceSupported: true
         bodySupported: true

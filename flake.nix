@@ -53,6 +53,7 @@
             pkgs.brightnessctl # the shell's backlight control at run time (D39)
             pkgs.sway # test only: a headless compositor for `qtws.py test-wayland` (D40)
             pkgs.grim # test only: screenshots of that compositor
+            pkgs.libnotify # test only: notify-send, to send the shell notifications (plan 2.8)
           ];
           devHook = ''
             export QML2_IMPORT_PATH=${qmlPath}''${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}

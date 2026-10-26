@@ -12,6 +12,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
   while the pointer is over them; critical ones stay. `ipc call notifications setDnd true` turns on Do not
   disturb (only critical ones pop up). While another notification daemon runs (Noctalia, mako, dunst), it keeps
   the notifications and the shell waits; the shell takes over when it stops.
+- **Notifications, more** (plan 2.8, D47): swipe a notification sideways to dismiss it; the list groups each
+  app's notifications under its newest ("Show 2 more from Mail"), and a dismissed one fades out while the rest
+  close up; apps that offer it (chat apps) get a Reply button with a field right in the notification. The dev
+  shell has `notify-send` (libnotify) for trying it.
 - **Notification list** (plan 2.8, D47): a bell left of the status pill shows whether there are notifications
   (a dot) or Do not disturb is on (crossed out). Clicking it opens the list under it: a Do not disturb switch,
   every notification newest first with its buttons and a close button, and Clear all. Opening it clears the

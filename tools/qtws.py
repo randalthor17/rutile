@@ -583,9 +583,14 @@ def run_wayland_smoke(screenshot=None):
                     if launcher_loaded is not False:
                         problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
                     # a notification (plan 2.8) on the private bus: kept, popped up in its window, gone when dismissed
-                    notify = [shutil.which("busctl") or "busctl", "--user", "--", "call", "org.freedesktop.Notifications",
-                              "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
-                              "susssasa{sv}i", "Mail", "0", "", "Hello", "<b>from</b> the smoke test", "0", "0", "0"]
+                    # notify-send (libnotify, as apps send) when the dev shell has it, else busctl
+                    if shutil.which("notify-send"):
+                        notify = ["notify-send", "--app-name=Mail", "--expire-time=0", "Hello", "<b>from</b> the smoke test"]
+                    else:
+                        notify = [shutil.which("busctl") or "busctl", "--user", "--", "call", "org.freedesktop.Notifications",
+                                  "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
+                                  "susssasa{sv}i", "Mail", "0", "", "Hello", "<b>from</b> the smoke test", "0", "0", "0"]
+                        notes.append("busctl sent the notification: notify-send not found")
                     sent = subprocess.run(notify, env=env, capture_output=True, text=True, timeout=10)
                     def notification_state():
                         try:
@@ -608,13 +613,41 @@ def run_wayland_smoke(screenshot=None):
                             shot = Path(screenshot).with_name(Path(screenshot).stem + "-notification.png")
                             subprocess.run([grim, str(shot)], env=comp.env(), timeout=10)
                             notes.append(f"screenshot: {shot}")
+                    # one whose popup times out stays in the list (the maintainer's report: check it does)
+                    if shutil.which("notify-send"):
+                        subprocess.run(["notify-send", "--expire-time=300", "Brief", "goes from the screen"],
+                                       env=env, capture_output=True, timeout=10)
+                        time.sleep(1.5)
+                        n = notification_state()
+                        if [x["summary"] for x in n.get("list", [])] != ["Brief", "Hello"] or n.get("popups") != [1]:
+                            problems.append(f"a timed-out popup: state {n}, expected Brief kept in the list, only 1 popping up")
+                    # an inline reply reaches the sender (NotificationReplied on the bus)
+                    busctl = shutil.which("busctl")
+                    if busctl:
+                        mon_log = comp.runtime / "bus.log"
+                        with open(mon_log, "w") as ml:
+                            mon = subprocess.Popen([busctl, "--user", "monitor"], env=env, stdout=ml, stderr=subprocess.STDOUT)
+                            time.sleep(0.5)
+                            r = subprocess.run([busctl, "--user", "--", "call", "org.freedesktop.Notifications",
+                                                "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
+                                                "susssasa{sv}i", "Chat", "0", "", "Hi", "there", "2", "inline-reply",
+                                                "Message", "0", "-1"], env=env, capture_output=True, text=True, timeout=10)
+                            chat = int(r.stdout.split()[-1]) if r.returncode == 0 else -1
+                            time.sleep(0.3)
+                            ipc("reply", str(chat), "hello back", target="notifications")
+                            time.sleep(0.5)
+                            mon.terminate()
+                            mon.wait(timeout=5)
+                        bus_text = mon_log.read_text()
+                        if "Member=NotificationReplied" not in bus_text or '"hello back"' not in bus_text:
+                            problems.append("inline reply: no NotificationReplied with the text on the bus")
                     # the bell shows there is one; it opens the list, and Do not disturb crosses it out (D47)
                     if n.get("bells") != ["notifications_unread"]:
                         problems.append(f"notification bell: {n.get('bells')}, expected ['notifications_unread']")
                     ipc("toggle", target="notifications")
                     time.sleep(0.5)
                     n = notification_state()
-                    if not n.get("listOpen") or n.get("listShown") != [1] or n.get("popups") != [] or n.get("bellsOpen") != [True]:
+                    if not n.get("listOpen") or n.get("listShown")[-1:] != [1] or n.get("popups") != [] or n.get("bellsOpen") != [True]:
                         problems.append(f"ipc notifications toggle: {n}, expected the list open with notification 1, "
                                         "and no popups")
                     if screenshot and shutil.which("grim"):

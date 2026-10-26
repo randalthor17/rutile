@@ -139,8 +139,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   state.json) keeps them from popping up, except critical ones. A replaced notification updates in place.
   A bell left of the status pill (a dot while there are notifications, crossed out in Do not disturb) opens
   the list under it: Do not disturb, the cards newest first, Clear all; opening it ends the popups, and it
-  closes like Quick Settings (Escape, focus loss). Not done: grouping by app, inline reply, sounds, swipe to
-  dismiss, a motion for a card leaving the list. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
+  closes like Quick Settings (Escape, focus loss). The list groups by app (an app's newest card, "Show N more"),
+  and a card that goes fades out while the rest close up. A card swiped sideways past a third of its width is
+  dismissed. Inline replies: a Reply button opens a field (the popup takes the keyboard only then); the reply
+  reaches the sender (NotificationReplied, checked on the bus). Not done: sounds (needs a player such as
+  pw-play or canberra-gtk-play: a dependency to decide), per-app settings. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 

@@ -55,6 +55,7 @@ PanelWindow {
             NotificationService.invoke(id, action);
             root.close();
         }
+        onReplied: (id, text) => NotificationService.reply(id, text)
         onWindowFocusLost: root.close()
         onHidden: root.closeRequested()
         Keys.onEscapePressed: root.close()

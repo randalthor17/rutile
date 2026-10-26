@@ -258,6 +258,7 @@ ShellRoot {
         function dismiss(id: int): void { NotificationService.dismiss(id); }
         function dismissAll(): void { NotificationService.dismissAll(); }
         function invoke(id: int, action: string): void { NotificationService.invoke(id, action); }
+        function reply(id: int, text: string): void { NotificationService.reply(id, text); }
         // What is kept and what pops up, as JSON: for diagnostics and the smoke test.
         function state(): string {
             return JSON.stringify({

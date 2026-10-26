@@ -13,11 +13,13 @@ Item {
     property var popups: []
     property real now: Date.now()
     readonly property bool empty: rows.count === 0
+    property int replyingId: -1             // the card with its reply field open: the window needs the keyboard
 
     signal activated(int id)
     signal actionInvoked(int id, string action)
     signal dismissed(int id)
     signal timedOut(int id)
+    signal replied(int id, string text)
 
     implicitWidth: 360
     implicitHeight: column.height
@@ -80,6 +82,12 @@ Item {
                     onActionInvoked: action => root.actionInvoked(slot.nid, action)
                     onDismissed: root.dismissed(slot.nid)
                     onTimedOut: root.timedOut(slot.nid)
+                    onReplied: text => root.replied(slot.nid, text)
+                    onReplyingChanged: {
+                        if (replying) root.replyingId = slot.nid;
+                        else if (root.replyingId === slot.nid) root.replyingId = -1;
+                    }
+                    Component.onDestruction: if (root.replyingId === slot.nid) root.replyingId = -1
                 }
                 PopupMotion {
                     id: motion

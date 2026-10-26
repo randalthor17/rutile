@@ -135,6 +135,21 @@ ShellRoot {
             if (!("over" in ids) || !item(ids.over)) return;
             t.compare(S.list.length, S.maxKept, "past the limit the oldest goes");
             t.verify(!item(ids.urgent), "the oldest was the critical one");
+            S.maxKept = 50;
+            send("chat", { actions: ["inline-reply", "Message"] });     // the action's text is the placeholder
+            stage = 20;
+            break;
+        case 20:
+            if (!("chat" in ids) || !item(ids.chat)) return;
+            t.compare(item(ids.chat).reply, "Message", "an inline reply, with the sender's placeholder");
+            S.reply(ids.chat, "hello");
+            t.verify(popupIds().indexOf(ids.chat) < 0, "replying ends its popup");
+            send("plain2");
+            stage = 21;
+            break;
+        case 21:
+            if (!("plain2" in ids) || !item(ids.plain2)) return;
+            t.compare(item(ids.plain2).reply, "", "no inline reply offered: none");
             S.dismissAll();
             stage = 12;
             break;

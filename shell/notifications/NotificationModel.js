@@ -49,3 +49,28 @@ function visiblePopups(ids) {
 function pops(urgency, dnd) {
     return !dnd || urgency === urgencyCritical;
 }
+
+// The list's rows, grouped by app (D47): each app in the order of its newest notification; its newest card, then
+// the rest when the app is in `expanded` ({appName: true}), and one "more" row while it has more than one:
+// [{key, kind: "card", id} | {key, kind: "more", app, count, expanded}]. `list` is newest first.
+function groupRows(list, expanded) {
+    var order = [], byApp = Object.create(null);    // no prototype: an app may be called "constructor"
+    for (var i = 0; i < list.length; i++) {
+        var app = list[i].appName || "";
+        if (!byApp[app]) {
+            byApp[app] = [];
+            order.push(app);
+        }
+        byApp[app].push(list[i]);
+    }
+    var rows = [];
+    for (var g = 0; g < order.length; g++) {
+        var items = byApp[order[g]];
+        var open = !!expanded && expanded[order[g]] === true;    // not `in`: {} has a "constructor" too
+        var shown = open ? items : items.slice(0, 1);
+        for (var k = 0; k < shown.length; k++) rows.push({ key: "n" + shown[k].id, kind: "card", id: shown[k].id });
+        if (items.length > 1)
+            rows.push({ key: "more:" + order[g], kind: "more", app: order[g], count: items.length - 1, expanded: open });
+    }
+    return rows;
+}

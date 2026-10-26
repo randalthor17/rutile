@@ -1,11 +1,15 @@
 pragma ComponentBehavior: Bound
 // The notification list (D47), opened from the bell left of the status pill: a header with Do not disturb, the
-// notifications newest first (NotificationCards, created only as they scroll into view), and Clear all. It grows
+// notifications newest first, grouped by app (an app's newest card, and "Show N more" to see the rest), as
+// NotificationCards created only as they scroll into view (one that goes fades out and the rest close up), and
+// Clear all. It grows
 // in from the top right with the shared popup motion (D43) and closes when another window takes the keyboard,
 // like Quick Settings (D41). Plain QtQuick on `notifications` (NotificationModel's data), so it tests offscreen.
 import QtQuick
 import qs.common
 import qs.components
+import "NotificationModel.js" as NotificationModel
+import "NotificationRows.js" as NotificationRows
 
 Rectangle {
     id: root
@@ -21,8 +25,36 @@ Rectangle {
     signal cleared()
     signal activated(int id)
     signal actionInvoked(int id, string action)
+    signal replied(int id, string text)
     signal windowFocusLost()
     signal hidden()
+
+    property var expanded: ({})             // {appName: true} for the groups showing all their notifications
+    function toggleGroup(app) {
+        const e = Object.assign({}, expanded);
+        if (e[app] === true) delete e[app];
+        else e[app] = true;
+        expanded = e;
+    }
+    readonly property var byId: {
+        const out = {};
+        for (const n of notifications) out[n.id] = n;
+        return out;
+    }
+    readonly property var groupRows: NotificationModel.groupRows(notifications, expanded)
+    readonly property var rowByKey: {
+        const out = {};
+        for (const r of groupRows) out[r.key] = r;
+        return out;
+    }
+    ListModel { id: rows }
+    function syncRows() {
+        // from the inputs, not groupRows: in a change handler that binding may not have caught up
+        NotificationRows.sync(rows, NotificationModel.groupRows(notifications, expanded).map(r => r.key));
+    }
+    onNotificationsChanged: syncRows()
+    onExpandedChanged: syncRows()
+    Component.onCompleted: syncRows()
 
     property bool windowActive: Window.active   // not readonly: the offscreen tests cannot move window focus
     property bool hadWindowFocus: false
@@ -83,25 +115,71 @@ Rectangle {
             }
         }
 
-        ListView {
-            id: list
-            objectName: "notificationList"
+        // The view keeps its full height and this clips it: a view that shrank at once would drop the card it is
+        // removing out of view, and Qt then skips its remove transition (seen with Qt 6.12).
+        Item {
+            objectName: "notificationListClip"
             width: parent.width
-            height: Math.min(contentHeight, root.maxListHeight)
-            visible: count > 0
+            height: Math.min(list.contentHeight, root.maxListHeight)
+            Behavior on height { EffectsNumber {} }
+            visible: list.count > 0
             clip: true
-            spacing: Spacing.sm
-            boundsBehavior: Flickable.StopAtBounds
-            model: root.notifications
-            delegate: NotificationCard {
-                required property var modelData
-                objectName: "notificationItem_" + modelData.id
-                width: list.width
-                notification: modelData
-                now: root.now
-                onActivated: root.activated(modelData.id)
-                onActionInvoked: action => root.actionInvoked(modelData.id, action)
-                onDismissed: root.dismissed(modelData.id)
+            ListView {
+                id: list
+                objectName: "notificationList"
+                width: parent.width
+                height: root.maxListHeight
+                spacing: Spacing.sm
+                boundsBehavior: Flickable.StopAtBounds
+                model: rows
+                // at Motion.speed (D43), through the effects animations
+                add: Transition { EffectsNumber { property: "opacity"; from: 0; to: 1 } }
+                remove: Transition { EffectsNumber { property: "opacity"; to: 0 } }
+                displaced: Transition { EffectsNumber { properties: "y" } }
+                delegate: Loader {
+                    id: rowItem
+                    required property string key
+                    property var kept: ({})              // what it showed, while it fades out
+                    readonly property var row: root.rowByKey[key] ?? kept
+                    onRowChanged: if (key in root.rowByKey) kept = root.rowByKey[key]
+                    objectName: "notificationRow_" + key
+                    width: list.width
+                    sourceComponent: row.kind === "more" ? moreRow : cardRow
+                    Component {
+                        id: cardRow
+                        NotificationCard {
+                            id: card
+                            property var keptNote: ({})
+                            objectName: "notificationItem_" + rowItem.row.id
+                            width: rowItem.width
+                            notification: root.byId[rowItem.row.id] ?? keptNote
+                            onNotificationChanged: if (rowItem.row.id in root.byId) keptNote = root.byId[rowItem.row.id]
+                            now: root.now
+                            onActivated: root.activated(rowItem.row.id)
+                            onActionInvoked: action => root.actionInvoked(rowItem.row.id, action)
+                            onDismissed: root.dismissed(rowItem.row.id)
+                            onReplied: text => root.replied(rowItem.row.id, text)
+                        }
+                    }
+                    Component {
+                        id: moreRow
+                        Item {
+                            width: rowItem.width
+                            height: more.height
+                            Button {
+                                id: more
+                                objectName: "notificationMore_" + rowItem.row.app
+                                anchors.right: parent.right
+                                type: "text"
+                                size: "xs"
+                                iconName: rowItem.row.expanded ? "expand_less" : "expand_more"
+                                text: rowItem.row.expanded ? "Show less"
+                                      : "Show " + rowItem.row.count + " more from " + (rowItem.row.app || "this app")
+                                onClicked: root.toggleGroup(rowItem.row.app)
+                            }
+                        }
+                    }
+                }
             }
         }
 

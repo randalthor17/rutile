@@ -216,6 +216,21 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **QtTest can leave a MouseArea hovered.** After `mouseClick` on a button and then elsewhere, the button's
   `containsMouse` stayed true even after `mouseMove` away. Test hover-dependent behavior on a fresh object.
 
+- **A ListView on a JS array rebuilds every delegate on each change**, so add, remove and displaced transitions
+  never play. The notification list keeps a ListModel of keys in step with the data (`NotificationRows.sync`:
+  remove, move, insert) and looks the data up by key.
+
+- **A ListView that shrinks at once skips its remove transition.** With `height: Math.min(contentHeight, max)`,
+  removing a row shrinks the view in the same step, the removed delegate is out of view, and Qt destroys it
+  without the transition (Qt 6.12, isolated in a scratch test). The notification list keeps the view at full
+  height inside a clipping Item whose height animates.
+
+- **Quickshell's inline reply placeholder is the action's text** (`inline-reply` with "Message" gives "Message"),
+  not KDE's placeholder hint.
+
+- **An object used as a map has a prototype:** `{}["constructor"]` is truthy, so an app named "constructor"
+  grouped wrongly until the lookup compared `=== true` (and the grouping used `Object.create(null)`).
+
 - **`busctl` takes a `-1` argument for an option.** Put `--` before `call` when sending a notification with
   the default timeout.
 
