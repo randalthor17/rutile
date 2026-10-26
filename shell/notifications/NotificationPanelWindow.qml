@@ -1,7 +1,8 @@
 // The notification list's layer-shell surface at the top right, under the bell and the status pill. As Quick
 // Settings' (D41): the shell creates it in a LazyLoader only while open (D31), it takes the keyboard on opening,
 // Escape or a click into a window closes it, and closing plays the panel's motion before closeRequested asks
-// the shell to unload it.
+// the shell to unload it. The window keeps the panel's tallest size, and the mask lets clicks through below
+// the panel.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -27,7 +28,8 @@ PanelWindow {
     focusable: true
     WlrLayershell.namespace: "rutile-notification-list"
     implicitWidth: panel.width
-    implicitHeight: panel.height
+    implicitHeight: panel.maxHeight
+    mask: Region { item: panel }
     color: "transparent"
 
     // ticks the cards' "5 min"

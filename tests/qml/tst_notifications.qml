@@ -355,6 +355,41 @@ TestCase {
         compare(d.swipeX, 0);
     }
 
+    // The windows size to these, not to the moving content: a layer surface resized on every frame stutters.
+    function test_window_room() {
+        Motion.speed = 0.5;
+        const p = createTemporaryObject(popupsComp, root);
+        const full = createTemporaryObject(spyComp, root, { target: p, signalName: "fullHeightChanged" });
+        const moving = createTemporaryObject(spyComp, root, { target: p, signalName: "implicitHeightChanged" });
+        p.popups = [note(1)];
+        tryVerify(() => findChild(p, "notificationPopup_1"), 1000);
+        const slot = findChild(p, "notificationPopup_1");
+        tryVerify(() => p.fullHeight === slot.room, 1000, "the room it takes fully open");
+        verify(p.implicitHeight < p.fullHeight, "while it is still opening");
+        tryVerify(() => p.implicitHeight === p.fullHeight && p.fullHeight === slot.room, 3000, "open");
+        verify(moving.count > 5, "the content moves frame by frame: " + moving.count);
+        verify(full.count <= 2, "the room does not: " + full.count);
+        const changes = full.count;
+        const room = p.fullHeight;
+        p.popups = [];
+        tryVerify(() => p.implicitHeight < room * 0.8, 3000, "leaving");
+        compare(p.fullHeight, room, "the room stays while it leaves");
+        compare(full.count, changes);
+        tryCompare(p, "fullHeight", 0, 4000, "and goes with it");
+        verify(p.area.height <= p.fullHeight, "what is on screen fits");
+
+        const panel = createTemporaryObject(panelComp, root);
+        const max = panel.maxHeight;
+        verify(panel.height <= max, "empty");
+        const many = [];
+        for (let i = 1; i <= 12; i++) many.push(note(i, { appName: "App " + i }));
+        panel.notifications = many;
+        waitForRendering(panel);
+        tryVerify(() => findChild(panel, "notificationListClip").height === panel.maxListHeight, 3000, "a full list");
+        tryCompare(panel, "height", max, 2000, "is the tallest it gets");    // the Column lays out a polish later
+        compare(panel.maxHeight, max, "a fixed size");
+    }
+
     function test_panel_list_motion() {
         Motion.speed = 0.5;
         const apps = id => note(id, { appName: "App " + id });

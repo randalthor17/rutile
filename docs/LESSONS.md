@@ -53,6 +53,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   test its absence with `tryVerify`.
 - **`qmltestrunner` needs a visible `TestCase`** (`width`, `height`, `visible: true`, `when: windowShown`) for any pixel check.
 
+- **Never size a layer-shell window to moving content.** The notification popups and list took their window's
+  height from content whose height animated, so the surface was resized on every frame (34 resizes for three
+  popups); each resize is a compositor round trip and a new buffer, and the motion stuttered. Size the window
+  to where the motion ends (grow at once, shrink after it), or to the largest it gets, and let the `mask` pass
+  clicks through the empty part. Count resizes under headless sway with `WAYLAND_DEBUG=1`
+  (`zwlr_layer_surface_v1.set_size`), mapping each surface by the order of its creation: ids are reused.
+
 ## Testing method
 
 - **A test that cannot fail proves nothing.** Mutate the code and watch the test fail. Several guards turned out

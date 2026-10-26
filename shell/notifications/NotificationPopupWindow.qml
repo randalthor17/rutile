@@ -1,7 +1,8 @@
 // The notification popups' layer-shell surface: top right, under the status pill (it keeps clear of the pill's
 // exclusive zone), above windows, as big as the cards so the rest of the screen takes clicks. No keyboard
 // focus, so a popup never takes typing away, except while a reply field is open. The shell creates it in a LazyLoader only while there are popups
-// (D31) and drops it once the last one has played its closing motion (`finished`).
+// (D31) and drops it once the last one has played its closing motion (`finished`). It is as tall as the cards
+// when fully open, not as they move, and the mask lets clicks through where they are not yet or no longer.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -27,7 +28,8 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: popups.replyingId >= 0 ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     implicitWidth: popups.implicitWidth
-    implicitHeight: Math.max(1, popups.implicitHeight)
+    implicitHeight: Math.max(1, popups.fullHeight)
+    mask: Region { item: popups.area }
     color: "transparent"
 
     // ticks the cards' "5 min"

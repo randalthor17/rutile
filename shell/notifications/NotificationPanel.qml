@@ -19,6 +19,10 @@ Rectangle {
     property bool shown: true
     property real now: Date.now()
     readonly property real maxListHeight: Spacing.xxxl * 10
+    // The tallest it gets (a full list, Clear all), for the window: a fixed size, so the surface is not resized
+    // on every frame while the list opens, closes up or grows (each resize is a compositor round trip, and the
+    // motion stutters).
+    readonly property real maxHeight: 2 * Spacing.md + header.height + maxListHeight + clearRow.height + 2 * column.spacing
 
     signal dndToggled(bool on)
     signal dismissed(int id)
@@ -85,6 +89,7 @@ Rectangle {
         spacing: Spacing.sm
 
         Item {
+            id: header
             width: parent.width
             height: Spacing.xxl + Spacing.sm
             Text {
@@ -207,6 +212,7 @@ Rectangle {
         }
 
         Item {
+            id: clearRow
             visible: root.notifications.length > 0
             width: parent.width
             height: clear.height

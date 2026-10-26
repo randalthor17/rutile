@@ -3,6 +3,9 @@ pragma ComponentBehavior: Bound
 // grows in from the top right with the shared popup motion (D43) and plays it backwards when it leaves `popups`;
 // the cards below slide up as its room closes. Plain QtQuick on `popups` ([NotificationModel data plus
 // `timeout`]), so it tests offscreen; `empty` turns true once the last one has gone, for the window to unload.
+// `fullHeight` is the room every card takes when fully open, for the window: it changes when a card comes and
+// once a leaving card has gone, never during the motion, so the surface is not resized on every frame (each
+// resize is a compositor round trip and the motion stutters). `area` is what is on screen, for the input mask.
 import QtQuick
 import qs.common
 import qs.components
@@ -23,6 +26,14 @@ Item {
 
     implicitWidth: 360
     implicitHeight: column.height
+    property real fullHeight: 0
+    readonly property Item area: column
+    function measure() {
+        let h = 0;
+        for (let i = 0; i < repeater.count; i++)
+            h += repeater.itemAt(i)?.room ?? 0;
+        fullHeight = h;
+    }
 
     // {id: data} for the cards, so a replaced notification updates its card in place
     readonly property var byId: {
@@ -60,16 +71,21 @@ Item {
         id: column
         width: root.width
         Repeater {
+            id: repeater
             model: rows
+            onItemAdded: Qt.callLater(root.measure)
+            onItemRemoved: Qt.callLater(root.measure)
             Item {
                 id: slot
                 required property int nid
                 required property bool leaving
                 readonly property var info: root.byId[nid] ?? card.kept
                 objectName: "notificationPopup_" + nid
+                readonly property real room: card.implicitHeight + Spacing.sm
+                onRoomChanged: Qt.callLater(root.measure)
                 width: column.width
                 // the room it takes opens and closes with its motion, so the cards below move smoothly
-                height: (card.implicitHeight + Spacing.sm) * motion.progress
+                height: room * motion.progress
                 NotificationCard {
                     id: card
                     property var kept: ({})          // what it showed, while it leaves

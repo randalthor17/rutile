@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Smoother notification motion** (plan 2.8): popups coming and going, and the list closing up or opening a
+  group, no longer stutter. Their windows were resized on every frame of the motion; now they change size only
+  when a notification comes or has gone (the list's not at all).
 - **Notifications** (plan 2.8, first part, D47): the shell is now a notification server. Notifications pop up
   under the status pill on the screen you are using, newest on top, at most three: the app, when it came, the
   summary and text, a picture when the sender gives one, and its buttons; a click on the card does the app's

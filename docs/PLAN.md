@@ -142,7 +142,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   closes like Quick Settings (Escape, focus loss). The list groups by app (an app's newest card, "Show N more"),
   and a card that goes fades out while the rest close up. A card swiped sideways past a third of its width is
   dismissed. Inline replies: a Reply button opens a field (the popup takes the keyboard only then); the reply
-  reaches the sender (NotificationReplied, checked on the bus). Not done: sounds (needs a player such as
+  reaches the sender (NotificationReplied, checked on the bus). The windows are not resized while things move
+  (the popups' grows when a card comes and shrinks once it has gone, the list's is fixed), which made the
+  motion stutter. Not done: sounds (needs a player such as
   pw-play or canberra-gtk-play: a dependency to decide), per-app settings. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
