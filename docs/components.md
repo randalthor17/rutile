@@ -73,7 +73,9 @@ Tile, Chip and ListItem (`ControlSpec.tileSpec`, `chipSpec`, `listSpec`):
   pills, active ones 24 px corners; on a dual-target tile the icon toggles and the body emits `clicked()`
   (open details). The focus border SystemUI draws is not done yet.
 - Chip spacing is Compose's `ChipArrangement`: 8 px padding at the ends, 8 px between elements, 4 px between a
-  filter chip's icon and label. Elevated chips have no shadow yet (as elevated buttons).
+  filter chip's icon and label. Elevated chips have no shadow yet (as elevated buttons). A filter chip's check
+  grows in and out with the fast spatial spring (`leadingShown`, 0..1), widening the chip as it does; a chip
+  created selected shows it at once.
 - ListItem uses the expressive shapes: 4 px at rest, 12 hovered, 16 pressed, focused or selected, sprung. In
   a segmented group the first item keeps 16 px top corners and the last 16 px bottom corners
   (`ListItemDefaults.segmentedShapes`); put items 2 px apart (`listSpec.segmentedGap`) on a container.

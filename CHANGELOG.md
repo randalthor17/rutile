@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Launcher chips move** (maintainer's request): a filter chip's check mark grows in and out (the chip widens to
+  make room; every filter chip, not only the launcher's), the chip row scrolls smoothly to the chosen chip, and
+  the results fade and rise in when the chip or the grid/list view changes. All follow `Motion.speed` (D43).
 - **Launcher chips and list view** (plan 2.7, maintainer's request): chips under the search field filter the
   apps by category (from the desktop files; only categories that have apps; Tab and Shift+Tab step through them),
   and a button in the search field switches between the grid and a list that shows each app's description. The

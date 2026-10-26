@@ -219,6 +219,34 @@ TestCase {
         compare(own.leadingName, "event", "its own icon wins over the check");
     }
 
+    function test_filter_chip_check_grows_in_and_out() {
+        var impl = ControlSpec.chipSpec.impl, icon = ControlSpec.chipSpec.filter.iconSize;
+        var c = make(chipComp, { type: "filter" });
+        var w0 = c.implicitWidth;
+        mouseClick(c);
+        compare(c.leadingShown, 0, "not yet: it grows");
+        compare(c.implicitWidth, w0);
+        tryVerify(() => c.leadingShown > 0.2 && c.leadingShown < 0.8, 2000, "on its way");
+        verify(findChild(c, "chipLeading").active);
+        tryCompare(c, "leadingShown", 1, 3000, "settles");
+        compare(c.implicitWidth, w0 + icon - impl.gap + impl.compactGap, "room for the check, compact gap");
+        var label = findChild(c, "chipLabel");
+        compare(label.x, impl.contentPadding + icon + impl.compactGap, "the label after the check");
+        mouseClick(c);
+        tryVerify(() => c.leadingShown < 0.8 && c.leadingShown > 0.2, 2000, "shrinks back");
+        verify(findChild(c, "chipLeading").active, "the check stays while it shrinks");
+        verify(label.x > impl.contentPadding + impl.gap && label.x < impl.contentPadding + icon + impl.compactGap,
+               "the label follows it");
+        tryCompare(c, "implicitWidth", w0, 3000);
+        compare(label.x, impl.contentPadding + impl.gap);
+        tryVerify(() => !findChild(c, "chipLeading").active, 1000, "the icon unloads");
+        var on = make(chipComp, { type: "filter", selected: true });
+        compare(on.leadingShown, 1, "starts selected: no motion");
+        compare(on.implicitWidth, w0 + icon - impl.gap + impl.compactGap);
+        var own = make(chipComp, { type: "filter", iconName: "event" });
+        compare(own.leadingShown, 1, "its own icon never moves");
+    }
+
     function test_assist_chip_clicks_without_selecting() {
         var c = make(chipComp);
         var spy = make(spyComp, { target: c, signalName: "clicked" });

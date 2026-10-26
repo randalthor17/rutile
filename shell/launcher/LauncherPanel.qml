@@ -146,14 +146,26 @@ Rectangle {
             boundsBehavior: Flickable.StopAtBounds
             clip: true
 
-            // Keep the chosen chip in view when the keyboard steps past the edge. Choosing one moves the check
-            // mark, which changes two chips' widths, so reveal once the row has placed them again (before that
-            // the chips' x and the row's width are stale).
+            // Keep the chosen chip in view when the keyboard steps past the edge, scrolling with a spring.
+            // Choosing one moves the check mark, which grows one chip and shrinks another over a few frames, so
+            // reveal each time the row has placed them again (before that the chips' x and the row's width are
+            // stale), and stay within the row as it shrinks.
             property Item chosen: null
             function reveal() {
                 if (!chosen) return;
-                if (chosen.x < contentX) contentX = chosen.x;
-                else if (chosen.x + chosen.width > contentX + width) contentX = chosen.x + chosen.width - width;
+                let x = contentX;
+                if (chosen.x < x) x = chosen.x;
+                else if (chosen.x + chosen.width > x + width) x = chosen.x + chosen.width - width;
+                x = Math.max(0, Math.min(x, chipRow.width - width));
+                scroll.value = contentX;    // from where it is (the wheel may have moved it), keeping any velocity
+                scroll.target = x;
+                if (x !== contentX) scroll.settled = false;     // the same target as before still moves
+            }
+            Spring {
+                id: scroll
+                stiffness: Motion.spring("spatial", "default").stiffness
+                dampingRatio: 1     // no overshoot past the row's ends
+                onValueChanged: chips.contentX = value
             }
 
             Row {
@@ -182,6 +194,25 @@ Rectangle {
         GridView {
             id: grid
             objectName: "launcherGrid"
+            // the results fade and rise in when a chip or the view changes (not while typing)
+            opacity: appear.value
+            transform: Translate { y: (1 - appear.value) * Spacing.lg }
+            Spring {
+                id: appear
+                value: 1
+                target: 1
+                stiffness: Motion.spring("effects", "default").stiffness
+                dampingRatio: Motion.spring("effects", "default").dampingRatio
+            }
+            function replay() {
+                appear.value = 0;
+                appear.settled = false;
+            }
+            Connections {
+                target: root
+                function onCategoryChanged() { grid.replay(); }
+                function onListViewChanged() { grid.replay(); }
+            }
             width: parent.width
             height: 4 * root.cell
             cellWidth: root.listView ? width : root.cell

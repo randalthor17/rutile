@@ -1,7 +1,8 @@
 // An M3 Expressive chip, 32 px tall. `assist` is an action (flat with an outline, or `elevated`);
 // `filter` is selectable: it fills with secondaryContainer and shows a check when selected and it has
-// no icon of its own. Sizes, colors and spacing come from ControlSpec.chipSpec (Compose's chip tokens
-// and the spacing Chip.kt hardcodes). Icons are only created when shown.
+// no icon of its own. The check grows in and out with a spatial spring (the chip widens to make room), at
+// Motion.speed (D43). Sizes, colors and spacing come from ControlSpec.chipSpec (Compose's chip tokens and the
+// spacing Chip.kt hardcodes). Icons are only created when shown.
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
@@ -25,6 +26,8 @@ Item {
     readonly property bool isFilter: type === "filter"
     readonly property bool on: isFilter && selected
     readonly property string leadingName: iconName !== "" ? iconName : (on ? "check" : "")
+    // 0..1: how far the check has grown in (1 for a chip's own icon, which does not move; 0 with neither)
+    readonly property real leadingShown: iconName !== "" ? 1 : checkSpring.value
     readonly property bool pressed: stateLayer.pressed
     readonly property bool hovered: stateLayer.hovered
 
@@ -73,11 +76,12 @@ Item {
 
     // Compose's ChipArrangement: content padding at both ends, `gap` between elements, and the compact
     // gap between a filter chip's icon and its label.
-    readonly property real leadingGap: leadingName === "" ? impl.gap : (isFilter ? impl.compactGap : impl.gap)
+    readonly property real leadingGap: isFilter ? impl.gap + (impl.compactGap - impl.gap) * leadingShown : impl.gap
+    readonly property real leadingWidth: spec.iconSize * leadingShown
     readonly property real trailingGap: trailingIconName === "" ? impl.gap : (isFilter ? impl.compactGap : impl.gap)
 
     implicitHeight: spec.containerHeight
-    implicitWidth: impl.contentPadding + (leadingName !== "" ? spec.iconSize : 0) + leadingGap + label.implicitWidth
+    implicitWidth: impl.contentPadding + leadingWidth + leadingGap + label.implicitWidth
                    + trailingGap + (trailingIconName !== "" ? spec.iconSize : 0) + impl.contentPadding
 
     activeFocusOnTab: true
@@ -104,6 +108,14 @@ Item {
         }
     }
 
+    Spring {
+        id: checkSpring
+        target: root.leadingName === "check" ? 1 : 0
+        stiffness: Motion.spring("spatial", "fast").stiffness
+        dampingRatio: Motion.spring("spatial", "fast").dampingRatio
+    }
+    Component.onCompleted: checkSpring.rest()   // a chip that starts selected shows its check at once
+
     Rectangle {
         anchors.fill: parent
         radius: root.spec.containerShape
@@ -115,19 +127,23 @@ Item {
 
     Loader {
         id: leading
-        active: root.leadingName !== ""
+        objectName: "chipLeading"
+        active: root.iconName !== "" || root.leadingShown > 0.01
         x: root.impl.contentPadding
         anchors.verticalCenter: parent.verticalCenter
         sourceComponent: Icon {
-            name: root.leadingName
+            name: root.iconName !== "" ? root.iconName : "check"
             size: root.spec.iconSize
             color: root.leadingColor
+            opacity: Math.min(1, root.leadingShown)
+            scale: Math.max(0, root.leadingShown)
         }
     }
 
     Text {
         id: label
-        x: root.impl.contentPadding + (leading.active ? root.spec.iconSize : 0) + root.leadingGap
+        objectName: "chipLabel"
+        x: root.impl.contentPadding + root.leadingWidth + root.leadingGap
         anchors.verticalCenter: parent.verticalCenter
         text: root.text
         color: root.labelColor

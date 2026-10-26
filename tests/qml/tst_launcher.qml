@@ -115,6 +115,21 @@ TestCase {
         verify(field.activeFocus, "still typing into the field");
     }
 
+    function test_results_fade_in_on_a_chip_or_view_change() {
+        var p = createTemporaryObject(panelComp, root);
+        waitForRendering(p);
+        var grid = findChild(p, "launcherGrid");
+        compare(grid.opacity, 1);
+        keyClick(Qt.Key_F);
+        compare(grid.opacity, 1, "typing does not fade");
+        keyClick(Qt.Key_Tab);
+        verify(grid.opacity < 0.5, "a chip change starts from faded");
+        tryCompare(grid, "opacity", 1, 2000);
+        p.listView = true;
+        verify(grid.opacity < 0.5, "so does the view toggle");
+        tryCompare(grid, "opacity", 1, 2000);
+    }
+
     function test_chips_scroll_into_view() {
         var many = ["Network", "AudioVideo", "Graphics", "Office", "Development", "Game", "Education", "System", "Utility"]
             .map((c, i) => ({ type: "app", id: "a" + i, name: "App " + i, categories: [c] }));
@@ -126,12 +141,29 @@ TestCase {
         keyClick(Qt.Key_Backtab);
         compare(p.category, "utilities");
         var last = findChild(p, "launcherChip_utilities");
+        wait(50);
+        verify(chips.contentX > 0 && chips.contentX < chips.contentWidth - chips.width - 1, "scrolls, not jumps");
+        var all = findChild(p, "launcherChip_all");
+        tryVerify(() => Math.abs(last.width - last.implicitWidth) < 0.01 && last.leadingShown === 1
+                  && all.leadingShown === 0, 3000, "the check marks settle");
         waitForRendering(chips);
         compare(last.x + last.width, chips.contentWidth, "placed again with its check mark");
-        compare(chips.contentX, chips.contentWidth - chips.width, "the last chip in view, not past it");
+        tryVerify(() => chips.contentX === chips.contentWidth - chips.width, 3000, "the last chip in view, not past it");
         keyClick(Qt.Key_Tab);
-        waitForRendering(chips);
-        compare(chips.contentX, 0, "All back in view");
+        tryCompare(chips, "contentX", 0, 3000, "All back in view");
+        chips.contentX = 200;               // as the wheel would
+        keyClick(Qt.Key_Backtab);
+        var lowest = 1e9;
+        for (var i = 0; i < 10; i++) {
+            wait(16);
+            lowest = Math.min(lowest, chips.contentX);
+        }
+        verify(lowest >= 200, "scrolls on from where the wheel left it, got " + lowest);
+        tryVerify(() => chips.contentX === chips.contentWidth - chips.width, 3000, "to the end");
+        var end = chips.contentX;
+        chips.contentX = 100;               // the wheel again; the row is placed again (the apps changed, say)
+        chips.reveal();
+        tryCompare(chips, "contentX", end, 3000, "the chosen chip comes back into view");
     }
 
     function test_list_view() {
