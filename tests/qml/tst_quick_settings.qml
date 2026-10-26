@@ -250,6 +250,8 @@ TestCase {
         compare(spy.count, 1);
         compare(spy.signalArguments[0][0], "reboot");
         verify(!t.panel.powerMenuOpen, "choosing closes the menu");
+        tryCompare(chevron, "rotation", 0, 2000, "and turns the chevron back");
+        tryCompare(findChild(t.panel, "qsPowerMenu"), "item", null, 2000, "and the menu goes away");
         // the menu can reach below a short panel (no brightness, no volume); the window grows to menuBottom
         var short = make({ brightnessAvailable: false, volumeAvailable: false });
         compare(short.panel.menuBottom, 0, "no menu, nothing to fit");
