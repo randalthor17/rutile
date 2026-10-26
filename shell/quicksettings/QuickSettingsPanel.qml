@@ -26,6 +26,7 @@ Rectangle {
         { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }
     ]
     property alias editMode: grid.editMode
+    readonly property bool brightnessShown: brightnessRow.visible
     readonly property real panelWidth: 412
 
     signal tilesEdited(var tiles)
@@ -92,7 +93,9 @@ Rectangle {
     radius: Shapes.extraLarge
     color: Colors.surfaceContainer
 
-    Component.onCompleted: backend.refresh()
+    // The backend may arrive after creation (a binding through the window): refresh when it does.
+    onBackendChanged: if (backend) backend.refresh()
+    Component.onCompleted: if (backend) backend.refresh()
 
     Column {
         id: content
@@ -166,6 +169,7 @@ Rectangle {
             visible: !root.editMode
 
             Row {
+                id: brightnessRow
                 objectName: "qsBrightnessRow"
                 visible: root.backend?.brightnessAvailable ?? false
                 spacing: Spacing.sm

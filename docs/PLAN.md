@@ -79,7 +79,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (quickshell-mirror/quickshell PR #949, open in October 2026); not `Quickshell.WindowManager`. If it has not
   merged when this item starts: pin the PR commit as a flake input (maintainer's approval) or a small `Socket`
   client on `$NIRI_SOCKET`, behind a thin `Niri` singleton either way. `IpcHandler` for keybinds into the shell.
-- [ ] **2.3** Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
+- [ ] **2.3** Started: the status pill at the top right of every screen (network, volume, battery; opens Quick
+  Settings, D41). Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
   floating time/date top-left, status icons top-right, no top bar. Types: `PanelWindow` on `WlrLayer.Background`,
   `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
 - [ ] **2.4** Shelf: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
@@ -90,7 +91,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **2.6a** Done (unreleased, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
   while open, toggled with `quickshell -p shell/shell.qml ipc call quicksettings toggle`: header, brightness and
   volume, Wi-Fi, Bluetooth, Microphone, Dark theme and Airplane mode tiles, edit mode (remove, rearrange, resize).
-  Tested offscreen with a fake backend and as the real shell under a headless sway. Not done: see
+  Tested offscreen with a fake backend and as the real shell under a headless sway. Since then: opens from the
+  status pill on its screen, closes when focus leaves (D41), `ipc call quicksettings state`. Not done: see
   `docs/quick-settings.md`.
 - [ ] **2.6** Status tray and Quick Settings on the shared EditableGrid: tiles as saved data (id + size),
   per-tile detail pages, Add Widget sheet, sliders. Types: `PopupWindow` or `PanelWindow` in a `LazyLoader`,

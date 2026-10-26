@@ -33,7 +33,7 @@ Unreleased. There is no shell UI yet: what exists is the foundation and the firs
 | Fonts: Google Sans Flex (text), Material Symbols Rounded (icons) | done |
 | Components: Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem, ShapeMorph | done, in the gallery |
 | Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
-| Shell entry (`shell/shell.qml`) with Quick Settings: tiles, brightness and volume, IPC toggle | first version; tested under a headless sway, and opened on the maintainer's niri (volume live; no Wi-Fi, Bluetooth or backlight there) (`docs/quick-settings.md`) |
+| Shell entry (`shell/shell.qml`) with the status pill and Quick Settings: tiles, brightness and volume, IPC toggle | first version; tested under a headless sway, and opened on the maintainer's niri (volume live; no Wi-Fi, Bluetooth or backlight there) (`docs/quick-settings.md`) |
 | Remaining components, rest of the shell, widget renderer, settings, distro | not started (see plan) |
 | Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
 | `tools/widget_check.py` (widget schema and widget checker, stdlib) | done; the acceptance check of the widget tasks |
@@ -185,6 +185,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/shell.qml` | the shell's entry point (`quickshell -p shell/shell.qml`): palette watcher, Quick Settings, IPC |
 | `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`) |
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
+| `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |

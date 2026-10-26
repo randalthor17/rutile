@@ -138,6 +138,18 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   file between two function names also deleted a test that had been inserted in between; two mutants it had
   caught came back, which is how it was noticed. List the test functions before committing.
 
+- **`prop: prop` binds a property to itself.** In `QuickSettingsWindow { backend: backend }` the right-hand
+  `backend` is the window's own property, not the id outside, so the panel got `undefined` and nothing failed
+  loudly: tiles showed "Unavailable", which looked like a machine without hardware. Never give an id the name of a
+  property it is assigned to; check wiring by asking the running shell (`ipc call quicksettings state`).
+
+- **Headless sway has no pointer.** `swaymsg seat ... cursor press` succeeds but no client gets a click (seat
+  capabilities 0), and `wlrctl` creates a virtual pointer only for one command. Test clicks offscreen; test
+  wiring through IPC.
+
+- **Reading a `color` property in JavaScript gives a live reference, not a copy** (Qt 6 value types): a "before"
+  value read into a `var` changes with the property. Copy with `String(...)` when comparing before and after.
+
 - **Quickshell offscreen cannot make a `PanelWindow`** ("No PanelWindow backend loaded"), and the whole config fails
   to load. Test windows under a headless sway (`WLR_BACKENDS=headless`); give it a short `XDG_RUNTIME_DIR`, because a
   Unix socket path over 108 bytes fails with "Unable to open wayland socket".

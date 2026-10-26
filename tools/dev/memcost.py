@@ -24,6 +24,7 @@ QML = """import QtQuick
 import qs.common
 import qs.components
 import qs.quicksettings
+import qs.bar
 
 Window {
     width: 1200; height: 900; visible: true

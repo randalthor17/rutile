@@ -5,6 +5,14 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Status pill** (plan 2.3, D41): a pill at the top right of every screen shows the network (Wi-Fi strength or
+  cable), volume and battery, and opens Quick Settings below it on that screen; it is marked while the panel is
+  open. Quick Settings now closes when keyboard focus leaves it (a click into a window), as well as on Escape.
+  `quickshell -p shell/shell.qml ipc call quicksettings state` reports what the windows see.
+- **Fix:** the real shell's panel had no backend: `backend: backend` inside a window binds the window's own
+  property to itself, so the panel showed no brightness and could not have changed anything. Found while adding
+  the pill; the Wayland smoke test now checks the wiring through `state`.
+- **Fix:** the panel asked its backend to refresh before the backend arrived (a TypeError in the log).
 - **Quick Settings, in the real shell** (plans 2.1 and 2.6a, D39, D40): `shell/shell.qml` is the shell's entry
   point. `quickshell -p shell/shell.qml ipc call quicksettings toggle` opens Googlebook's Quick Settings at the
   top right: edit-tiles, settings and power buttons; brightness (through brightnessctl, a new runtime

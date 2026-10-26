@@ -1,5 +1,6 @@
-// The Quick Settings panel in its own layer-shell surface at the top right. The shell creates it in a
-// LazyLoader only while open (D31) and destroys it on close. Escape closes it.
+// The Quick Settings panel in its own layer-shell surface at the top right, under the status pill. The shell
+// creates it in a LazyLoader only while open (D31) and destroys it on close. Escape closes it, and so does losing
+// keyboard focus (a click into a window): it takes focus when it opens, at least on niri (D41).
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -8,11 +9,17 @@ import qs.common
 PanelWindow {
     id: root
 
+    required property var backend
+
     signal closeRequested()
+
+    // For `ipc call quicksettings state` (diagnostics and the Wayland smoke test).
+    readonly property bool panelHasBackend: !!panel.backend
+    readonly property bool brightnessShown: panel.brightnessShown
 
     anchors.top: true
     anchors.right: true
-    margins.top: Spacing.sm
+    margins.top: 2 * Spacing.sm + Spacing.xxl      // below the status pill
     margins.right: Spacing.sm
     exclusionMode: ExclusionMode.Ignore
     focusable: true
@@ -21,13 +28,17 @@ PanelWindow {
     implicitHeight: panel.height
     color: "transparent"
 
-    QuickSettingsBackend { id: backend }
-
     QuickSettingsPanel {
         id: panel
         objectName: "quickSettingsPanel"
-        backend: backend
+        backend: root.backend
         focus: true
+        // Close when focus leaves, but only after it arrived: a compositor that never gives focus keeps it open.
+        property bool hadFocus: false
+        onActiveFocusChanged: {
+            if (activeFocus) hadFocus = true;
+            else if (hadFocus) root.closeRequested();
+        }
         Keys.onEscapePressed: root.closeRequested()
     }
 }

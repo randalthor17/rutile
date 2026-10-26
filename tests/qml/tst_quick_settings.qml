@@ -64,6 +64,11 @@ TestCase {
     function test_opening_refreshes_the_backend() {
         var t = make();
         compare(t.backend.calls[0], "refresh");
+        // a backend that arrives after creation (bound through the window) is refreshed too
+        var late = createTemporaryObject(panelComp, root, { backend: null });
+        var b = createTemporaryObject(fakeComp, root);
+        late.backend = b;
+        compare(b.calls[0], "refresh");
     }
 
     function test_tiles_show_the_backend_state() {

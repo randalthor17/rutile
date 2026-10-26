@@ -246,3 +246,13 @@ sway (wlroots' headless backend) with a private `XDG_RUNTIME_DIR`: no session co
 reachable, and brightnessctl is a fake, so tests cannot change the machine. sway and grim are test-only tools in
 the dev shell; the test skips without sway. niri would be the better test compositor, but its headless backend
 is internal to its own tests. Revisit if niri gains a headless mode.
+
+**D41. Quick Settings opens from a status pill and closes when it loses keyboard focus.** Googlebook has no top
+bar: a pill at the top right shows network, volume and battery and opens the panel below it. The shell makes one
+pill per screen (`Variants` over `Quickshell.screens`) and one backend for pills and panel. To close on an outside
+click, the panel closes when its keyboard focus leaves, but only after it had focus (so a compositor that never
+gives it focus cannot close it at once). On niri a focusable layer surface gets focus when it opens and loses it
+when a window takes focus (checked live). Rejected: a full-screen transparent window behind the panel to catch
+clicks, which closes on any click but holds a screen-sized buffer while open (D31), and compositor-specific focus
+grabs (Hyprland's). Known gap: a click on empty desktop or on another program's bar does not move focus on niri,
+so it does not close the panel; Escape and the pill do. Revisit if that annoys in use.

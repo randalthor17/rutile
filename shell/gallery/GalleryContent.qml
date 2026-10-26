@@ -4,6 +4,7 @@ import QtQuick
 import qs.common
 import qs.components
 import qs.quicksettings
+import qs.bar
 import "GalleryHelpers.js" as Helpers
 import "../common/MaterialShapes.js" as MaterialShapes
 
@@ -502,6 +503,11 @@ Rectangle {
                         property bool wifiAvailable: true
                         property bool wifiEnabled: true
                         property string wifiName: "Home"
+                        property real wifiSignal: 0.8
+                        property bool wiredConnected: false
+                        property bool batteryAvailable: true
+                        property real battery: 0.82
+                        property bool charging: false
                         property bool bluetoothAvailable: true
                         property bool bluetoothEnabled: false
                         property string bluetoothDevice: ""
@@ -515,13 +521,21 @@ Rectangle {
                         function setAirplaneMode(b) { wifiEnabled = !b; bluetoothEnabled = !b; }
                         function refresh() {}
                     }
+                    StatusPill {
+                        id: demoPill
+                        objectName: "galleryStatusPill"
+                        backend: demoBackend
+                        open: demoPanel.visible
+                        onClicked: demoPanel.visible = !demoPanel.visible
+                    }
                     QuickSettingsPanel {
+                        id: demoPanel
                         objectName: "galleryQuickSettings"
                         backend: demoBackend
                     }
                     Text {
-                        text: "The shell's panel with a demo backend. In the shell: quickshell -p shell/shell.qml, then "
-                              + "quickshell -p shell/shell.qml ipc call quicksettings toggle"
+                        text: "The shell's status pill and panel with a demo backend; click the pill. In the shell: "
+                              + "quickshell -p shell/shell.qml, then click the pill at the top right"
                         width: parent.width
                         wrapMode: Text.WordWrap
                         color: Colors.surfaceVariantOn

@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -334,6 +334,17 @@ def run_wayland_smoke(screenshot=None):
                             problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
                         time.sleep(0.5)
                     time.sleep(1.0)
+                    # what the windows see: the panel reaches the backend (the fake brightness shows as a
+                    # slider) and the pill on the panel's screen is marked open
+                    try:
+                        state = json.loads(ipc("state"))
+                    except ValueError as e:
+                        state = {}
+                        problems.append(f"ipc state: {e}")
+                    want = {"open": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
+                            "pillsHaveBackend": [True]}
+                    if state != want:
+                        problems.append(f"ipc state: got {state}, expected {want}")
                     if screenshot:
                         grim = shutil.which("grim")
                         if grim:

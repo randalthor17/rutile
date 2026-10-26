@@ -11,7 +11,10 @@ Singleton {
     readonly property var wifiDevice: Networking.devices.values.find(d => d.type === DeviceType.Wifi) ?? null
     readonly property bool wifiAvailable: wifiDevice !== null && Networking.wifiHardwareEnabled
     readonly property bool wifiEnabled: Networking.wifiEnabled
-    readonly property string wifiName: wifiDevice?.networks.values.find(n => n.connected)?.name ?? ""
+    readonly property var wifiNetwork: wifiDevice?.networks.values.find(n => n.connected) ?? null
+    readonly property string wifiName: wifiNetwork?.name ?? ""
+    readonly property real wifiSignal: wifiNetwork?.signalStrength ?? 0     // 0..1
+    readonly property bool wiredConnected: Networking.devices.values.some(d => d.type === DeviceType.Wired && d.connected)
 
     function setWifiEnabled(on) {
         Networking.wifiEnabled = on;

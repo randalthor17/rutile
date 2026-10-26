@@ -1,5 +1,6 @@
-// The Quick Settings panel's backend in the real shell: the panel's interface (see QuickSettingsPanel.qml)
-// on top of the Quickshell services in shell/services. Tests and the gallery use fakes with the same names.
+// The shell's backend for Quick Settings and the status pill: the interface QuickSettingsPanel.qml and
+// StatusPill.qml list, on top of the Quickshell services in shell/services. The shell makes one; tests and the
+// gallery use fakes with the same names.
 import QtQuick
 import qs.common
 import qs.services
@@ -15,6 +16,11 @@ QtObject {
     readonly property bool wifiAvailable: NetworkService.wifiAvailable
     readonly property bool wifiEnabled: NetworkService.wifiEnabled
     readonly property string wifiName: NetworkService.wifiName
+    readonly property real wifiSignal: NetworkService.wifiSignal
+    readonly property bool wiredConnected: NetworkService.wiredConnected
+    readonly property bool batteryAvailable: PowerService.batteryAvailable
+    readonly property real battery: PowerService.battery
+    readonly property bool charging: PowerService.charging
     readonly property bool bluetoothAvailable: BluetoothService.available
     readonly property bool bluetoothEnabled: BluetoothService.enabled
     readonly property string bluetoothDevice: BluetoothService.connectedName

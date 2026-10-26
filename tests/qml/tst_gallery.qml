@@ -112,6 +112,12 @@ TestCase {
         compare(panel.tileState("bluetooth").active, true, "the demo applies what it is asked");
         panel.toggleTile("airplane", true);
         compare(panel.tileState("wifi").active, false);
+        var pill = byName(g, "galleryStatusPill")[0];
+        verify(pill.open);
+        pill.clicked();
+        verify(!panel.visible && !pill.open, "the pill hides the demo panel");
+        pill.clicked();
+        verify(panel.visible && pill.open);
     }
 
     function test_gallery_grid_edits_quick_settings_tiles() {
