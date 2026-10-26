@@ -355,12 +355,11 @@ Rectangle {
                             width: 360
                             size: modelData
                             value: 0.5
-                            startIcon: "volume_down"
                             endIcon: "volume_up"
                         }
                     }
                     Text {
-                        text: "Sizes s, m, l and xl (xs is the slider above). Track icons show from m up, while their part of the track has room."
+                        text: "Sizes s, m, l and xl (xs is the slider above). Track icons show from m up; Android uses one, at the end."
                         width: parent.width
                         wrapMode: Text.WordWrap
                         color: Colors.surfaceVariantOn

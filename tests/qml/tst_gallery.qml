@@ -76,7 +76,8 @@ TestCase {
         wait(200);
         var sized = byName(g, "gallerySizedSlider");
         compare(sized.map(function (s) { return s.size; }).join(), "s,m,l,xl");
-        verify(sized.every(function (s) { return s.startIconShown === (s.size !== "s"); }), "icons from m up");
+        verify(sized.every(function (s) { return s.endIconShown === (s.size !== "s") && !s.startIconShown; }),
+               "one end icon, from m up");
         var qs = byName(g, "galleryQsSlider");
         compare(qs.length, 2, "brightness and volume");
         verify(qs.every(function (s) { return s.size === "m" && s.endIconShown && !s.startIconShown; }));

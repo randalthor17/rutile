@@ -27,7 +27,8 @@ Quick Settings panel (plan 2.6):
   (D36); the gallery shows the pair under "Slider sizes and track icons".
 - Near full (Android 17, `android-17-slider-almost-full.png`): the end icon moves to the end of the active
   track, just before the handle, in the color of what sits on the active track. No stop dot shows in either
-  capture while the slider has an icon.
+  capture while the slider has an icon. Android's sliders (brightness, volume and the rest) carry one icon, at
+  the end; use `endIcon` and leave `startIcon` (MDC's slot) empty for system controls.
 - Tiles are Android 16's (D32): 4 columns; large tiles span 2 and small tiles are icon-only. Inactive tiles are
   pills; active ones are rounded squares filled with the primary color; a dual-target tile (Wi-Fi, Bluetooth)
   keeps a surface body and a primary icon box when on, and a slightly lighter round icon box when off.
