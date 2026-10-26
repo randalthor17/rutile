@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -207,6 +207,7 @@ def qs_workspace(test):
         shutil.copytree(ROOT / "shell" / d, ws / d)
     shutil.copy(ROOT / "tests" / "qs" / "QsTest.qml", ws)
     shutil.copytree(ROOT / "tests" / "qs" / "bin", ws / "bin")
+    shutil.copytree(ROOT / "tests" / "qs" / "apps", ws / "apps")
     shutil.copy(test, ws / "shell.qml")
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
     return ws
@@ -317,6 +318,9 @@ def run_wayland_smoke(screenshot=None):
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
             "RUTILE_ANIMATION_SPEED": "1.5",
+            # only the fixture apps, so the shelf's default pins are known
+            "XDG_DATA_DIRS": str(ROOT / "tests" / "qs" / "apps"),
+            "XDG_DATA_HOME": str(ROOT / "tests" / "qs" / "apps" / "no-user-apps"),
             "RUTILE_PALETTE": str(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json"),
         })
         log_path = comp.runtime / "shell.log"
@@ -365,6 +369,9 @@ def run_wayland_smoke(screenshot=None):
                         nows = [time.localtime(time.time() - d) for d in (0, 60)]
                         if not any(h % 12 == t.tm_hour % 12 and m == t.tm_min for t in nows):
                             problems.append(f"ipc state: clock {clocks[0]!r} is not the current time")
+                    shelves = state.pop("shelves", None)
+                    if shelves != [["org.gnome.Nautilus", "firefox", "foot"]]:
+                        problems.append(f"ipc state: shelves {shelves!r}, expected the fixture's default pins")
                     want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:
@@ -374,6 +381,10 @@ def run_wayland_smoke(screenshot=None):
                     tops = [w["rect"]["y"] for w in spaces]
                     if tops != [32]:
                         problems.append(f"workspace area starts at {tops}, expected [32] (the pill's reserved space)")
+                    # and ends above the shelf (56 px at the bottom of the 800 px output)
+                    bottoms = [w["rect"]["y"] + w["rect"]["height"] for w in spaces]
+                    if bottoms != [800 - 56]:
+                        problems.append(f"workspace area ends at {bottoms}, expected [{800 - 56}] (above the shelf)")
                     if screenshot:
                         grim = shutil.which("grim")
                         if grim:

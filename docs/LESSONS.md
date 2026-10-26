@@ -117,6 +117,11 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 
 ## Process
 
+- **The maintainer's shell hot-reloads this checkout.** Mutation testing by editing files in place shows every
+  mutant on their screen; mutate in a copy. A new module directory under `shell/` can make the reload fail with
+  `module "qs.common" is not installed`; `touch shell/shell.qml` reloads it. `qs log -p shell/shell.qml` prints the
+  running instance's log, so there is no need to start a second one.
+
 - **Verify in a fresh clone, and read the result before delivering.** A bundle shipped with a failing check because
   `widgets/` and `settings/` existed in the working directory only as untracked empty directories (git does not
   track empty directories), so a path check passed locally and failed in every clone. The fresh-clone step was

@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Shelf** (plan 2.4, first part): a bar along the bottom of every screen that keeps windows above it, with a
+  launcher button (does nothing until the launcher, plan 2.7), pinned apps (the first installed file manager,
+  browser and terminal, or `RUTILE_SHELF_PINS=id,id`) that start on click, and running apps from the compositor
+  (a dot; a longer primary dash while active; a click brings the next window forward). Apps that run without
+  being pinned follow a divider. Apps without an icon show their initial.
 - **Power actions wait for Quick Settings to close** (maintainer's request): choosing Lock, Sign out, Restart or
   Shut down closes the menu and the panel first, and runs the action once they have gone; reopening the panel
   before then cancels it.

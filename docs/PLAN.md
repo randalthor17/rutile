@@ -84,7 +84,12 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   clock at the top left (time and date). Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
   floating time/date top-left, status icons top-right, no top bar. Types: `PanelWindow` on `WlrLayer.Background`,
   `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
-- [ ] **2.4** Shelf: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
+- [ ] **2.4** Started (`shell/shelf/`): a full-width bar along the bottom of every screen that reserves its
+  height; a launcher button (emits only, until 2.7), pinned apps (default: the first installed file manager,
+  browser and terminal; `RUTILE_SHELF_PINS` until 2.5) that start on click, running apps from `ToplevelManager`
+  (wlr-foreign-toplevel; niri has it, so no wait for PR #949) with a dot, a primary dash while active, and a click
+  cycling their windows; unpinned running apps after a divider; press motion. Not done: tooltips, context menu
+  (pin, close), special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
   via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
 - [ ] **2.5** Settings registry and search: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,

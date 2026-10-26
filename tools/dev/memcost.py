@@ -25,6 +25,7 @@ import qs.common
 import qs.components
 import qs.quicksettings
 import qs.bar
+import qs.shelf
 
 Window {
     width: 1200; height: 900; visible: true

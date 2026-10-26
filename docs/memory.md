@@ -59,6 +59,8 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | StatusPill | 122.8 | 58.3 | always on screen (one per screen): one `Icon` with three ligatures instead of three (93.2), then no container while closed and 16 px icons. Scrolling the volume (an Item with a WheelHandler over the volume glyph) added 5.2, measured with a backend passed in (95.0 to 100.2 including it) |
 | ClockPill | | 35.2 | always on screen (one per screen): one `Text` for time and date |
 | PowerMenu | | 511 | 4 `ListItem`s with their shape springs; only while the menu is open, inside the open panel |
+| ShelfButton | | 76.5 | icon or initial, state layer, press spring, running mark |
+| Shelf, 3 apps | | 317.5 | always on screen (one per screen): bar, launcher button, divider, 3 ShelfButtons; app icons decode at 40 px (`sourceSize`) |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 

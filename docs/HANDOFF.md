@@ -244,6 +244,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_OPENCODE` | tests | opencode binary for the real-config checks |
 | `RUTILE_OPENCODE_STALL` | tests | seconds without a model request before a real-opencode run counts as hung (default 20) |
 | `RUTILE_ANIMATION_SPEED` | `shell/shell.qml` | animation speed at start (D43): 1 normal, 2 twice as fast, 0 no motion; live: `ipc call motion setSpeed 2` |
+| `RUTILE_SHELF_PINS` | `shell/shelf/ShelfBackend.qml` | the shelf's pinned apps, desktop ids separated by commas (until saved settings, plan 2.5) |
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |

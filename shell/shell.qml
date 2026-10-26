@@ -1,5 +1,5 @@
 // Rutile Shell. Run with:   quickshell -p shell/shell.qml   (or `qs -p shell`)
-// A clock sits at the top left of every screen and a status pill at the top right; clicking it opens Quick Settings on that screen.
+// A clock sits at the top left of every screen, a status pill at the top right and the shelf along the bottom; clicking it opens Quick Settings on that screen.
 // From a niri keybind:   quickshell -p <path>/shell/shell.qml ipc call quicksettings toggle
 import QtQuick
 import Quickshell
@@ -8,6 +8,7 @@ import Quickshell.Wayland
 import qs.common
 import qs.bar
 import qs.quicksettings
+import qs.shelf
 
 ShellRoot {
     id: shell
@@ -68,6 +69,18 @@ ShellRoot {
         }
     }
 
+    ShelfBackend { id: shelfBackend }
+
+    Variants {
+        id: shelves
+        model: Quickshell.screens
+        ShelfWindow {
+            required property var modelData
+            screen: modelData
+            backend: shelfBackend
+        }
+    }
+
     LazyLoader {
         id: quickSettings
         QuickSettingsWindow {
@@ -95,7 +108,8 @@ ShellRoot {
                 pillsHaveBackend: statusWindows.instances.map(s => !!s.pill.backend),
                 pillsOnTop: statusWindows.instances.map(s => s.pill.WlrLayershell.layer === WlrLayer.Top),
                 reserved: statusWindows.instances.map(s => s.reserved),
-                clocks: statusWindows.instances.map(s => s.clock.pill.timeText + " " + s.clock.pill.dateText)
+                clocks: statusWindows.instances.map(s => s.clock.pill.timeText + " " + s.clock.pill.dateText),
+                shelves: shelves.instances.map(s => s.shelf.items.map(i => i.id))
             });
         }
     }
