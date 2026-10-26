@@ -11,6 +11,8 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 - **Power menu** (maintainer's request): the power button (power icon and chevron, as Googlebook) opens a menu
   with Lock, Sign out, Restart and Shut down (`loginctl`, niri, `systemctl`). A full-screen power menu over a
   blurred desktop is planned to replace it (plan 2.8).
+- **Fix** (maintainer's report): the power menu was cut off at the bottom when the panel is short (no brightness
+  row). The window now grows to fit the menu, and its mask keeps the extra space click-through.
 - **Clock** (plan 2.3): every screen shows the time and date at the top left ("8:55  Fri, Oct 9"), on the same
   tonal container as the status pill; 24-hour when the locale uses it. The Wayland smoke test checks that it
   shows the current time.

@@ -243,6 +243,14 @@ TestCase {
         compare(spy.count, 1);
         compare(spy.signalArguments[0][0], "reboot");
         verify(!t.panel.powerMenuOpen, "choosing closes the menu");
+        // the menu can reach below a short panel (no brightness, no volume); the window grows to menuBottom
+        var short = make({ brightnessAvailable: false, volumeAvailable: false });
+        compare(short.panel.menuBottom, 0, "no menu, nothing to fit");
+        clickItem(findChild(short.panel, "qsPower"));
+        var m = short.panel.powerMenu;
+        verify(m);
+        compare(short.panel.menuBottom, m.mapToItem(short.panel, 0, m.height).y);
+        verify(short.panel.menuBottom > short.panel.height, "taller than the panel here");
         // edit mode hides the button and the menu
         clickItem(button);
         t.panel.editMode = true;

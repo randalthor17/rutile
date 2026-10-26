@@ -30,7 +30,13 @@ PanelWindow {
     focusable: true
     WlrLayershell.namespace: "rutile-quicksettings"
     implicitWidth: panel.width
-    implicitHeight: panel.height
+    // Tall enough for the power menu where it reaches below the panel; the mask keeps the empty part
+    // click-through.
+    implicitHeight: Math.max(panel.height, panel.menuBottom)
+    mask: Region {
+        item: panel
+        Region { item: panel.powerMenu }
+    }
     color: "transparent"
 
     QuickSettingsPanel {

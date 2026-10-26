@@ -31,6 +31,10 @@ Rectangle {
     // Open and close motion: false shrinks and fades the panel away, then `hidden` fires.
     property bool shown: true
     readonly property real appearProgress: appear.value
+    // The open power menu and where it ends: it can reach below the panel (with no brightness row the panel is
+    // shorter than the menu), so the window grows to fit it.
+    readonly property Item powerMenu: powerMenuLoader.item as Item
+    readonly property real menuBottom: powerMenu ? powerMenuLoader.y + powerMenu.height : 0
     readonly property bool brightnessShown: brightnessRow.visible
     readonly property real panelWidth: 412
 
@@ -336,6 +340,7 @@ Rectangle {
 
     // The power menu over the tiles, under the power button; created only while open (D31).
     Loader {
+        id: powerMenuLoader
         objectName: "qsPowerMenu"
         active: root.powerMenuOpen && !root.editMode
         z: 1
