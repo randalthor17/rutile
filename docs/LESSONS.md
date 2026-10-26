@@ -138,6 +138,17 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   file between two function names also deleted a test that had been inserted in between; two mutants it had
   caught came back, which is how it was noticed. List the test functions before committing.
 
+- **Quickshell offscreen cannot make a `PanelWindow`** ("No PanelWindow backend loaded"), and the whole config fails
+  to load. Test windows under a headless sway (`WLR_BACKENDS=headless`); give it a short `XDG_RUNTIME_DIR`, because a
+  Unix socket path over 108 bytes fails with "Unable to open wayland socket".
+
+- **Publish readiness last.** BrightnessService set `available` before `device` and `maximum`, so anything reacting
+  to `available` and calling `set()` would have written the minimum to no device. Set every field, then the flag.
+
+- **Setting `Process.running = true` while it runs reruns it once, with the latest `command`, after it exits**
+  (Quickshell 0.3.2, observed, not documented). A queue that relies only on that would work by accident; ours is
+  explicit, and its mutant survives because of this.
+
 - **A `{` in a comment above the imports breaks Quickshell's `qs.*` imports.** A test header comment holding
   `{ws}` made `import qs.common` fail with "module is not installed"; the same file without the brace loaded.
   Quickshell seems to read a file's header only up to the first brace. Keep braces out of leading comments.

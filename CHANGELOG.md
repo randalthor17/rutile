@@ -5,6 +5,16 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Quick Settings, in the real shell** (plans 2.1 and 2.6a, D39, D40): `shell/shell.qml` is the shell's entry
+  point. `quickshell -p shell/shell.qml ipc call quicksettings toggle` opens Googlebook's Quick Settings at the
+  top right: edit-tiles, settings and power buttons; brightness (through brightnessctl, a new runtime
+  dependency) and volume sliders; Wi-Fi, Bluetooth, Microphone, Dark theme and Airplane mode tiles on Quickshell's
+  Networking, Bluetooth and Pipewire services; and "Edit tiles". The window exists only while open. The panel is
+  tested offscreen against a fake backend and shown in the gallery; the real shell is tested under a headless
+  sway (`tools/qtws.py test-wayland`, with a screenshot option), and the brightness service against a fake
+  brightnessctl. The dev shell gains brightnessctl, and sway and grim for tests.
+- **Fix:** the brightness service announced itself available before it knew its device, so a control reacting
+  at once would have set the backlight to its minimum. Found by its test.
 - **Decision D38** (maintainer): plan 2.2 waits for Quickshell's `Quickshell.Niri` module (PR #949) instead of
   building Quickshell from git or using `Quickshell.WindowManager` (ext-workspace-v1, immature on niri); the
   fallback is named. niri supports `ext-background-effect-v1`, so the shell's own surfaces may blur

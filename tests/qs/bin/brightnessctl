@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# A stand-in for brightnessctl in tests, so the real backlight is never touched. State lives in
+# $FAKE_BRIGHTNESS (default: a file beside this script's directory); every call is appended to
+# $FAKE_BRIGHTNESS.log. `set` takes a moment, like a real write, so callers have to queue.
+state="${FAKE_BRIGHTNESS:-$(dirname "$0")/../fake-brightness}"
+echo "$*" >> "$state.log"
+[ -f "$state" ] || echo 512 > "$state"
+max=1060
+case " $* " in
+  *" set "*)
+    sleep 0.3
+    value="${*##* }"
+    echo "$value" > "$state"
+    ;;
+esac
+current=$(cat "$state")
+echo "intel_backlight,backlight,$current,$((current * 100 / max))%,$max"

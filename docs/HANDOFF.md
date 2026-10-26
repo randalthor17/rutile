@@ -33,7 +33,8 @@ Unreleased. There is no shell UI yet: what exists is the foundation and the firs
 | Fonts: Google Sans Flex (text), Material Symbols Rounded (icons) | done |
 | Components: Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem, ShapeMorph | done, in the gallery |
 | Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
-| Remaining components, EditableGrid, shell, widget renderer, settings, distro | not started (see plan) |
+| Shell entry (`shell/shell.qml`) with Quick Settings: tiles, brightness and volume, IPC toggle | first version; runs under a headless sway in tests, not yet tried on the maintainer's niri (`docs/quick-settings.md`) |
+| Remaining components, rest of the shell, widget renderer, settings, distro | not started (see plan) |
 | Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
 | `tools/widget_check.py` (widget schema and widget checker, stdlib) | done; the acceptance check of the widget tasks |
 | Widget spec v1 (`widgets/spec.schema.json`, examples) | done: local-model draft merged as failing, rewritten by Claude (plan 4.1, S2) |
@@ -49,10 +50,10 @@ surfaces), no focus ring. See `docs/components.md`.
 
 ### Next up
 
-1. The maintainer tries the editable grid ("Editable grid"), the slider sizes ("Slider sizes and track
-   icons") and the shapes ("Shape library and morph") in the gallery, and reviews Tile, Chip and ListItem.
-   Then: GeminiGlow, the last Googlebook signature piece, or the Quick Settings panel itself (2.6), which now
-   has its tiles, grid and sliders.
+1. The maintainer runs the shell on niri (`quickshell -p shell/shell.qml`, then the `ipc call quicksettings toggle`
+   line in `docs/quick-settings.md`, ideally from a keybind) with real Wi-Fi, Bluetooth, audio and backlight, and
+   tries the gallery's newer sections. Then Quick Settings' remaining parts (click outside to close, detail
+   pages, blur, more tiles), the status pills (2.3), or GeminiGlow once a reference image exists.
 2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
    `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
    `sidework.py merge TASK --close`. Judge speed and whether ROCm runs on the card.
@@ -118,20 +119,20 @@ Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the
 
 | Need | Quickshell type | Plan |
 |---|---|---|
-| Shell root, windows | `ShellRoot`, `FloatingWindow` (in use: gallery), `PanelWindow`, `PopupWindow`, `PopupAnchor`, `QsWindow` | 2.3 to 2.8 |
+| Shell root, windows | `ShellRoot`, `FloatingWindow` (in use: gallery), `PanelWindow` (in use: Quick Settings), `PopupWindow`, `PopupAnchor`, `QsWindow` | 2.3 to 2.8 |
 | Layer-shell surfaces (desktop, shelf, panels) | `WlrLayershell`, `WlrLayer`, `ExclusionMode`, `WlrKeyboardFocus` | 2.3, 2.4, 2.6 |
 | One surface per monitor | `Variants` over `Quickshell.screens`, `ShellScreen` | 2.3, 2.4 |
-| Load windows and popups only while open (D31) | `LazyLoader` (windows and popups; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
+| Load windows and popups only while open (D31) | `LazyLoader` (in use: Quick Settings; windows and popups; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
 | Files and config, watched | `FileView` (in use: PaletteWatcher), `JsonAdapter`, `JsonObject` | 2.5, 4.2 |
-| Commands, sockets | `Process`, `StdioCollector`, `SplitParser`, `Socket` | 4.2; 2.2 only as the fallback (D38) |
-| Shell IPC and keybinds | `IpcHandler` (`qs ipc call ...` from niri binds) | 2.2 |
+| Commands, sockets | `Process` (in use: brightnessctl), `StdioCollector`, `SplitParser`, `Socket` | 4.2; 2.2 only as the fallback (D38) |
+| Shell IPC and keybinds | `IpcHandler` (in use: `quicksettings`; `quickshell -p ... ipc call` from niri binds) | 2.2 |
 | State kept across config reloads | `PersistentProperties` | 2.x |
 | Clock | `SystemClock` | 2.3, 4.2 |
 | Apps | `DesktopEntries`, `DesktopEntry`, `IconImage` | 2.4, 2.7 |
 | Running windows, workspaces | `Quickshell.Niri` once PR #949 merges (D38); `ToplevelManager`, `Toplevel` (wlr-foreign-toplevel) | 2.2, 2.4 |
-| Sound | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` | 2.1, 2.6 |
-| Network | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork` (NetworkManager backend) | 2.1, 2.6, 5.2 |
-| Bluetooth | `Bluetooth`, `BluetoothAdapter`, `BluetoothDevice` | 2.1, 2.6, 5.2 |
+| Sound | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` (in use: AudioService) | 2.1, 2.6 |
+| Network | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork` (NetworkManager backend; in use: NetworkService) | 2.1, 2.6, 5.2 |
+| Bluetooth | `Bluetooth`, `BluetoothAdapter`, `BluetoothDevice` (in use: BluetoothService) | 2.1, 2.6, 5.2 |
 | Battery, power profiles | `UPower`, `UPowerDevice`, `PowerProfiles` | 2.1, 2.6, 4.2 |
 | Media | `Mpris`, `MprisPlayer` | 2.1, 2.3 (media pill), 4.2 |
 | Notifications | `NotificationServer`, `Notification` | 2.8 |
@@ -180,7 +181,10 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | Path | What it is |
 |---|---|
 | `shell/common/` | QML singletons (most generated by `tools/gen_qml.py`), `Spring`, `EffectsColor`, `EffectsNumber`, `PaletteWatcher` |
-| `shell/components/` | Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem |
+| `shell/components/` | Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem, EditableGrid, ShapeMorph |
+| `shell/shell.qml` | the shell's entry point (`quickshell -p shell/shell.qml`): palette watcher, Quick Settings, IPC |
+| `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`) |
+| `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
@@ -188,14 +192,15 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
-| `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
-| `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`) |
+| `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
+| `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`) |
 | `flake.nix` | dev shells (`default`, and x86_64-only `local-ai`), the font package, the NixOS module |
 
 Tool inventory (every script has a docstring with usage): `tools/gen_tokens.py` and `tools/gen_components.py`
 generate token JSON from the vendored Kotlin sources; `tools/gen_qml.py` generates the QML singletons;
 `tools/palette.py` renders and validates `palette.json`; `tools/qtws.py` builds the Qt workspace and runs
-tests, lint, GPU tests and gallery renders; `tools/fontconf.py` writes the dev shell's fontconfig;
+tests, lint, GPU tests and gallery renders, the Quickshell tests (`test-qs`) and the real shell under a headless
+sway (`test-wayland`); `tools/fontconf.py` writes the dev shell's fontconfig;
 `tools/otinfo.py` reads font names and axes; `tools/lint_hardcoded.py` enforces the no-hardcoded-values rule and
 the memory rules; `tools/dev/memcost.py` measures memory per component;
 `tools/sidework.py` runs the local-model workflow; `tools/widget_check.py` checks the widget schema and widget files; `tools/llm_docs_check.py` checks

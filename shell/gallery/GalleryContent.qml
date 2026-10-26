@@ -3,6 +3,7 @@
 import QtQuick
 import qs.common
 import qs.components
+import qs.quicksettings
 import "GalleryHelpers.js" as Helpers
 import "../common/MaterialShapes.js" as MaterialShapes
 
@@ -482,6 +483,53 @@ Rectangle {
             }
 
             // ---- editable grid: Quick Settings tiles ----
+            GallerySection {
+                title: "Quick Settings panel"
+                width: parent.width
+                Column {
+                    width: parent.width
+                    spacing: Spacing.md
+                    // A demo backend that applies what the panel asks, so tiles and sliders respond.
+                    QtObject {
+                        id: demoBackend
+                        property bool brightnessAvailable: true
+                        property real brightness: 0.95
+                        property bool volumeAvailable: true
+                        property real volume: 0.7
+                        property bool muted: false
+                        property bool micAvailable: true
+                        property bool micMuted: false
+                        property bool wifiAvailable: true
+                        property bool wifiEnabled: true
+                        property string wifiName: "Home"
+                        property bool bluetoothAvailable: true
+                        property bool bluetoothEnabled: false
+                        property string bluetoothDevice: ""
+                        readonly property bool darkTheme: Colors.mode === "dark"
+                        function setBrightness(v) { brightness = v; }
+                        function setVolume(v) { volume = v; muted = false; }
+                        function setMicMuted(m) { micMuted = m; }
+                        function setWifiEnabled(b) { wifiEnabled = b; }
+                        function setBluetoothEnabled(b) { bluetoothEnabled = b; }
+                        function setDarkTheme(b) { Colors.mode = b ? "dark" : "light"; }
+                        function setAirplaneMode(b) { wifiEnabled = !b; bluetoothEnabled = !b; }
+                        function refresh() {}
+                    }
+                    QuickSettingsPanel {
+                        objectName: "galleryQuickSettings"
+                        backend: demoBackend
+                    }
+                    Text {
+                        text: "The shell's panel with a demo backend. In the shell: quickshell -p shell/shell.qml, then "
+                              + "quickshell -p shell/shell.qml ipc call quicksettings toggle"
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        color: Colors.surfaceVariantOn
+                        font: Type.font(Type.labelMedium)
+                    }
+                }
+            }
+
             GallerySection {
                 title: "Editable grid (Quick Settings tiles)"
                 width: parent.width

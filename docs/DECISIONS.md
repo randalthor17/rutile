@@ -226,3 +226,23 @@ Wayland toplevels (niri exposes no window ids over Wayland), so the shelf takes 
 list. If 2.2 starts before it merges: pin the PR commit as a flake input (with the maintainer's approval) or a
 small `Socket` client on `$NIRI_SOCKET`, behind a thin `Niri` singleton so switching later touches one file.
 Revisit when #949 merges or stalls.
+
+**D39. Backlight brightness through brightnessctl.** Quickshell has no brightness service. brightnessctl writes
+through systemd-logind, so it needs no root, udev rule or setuid wrapper on NixOS: installing the package is
+enough (NixOS wiki). It finds the backlight device, reports it in one machine-readable line and is small and
+maintained. Rejected: our own sysfs reader plus logind's `SetBrightness` over `busctl` (no package, but more code
+of our own for the same thing); ddcutil and ddcci-driver for external monitors (permissions or an out-of-tree
+kernel module; maintenance for a later, opt-in NixOS option if wanted). Without brightnessctl or a backlight the
+brightness slider is hidden. brightnessctl reports no changes, so the panel rereads the level when it opens.
+Approved by the maintainer as a runtime dependency (October 2026); in the dev shell, and in the NixOS module (6.1).
+
+**D40. Quick Settings is a panel with a backend interface, in a window that exists only while open.** The panel
+(`shell/quicksettings/QuickSettingsPanel.qml`) is plain QtQuick and reaches the system only through a duck-typed
+`backend`, so the same file is tested offscreen with a fake and shown in the gallery; the real backend maps
+Quickshell's services. The window is a `PanelWindow` in a `LazyLoader`, opened and closed through an
+`IpcHandler` (niri keybinds call `quickshell ... ipc call`), and destroyed when closed (D31). Quickshell cannot
+create a `PanelWindow` offscreen ("No PanelWindow backend loaded"), so the real shell is tested under a headless
+sway (wlroots' headless backend) with a private `XDG_RUNTIME_DIR`: no session compositor, PipeWire or portal is
+reachable, and brightnessctl is a fake, so tests cannot change the machine. sway and grim are test-only tools in
+the dev shell; the test skips without sway. niri would be the better test compositor, but its headless backend
+is internal to its own tests. Revisit if niri gains a headless mode.

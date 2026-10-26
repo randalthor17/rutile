@@ -102,6 +102,18 @@ TestCase {
         tryVerify(function () { return !morph.morphing; }, 3000);
     }
 
+    function test_gallery_shows_the_quick_settings_panel_with_a_working_demo() {
+        var g = createTemporaryObject(galleryComp, root);
+        wait(200);
+        var panel = byName(g, "galleryQuickSettings")[0];
+        verify(panel !== undefined);
+        verify(panel.visible && panel.height > 200);
+        panel.toggleTile("bluetooth", true);
+        compare(panel.tileState("bluetooth").active, true, "the demo applies what it is asked");
+        panel.toggleTile("airplane", true);
+        compare(panel.tileState("wifi").active, false);
+    }
+
     function test_gallery_grid_edits_quick_settings_tiles() {
         var g = createTemporaryObject(galleryComp, root);
         wait(200);

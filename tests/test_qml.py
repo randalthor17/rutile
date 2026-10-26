@@ -98,6 +98,14 @@ class QuickshellSuite(unittest.TestCase):
             self.assertIn("QSTEST FAIL: meant to fail", r.stdout + r.stderr)
 
 
+@unittest.skipUnless(shutil.which("quickshell") and shutil.which("sway"),
+                     "quickshell or sway not found; Wayland smoke test SKIPPED")
+class WaylandShell(unittest.TestCase):
+    def test_the_shell_opens_quick_settings_over_ipc_without_qml_errors(self):
+        code, out = qtws.run_wayland_smoke()
+        self.assertEqual(code, 0, out)
+
+
 @unittest.skipUnless(qtws.qt_tool("qmllint"), "qmllint not found (set RUTILE_QT_BIN); lint SKIPPED")
 class QmlLint(unittest.TestCase):
     def test_qmllint_is_clean(self):

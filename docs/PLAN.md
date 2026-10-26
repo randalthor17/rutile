@@ -68,7 +68,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 ## Phase 2: shell core (on niri)
 
-- [ ] **2.1** Quickshell built-in services first (Pipewire, UPower, NetworkManager, Bluetooth, notifications,
+- [ ] **2.1** Started: `shell/services/` wraps Pipewire (volume, mute, mic), Networking (Wi-Fi), Bluetooth and,
+  through brightnessctl (D39), the backlight; enough for Quick Settings. Next: UPower, Mpris, notifications, tray.
+  Quickshell built-in services first (Pipewire, UPower, NetworkManager, Bluetooth, notifications,
   MPRIS, tray); a small daemon only for real gaps (settings persistence, widget validation, Ollama bridge).
   Types: `Pipewire`, `UPower`/`PowerProfiles`, `Networking`, `Bluetooth`, `NotificationServer`, `Mpris`,
   `SystemTray` (the table in `docs/HANDOFF.md`, "Quickshell types and where they go").
@@ -85,6 +87,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
 - [ ] **2.5** Settings registry and search: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
+- [ ] **2.6a** Done (unreleased, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
+  while open, toggled with `quickshell -p shell/shell.qml ipc call quicksettings toggle`: header, brightness and
+  volume, Wi-Fi, Bluetooth, Microphone, Dark theme and Airplane mode tiles, edit mode (remove, rearrange, resize).
+  Tested offscreen with a fake backend and as the real shell under a headless sway. Not done: see
+  `docs/quick-settings.md`.
 - [ ] **2.6** Status tray and Quick Settings on the shared EditableGrid: tiles as saved data (id + size),
   per-tile detail pages, Add Widget sheet, sliders. Types: `PopupWindow` or `PanelWindow` in a `LazyLoader`,
   the 2.1 services, `SystemTray` with `QsMenuOpener`.

@@ -23,6 +23,7 @@ import qtws  # noqa: E402
 QML = """import QtQuick
 import qs.common
 import qs.components
+import qs.quicksettings
 
 Window {
     width: 1200; height: 900; visible: true

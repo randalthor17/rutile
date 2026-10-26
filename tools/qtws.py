@@ -8,6 +8,9 @@ normally registers them itself.
     qtws.py lint     qmllint the QML that can be checked without Quickshell
     qtws.py test     run tests/qml/tst_*.qml with qmltestrunner
     qtws.py test-gpu run tests/qml_gpu through the real scene graph (needs a display session)
+    qtws.py test-wayland [--screenshot FILE]
+                     start the real shell (shell/shell.qml) under a headless sway, open Quick Settings over
+                     IPC and check it loads cleanly; FILE gets a screenshot (needs grim)
     qtws.py test-qs  run tests/qs/tst_*.qml as shells under `quickshell`, offscreen (code that needs
                      Quickshell types, which qmltestrunner cannot load)
     qtws.py render [--mode dark|light] [--out DIR]
@@ -22,12 +25,15 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery")
+MODULES = ("common", "components", "gallery", "services", "quicksettings")
+# Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
+QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
 
 def qt_tool(name):
@@ -128,7 +134,7 @@ def workspace(tests_dir="qml"):
         entries = [f"module qs.{module}"]
         for f in sorted(src.iterdir()) if src.is_dir() else []:
             text = f.read_text()
-            if "import Quickshell" in text:
+            if any(i in text for i in QUICKSHELL_IMPORTS):
                 continue
             shutil.copy(f, dst / f.name)
             if f.suffix == ".qml":
@@ -200,6 +206,7 @@ def qs_workspace(test):
     for d in MODULES:
         shutil.copytree(ROOT / "shell" / d, ws / d)
     shutil.copy(ROOT / "tests" / "qs" / "QsTest.qml", ws)
+    shutil.copytree(ROOT / "tests" / "qs" / "bin", ws / "bin")
     shutil.copy(test, ws / "shell.qml")
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
     return ws
@@ -207,11 +214,11 @@ def qs_workspace(test):
 
 def qs_test_env(test, ws):
     """Offscreen, never the session's compositor. `// env NAME=value` lines in the test add variables;
-    @WS@ is the shell directory. No braces there: a `{` above the imports stops Quickshell resolving qs.*."""
+    @WS@ is the shell directory and @PATH@ the current PATH. No braces there: a `{` above the imports stops Quickshell resolving qs.*."""
     env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY")}
     env["QT_QPA_PLATFORM"] = "offscreen"
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
-        env[name] = value.replace("@WS@", str(ws))
+        env[name] = value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
     return env
 
 
@@ -239,6 +246,122 @@ def run_qs_tests(timeout=60):
             lines = [l for l in text.splitlines() if "QSTEST" in l or "ERROR" in l or "WARN" in l]
             out.append(f"FAIL {test.name}:\n" + "\n".join(lines[-20:] or text.splitlines()[-20:]))
     return (1 if failed else 0), "\n".join(out), (passed, failed)
+
+
+class HeadlessSway:
+    """A headless sway with its own XDG_RUNTIME_DIR, so nothing reaches the session: no compositor, no
+    PipeWire, no portal. The directory is short because Unix socket paths are capped at 108 bytes."""
+
+    def __init__(self, width=1280, height=800):
+        self.size = (width, height)
+
+    def __enter__(self):
+        uid_dir = Path(f"/run/user/{os.getuid()}")
+        self.runtime = Path(tempfile.mkdtemp(prefix="rtl.", dir=uid_dir if uid_dir.is_dir() else None))
+        conf = self.runtime / "sway.conf"
+        conf.write_text(f"output HEADLESS-1 resolution {self.size[0]}x{self.size[1]}\n")
+        env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY", "SWAYSOCK")}
+        env.update(XDG_RUNTIME_DIR=str(self.runtime), WLR_BACKENDS="headless", WLR_RENDERER="pixman",
+                   WLR_LIBINPUT_NO_DEVICES="1")
+        self.log = open(self.runtime / "sway.log", "w")
+        self.proc = subprocess.Popen([shutil.which("sway"), "-c", str(conf)], env=env,
+                                     stdout=self.log, stderr=subprocess.STDOUT)
+        for _ in range(100):
+            sockets = sorted(p.name for p in self.runtime.glob("wayland-*") if not p.name.endswith(".lock"))
+            if sockets:
+                self.display = sockets[0]
+                return self
+            if self.proc.poll() is not None:
+                break
+            time.sleep(0.05)
+        self.__exit__()
+        raise RuntimeError("headless sway did not start: " + (self.runtime / "sway.log").read_text()[-500:])
+
+    def env(self, extra=None):
+        env = {k: v for k, v in os.environ.items() if k not in ("DISPLAY", "SWAYSOCK")}
+        env.update(XDG_RUNTIME_DIR=str(self.runtime), WAYLAND_DISPLAY=self.display, QT_QPA_PLATFORM="wayland")
+        env.update(extra or {})
+        return env
+
+    def __exit__(self, *exc):
+        if self.proc.poll() is None:
+            self.proc.terminate()
+            try:
+                self.proc.wait(5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+        self.log.close()
+        shutil.rmtree(self.runtime, ignore_errors=True)
+
+
+def run_wayland_smoke(screenshot=None):
+    """Start shell/shell.qml under headless sway, toggle Quick Settings over IPC, and collect problems.
+
+    Returns (code, report). brightnessctl is the fake in tests/qs/bin, so the real backlight is never touched.
+    """
+    qs, sway = shutil.which("quickshell"), shutil.which("sway")
+    if not qs or not sway:
+        return SKIPPED, "needs quickshell and sway"
+    shell = ROOT / "shell" / "shell.qml"
+    problems, notes = [], []
+    with HeadlessSway() as comp:
+        fake = comp.runtime / "fake-brightness"
+        env = comp.env({
+            "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
+            "FAKE_BRIGHTNESS": str(fake),
+            "RUTILE_PALETTE": str(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json"),
+        })
+        log_path = comp.runtime / "shell.log"
+        with open(log_path, "w") as log:
+            shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                def ipc(*args):
+                    r = subprocess.run([qs, "-p", str(shell), "ipc", "call", "quicksettings", *args],
+                                       env=env, capture_output=True, text=True, timeout=10)
+                    return (r.stdout + r.stderr).strip()
+                deadline = time.time() + 15
+                while "Configuration Loaded" not in log_path.read_text() and time.time() < deadline:
+                    if shell_proc.poll() is not None:
+                        break
+                    time.sleep(0.1)
+                if "Configuration Loaded" not in log_path.read_text():
+                    problems.append("the shell did not load")
+                else:
+                    steps = [("isOpen", "false"), ("toggle", ""), ("isOpen", "true")]
+                    for call, want in steps:
+                        got = ipc(call)
+                        if got != want:
+                            problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
+                        time.sleep(0.5)
+                    time.sleep(1.0)
+                    if screenshot:
+                        grim = shutil.which("grim")
+                        if grim:
+                            subprocess.run([grim, str(screenshot)], env=comp.env(), timeout=10)
+                            notes.append(f"screenshot: {screenshot}")
+                        else:
+                            notes.append("no screenshot: grim not found")
+                    for call, want in [("toggle", ""), ("isOpen", "false"), ("open", ""), ("isOpen", "true"),
+                                       ("close", ""), ("isOpen", "false")]:
+                        got = ipc(call)
+                        if got != want:
+                            problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
+                    calls = (fake.parent / (fake.name + ".log"))
+                    if not calls.exists() or "info" not in calls.read_text():
+                        problems.append("opening the panel did not read the brightness")
+            finally:
+                shell_proc.terminate()
+                try:
+                    shell_proc.wait(5)
+                except subprocess.TimeoutExpired:
+                    shell_proc.kill()
+        text = log_path.read_text()
+    # QML errors and warnings from our files; service connection errors are expected here (no PipeWire,
+    # no BlueZ in the private runtime dir) and are not ours.
+    for line in text.splitlines():
+        if re.search(r"(ERROR|WARN).*(@|file://).*\.qml|TypeError|ReferenceError|is not defined|Unable to assign", line):
+            problems.append(line.strip())
+    return (1 if problems else 0), "\n".join(problems + notes)
 
 
 def render_gallery(out_dir, mode="dark", width=1180):
@@ -308,6 +431,14 @@ def main(argv):
             print(f"gpu tests: SKIPPED, {out}")
             return 0
         print(out if code else f"gpu tests passed {counts}")
+        return code
+    if argv and argv[0] == "test-wayland":
+        shot = argv[argv.index("--screenshot") + 1] if "--screenshot" in argv else None
+        code, out = run_wayland_smoke(shot)
+        if code == SKIPPED:
+            print(f"wayland smoke test: SKIPPED, {out}")
+            return 0
+        print(out if out else "wayland smoke test passed")
         return code
     if argv and argv[0] == "test-qs":
         code, out, counts = run_qs_tests()
