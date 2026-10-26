@@ -138,6 +138,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   file between two function names also deleted a test that had been inserted in between; two mutants it had
   caught came back, which is how it was noticed. List the test functions before committing.
 
+- **A `{` in a comment above the imports breaks Quickshell's `qs.*` imports.** A test header comment holding
+  `{ws}` made `import qs.common` fail with "module is not installed"; the same file without the brace loaded.
+  Quickshell seems to read a file's header only up to the first brace. Keep braces out of leading comments.
+
+- **Quickshell runs headless.** `QT_QPA_PLATFORM=offscreen quickshell -p file.qml` (with WAYLAND_DISPLAY unset)
+  loads a shell, runs FileView and timers, and exits on `Qt.exit()`; that is how tests/qs/ runs.
+
 - **`Spring.snap()` settles the spring before it returns.** Handlers on `settled` (or anything bound to it) run in
   the middle of a restart: ShapeMorph cleared its morph data when the spring reported settled, so a morph started
   with `snap(0)` lost the data it had just been given. Set the data after `snap()` and the new `target`.

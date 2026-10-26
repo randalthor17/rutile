@@ -1,4 +1,7 @@
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -70,6 +73,29 @@ class QmlSuite(unittest.TestCase):
         finally:
             import shutil
             shutil.rmtree(ws, ignore_errors=True)
+
+
+@unittest.skipUnless(shutil.which("quickshell"), "quickshell not found; Quickshell tests SKIPPED")
+class QuickshellSuite(unittest.TestCase):
+    def test_quickshell_tests_pass_offscreen(self):
+        code, out, counts = qtws.run_qs_tests()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(counts[0], len(list((ROOT / "tests" / "qs").glob("tst_*.qml"))))
+        self.assertGreater(counts[0], 0)
+
+    def test_a_failing_check_fails_the_run(self):
+        with tempfile.TemporaryDirectory() as d:
+            bad = Path(d) / "tst_bad.qml"
+            bad.write_text("import QtQuick\nimport Quickshell\nShellRoot {\n    QsTest { id: t }\n"
+                           "    Component.onCompleted: { t.verify(false, \"meant to fail\"); t.done() }\n}\n")
+            ws = qtws.qs_workspace(bad)
+            try:
+                r = subprocess.run(["quickshell", "-p", str(ws / "shell.qml")], env=qtws.qs_test_env(bad, ws),
+                                   capture_output=True, text=True, timeout=20)
+            finally:
+                shutil.rmtree(ws, ignore_errors=True)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn("QSTEST FAIL: meant to fail", r.stdout + r.stderr)
 
 
 @unittest.skipUnless(qtws.qt_tool("qmllint"), "qmllint not found (set RUTILE_QT_BIN); lint SKIPPED")

@@ -5,6 +5,12 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Quickshell first** (maintainer's rule, plan H5): `docs/HANDOFF.md` now says to check the Quickshell docs for
+  the installed version (0.3.2) before building anything, with a table mapping its types to plan items, and the
+  plan names the types for each Phase 2 item. Code that needs Quickshell types can now be tested:
+  `tools/qtws.py test-qs` runs `tests/qs/tst_*.qml` as shells under `quickshell`, offscreen, and `make check`
+  runs it. `PaletteWatcher`, untested until now, is covered (load, reload when the file changes, missing file).
+  The components stay plain QtQuick: Quickshell has no controls to replace them.
 - **ShapeMorph and the M3 Expressive shape library** (plan 1.5f, D37): `ShapeMorph { shape: "cookie9Sided" }`
   draws any of the 35 shapes of Compose's `MaterialShapes` (circle, cookies, bursts, clovers, pixel shapes,
   heart and the rest), and changing `shape` morphs to the new one on the fast spatial spring. The shape

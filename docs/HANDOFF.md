@@ -99,6 +99,11 @@ skip means that tool was missing, not that the behavior was checked.
 - **Light on memory, always** (D31, `docs/memory.md`): create things when they are needed and unload them when
   closed, animate on the property, prefer Rectangles to Canvas, nothing runs while idle. Measure new components
   with `tools/dev/memcost.py`. The lint catches the mechanical cases.
+- **Quickshell first** (the maintainer's rule). Before building anything, read the Quickshell docs for the
+  installed version (`quickshell --version`; now 0.3.2, https://quickshell.org/docs/v0.3.2/types/) and use its
+  type when one fits; the table "Quickshell types and where they go" below maps them to plan items. Our own code
+  is for what Quickshell does not have (M3E controls, shapes, the widget renderer) or a gap it leaves; say which
+  in the commit. Code that needs Quickshell types is tested with `tools/qtws.py test-qs` (tests/qs/).
 - **No new dependency without the maintainer's approval.** Optional test-only tools that skip when absent are fine.
 - **Ask before changing the plan.** Decisions are in `docs/DECISIONS.md`; reverse one only with the reason.
 - **Releases:** a release-tag-worthy commit gets a version tag and a git bundle given to the maintainer. Other
@@ -106,6 +111,41 @@ skip means that tool was missing, not that the behavior was checked.
   Never move or reuse a tag the maintainer already has. **Exception:** when working directly in the maintainer's
   checkout (Claude Code on their machine), just commit; no bundle is needed (the maintainer's instruction).
 - **Record progress** in `docs/PLAN.md` and `CHANGELOG.md`, and in memory if you have it, in the same session.
+
+### Quickshell types and where they go
+
+Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the repo uses today.
+
+| Need | Quickshell type | Plan |
+|---|---|---|
+| Shell root, windows | `ShellRoot`, `FloatingWindow` (in use: gallery), `PanelWindow`, `PopupWindow`, `PopupAnchor`, `QsWindow` | 2.3 to 2.8 |
+| Layer-shell surfaces (desktop, shelf, panels) | `WlrLayershell`, `WlrLayer`, `ExclusionMode`, `WlrKeyboardFocus` | 2.3, 2.4, 2.6 |
+| One surface per monitor | `Variants` over `Quickshell.screens`, `ShellScreen` | 2.3, 2.4 |
+| Load windows and popups only while open (D31) | `LazyLoader` (windows and popups; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
+| Files and config, watched | `FileView` (in use: PaletteWatcher), `JsonAdapter`, `JsonObject` | 2.5, 4.2 |
+| Commands, sockets | `Process`, `StdioCollector`, `SplitParser`, `Socket` | 2.2 (niri IPC socket), 4.2 |
+| Shell IPC and keybinds | `IpcHandler` (`qs ipc call ...` from niri binds) | 2.2 |
+| State kept across config reloads | `PersistentProperties` | 2.x |
+| Clock | `SystemClock` | 2.3, 4.2 |
+| Apps | `DesktopEntries`, `DesktopEntry`, `IconImage` | 2.4, 2.7 |
+| Running windows | `ToplevelManager`, `Toplevel` (wlr-foreign-toplevel); niri IPC for workspaces | 2.4 |
+| Sound | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` | 2.1, 2.6 |
+| Network | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork` (NetworkManager backend) | 2.1, 2.6, 5.2 |
+| Bluetooth | `Bluetooth`, `BluetoothAdapter`, `BluetoothDevice` | 2.1, 2.6, 5.2 |
+| Battery, power profiles | `UPower`, `UPowerDevice`, `PowerProfiles` | 2.1, 2.6, 4.2 |
+| Media | `Mpris`, `MprisPlayer` | 2.1, 2.3 (media pill), 4.2 |
+| Notifications | `NotificationServer`, `Notification` | 2.8 |
+| Tray and its menus | `SystemTray`, `SystemTrayItem`, `QsMenuOpener`, `QsMenuAnchor` | 2.6 |
+| Lock screen, idle | `WlSessionLock`, `WlSessionLockSurface`, `PamContext`, `IdleMonitor`, `IdleInhibitor` | 2.8 |
+| Greeter, polkit | `Greetd`, `PolkitAgent` | 6.2, 2.8 |
+| Rounded clipping of children (cards, pictures) | `ClippingRectangle` (rectangles only; a cookie needs ShapeMorph) | 2.3, 4.3 |
+| Wallpaper colors | `ColorQuantizer` (dominant colors only; matugen still makes the scheme) | 1.1b |
+| Blur behind a surface | `BackgroundEffect` (`ext-background-effect-v1`; niri support unverified, D4) | 3.1 |
+| Screen preview | `ScreencopyView` | later |
+
+Not in Quickshell, so ours: the M3E controls and shapes (`shell/components/`), niri IPC (no niri module; use
+`Socket` on `$NIRI_SOCKET`), the widget renderer, settings registry and search. `Quickshell.WindowManager`
+(`WindowManager`, `Windowset`) does not say which compositors it supports; check against niri before 2.2.
 
 ### Release protocol
 

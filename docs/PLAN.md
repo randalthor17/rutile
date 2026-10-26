@@ -25,6 +25,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **1.1b** Decided: stay on matugen (2021-spec palette) for now; swap in an own generator
   (materialyoucolor-based, 2025 spec, or Noctalia's) behind the same `palette.json` only if matugen does not look
   as good. Open: the default seed color and scheme type, chosen against the Googlebook references.
+  Quickshell's `ColorQuantizer` gives a wallpaper's dominant colors (a seed), not a scheme.
 - [x] **1.2** Palette tests, cross-checked against materialyoucolor: matugen matches the 2021 spec 94.7%, not the
   2025 spec (v0.2.0).
 - [x] **1.3** QML singletons: generated Colors, Shapes, Motion, Type, Elevation; Spacing, Spring (exact M3 spring
@@ -69,25 +70,34 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [ ] **2.1** Quickshell built-in services first (Pipewire, UPower, NetworkManager, Bluetooth, notifications,
   MPRIS, tray); a small daemon only for real gaps (settings persistence, widget validation, Ollama bridge).
+  Types: `Pipewire`, `UPower`/`PowerProfiles`, `Networking`, `Bluetooth`, `NotificationServer`, `Mpris`,
+  `SystemTray` (the table in `docs/HANDOFF.md`, "Quickshell types and where they go").
 - [ ] **2.2** niri integration: IPC (workspaces, windows, focus events); the shell ships a generated niri config
-  module (window rules, keybinds, startup).
+  module (window rules, keybinds, startup). Types: `Socket` on `$NIRI_SOCKET` (Quickshell has no niri module),
+  `IpcHandler` for keybinds into the shell; check `Quickshell.WindowManager` against niri first.
 - [ ] **2.3** Desktop surface: wallpaper layer, right-aligned desktop icon grid (tonal circles with labels),
-  floating time/date top-left, status icons top-right, no top bar.
+  floating time/date top-left, status icons top-right, no top bar. Types: `PanelWindow` on `WlrLayer.Background`,
+  `Variants` over `Quickshell.screens`, `SystemClock`, `Mpris`, `IconImage`.
 - [ ] **2.4** Shelf: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
-  via niri IPC, divider, special buttons, M3E hover and press motion.
+  via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
+  `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
 - [ ] **2.5** Settings registry and search: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
 - [ ] **2.6** Status tray and Quick Settings on the shared EditableGrid: tiles as saved data (id + size),
-  per-tile detail pages, Add Widget sheet, sliders.
+  per-tile detail pages, Add Widget sheet, sliders. Types: `PopupWindow` or `PanelWindow` in a `LazyLoader`,
+  the 2.1 services, `SystemTray` with `QsMenuOpener`.
 - [ ] **2.7** Launcher: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
-  frecency, type bonuses); smaller controller with apps and settings providers first.
-- [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM).
+  frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
+  `IconImage`, `LazyLoader`.
+- [ ] **2.8** Notifications, toasts, OSD, lock screen (PAM). Types: `NotificationServer`, `WlSessionLock`,
+  `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
 ## Phase 3: windows on niri
 
 - [ ] **3.1** Googlebook-like floating windows via niri window rules (default floating, corner radius, shadow,
   focus ring); our own apps draw M3E title bars with ChromeOS-style caption buttons; third-party apps get GTK/Qt
-  theming and rules (niri draws no title bars; upstream niri has no blur).
+  theming and rules (niri draws no title bars; upstream niri has no blur). Quickshell's `BackgroundEffect`
+  blurs behind our own surfaces where the compositor supports `ext-background-effect-v1`; check niri.
 
 ## Phase 4: widget system (the core feature)
 
@@ -97,7 +107,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   fields rejected at every level); its five examples pass `tools/widget_check.py` and `jsonschema`, and
   `tests/test_widget_spec.py` pins what the spec refuses. Node fields are a first cut: the renderer (4.3) may refine them.
 - [ ] **4.2** Data sources: clock, weather (keyless API), calendar, battery, system stats, countdown, HTTP JSON
-  (allowlisted), files; bindings `{{source.field}}` with no arbitrary JS.
+  (allowlisted), files; bindings `{{source.field}}` with no arbitrary JS. Types: `SystemClock`, `UPower`,
+  `Mpris`, `FileView`, `Process`.
 - [ ] **4.3** WidgetHost renderer: builds QML from the spec with Loader/Repeater.
 - [ ] **4.4** Desktop widget grid reusing the EditableGrid (1.6): snap, edit mode, persistence.
 - [ ] **4.5** Custom widgets app: category list and template cards (weather, daily update, world clock, finance,
@@ -123,7 +134,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [ ] **6.1** NixOS flake modules for niri config, shell, settings, widgets, matugen, fonts; home-manager
   integration; default config.
-- [ ] **6.2** Custom greetd greeter in the same style.
+- [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
 - [ ] **6.3** Installer ISO.
 
 ## Phase 7: QA for v1
@@ -159,6 +170,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **H1** Handoff docs (unreleased): `docs/HANDOFF.md`, this plan, `docs/DECISIONS.md`, `docs/LESSONS.md`,
   `CHANGELOG.md`, `AGENTS.md`, and reproducible dev tools in `tools/dev/`.
 - [ ] **H2** Standing rule: keep this file, `CHANGELOG.md` and memory in step with every change.
+- [ ] **H5** Standing rule: Quickshell first. Check the Quickshell docs for the installed version before building
+  and use its types where they fit (the table in `docs/HANDOFF.md`). Done so far: `tools/qtws.py test-qs` runs
+  tests that need Quickshell (tests/qs/) as shells under `quickshell`, offscreen, in `make check`;
+  `PaletteWatcher` is now tested (load, reload on change, missing file). Nothing in the components needed
+  migrating: Quickshell has no controls, and their `Loader`s are small in-item parts, not windows.
 - [ ] **H4** Standing rule (D31): light on memory. Lazy-load everything not on screen, measure new components
   with `tools/dev/memcost.py`, follow `docs/memory.md`. First pass done: components 26-64% smaller.
 - [ ] **H3** First `nix develop` on the maintainer's machine writes `flake.lock`; commit it.

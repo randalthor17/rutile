@@ -8,6 +8,8 @@ normally registers them itself.
     qtws.py lint     qmllint the QML that can be checked without Quickshell
     qtws.py test     run tests/qml/tst_*.qml with qmltestrunner
     qtws.py test-gpu run tests/qml_gpu through the real scene graph (needs a display session)
+    qtws.py test-qs  run tests/qs/tst_*.qml as shells under `quickshell`, offscreen (code that needs
+                     Quickshell types, which qmltestrunner cannot load)
     qtws.py render [--mode dark|light] [--out DIR]
                      render the gallery offscreen to a PNG (to look at the result)
 
@@ -191,6 +193,54 @@ def run_tests(verbose=False, gpu=False):
         shutil.rmtree(ws, ignore_errors=True)
 
 
+def qs_workspace(test):
+    """A shell directory for one tests/qs test: shell/ copied, the test as its shell.qml, QsTest.qml and
+    the golden palette beside it."""
+    ws = Path(tempfile.mkdtemp(prefix="rutile-qs-"))
+    for d in MODULES:
+        shutil.copytree(ROOT / "shell" / d, ws / d)
+    shutil.copy(ROOT / "tests" / "qs" / "QsTest.qml", ws)
+    shutil.copy(test, ws / "shell.qml")
+    shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
+    return ws
+
+
+def qs_test_env(test, ws):
+    """Offscreen, never the session's compositor. `// env NAME=value` lines in the test add variables;
+    @WS@ is the shell directory. No braces there: a `{` above the imports stops Quickshell resolving qs.*."""
+    env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY")}
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
+        env[name] = value.replace("@WS@", str(ws))
+    return env
+
+
+def run_qs_tests(timeout=60):
+    """(code, output, (passed, failed)); code is SKIPPED without the quickshell binary."""
+    qs = shutil.which("quickshell")
+    if not qs:
+        return SKIPPED, "quickshell not found", None
+    passed, failed, out = 0, 0, []
+    for test in sorted((ROOT / "tests" / "qs").glob("tst_*.qml")):
+        ws = qs_workspace(test)
+        try:
+            r = subprocess.run([qs, "-p", str(ws / "shell.qml")], env=qs_test_env(test, ws),
+                               capture_output=True, text=True, timeout=timeout)
+            text = r.stdout + r.stderr
+        except subprocess.TimeoutExpired as e:
+            text, r = f"timed out after {timeout} s\n{e.stdout or ''}", None
+        finally:
+            shutil.rmtree(ws, ignore_errors=True)
+        done = re.search(r"QSTEST done checks=(\d+) failures=0", text)
+        if r is not None and r.returncode == 0 and done and int(done.group(1)) > 0:
+            passed += 1
+        else:
+            failed += 1
+            lines = [l for l in text.splitlines() if "QSTEST" in l or "ERROR" in l or "WARN" in l]
+            out.append(f"FAIL {test.name}:\n" + "\n".join(lines[-20:] or text.splitlines()[-20:]))
+    return (1 if failed else 0), "\n".join(out), (passed, failed)
+
+
 def render_gallery(out_dir, mode="dark", width=1180):
     """Render shell/gallery/GalleryContent offscreen as scrolled slices out_dir/gallery-<mode>-N.png.
 
@@ -258,6 +308,13 @@ def main(argv):
             print(f"gpu tests: SKIPPED, {out}")
             return 0
         print(out if code else f"gpu tests passed {counts}")
+        return code
+    if argv and argv[0] == "test-qs":
+        code, out, counts = run_qs_tests()
+        if code == SKIPPED:
+            print(f"quickshell tests: SKIPPED, {out}")
+            return 0
+        print(out if code else f"quickshell tests passed {counts}")
         return code
     if not argv or argv[0] not in ("lint", "test"):
         print(__doc__)
