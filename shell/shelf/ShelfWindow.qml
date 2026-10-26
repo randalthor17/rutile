@@ -11,6 +11,8 @@ PanelWindow {
     required property var backend
     readonly property alias shelf: shelf
 
+    signal launcherClicked()
+
     anchors.bottom: true
     anchors.left: true
     anchors.right: true
@@ -26,6 +28,7 @@ PanelWindow {
         pinned: root.backend.pinned
         groups: root.backend.groupsFor(root.screen?.name ?? "")
         onLaunched: app => root.backend.launch(app)
+        onLauncherClicked: root.launcherClicked()
         onWindowClicked: window => root.backend.focusWindow(window)
         onWorkspaceScrolled: delta => root.backend.scrollWorkspace(root.screen?.name ?? "", delta)
     }

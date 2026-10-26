@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -399,6 +399,28 @@ def run_wayland_smoke(screenshot=None):
                         got = ipc(call)
                         if got != want:
                             problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
+                    # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
+                    for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
+                                       (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
+                                       (("search", "term"), "foot"), (("search", "qqqq"), "")]:
+                        got = ipc(*args, target="launcher")
+                        if args[0] == "search":
+                            got = got.split(",")[0]         # the best match
+                        if got != want:
+                            problems.append(f"ipc launcher {' '.join(args)}: got {got!r}, expected {want!r}")
+                    try:
+                        launcher = json.loads(ipc("state", target="launcher"))
+                    except ValueError:
+                        launcher = {}
+                    if launcher != {"open": True, "loaded": True, "apps": 3}:
+                        problems.append(f"ipc launcher state: {launcher}, expected open with the 3 fixture apps")
+                    # slow motion, so the launcher is still on screen when asked: closing, not open
+                    ipc("setSpeed", "0.1", target="motion")
+                    ipc("close", target="launcher")
+                    closing = (ipc("isOpen", target="launcher"), ipc("state", target="launcher"))
+                    if closing[0] != "false" or '"loaded":true' not in closing[1]:
+                        problems.append(f"ipc launcher close: {closing}, expected closed while its motion plays")
+                    ipc("setSpeed", "2", target="motion")
                     # closing plays the panel's motion, then the loader drops the window (`open` above went
                     # false at once; `open` right after `toggle` reopened it mid-close)
                     time.sleep(1.5)
@@ -408,6 +430,12 @@ def run_wayland_smoke(screenshot=None):
                         loaded = None
                     if loaded is not False:
                         problems.append(f"ipc state: loaded {loaded!r} after closing, expected False")
+                    try:
+                        launcher_loaded = json.loads(ipc("state", target="launcher")).get("loaded")
+                    except ValueError:
+                        launcher_loaded = None
+                    if launcher_loaded is not False:
+                        problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
                     # Closing when another window takes focus (D41) cannot be tested here: sway gives an
                     # on-demand layer surface focus only when it is clicked, and there is no pointer.
                     calls = (fake.parent / (fake.name + ".log"))

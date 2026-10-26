@@ -26,6 +26,7 @@ import qs.components
 import qs.quicksettings
 import qs.bar
 import qs.shelf
+import qs.launcher
 
 Window {
     width: 1200; height: 900; visible: true

@@ -1,5 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Foot
+GenericName=Terminal
 Icon=foot
 Exec=true

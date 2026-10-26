@@ -7,6 +7,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.common
 import qs.bar
+import qs.launcher
 import qs.quicksettings
 import qs.shelf
 
@@ -22,6 +23,28 @@ ShellRoot {
     function closeQuickSettings() {
         if (quickSettings.item) quickSettings.item.close();
         else quickSettings.active = false;
+    }
+
+    // The launcher, as Quick Settings: open on a screen (null: the compositor's choice), closing plays its motion.
+    property var launcherScreen: null
+    readonly property bool launcherOpen: launcher.active && !(launcher.item?.closing ?? false)
+    function closeLauncher() {
+        if (launcher.item) launcher.item.close();
+        else launcher.active = false;
+    }
+    function toggleLauncher(screen) {
+        const here = screen === null || screen === launcherScreen;
+        if (launcherOpen && here) {
+            closeLauncher();
+            return;
+        }
+        if (launcher.item?.closing && here) {
+            launcher.item.reopen();
+            return;
+        }
+        launcher.active = false;
+        launcherScreen = screen;
+        launcher.active = true;
     }
 
     function toggleQuickSettings(screen) {
@@ -78,6 +101,35 @@ ShellRoot {
             required property var modelData
             screen: modelData
             backend: shelfBackend
+            onLauncherClicked: shell.toggleLauncher(modelData)
+        }
+    }
+
+    LazyLoader {
+        id: launcher
+        LauncherWindow {
+            screen: shell.launcherScreen
+            onCloseRequested: launcher.active = false
+        }
+    }
+
+    // From a niri keybind: quickshell -p <path>/shell/shell.qml ipc call launcher toggle
+    IpcHandler {
+        target: "launcher"
+        function toggle(): void { shell.toggleLauncher(null); }
+        function open(): void { if (!shell.launcherOpen) shell.toggleLauncher(null); }
+        function close(): void { shell.closeLauncher(); }
+        function isOpen(): bool { return shell.launcherOpen; }
+        // Type a query into the open launcher; returns the first results' ids (diagnostics, the smoke test).
+        function search(query: string): string {
+            const p = launcher.item?.panel;
+            if (!p) return "";
+            p.query = query;
+            return p.results.slice(0, 5).map(a => a.id).join(",");
+        }
+        function state(): string {
+            return JSON.stringify({ open: shell.launcherOpen, loaded: launcher.active,
+                                    apps: launcher.item?.panel.apps.length ?? 0 });
         }
     }
 
