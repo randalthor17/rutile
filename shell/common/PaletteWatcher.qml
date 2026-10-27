@@ -12,11 +12,29 @@ Scope {
     property string path: Quickshell.env("RUTILE_PALETTE")
         || ((Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/rutile/palette.json")
 
+    property bool missing: false
+
     FileView {
+        id: file
         path: root.path
         watchChanges: true
         onFileChanged: reload()
-        onLoaded: Colors.load(text())
-        onLoadFailed: error => console.warn("rutile: cannot read palette " + root.path + " (" + error + ")")
+        onLoaded: {
+            root.missing = false;
+            Colors.load(text());
+        }
+        onLoadFailed: error => {
+            if (!root.missing) console.warn("rutile: cannot read palette " + root.path + " (" + error + ")");
+            root.missing = true;
+        }
+    }
+
+    // FileView watches only a file that exists, so a palette written after the shell started (the first render)
+    // went unnoticed until a restart (Quickshell 0.3.2). While there is none, look again now and then.
+    Timer {
+        interval: 3000
+        repeat: true
+        running: root.missing
+        onTriggered: file.reload()
     }
 }

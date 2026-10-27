@@ -7,6 +7,8 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 - **Palette from the wallpaper**: `tools/palette.py render --image <wallpaper> --out ~/.cache/rutile/palette.json`
   colors the shell from the image's dominant color; the shell picks the new file up at once.
+- **Fix:** a palette rendered while the shell ran without one was ignored until a restart; now it is picked up
+  within a few seconds.
 - **Toasts** (plan 2.8): short messages at the bottom left, one at a time, e.g. from a screenshot script:
   `ipc call toast send "Screenshot saved" photo_camera` (the icon may be ""). Each stays 4 s, longer while the
   pointer is on it; the same message again keeps it up instead of queueing. The shell can give one an action.

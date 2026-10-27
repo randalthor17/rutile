@@ -71,6 +71,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   argument was not expected: volume": the CLI reads `show` as its own `ipc show` command (Quickshell 0.3.2). An
   IPC function is not done until a test calls it through the real CLI.
 
+- **A FileView with `watchChanges` does not see a file appear.** It watches only a file that exists (Quickshell
+  0.3.2): a palette rendered after the shell started went unnoticed. PaletteWatcher looks again every 3 s while
+  the file is missing. A later atomic replace (rename over the name) is seen.
+
 ## Testing method
 
 - **A test that cannot fail proves nothing.** Mutate the code and watch the test fail. Several guards turned out
