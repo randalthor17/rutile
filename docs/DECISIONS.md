@@ -416,18 +416,31 @@ shell draws depends on the platform theme. Without a portal, Qt falls back to it
 learns the portal's version a moment after start, so a dialog opened in the first second is Qt's own; a click in
 Settings always comes later. The NixOS module must enable xdg-desktop-portal with a FileChooser backend (plan 6.1).
 
-**D52. Other apps can wear the shell's colors; every switch is off by default (plan 2.9).** The maintainer
+**D52. Other apps can wear the shell's colors; every switch is off by default (plan 2.9; preliminary until the
+maintainer has tried it with a separate user).** The maintainer
 (October 2026): a main switch (`appColors.enabled`) and one per app (GTK, Qt, kitty, Ghostty, btop, Neovim,
 Firefox), all off, because these are the user's own files and another tool (Noctalia, the maintainer's) may
-already theme them. `tools/apptheme.py sync` runs matugen again from the palette's source color with the
+already theme them. The shell (AppTheme.js since D53) runs matugen again from the palette's source color with the
 palette's scheme, mode and contrast (palette.py now records them), so an app gets exactly the shell's colors,
 rendering only the switched-on apps' templates (`theme/apps/`, matugen's syntax, so community templates fit).
 It changes only what it can undo: its own files, a marked block in a config that includes them (GTK's
 `@import` goes after the others, so ours wins over an earlier theme's), or one key whose previous value it keeps
-and puts back only if the key still holds ours. What it did is in `$XDG_STATE_HOME/rutile/apptheme.json`, so
+and puts back only if the key still holds ours. What it did is in state.json (`appColors.done`), so
 turning an app off takes exactly that back out. Terminal ANSI colors are left alone (readability). Firefox goes
 through the Pywalfox extension with our own native-messaging host (`tools/pywalfox_host.py`, written from
 Pywalfox's protocol, as Noctalia does), so no pywalfox program is needed; it pushes new colors when the file
 changes. Its manifest replaces another one at the same path (Noctalia's), which is kept aside and put back. The
 shell (`AppColorsService`) runs the tool when a switch or the palette changes, and never when nothing is on and
 nothing was themed. Tests run in a sandbox HOME only (the maintainer's rule).
+
+**D53. The running shell needs no Python (plan 2.11).** The maintainer (October 2026): what the user runs should be
+QML and JS. The palette from the wallpaper (it used `tools/palette.py`) and other apps' colors (a Python `apptheme.py`,
+removed) now run in the shell: `Files.js` builds `Process` commands for `sh` that read several files at once,
+apply a list of changes (each write to a temporary file renamed over the target, so no reader sees half a file;
+moves; removals; signals) and run matugen with a config made on the spot; paths and texts go as arguments, never
+into the script. `Palette.js` is `palette.py validate` in JS; `AppTheme.js` is the theming plan as pure functions of
+the files' text, so the edge cases test offscreen and the file work is one end-to-end test in a sandbox HOME.
+`palette.py` stays as the developer's tool (fixtures, the golden test against matugen). The one exception is
+`tools/pywalfox_host.py`: Firefox starts it as its own process and talks over its stdin and stdout, which a
+Quickshell shell cannot be; it runs only while Firefox's colors are on. Quickshell tests now get a sandbox HOME,
+cache and data directory by default.

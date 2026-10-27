@@ -174,17 +174,24 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **2.9** Started (D48, `shell/wallpaper/`, the maintainer's choice over an outside app): the wallpaper.
   `wallpaper.path` shows on every screen on the background layer, decoded at the screen's size; a new one fades in
   over the old (`Motion.long2`), and only then is the old dropped. When it changes the palette is rendered from it
-  (`tools/palette.py --image`, `wallpaper.palette`, on by default), once per path (remembered in state.json); the
-  lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Colors in other apps (D52):
-  a main switch and one per app (GTK, Qt, kitty, Ghostty, btop, Neovim, Firefox through our own Pywalfox host),
-  all off by default, in Settings > Wallpaper & style; `tools/apptheme.py` themes them from the palette and takes
-  it back out exactly; tested in a sandbox HOME only, not yet on the maintainer's apps. Not yet: per-screen
+  (the shell runs matugen and checks the result itself, D53; `wallpaper.palette`, on by default), once per path
+  (remembered in state.json); the
+  lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Colors in other apps (D52,
+  **preliminary**: the maintainer will try it with a separate user before it counts as done): a main switch and
+  one per app (GTK, Qt, kitty, Ghostty, btop, Neovim, Firefox through our own Pywalfox host), all off by default,
+  in Settings > Wallpaper & style; `AppColorsService` (AppTheme.js) themes them from the palette and takes it
+  back out exactly; tested in a sandbox HOME only, not yet on real apps. Not yet: per-screen
   wallpapers, fill modes other than crop, a slideshow, KDE's kdeglobals, community templates.
 
 - [ ] **2.10** App indicators (the maintainer's request, October 2026): a pill at the top right between the
   notification bell and the status pill, showing the icons apps put in the tray (StatusNotifierItem: Discord,
   Steam, Nextcloud and the like), with their menus on a click. It appears only while there is at least one
   indicator, and takes no room otherwise. Types: `SystemTray`, `SystemTrayItem`, `QsMenuOpener`.
+
+- [x] **2.11** No Python in the running shell (D53, the maintainer's request, October 2026): the palette from the
+  wallpaper and other apps' colors run matugen and change files from QML and JS (`Files.js`, `Palette.js`,
+  `AppTheme.js`), with `sh` doing the file work. Python stays for development (`tools/`) and for one program
+  Firefox starts itself, `tools/pywalfox_host.py`, which only runs while Firefox's colors are on.
 
 ## Phase 3: windows on niri
 

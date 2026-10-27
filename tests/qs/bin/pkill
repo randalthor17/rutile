@@ -1,0 +1,3 @@
+#!/bin/sh
+# A stand-in for pkill in tests that put tests/qs/bin first on PATH: logs, so no real program gets a signal.
+echo "$@" >> "${FAKE_PKILL_LOG:-/dev/null}"

@@ -1,8 +1,8 @@
 # Theme pipeline
 
 ```
-seed color + scheme + mode + contrast
-        |  tools/palette.py render
+seed color (or the wallpaper) + scheme + mode + contrast
+        |  tools/palette.py render (development), or the shell itself (WallpaperService, D53)
         v
 matugen (theme/matugen.toml + theme/templates/palette.json)
         v

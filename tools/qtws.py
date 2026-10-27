@@ -219,8 +219,12 @@ def run_tests(verbose=False, gpu=False, only=None):
 
 def qs_workspace(test):
     """A shell directory for one tests/qs test: shell/ copied, the test as its shell.qml, QsTest.qml and
-    the golden palette beside it."""
-    ws = Path(tempfile.mkdtemp(prefix="rutile-qs-"))
+    the golden palette beside it; theme/ and tools/ next to it, where the shell finds them (../theme, D53).
+    Remove it with its parent."""
+    top = Path(tempfile.mkdtemp(prefix="rutile-qs-"))
+    ws = top / "shell"
+    shutil.copytree(ROOT / "theme", top / "theme")
+    shutil.copytree(ROOT / "tools", top / "tools", ignore=shutil.ignore_patterns("__pycache__", "dev"))
     for d in MODULES:
         shutil.copytree(ROOT / "shell" / d, ws / d)
     shutil.copy(ROOT / "tests" / "qs" / "QsTest.qml", ws)
@@ -242,6 +246,10 @@ def qs_test_env(test, ws):
     # never the user's settings or state (D45); a test's `// env XDG_CONFIG_HOME=@WS@/config/<name>` picks a fixture
     env["XDG_CONFIG_HOME"] = str(ws / "home" / "config")
     env["XDG_STATE_HOME"] = str(ws / "home" / "state")
+    # nor anything else of theirs: the files other apps' colors go into (D52), the palette, ~/.mozilla
+    env["HOME"] = str(ws / "home")
+    env["XDG_CACHE_HOME"] = str(ws / "home" / "cache")
+    env["XDG_DATA_HOME"] = str(ws / "home" / "data")
     # never the user's logind session (the lock screen's triggers and LockedHint act on it)
     env["XDG_SESSION_ID"] = ""
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
@@ -295,7 +303,7 @@ def run_qs_tests(timeout=60, only=None):
         except subprocess.TimeoutExpired as e:
             text, r = f"timed out after {timeout} s\n{e.stdout or ''}", None
         finally:
-            shutil.rmtree(ws, ignore_errors=True)
+            shutil.rmtree(ws.parent, ignore_errors=True)
         done = re.search(r"QSTEST done checks=(\d+) failures=0", text)
         if r is not None and r.returncode == 0 and done and int(done.group(1)) > 0:
             passed += 1

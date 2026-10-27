@@ -209,7 +209,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 Tool inventory (every script has a docstring with usage): `tools/gen_tokens.py` and `tools/gen_components.py`
 generate token JSON from the vendored Kotlin sources; `tools/gen_qml.py` generates the QML singletons; `tools/gen_settings.py` checks `settings/schema.json` and
 generates `shell/services/SettingsSchema.js` from it;
-`tools/palette.py` renders and validates `palette.json`; `tools/qtws.py` builds the Qt workspace and runs
+`tools/palette.py` renders and validates `palette.json` for development (the shell does its own, D53); `tools/qtws.py` builds the Qt workspace and runs
 tests, lint, GPU tests and gallery renders, the Quickshell tests (`test-qs`) and the real shell under a headless
 sway (`test-wayland`); `tools/fontconf.py` writes the dev shell's fontconfig;
 `tools/otinfo.py` reads font names and axes; `tools/lint_hardcoded.py` enforces the no-hardcoded-values rule and
@@ -244,7 +244,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 |---|---|---|
 | `RUTILE_QT_BIN` | `tools/qtws.py` | directory with `qmltestrunner` and `qmllint`; authoritative when set (empty means "no Qt tools") |
 | `RUTILE_QML_IMPORT` | `tools/qtws.py` | extra QML module directories (nix shells need Qt's `qml` directory) |
-| `RUTILE_MATUGEN` | tests | matugen binary when it is not on `PATH` |
+| `RUTILE_MATUGEN` | tests, `shell/services/WallpaperService.qml` | matugen binary when it is not on `PATH`; the shell's tests point it at a stand-in |
 | `RUTILE_FONT_DIRS` | tests, `tools/fontconf.py`, flake | font directories; the font tests run only if they find the real files |
 | `RUTILE_OPENCODE` | tests | opencode binary for the real-config checks |
 | `RUTILE_OPENCODE_STALL` | tests | seconds without a model request before a real-opencode run counts as hung (default 20) |
@@ -252,8 +252,6 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `XDG_CONFIG_HOME`, `XDG_STATE_HOME` | `shell/services/Settings.qml` | where `$XDG_CONFIG_HOME/rutile/settings.json`, `managed.json` and `$XDG_STATE_HOME/rutile/state.json` live (D45); the tests point them at temporary directories |
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_PAM_DIR`, `RUTILE_PAM_CONFIG` | `shell/lock/LockScreen.qml` | tests only: the PAM directory and service the lock screen uses instead of `/etc/pam.d` and `login` |
-| `RUTILE_PALETTE_TOOL` | `shell/services/WallpaperService.qml` | tests only: the palette renderer to run instead of `tools/palette.py` |
-| `RUTILE_APPTHEME_TOOL` | `shell/services/AppColorsService.qml` | tests only: the app theming tool to run instead of `tools/apptheme.py`, so no test themes the user's apps |
 | `RUTILE_PYWALFOX_POLL` | `tools/pywalfox_host.py` | seconds between checks of the Firefox colors file (default 1; tests use less) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
