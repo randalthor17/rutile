@@ -22,7 +22,10 @@ TestCase {
         QtObject {
             property var values: ({ "motion.speed": 1, "notifications.sound": true, "wallpaper.path": "/pics/a.png",
                                     "wallpaper.palette": true, "lock.idleMinutes": 10, "lock.beforeSleep": true,
-                                    "polkit.agent": true, "shelf.pins": ["firefox", "foot"] })
+                                    "polkit.agent": true, "shelf.pins": ["firefox", "foot"],
+                                    "appColors.enabled": false, "appColors.gtk": false, "appColors.qt": false,
+                                    "appColors.kitty": false, "appColors.ghostty": false, "appColors.btop": false,
+                                    "appColors.nvim": false, "appColors.firefox": false })
             property var managed: ({})
             property var sets: []
             readonly property string configDir: "/home/u/.config/rutile"
@@ -285,6 +288,24 @@ TestCase {
         verify(!findChild(mRow, "settingChoose_wallpaper.path"), "set in Nix: no Choose button");
         mouseClick(mRow, 40, mRow.height / 2);
         compare(mAsked.count, 0);
+    }
+
+    function test_app_colors_wait_for_the_main_switch() {
+        const t = make();
+        const main = findChild(t.a, "setting_appColors.enabled");
+        const kitty = findChild(t.a, "setting_appColors.kitty");
+        verify(main.item.enabled, "the main switch works");
+        verify(!kitty.applies && !kitty.item.enabled, "an app's switch is greyed out while it is off");
+        mouseClick(kitty, 40, kitty.height / 2);
+        compare(t.s.sets.length, 0, "and takes no click");
+        mouseClick(findChild(main, "settingSwitch_appColors.enabled"));
+        compare(t.s.sets, [["appColors.enabled", true]]);
+        verify(kitty.applies && kitty.item.enabled, "then it works");
+        mouseClick(findChild(kitty, "settingSwitch_appColors.kitty"));
+        compare(t.s.sets[1], ["appColors.kitty", true]);
+        const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.key);
+        verify(keys("pywalfox").indexOf("appColors.firefox") === 0, "found by what people call it");
+        verify(keys("matugen").indexOf("appColors.enabled") >= 0);
     }
 
     function test_list_shows_its_value() {

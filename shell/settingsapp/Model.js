@@ -36,7 +36,8 @@ function sections(page, schema, hints) {
                 maximum: leaf.maximum,
                 step: hint.step ?? (leaf.type === "integer" ? 1 : 0),
                 choices: hint.choices ?? leaf.enum ?? [],
-                filters: hint.filters ?? []
+                filters: hint.filters ?? [],
+                requires: hint.requires ?? ""
             };
             (row.advanced ? advanced : rows).push(row);
         }

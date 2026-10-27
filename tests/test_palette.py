@@ -116,6 +116,9 @@ class WithMatugen(unittest.TestCase):
     def test_render_matches_golden(self):
         doc, _ = self.render()
         ver = subprocess.run([MATUGEN, "--version"], capture_output=True, text=True).stdout.strip()
+        made = {k: doc.pop(k) for k in ("scheme", "contrast")}
+        self.assertEqual(made, {"scheme": "scheme-tonal-spot", "contrast": 0.0},
+                         "how it was made, for tools/apptheme.py (D52)")
         self.assertEqual(doc, golden(), f"output drifted from golden with {ver}; review before updating the fixture")
 
     def test_both_modes_in_every_file(self):

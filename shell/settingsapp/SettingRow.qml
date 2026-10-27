@@ -25,6 +25,8 @@ Item {
 
     readonly property var current: store?.value(row.key)
     readonly property bool managed: store?.isManaged(row.key) ?? false
+    // greyed out while the setting it depends on is off (an app's colors under the main switch)
+    readonly property bool applies: row.requires === "" || store?.value(row.requires) === true
     readonly property string shownValue: Model.valueText(row.key, current, Pages.hints)
     readonly property alias item: listItem
 
@@ -47,7 +49,7 @@ Item {
         tone: Colors.surfaceContainer
         trailingText: !root.managed && root.row.kind === "slider" ? root.shownValue : ""
         selected: root.highlighted
-        enabled: !root.managed
+        enabled: !root.managed && root.applies
 
         onClicked: {
             if (root.row.kind === "switch") root.store.set(root.row.key, !root.current);
@@ -63,7 +65,7 @@ Item {
                 objectName: "settingSwitch_" + root.row.key
                 controlled: true
                 checked: root.current === true
-                enabled: !root.managed
+                enabled: !root.managed && root.applies
                 onToggled: want => root.store.set(root.row.key, want)
             }
         }

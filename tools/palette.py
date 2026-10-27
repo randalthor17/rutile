@@ -104,6 +104,9 @@ def render(seed, scheme, mode, contrast, out, matugen="matugen", image=None):
     errs = validate(doc)
     if errs:
         raise PaletteError("invalid palette: " + "; ".join(errs))
+    # how it was made, so tools/apptheme.py can give other apps the same colors (D52)
+    doc["scheme"] = scheme
+    doc["contrast"] = contrast
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=out.parent, prefix=".palette-", suffix=".tmp")

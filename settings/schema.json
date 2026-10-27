@@ -81,6 +81,60 @@
         }
       }
     },
+    "appColors": {
+      "type": "object",
+      "title": "Colors in other apps",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "title": "Colors in other apps",
+          "description": "Give other apps the shell's colors (matugen) whenever the palette changes. Each app has its own switch; off takes the colors back out."
+        },
+        "gtk": {
+          "type": "boolean",
+          "default": false,
+          "title": "GTK apps",
+          "description": "GTK 3 and 4 apps (Nautilus and the like): a rutile.css that gtk.css imports."
+        },
+        "qt": {
+          "type": "boolean",
+          "default": false,
+          "title": "Qt apps",
+          "description": "qt5ct and qt6ct's color scheme (Qt apps that use them)."
+        },
+        "kitty": {
+          "type": "boolean",
+          "default": false,
+          "title": "kitty",
+          "description": "kitty's background, foreground, selection, cursor and tabs; reloads at once."
+        },
+        "ghostty": {
+          "type": "boolean",
+          "default": false,
+          "title": "Ghostty",
+          "description": "Ghostty's background, foreground, selection and cursor (theme = rutile)."
+        },
+        "btop": {
+          "type": "boolean",
+          "default": false,
+          "title": "btop",
+          "description": "btop's colors (color_theme = rutile; your previous theme comes back when this is off)."
+        },
+        "nvim": {
+          "type": "boolean",
+          "default": false,
+          "title": "Neovim",
+          "description": "A rutile colorscheme for Neovim; choose it with :colorscheme rutile."
+        },
+        "firefox": {
+          "type": "boolean",
+          "default": false,
+          "title": "Firefox",
+          "description": "Firefox through the Pywalfox extension, with Rutile's own host: no pywalfox program needed. Install the extension in Firefox."
+        }
+      }
+    },
     "polkit": {
       "type": "object",
       "title": "Authentication",

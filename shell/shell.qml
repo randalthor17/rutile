@@ -250,6 +250,17 @@ ShellRoot {
         }
     }
 
+    // Other apps in the shell's colors (D52; all off by default): created at start so it follows the palette.
+    readonly property var appColorsWanted: AppColorsService.wanted
+    IpcHandler {
+        target: "appcolors"
+        function state(): string {
+            return JSON.stringify({ enabled: AppColorsService.enabled, wanted: AppColorsService.wanted,
+                                    synced: AppColorsService.synced, runs: AppColorsService.runs,
+                                    error: AppColorsService.lastError });
+        }
+    }
+
     // The polkit agent (plan 2.8): an app asking for an administrator's permission gets the shell's password dialog
     // on the focused screen, loaded only while polkit asks (D31). polkit allows one agent per session, so with
     // another one running (polkit.agent off, or it registered first) this one stays out of the way.

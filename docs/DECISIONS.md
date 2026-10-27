@@ -415,3 +415,19 @@ does not apply it) and overrides a `QT_QPA_PLATFORMTHEME` of the user's for the 
 shell draws depends on the platform theme. Without a portal, Qt falls back to its own Qt Quick dialog. The theme
 learns the portal's version a moment after start, so a dialog opened in the first second is Qt's own; a click in
 Settings always comes later. The NixOS module must enable xdg-desktop-portal with a FileChooser backend (plan 6.1).
+
+**D52. Other apps can wear the shell's colors; every switch is off by default (plan 2.9).** The maintainer
+(October 2026): a main switch (`appColors.enabled`) and one per app (GTK, Qt, kitty, Ghostty, btop, Neovim,
+Firefox), all off, because these are the user's own files and another tool (Noctalia, the maintainer's) may
+already theme them. `tools/apptheme.py sync` runs matugen again from the palette's source color with the
+palette's scheme, mode and contrast (palette.py now records them), so an app gets exactly the shell's colors,
+rendering only the switched-on apps' templates (`theme/apps/`, matugen's syntax, so community templates fit).
+It changes only what it can undo: its own files, a marked block in a config that includes them (GTK's
+`@import` goes after the others, so ours wins over an earlier theme's), or one key whose previous value it keeps
+and puts back only if the key still holds ours. What it did is in `$XDG_STATE_HOME/rutile/apptheme.json`, so
+turning an app off takes exactly that back out. Terminal ANSI colors are left alone (readability). Firefox goes
+through the Pywalfox extension with our own native-messaging host (`tools/pywalfox_host.py`, written from
+Pywalfox's protocol, as Noctalia does), so no pywalfox program is needed; it pushes new colors when the file
+changes. Its manifest replaces another one at the same path (Noctalia's), which is kept aside and put back. The
+shell (`AppColorsService`) runs the tool when a switch or the palette changes, and never when nothing is on and
+nothing was themed. Tests run in a sandbox HOME only (the maintainer's rule).

@@ -316,4 +316,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   theme is never used, so an offscreen check proves nothing; and right after start the xdgdesktopportal theme has
   not yet learned the portal's version, so a dialog opened then falls back to Qt's own. Check with `dbus-monitor
   --session "type='method_call',interface='org.freedesktop.portal.FileChooser'"` and open it a few seconds in.
+- **`pkill -f PATTERN` from a shell kills that shell when its own command line contains PATTERN** (twice in
+  October 2026: stopping a mutation batch killed the command doing it). Kill by PID (`pgrep` first, look, then
+  `kill`), or make the pattern unable to match itself (`pkill -f "[m]ut.py"`).
+- **`select()` on a buffered pipe misses data already read into the buffer.** A test that reads two messages
+  through `proc.stdout` (buffered) and then waits on `select` hangs: the second one was buffered by the first
+  read. Use `bufsize=0` and read exact byte counts.
 

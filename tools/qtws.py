@@ -13,7 +13,8 @@ normally registers them itself.
                      start the real shell (shell/shell.qml) under a headless sway, open Quick Settings over
                      IPC and check it loads cleanly; FILE gets a screenshot (needs grim)
                      and check how the popup windows use their surfaces (run_wayland_surfaces)
-    qtws.py test-qs  run tests/qs/tst_*.qml as shells under `quickshell`, offscreen (code that needs
+    qtws.py test-qs [tst_name]
+                     run tests/qs/tst_*.qml (or the one named) as shells under `quickshell`, offscreen (code that needs
                      Quickshell types, which qmltestrunner cannot load)
     qtws.py render [--mode dark|light] [--out DIR]
                      render the gallery offscreen to a PNG (to look at the result)
@@ -272,13 +273,18 @@ class PrivateBus:
             self.proc.stdout.close()
 
 
-def run_qs_tests(timeout=60):
-    """(code, output, (passed, failed)); code is SKIPPED without the quickshell binary."""
+def run_qs_tests(timeout=60, only=None):
+    """(code, output, (passed, failed)); code is SKIPPED without the quickshell binary. `only`: one test by name."""
     qs = shutil.which("quickshell")
     if not qs:
         return SKIPPED, "quickshell not found", None
     passed, failed, out = 0, 0, []
-    for test in sorted((ROOT / "tests" / "qs").glob("tst_*.qml")):
+    tests = sorted((ROOT / "tests" / "qs").glob("tst_*.qml"))
+    if only:
+        tests = [t for t in tests if t.stem == only.removesuffix(".qml")]
+        if not tests:
+            return 1, f"no test file {only}", (0, 0)
+    for test in tests:
         ws = qs_workspace(test)
         try:
             with PrivateBus() as bus:
@@ -1127,7 +1133,7 @@ def main(argv):
         print(out2 if out2 else "wayland surfaces test passed")
         return code or code2
     if argv and argv[0] == "test-qs":
-        code, out, counts = run_qs_tests()
+        code, out, counts = run_qs_tests(only=argv[1] if len(argv) > 1 else None)
         if code == SKIPPED:
             print(f"quickshell tests: SKIPPED, {out}")
             return 0

@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+"""A stand-in for tools/apptheme.py in tests: logs its arguments to $FAKE_APPTHEME_LOG and succeeds, so no test
+ever themes the user's apps."""
+import os, sys
+with open(os.environ["FAKE_APPTHEME_LOG"], "a") as f:
+    f.write(" ".join(sys.argv[1:]) + "\n")

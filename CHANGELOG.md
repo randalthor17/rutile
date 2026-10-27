@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Colors in other apps** (Settings > Wallpaper & style): a main switch and one per app, all off until you turn
+  them on. GTK, Qt (qt5ct/qt6ct), kitty, Ghostty, btop, Neovim (`:colorscheme rutile`) and Firefox (install the
+  Pywalfox extension; Rutile is its backend, no pywalfox program needed) follow the wallpaper's colors. Turning
+  an app off puts its old look back. If Noctalia themes the same apps, turn that off there first.
 - **Settings app** (plan 5.1): Quick Settings' gear (or `ipc call settings open <page>`) opens Settings, laid out
   like Googlebook's: search on the left above the pages, the page's settings on the right. Every setting so far is
   there: wallpaper colors, notification sounds, screen lock, the polkit agent, animation speed. Choose… on the

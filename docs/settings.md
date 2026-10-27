@@ -32,6 +32,14 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
+| `appColors.enabled` | true or false | false | give other apps the shell's colors (D52); each app below also needs its own switch on |
+| `appColors.gtk` | true or false | false | GTK 3 and 4 (a rutile.css that gtk.css imports) |
+| `appColors.qt` | true or false | false | qt5ct and qt6ct's color scheme |
+| `appColors.kitty` | true or false | false | kitty's colors (not the 16 terminal colors); reloads at once |
+| `appColors.ghostty` | true or false | false | Ghostty's colors (`theme = rutile`) |
+| `appColors.btop` | true or false | false | btop's theme; the previous one comes back when off |
+| `appColors.nvim` | true or false | false | a `rutile` colorscheme for Neovim |
+| `appColors.firefox` | true or false | false | Firefox through the Pywalfox extension, with Rutile's own host |
 | `polkit.agent` | true or false | true | be the session's polkit agent (an app asking for an administrator's password asks in the shell); turn off when another agent does it (polkit allows one per session) |
 | `shelf.pins` | list of desktop ids | unset | the shelf's pinned apps, in order; unset: the first installed file manager, browser and terminal |
 

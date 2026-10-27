@@ -253,6 +253,8 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_PAM_DIR`, `RUTILE_PAM_CONFIG` | `shell/lock/LockScreen.qml` | tests only: the PAM directory and service the lock screen uses instead of `/etc/pam.d` and `login` |
 | `RUTILE_PALETTE_TOOL` | `shell/services/WallpaperService.qml` | tests only: the palette renderer to run instead of `tools/palette.py` |
+| `RUTILE_APPTHEME_TOOL` | `shell/services/AppColorsService.qml` | tests only: the app theming tool to run instead of `tools/apptheme.py`, so no test themes the user's apps |
+| `RUTILE_PYWALFOX_POLL` | `tools/pywalfox_host.py` | seconds between checks of the Firefox colors file (default 1; tests use less) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
 | `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config, merged after any project file |

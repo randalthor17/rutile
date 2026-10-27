@@ -4,14 +4,17 @@
 // the schema; `hints` here only say how to show it when the schema alone does not (D45 keeps the schema to what
 // Nix and the store need). Hints: `kind` (path, list), `choices` (values offered in a menu) with `label(value)`,
 // `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section), `filters` for a
-// path's file chooser ("Name (*.ext ...)").
+// path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply).
 .pragma library
 
 var pages = [
     {
         id: "wallpaper", title: "Wallpaper & style", icon: "palette", tone: "tertiaryContainer",
-        summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette"],
-        sections: [{ title: "", keys: ["wallpaper.path", "wallpaper.palette"] }]
+        summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette", "matugen"],
+        sections: [
+            { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
+            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.gtk", "appColors.qt", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
+        ]
     },
     {
         id: "notifications", title: "Notifications", icon: "notifications", tone: "errorContainer",
@@ -49,6 +52,14 @@ var hints = {
         filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
+    "appColors.enabled": { aliases: ["matugen", "theme apps", "gtk", "qt", "terminal"] },
+    "appColors.gtk": { requires: "appColors.enabled", aliases: ["gnome", "libadwaita", "nautilus"] },
+    "appColors.qt": { requires: "appColors.enabled", aliases: ["kde", "qt5ct", "qt6ct"] },
+    "appColors.kitty": { requires: "appColors.enabled", aliases: ["terminal"] },
+    "appColors.ghostty": { requires: "appColors.enabled", aliases: ["terminal"] },
+    "appColors.btop": { requires: "appColors.enabled" },
+    "appColors.nvim": { requires: "appColors.enabled", aliases: ["vim", "editor"] },
+    "appColors.firefox": { requires: "appColors.enabled", aliases: ["pywalfox", "browser"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
     "lock.idleMinutes": {
         choices: [0, 1, 2, 5, 10, 15, 30, 60],

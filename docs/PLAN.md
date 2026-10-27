@@ -175,8 +175,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `wallpaper.path` shows on every screen on the background layer, decoded at the screen's size; a new one fades in
   over the old (`Motion.long2`), and only then is the old dropped. When it changes the palette is rendered from it
   (`tools/palette.py --image`, `wallpaper.palette`, on by default), once per path (remembered in state.json); the
-  lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Not yet: a picker (Settings,
-  5.2), per-screen wallpapers, fill modes other than crop, a slideshow.
+  lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Colors in other apps (D52):
+  a main switch and one per app (GTK, Qt, kitty, Ghostty, btop, Neovim, Firefox through our own Pywalfox host),
+  all off by default, in Settings > Wallpaper & style; `tools/apptheme.py` themes them from the palette and takes
+  it back out exactly; tested in a sandbox HOME only, not yet on the maintainer's apps. Not yet: per-screen
+  wallpapers, fill modes other than crop, a slideshow, KDE's kdeglobals, community templates.
 
 - [ ] **2.10** App indicators (the maintainer's request, October 2026): a pill at the top right between the
   notification bell and the status pill, showing the icons apps put in the tray (StatusNotifierItem: Discord,
