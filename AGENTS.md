@@ -13,6 +13,7 @@ brief lists; a commit hook rejects anything else.
 5. No hardcoded colors, radii or durations in QML; use the singletons. No new dependencies without approval.
    Keep the shell light on memory: create on demand, unload when closed (`docs/memory.md`, D31).
 6. Record progress in `docs/PLAN.md` and `CHANGELOG.md` in the same commit, and in your memory if you have one.
-7. Claude's commits use `user.name claude`, `user.email claude@anthropic.com`. Tag-worthy commits get a tag and a git
-   bundle for the maintainer; others get an untagged `rutile-dev-<sha>.bundle`. Never move a tag that was delivered.
+7. Claude's commits use `user.name claude`, `user.email claude@anthropic.com`. Push to `origin`
+   (https://github.com/randalthor17/rutile); tag-worthy commits also get a tag. A session that cannot push hands over
+   a git bundle instead (`docs/HANDOFF.md`). Never move a tag that was pushed or delivered.
 8. Say what you did not verify. Do not let green checks imply more than they covered.

@@ -81,7 +81,7 @@ its examples). That is what the review after the merge is for.
 **Option A: Ollama as a system service (recommended on NixOS).** In your system flake:
 
 ```nix
-inputs.rutile.url = "path:/home/rand/Downloads/rutile";      # wherever the repo lives
+inputs.rutile.url = "github:randalthor17/rutile";       # or path:/where/the/checkout/is
 # ...
 modules = [ rutile.nixosModules.local-ai ];
 ```

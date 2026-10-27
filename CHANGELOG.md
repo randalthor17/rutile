@@ -1,10 +1,12 @@
 # Changelog
 
-Releases are git tags with a bundle given to the maintainer. Work after the latest tag is under Unreleased and
-ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section here (a test checks).
+Releases are git tags pushed to https://github.com/randalthor17/rutile. Work after the latest tag is under
+Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` from a session that cannot push). Every tag must have a section here (a test checks).
 
 ## Unreleased
 
+- **On GitHub:** the repository is public at https://github.com/randalthor17/rutile, and the docs use its flake,
+  `github:randalthor17/rutile`.
 - **Install with Nix** (`docs/install.md`): the flake now has the shell as a package (`nix run`) and a
   home-manager module, `programs.rutile.enable = true`: the shell as a user service, the `rutile-shell` command,
   niri's blur rule for the power menu and password dialog, and keybinds if you want them

@@ -1,6 +1,7 @@
 # Handoff: start here
 
-This is the single entry point for anyone picking Rutile Shell up from the git bundle alone: a new Claude
+This is the single entry point for anyone picking Rutile Shell up from the repository alone
+(https://github.com/randalthor17/rutile, public; or a git bundle): a new Claude
 chat, a different AI, a local model, or a person. **The repository is the source of truth.** Claude's
 memory is only a cache of it. Keep them in step: when you finish something or change the plan, update
 `docs/PLAN.md` (and `CHANGELOG.md` for anything released), and if you have a memory store, update its copy
@@ -61,9 +62,10 @@ surfaces), no focus ring. See `docs/components.md`.
 
 ## 3. Resume in five minutes
 
-Get the repo from the bundle (a bundle is a git repository in one file):
+Get the repo from GitHub, or from a bundle (a git repository in one file) where GitHub cannot be reached:
 
 ```
+git clone https://github.com/randalthor17/rutile.git     # the usual way
 git clone rutile-X.Y.Z.bundle rutile            # first time
 git pull ../rutile-X.Y.Z.bundle main            # later: update an existing clone
 git fetch --tags ../rutile-X.Y.Z.bundle 'refs/tags/*:refs/tags/*'     # pull does not bring tags
@@ -114,10 +116,12 @@ skip means that tool was missing, not that the behavior was checked.
   in the commit. Code that needs Quickshell types is tested with `tools/qtws.py test-qs` (tests/qs/).
 - **No new dependency without the maintainer's approval.** Optional test-only tools that skip when absent are fine.
 - **Ask before changing the plan.** Decisions are in `docs/DECISIONS.md`; reverse one only with the reason.
-- **Releases:** a release-tag-worthy commit gets a version tag and a git bundle given to the maintainer. Other
-  commits are untagged; they still need a bundle to reach the maintainer, named `rutile-dev-<shortsha>.bundle`.
-  Never move or reuse a tag the maintainer already has. **Exception:** when working directly in the maintainer's
-  checkout (Claude Code on their machine), just commit; no bundle is needed (the maintainer's instruction).
+- **Releases:** the repository lives at https://github.com/randalthor17/rutile (`origin`), and its flake is used
+  from there (`github:randalthor17/rutile`). Working in the maintainer's checkout (Claude Code on their machine),
+  commit and push to `origin`; no bundle is needed. A release-tag-worthy commit also gets a version tag, pushed
+  with `git push --tags`. A session that cannot push (a sandbox) hands the maintainer a git bundle instead:
+  `rutile-X.Y.Z.bundle` for a tag, `rutile-dev-<shortsha>.bundle` otherwise. Never move or reuse a tag that was
+  pushed or delivered.
 - **Record progress** in `docs/PLAN.md` and `CHANGELOG.md`, and in memory if you have it, in the same session.
 
 ### Quickshell types and where they go
@@ -162,6 +166,8 @@ ext-workspace-v1, which is immature, and niri's implementation of it is basic: d
 make check
 git add -A && git -c user.name=claude -c user.email=claude@anthropic.com commit -m "..."
 git tag -a vX.Y.Z -m "..."                                  # tag-worthy only
+git push origin main --tags                                 # in the maintainer's checkout; done here
+# a session that cannot push gives a bundle instead:
 git bundle create rutile-X.Y.Z.bundle --all                 # untagged: rutile-dev-$(git rev-parse --short HEAD).bundle
 git bundle verify rutile-X.Y.Z.bundle
 git clone rutile-X.Y.Z.bundle /tmp/fresh && (cd /tmp/fresh && make check)      # a fresh clone must pass
@@ -263,7 +269,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 
 ## 8. Resume prompt for a new chat
 
-Upload the latest bundle and say:
+Point it at https://github.com/randalthor17/rutile (or upload the latest bundle) and say:
 
 > This is the Rutile Shell project. Read `docs/HANDOFF.md`, then `docs/PLAN.md`, and continue from "Next up".
 > Follow the working agreement in the handoff. Update the plan, changelog and your memory as you go.
