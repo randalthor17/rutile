@@ -47,6 +47,37 @@ var schema = {
                     "description": "Play a sound when a notification pops up (with pw-play): the sender's sound, or the sound theme's message sound. Never in Do not disturb, except for critical ones."
                 }
             }
+        },
+        "wallpaper": {
+            "type": "object",
+            "title": "Wallpaper",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "title": "Wallpaper image",
+                    "description": "The wallpaper's image file (absolute path). The lock screen shows it blurred behind the clock; unset or missing: a plain surface."
+                }
+            }
+        },
+        "lock": {
+            "type": "object",
+            "title": "Lock screen",
+            "properties": {
+                "idleMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 240,
+                    "default": 10,
+                    "title": "Lock when idle",
+                    "description": "Lock after this many minutes without input; 0 never. Apps that inhibit idle (a playing video) keep it unlocked."
+                },
+                "beforeSleep": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Lock before sleep",
+                    "description": "Lock when the computer suspends or hibernates, so it wakes up locked."
+                }
+            }
         }
     }
 };

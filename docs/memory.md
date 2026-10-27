@@ -68,7 +68,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | NotificationPanel, 3 notifications | 1006 | 1084 | header with a Switch, a ListView of cards (rows in a ListModel synced by key, so changes animate; grouped by app) (only those in view are created; the list scrolls past 480 px), Clear all (its sweep: about 11 KiB a row, 1050 without it); only while open (LazyLoader) |
 | OsdPanel | | 136.1 | a tonal pill with a size m Slider and its PopupMotion; only from a level change until it has closed (LazyLoader) |
 | Toast, with an action | | 120.0 | an inverse-surface pill: icon, one line of text, a text Button, PopupMotion; only while there is a toast (LazyLoader) |
-| LockPanel | | 88.0 | one per screen: the time, date, user and a password field; only while locked (LazyLoader), with the WlSessionLock and PamContext around it |
+| LockPanel | | 88.0 | one per screen: the time, date, user and a password field; only while locked (LazyLoader), with the WlSessionLock and PamContext around it; with a wallpaper, the full-size image (8 MB at 1920x1080) only while locked. The shell keeps a 480x270 copy decoded at all times (about 0.5 MB), and runs `dbus-monitor` and `systemd-inhibit` (two small processes) for the lock triggers |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 

@@ -12,12 +12,17 @@ ShellRoot {
 
     property int stage: 0
     property int unlockedCount: 0
+    property real progressAtUnlock: -1
+    property bool triedWhileLeaving: false
 
     QsTest { id: t }
 
     LockScreen {
         id: lock
-        onUnlocked: root.unlockedCount++
+        onUnlocked: {
+            root.unlockedCount++;
+            root.progressAtUnlock = lock.progress;
+        }
     }
 
     Timer {
@@ -35,6 +40,7 @@ ShellRoot {
                 root.stage = 1;
                 break;
             case 1:
+                if (lock.progress < 0.99) return;   // fully in, so leaving has a motion to run back
                 t.compare(lock.error, "Wrong password", "pam_deny: wrong password");
                 t.compare(lock.attempts, 1, "one failed attempt");
                 t.verify(lock.locked, "still locked");
@@ -45,6 +51,16 @@ ShellRoot {
                 root.stage = 2;
                 break;
             case 2:
+                if (lock.locked && lock.leaving && !root.triedWhileLeaving) {
+                    root.triedWhileLeaving = true;
+                    lock.submit("again");
+                    t.verify(!lock.busy, "a password while it leaves is ignored");
+                }
+                if (lock.locked) return;         // the motion runs back first
+                t.verify(root.triedWhileLeaving, "it was still locked while leaving");
+                t.verify(root.progressAtUnlock >= 0 && root.progressAtUnlock < 0.01,
+                         "unlocked only once the motion had run back: " + root.progressAtUnlock);
+                t.verify(lock.leaving, "it left through its motion");
                 t.compare(lock.error, "", "no error");
                 t.verify(!lock.locked, "pam_permit: unlocked");
                 t.compare(root.unlockedCount, 1, "unlocked once");

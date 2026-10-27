@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Lock screen, polished** (plan 2.8): locking blurs the wallpaper in while the clock and password field rise into
+  place; unlocking runs it back and the wallpaper sharpens before the desktop returns. The wallpaper is the new
+  `wallpaper.path` setting. `loginctl lock-session` (and idle tools) now lock, the computer locks before it
+  suspends (`lock.beforeSleep`, on by default) and after 10 minutes idle (`lock.idleMinutes`; 0 turns it off; a
+  playing video keeps it unlocked).
 - **Lock screen** (plan 2.8): Lock in Quick Settings' power menu, or `ipc call lock lock` from a keybind, covers
   every screen with the time, the date, your name and a password field, and only your password unlocks it (the
   system's `login` PAM service). A wrong one says so and the field shakes. Nothing unlocks it over IPC. If the

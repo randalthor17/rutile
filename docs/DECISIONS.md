@@ -369,3 +369,11 @@ Quickshell's objects and hands the UI plain data, so the cards test offscreen. C
   tests only (pam_permit, pam_deny); they give nothing to someone who can already set the shell's environment.
   If the shell dies while locked, niri keeps the screens locked and blank (ext-session-lock); starting the
   shell and locking again brings the lock screen back.
+- Lock triggers (plan 2.8): logind's signals come through `dbus-monitor --system` (part of D-Bus, on every system
+  that has logind; Quickshell has no system-bus signal type, and `busctl monitor` needs root). The session's Unlock
+  signal is ignored, as swaylock does: any program of the user's can send it. Suspend waits for the lock through a
+  logind delay inhibitor (`systemd-inhibit ... sleep infinity`, let go once the lock is secure, taken again on
+  resume). Idle is Quickshell's IdleMonitor. Test shells get no `XDG_SESSION_ID` (or a fake one with fake
+  `dbus-monitor` and `systemd-inhibit`), so they never touch the real session.
+- The lock screen's wallpaper is kept decoded small (480x270, about 0.5 MB) while unlocked, so locking shows it at
+  once; the full-size image is decoded only while locked (D31).

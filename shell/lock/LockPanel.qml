@@ -1,11 +1,16 @@
 // What the lock screen shows on each screen (plan 2.8): the time and date large in the middle, the user's name and a
-// password field under them, on the surface color (no wallpaper, so nothing of the session shows through). Enter
-// sends the password (`submitted`); while `busy` the field takes no typing; `error` shows under the field and the
-// field shakes. Plain QtQuick, so it tests offscreen: LockScreen gives it the time, the user and the state.
+// password field under them, over the wallpaper blurred and veiled in the surface color (or the plain surface when
+// there is no wallpaper). Enter sends the password (`submitted`); while `busy` the field takes no typing; `error`
+// shows under the field and the field shakes. `progress` (0 to 1, from LockScreen's spring) is the lock's motion:
+// at 0 the wallpaper is sharp and nothing is on it, at 1 it is blurred and the clock and field have risen into
+// place; unlocking runs it back to 0. Plain QtQuick, so it tests offscreen: LockScreen gives it the time, the user,
+// the wallpaper and the state.
 import QtQuick
+import QtQuick.Effects
 import qs.common
 import qs.components
 import "../bar/ClockText.js" as ClockText
+import "LockWallpaper.js" as LockWallpaper
 
 Rectangle {
     id: root
@@ -16,6 +21,15 @@ Rectangle {
     property string error: ""
     property string message: ""          // what PAM asks or tells, when it is not just the password
     property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
+    property string wallpaper: ""        // an image file's path; "" for none
+    property real progress: 1            // the lock's motion, see above; may overshoot 1 a little (a spring)
+
+    readonly property real shown: Math.max(0, Math.min(1, progress))
+    readonly property bool hasWallpaper: wallpaperImage.status === Image.Ready
+    // Ready to move: the wallpaper has loaded, failed, or there is none (the motion waits for it, so the wallpaper
+    // blurs in with it instead of popping in after).
+    readonly property bool backgroundReady: wallpaper === "" || wallpaperImage.status === Image.Ready
+                                            || wallpaperImage.status === Image.Error
 
     readonly property alias field: passwordInput
     readonly property string timeText: ClockText.time(now, use24h)
@@ -44,8 +58,58 @@ Rectangle {
         NumberAnimation { target: root; property: "shakeOffset"; to: 0; duration: Motion.duration(Motion.short2) } // motion-speed: Motion.duration
     }
 
+    // The wallpaper, small (it is only ever seen blurred), blurred as the lock comes in. LockWallpaper keeps the
+    // same image at the same size loaded while unlocked, so this comes from Qt's image cache at once instead of
+    // decoding a large file (a 4K PNG took 0.4 s) while the screen waits.
+    Image {
+        id: wallpaperImage
+        anchors.fill: parent
+        visible: false                   // drawn through the blur below
+        source: LockWallpaper.url(root.wallpaper)
+        sourceSize: LockWallpaper.size
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+    }
+    MultiEffect {
+        objectName: "lockBlur"
+        anchors.fill: parent
+        visible: root.hasWallpaper
+        source: wallpaperImage
+        blurEnabled: true
+        blurMax: 64
+        // never quite sharp: the small copy shows its pixels without some blur
+        blur: root.minBlur + (1 - root.minBlur) * root.shown
+        autoPaddingEnabled: false
+    }
+    readonly property real minBlur: 0.15
+    // The wallpaper at the screen's size, loaded in the background once locked (only while locked, D31): it takes
+    // over as the blur goes, so the end of unlocking is sharp, as the desktop it gives way to.
+    Image {
+        id: sharpImage
+        objectName: "lockSharp"
+        anchors.fill: parent
+        source: root.hasWallpaper ? LockWallpaper.url(root.wallpaper) : ""
+        sourceSize: Qt.size(root.width, root.height)
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        cache: false
+        opacity: Math.max(0, 1 - 4 * root.shown)
+        visible: status === Image.Ready && opacity > 0
+    }
+    // A veil in the surface color, so the text reads on any wallpaper in both modes.
+    Rectangle {
+        anchors.fill: parent
+        visible: root.hasWallpaper
+        color: Colors.surface
+        opacity: 0.45 * root.shown
+    }
+
     Column {
+        id: content
+        objectName: "lockContent"
         anchors.centerIn: parent
+        anchors.verticalCenterOffset: (1 - root.progress) * Spacing.xxxl
+        opacity: root.shown
         spacing: Spacing.lg
 
         Text {

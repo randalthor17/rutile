@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# A stand-in for systemd-inhibit in tests: logs "start" with its arguments to $FAKE_INHIBIT and holds nothing, so a
+# test shell never delays the real system's sleep. It runs until it is stopped, like the real one with `sleep infinity`.
+: "${FAKE_INHIBIT:?FAKE_INHIBIT not set}"
+echo "start $*" >> "$FAKE_INHIBIT"
+trap 'echo stop >> "$FAKE_INHIBIT"; exit 0' TERM INT
+while :; do sleep 1; done

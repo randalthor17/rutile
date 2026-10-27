@@ -225,6 +225,8 @@ def qs_test_env(test, ws):
     # never the user's settings or state (D45); a test's `// env XDG_CONFIG_HOME=@WS@/config/<name>` picks a fixture
     env["XDG_CONFIG_HOME"] = str(ws / "home" / "config")
     env["XDG_STATE_HOME"] = str(ws / "home" / "state")
+    # never the user's logind session (the lock screen's triggers and LockedHint act on it)
+    env["XDG_SESSION_ID"] = ""
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
         env[name] = value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
     return env
@@ -351,6 +353,10 @@ def run_wayland_smoke(screenshot=None):
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
+            # a session of its own, heard through the fake dbus-monitor; the fake systemd-inhibit holds nothing
+            "XDG_SESSION_ID": "rutiletest",
+            "FAKE_LOGIND": str(comp.runtime / "logind.txt"),
+            "FAKE_INHIBIT": str(comp.runtime / "inhibit.log"),
             "FAKE_APP_LOG": str(comp.runtime / "apps.log"),
             "RUTILE_ANIMATION_SPEED": "1.5",
             "DBUS_SESSION_BUS_ADDRESS": bus.address,
@@ -740,9 +746,27 @@ def run_wayland_smoke(screenshot=None):
                     calls = (fake.parent / (fake.name + ".log"))
                     if not calls.exists() or "info" not in calls.read_text():
                         problems.append("opening the panel did not read the brightness")
-                    # last, as nothing unlocks it here: the lock screen covers the screen (the compositor says
-                    # secure) and there is no IPC call that unlocks it
-                    ipc("lock", target="lock")
+                    # last, as nothing unlocks it here. logind (the fake dbus-monitor) asks our session to lock: the
+                    # lock screen covers the screen (the compositor says secure); there is no IPC call that unlocks it
+                    logind, inhibit = comp.runtime / "logind.txt", comp.runtime / "inhibit.log"
+                    session = "/org/freedesktop/login1/session/rutiletest"
+                    args = (comp.runtime / "logind.txt.args").read_text() if (comp.runtime / "logind.txt.args").exists() else ""
+                    if f"path='{session}'" not in args or "PrepareForSleep" not in args:
+                        problems.append(f"dbus-monitor's match rules: {args!r}, expected our session's Lock and PrepareForSleep")
+                    if not inhibit.exists() or not inhibit.read_text().startswith("start --what=sleep --mode=delay"):
+                        problems.append("no sleep delay inhibitor was taken (lock.beforeSleep)")
+                    def logind_signal(path, iface, member, arg=None):
+                        with open(logind, "a") as f:
+                            f.write(f"signal time=1.0 sender=:1.4 -> destination=(null destination) serial=1 path={path}; "
+                                    f"interface=org.freedesktop.login1.{iface}; member={member}\n")
+                            if arg is not None:
+                                f.write(f"   boolean {arg}\n")
+                    logind_signal("/org/freedesktop/login1/session/other", "Session", "Lock")
+                    time.sleep(0.5)
+                    if ipc("isLocked", target="lock") != "false":
+                        problems.append("another session's Lock locked the screen")
+                    logind_signal(session, "Session", "Lock")
+                    ipc("lock", target="lock")              # already locked: changes nothing
                     lock = {}
                     for _ in range(30):
                         try:
@@ -752,8 +776,17 @@ def run_wayland_smoke(screenshot=None):
                         if lock.get("secure"):
                             break
                         time.sleep(0.1)
-                    if lock != {"locked": True, "secure": True, "busy": False, "error": "", "attempts": 0}:
-                        problems.append(f"ipc lock lock: state {lock}, expected locked and secure")
+                    if lock != {"locked": True, "secure": True, "busy": False, "error": "", "attempts": 0, "reason": "logind"}:
+                        problems.append(f"logind Lock: state {lock}, expected locked and secure, by logind")
+                    # suspend: locked and secure already, so the delay inhibitor is let go; on resume it is taken again
+                    logind_signal("/org/freedesktop/login1", "Manager", "PrepareForSleep", "true")
+                    time.sleep(1.5)
+                    if inhibit.read_text().splitlines()[-1:] != ["stop"]:
+                        problems.append(f"about to sleep, locked: inhibitor log {inhibit.read_text()!r}, expected it let go")
+                    logind_signal("/org/freedesktop/login1", "Manager", "PrepareForSleep", "false")
+                    time.sleep(0.5)
+                    if inhibit.read_text().count("start --what=sleep") != 2:
+                        problems.append(f"after resume: inhibitor log {inhibit.read_text()!r}, expected it taken again")
                     if "not found" not in ipc("unlock", target="lock") or ipc("isLocked", target="lock") != "true":
                         problems.append("ipc lock: an unlock call exists or it unlocked")
             finally:
@@ -813,6 +846,7 @@ def run_wayland_surfaces():
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(comp.runtime / "fake-brightness"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
+            "XDG_SESSION_ID": "",
             "DBUS_SESSION_BUS_ADDRESS": bus.address,
             "WAYLAND_DEBUG": "1",
             "XDG_CONFIG_HOME": str(comp.runtime / "config"),

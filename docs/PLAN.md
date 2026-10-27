@@ -154,8 +154,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   shows the current one longer; `ipc call toast send <text> <icon>`. Not
   done: per-app settings. The lock screen (`shell/lock/`): WlSessionLock with a LockPanel per screen, PAM's `login`
   service, the power menu's Lock and `ipc call lock lock`, no unlock over IPC; checked in a nested niri with the
-  maintainer's real password and a wrong one (2026-10-27). Not yet: logind's Lock signal (`loginctl
-  lock-session`, idle tools), locking on idle (IdleMonitor), a blurred wallpaper behind it. Then the rest of the item: a full-screen power menu over the blurred desktop
+  maintainer's real password and a wrong one (2026-10-27). Polished: the lock's motion (the wallpaper blurs in, the clock and
+  field rise; unlocking runs it back), the wallpaper (`wallpaper.path`, a small copy kept decoded so it shows at
+  once, the full-size one loaded while locked for a sharp end), logind's Lock signal, locking before suspend (a
+  delay inhibitor held until the lock is secure) and on idle (`lock.idleMinutes`). Checked in a nested niri by the
+  maintainer. Not verified: idle and suspend on the real machine (tested with fakes). Then the rest of the item: a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 

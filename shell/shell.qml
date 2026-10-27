@@ -16,6 +16,7 @@ import qs.quicksettings
 import qs.services
 import qs.shelf
 import "quicksettings/Controls.js" as Controls
+import "lock/LockWallpaper.js" as LockWallpaper
 
 ShellRoot {
     id: shell
@@ -123,6 +124,7 @@ ShellRoot {
         id: shellBackend
         onLockRequested: {
             shell.closeQuickSettings();
+            if (!lockScreen.active) shell.lockReason = "menu";
             shell.lock();
         }
     }
@@ -137,16 +139,39 @@ ShellRoot {
             onUnlocked: Qt.callLater(() => lockScreen.active = false)
         }
     }
+    // The lock screen's wallpaper, kept decoded (small, about 0.5 MB) so locking shows it at once (LockWallpaper.js).
+    Image {
+        visible: false
+        source: LockWallpaper.url(Settings.value("wallpaper.path") ?? "")
+        sourceSize: LockWallpaper.size
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+    }
+
+    // logind's Lock (loginctl lock-session), suspend and idle (LockTriggers.qml).
+    property string lockReason: ""
+    LockTriggers {
+        locked: lockScreen.active
+        secure: lockScreen.item?.secure ?? false
+        onLockRequested: reason => {
+            if (!lockScreen.active) shell.lockReason = reason;
+            shell.lock();
+        }
+    }
     // From a niri keybind: quickshell -p <path>/shell/shell.qml ipc call lock lock. There is deliberately no unlock.
     IpcHandler {
         target: "lock"
-        function lock(): void { shell.lock(); }
+        function lock(): void {
+            if (!lockScreen.active) shell.lockReason = "ipc";
+            shell.lock();
+        }
         function isLocked(): bool { return lockScreen.active; }
         // diagnostics and tests: never the password
         function state(): string {
             const l = lockScreen.item;
             return JSON.stringify({ locked: lockScreen.active, secure: l?.secure ?? false, busy: l?.busy ?? false,
-                                    error: l?.error ?? "", attempts: l?.attempts ?? 0 });
+                                    error: l?.error ?? "", attempts: l?.attempts ?? 0,
+                                    reason: lockScreen.active ? shell.lockReason : "" });
         }
     }
 

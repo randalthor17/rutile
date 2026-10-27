@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# A stand-in for dbus-monitor in tests: prints what the test appends to $FAKE_LOGIND (lines as dbus-monitor prints
+# logind's signals), so a test shell never listens to the real system bus. Its arguments go to $FAKE_LOGIND.args.
+: "${FAKE_LOGIND:?FAKE_LOGIND not set}"
+echo "$*" > "$FAKE_LOGIND.args"
+touch "$FAKE_LOGIND"
+exec tail -n +1 -F "$FAKE_LOGIND" 2>/dev/null

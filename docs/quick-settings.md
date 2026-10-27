@@ -31,7 +31,10 @@ Toasts: `ipc call toast send <text> <icon>` (a Material Symbols name, or "" for 
 No IPC function is called `show`: `quickshell ipc call <target> show` is read as the CLI's own `ipc show`.
 Lock screen: `ipc call lock lock`, `isLocked`, `state` (never the password); there is no unlock call. A niri
 keybind: `Mod+Alt+L { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "lock" "lock"; }`.
-`loginctl lock-session` does not reach it yet (the shell does not listen for logind's Lock signal).
+`loginctl lock-session` locks too (logind's Lock signal for our session, heard with `dbus-monitor --system`); its
+Unlock is ignored. Before suspend the shell holds a logind delay inhibitor (`systemd-inhibit --list` shows "Rutile
+Shell") until the lock covers the screens. Without `XDG_SESSION_ID` (the shell started outside a login session)
+neither works, and the log says so.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
 (D41); clicks inside the panel do not. The panel grows in from the corner under the pill (`PopupMotion`, the motion
 every popup shares, D43) and fades in; closing shrinks and fades it, and the window is unloaded once the motion ends (`isOpen` turns false
