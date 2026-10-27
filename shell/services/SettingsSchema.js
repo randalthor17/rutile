@@ -55,7 +55,13 @@ var schema = {
                 "path": {
                     "type": "string",
                     "title": "Wallpaper image",
-                    "description": "The wallpaper's image file (absolute path). The lock screen shows it blurred behind the clock; unset or missing: a plain surface."
+                    "description": "The wallpaper's image file (absolute path), shown on every screen; the lock screen shows it blurred. Unset: a plain surface."
+                },
+                "palette": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Colors from the wallpaper",
+                    "description": "Render the shell's palette from the wallpaper whenever it changes (matugen)."
                 }
             }
         },

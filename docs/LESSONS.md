@@ -75,6 +75,13 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   0.3.2): a palette rendered after the shell started went unnoticed. PaletteWatcher looks again every 3 s while
   the file is missing. A later atomic replace (rename over the name) is seen.
 
+- **A zero-length SequentialAnimation can run its ScriptAction twice.** With Motion.speed 0 the wallpaper's fade
+  (a NumberAnimation then a ScriptAction that swapped the two images) swapped them back again, leaving nothing
+  shown. A single NumberAnimation with `onFinished` runs once.
+- **A Quickshell singleton is created when first used**, not at start. A test that only reads its effects (a log
+  it writes) must use it first, or it reads before anything happened and passes for the wrong reason (a mutant
+  survived that way).
+
 ## Testing method
 
 - **A test that cannot fail proves nothing.** Mutate the code and watch the test fail. Several guards turned out

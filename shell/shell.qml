@@ -12,6 +12,7 @@ import qs.notifications
 import qs.osd
 import qs.toast
 import qs.lock
+import qs.wallpaper
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -98,6 +99,29 @@ ShellRoot {
     }
 
     PaletteWatcher {}
+
+    // The wallpaper on every screen (plan 2.9), under everything.
+    Variants {
+        id: wallpapers
+        model: Quickshell.screens
+        WallpaperWindow {
+            required property var modelData
+            screen: modelData
+        }
+    }
+    // From a script or keybind: quickshell -p <path>/shell/shell.qml ipc call wallpaper set /path/to/image.png
+    IpcHandler {
+        target: "wallpaper"
+        // false when the path is not absolute or the setting is set in Nix; "" removes the wallpaper
+        function set(path: string): bool { return WallpaperService.set(path); }
+        function get(): string { return WallpaperService.path; }
+        function state(): string {
+            return JSON.stringify({ path: WallpaperService.path, error: WallpaperService.lastError,
+                                    paletteFrom: Settings.stateValue("wallpaper.paletteFrom", ""),
+                                    shown: wallpapers.instances.map(w => w.view.front.source.toString()),
+                                    ready: wallpapers.instances.map(w => w.view.front.status === Image.Ready) });
+        }
+    }
 
     // The animation speed (D43) is the motion.speed setting (D45). RUTILE_ANIMATION_SPEED overrides it for this
     // run (0.5 halves it, 0 turns motion off) until `ipc call motion setSpeed 2` saves a new speed.

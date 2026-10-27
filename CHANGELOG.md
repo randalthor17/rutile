@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Wallpaper** (plan 2.9): the shell draws the wallpaper itself. `ipc call wallpaper set /path/to/image.png`
+  (or `wallpaper.path` in settings.json) shows it on every screen with a crossfade, colors the shell from it
+  (matugen; `wallpaper.palette: false` keeps the palette) and the lock screen blurs it. Turn off another
+  wallpaper program (Noctalia's, swaybg) so they do not both draw.
 - **Lock screen, polished** (plan 2.8): locking blurs the wallpaper in while the clock and password field rise into
   place; unlocking runs it back and the wallpaper sharpens before the desktop returns. The wallpaper is the new
   `wallpaper.path` setting. `loginctl lock-session` (and idle tools) now lock, the computer locks before it

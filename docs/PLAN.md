@@ -162,6 +162,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
+- [ ] **2.9** Started (D48, `shell/wallpaper/`, the maintainer's choice over an outside app): the wallpaper.
+  `wallpaper.path` shows on every screen on the background layer, decoded at the screen's size; a new one fades in
+  over the old (`Motion.long2`), and only then is the old dropped. When it changes the palette is rendered from it
+  (`tools/palette.py --image`, `wallpaper.palette`, on by default), once per path (remembered in state.json); the
+  lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Not yet: a picker (Settings,
+  5.2), per-screen wallpapers, fill modes other than crop, a slideshow.
+
 ## Phase 3: windows on niri
 
 - [ ] **3.1** Googlebook-like floating windows via niri window rules (default floating, corner radius, shadow,

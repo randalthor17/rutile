@@ -377,3 +377,11 @@ Quickshell's objects and hands the UI plain data, so the cards test offscreen. C
   `dbus-monitor` and `systemd-inhibit`), so they never touch the real session.
 - The lock screen's wallpaper is kept decoded small (480x270, about 0.5 MB) while unlocked, so locking shows it at
   once; the full-size image is decoded only while locked (D31).
+
+**D48. The shell draws the wallpaper (plan 2.9).** The maintainer chose this (October 2026) over swaybg, awww or
+Noctalia's. The wallpaper feeds the palette and the lock screen, and a Settings picker comes later, so the shell
+owning it means one setting drives all three and a change is noticed at once; an outside program would leave the
+shell watching its config. Cost: one image decoded at the screen's size per screen (8 MB at 1920x1080), two during
+a crossfade. The palette is rendered by running `tools/palette.py` (python3 and matugen, both already needed for
+the theme pipeline), found beside the shell directory (`../tools` from `Quickshell.shellDir`); a packaged shell must
+ship it there. Video and animated wallpapers stay with outside programs.

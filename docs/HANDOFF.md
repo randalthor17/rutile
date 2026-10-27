@@ -192,7 +192,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
-| `shell/osd/`, `shell/toast/`, `shell/lock/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM) |
+| `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`) |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
@@ -251,6 +251,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `XDG_CONFIG_HOME`, `XDG_STATE_HOME` | `shell/services/Settings.qml` | where `$XDG_CONFIG_HOME/rutile/settings.json`, `managed.json` and `$XDG_STATE_HOME/rutile/state.json` live (D45); the tests point them at temporary directories |
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_PAM_DIR`, `RUTILE_PAM_CONFIG` | `shell/lock/LockScreen.qml` | tests only: the PAM directory and service the lock screen uses instead of `/etc/pam.d` and `login` |
+| `RUTILE_PALETTE_TOOL` | `shell/services/WallpaperService.qml` | tests only: the palette renderer to run instead of `tools/palette.py` |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
 | `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config, merged after any project file |

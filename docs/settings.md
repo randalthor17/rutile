@@ -28,7 +28,8 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 |---|---|---|---|
 | `motion.speed` | number, 0 to 4 | 1 | how fast every animation runs (D43): 2 twice as fast, 0 no motion |
 | `notifications.sound` | true or false | true | a sound when a notification pops up (pw-play): the sender's, or the sound theme's message sound; none in Do not disturb, except for critical ones |
-| `wallpaper.path` | file path | unset | the wallpaper image; the lock screen shows it blurred (unset: a plain surface) |
+| `wallpaper.path` | file path | unset | the wallpaper image on every screen, also blurred on the lock screen (unset: a plain surface) |
+| `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
 | `shelf.pins` | list of desktop ids | unset | the shelf's pinned apps, in order; unset: the first installed file manager, browser and terminal |
@@ -79,6 +80,7 @@ Shell state that is not a setting (usage, the last view) goes through `Settings.
 |---|---|
 | `launcher.view` | `"grid"` or `"list"`, as last chosen |
 | `launcher.usage` | `{appId: {count, last}}`: apps opened from the launcher, `last` in ms since the epoch; at most 200 apps, the least recently used dropped (`shell/launcher/Usage.js`, D46) |
+| `wallpaper.paletteFrom` | the wallpaper the palette was last rendered from, so a restart does not render it again |
 
 Deleting `state.json` forgets all of it; nothing else depends on it.
 

@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -164,6 +164,10 @@ def workspace(tests_dir="qml"):
     import shape_ref
     (data / "spring_cases.json").write_text(json.dumps(spring_ref.cases()))
     (data / "shape_cases.json").write_text(json.dumps(shape_ref.cases()))
+    # two small images for the wallpaper tests
+    import test_palette
+    test_palette.solid_png(data / "red.png", (0xc6, 0x28, 0x28))
+    test_palette.solid_png(data / "green.png", (0x2e, 0x7d, 0x32))
     return ws
 
 
@@ -366,8 +370,10 @@ def run_wayland_smoke(screenshot=None):
             # only the fixture apps, so the shelf's default pins are known
             "XDG_DATA_DIRS": str(ROOT / "tests" / "qs" / "apps"),
             "XDG_DATA_HOME": str(ROOT / "tests" / "qs" / "apps" / "no-user-apps"),
-            "RUTILE_PALETTE": str(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json"),
+            # a copy: setting a wallpaper renders the palette into this file (WallpaperService)
+            "RUTILE_PALETTE": str(comp.runtime / "palette.json"),
         })
+        shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
@@ -493,6 +499,34 @@ def run_wayland_smoke(screenshot=None):
                     if toast != want or again != first or second == first:
                         problems.append(f"ipc toast: ids {first}, {second}, {again}; state {toast}, expected {want}")
                     toast_sent = time.time()
+                    # the wallpaper: an absolute path only; set, it shows on the screen and the palette follows it
+                    sys.path.insert(0, str(ROOT / "tests"))
+                    import test_palette
+                    green = comp.runtime / "green.png"
+                    test_palette.solid_png(green, (0x2e, 0x7d, 0x32))
+                    if ipc("set", "relative.png", target="wallpaper") != "false":
+                        problems.append("ipc wallpaper set relative.png: accepted, expected false")
+                    if ipc("set", str(green), target="wallpaper") != "true":
+                        problems.append("ipc wallpaper set: refused")
+                    wall = {}
+                    for _ in range(100):                    # matugen takes a moment
+                        try:
+                            wall = json.loads(ipc("state", target="wallpaper"))
+                        except ValueError:
+                            wall = {}
+                        if wall.get("paletteFrom") == str(green) and wall.get("ready") == [True]:
+                            break
+                        time.sleep(0.1)
+                    if wall != {"path": str(green), "error": "", "paletteFrom": str(green),
+                                "shown": [f"file://{green}"], "ready": [True]}:
+                        problems.append(f"ipc wallpaper state: {wall}, expected it shown and the palette rendered from it")
+                    try:
+                        primary = json.loads((comp.runtime / "palette.json").read_text())["colors"]["dark"]["primary"]
+                    except (OSError, ValueError, KeyError) as e:
+                        primary = repr(e)
+                    rgb = [int(primary[i:i + 2], 16) for i in (1, 3, 5)] if primary.startswith("#") else [0, 0, 0]
+                    if max(range(3), key=lambda i: rgb[i]) != 1:
+                        problems.append(f"palette after a green wallpaper: primary {primary}, expected green")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -851,8 +885,9 @@ def run_wayland_surfaces():
             "WAYLAND_DEBUG": "1",
             "XDG_CONFIG_HOME": str(comp.runtime / "config"),
             "XDG_STATE_HOME": str(comp.runtime / "state"),
-            "RUTILE_PALETTE": str(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json"),
+            "RUTILE_PALETTE": str(comp.runtime / "palette.json"),     # a copy, as in the smoke test
         })
+        shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
