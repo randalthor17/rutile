@@ -168,7 +168,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Authenticate; Enter, Escape; a wrong password shakes and says so, polkit retries by itself); the window is
   loaded only while polkit asks. `ipc call polkit state`, `cancel`. Checked on the maintainer's session: the live
   shell registered (beside Noctalia's agent) and a real `pkexec true` opened the dialog; cancelling over IPC
-  dismissed it (pkexec exit 126). Not verified: a real password through it (tested with a fake AuthFlow).
+  dismissed it (pkexec exit 126); the maintainer authenticated with their real password (2026-10-27).
   Types: `NotificationServer`, `WlSessionLock`, `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
 - [ ] **2.9** Started (D48, `shell/wallpaper/`, the maintainer's choice over an outside app): the wallpaper.
