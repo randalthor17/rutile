@@ -68,6 +68,25 @@ fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that 
   Settings' Choose... buttons.
 - PAM's `login` service, for the lock screen (on NixOS by default).
 
+## GTK, Qt and KDE apps in the shell's look
+
+```nix
+programs.rutile.theming.enable = true;
+```
+
+sets up GTK (adw-gtk3 dark for GTK 3 apps, libadwaita's own theme for GTK 4, a dark color scheme, gtk.css
+importing the shell's colors), Qt (qt5ct and qt6ct with the Fusion style) and KDE apps (kdeglobals' fonts and
+icons), the font (Google Sans Flex, also fontconfig's default sans-serif) and icons (Adwaita), and turns on the
+shell's GTK, Qt and KDE color switches. Each part can be left out: `theming.gtk.enable`, `theming.qt.enable`,
+`theming.kde.enable`, `theming.fonts.enable` (and `theming.fonts.name`, `.size`; `theming.icons.name`, `.package`).
+Apps pick the colors up when they start.
+
+Plain GTK 4 apps (those without libadwaita) keep GTK's own colors; `theming.gtk.plainGtk4 = true` themes them too,
+with adw-gtk3's GTK 4 stylesheet, but that also lies over libadwaita apps (their accent goes back to stock blue).
+
+This takes over `gtk`, `qt` and `fonts.fontconfig` settings in your home-manager configuration (set them
+yourself to override; Nix reports a conflict for a plain value set twice).
+
 ## Colors in other apps, with home-manager
 
 Each app has a switch in Settings > Wallpaper (all off at first, and a main one above them). The shell writes the

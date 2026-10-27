@@ -113,6 +113,12 @@ var schema = {
                     "title": "Qt apps",
                     "description": "qt5ct and qt6ct's color scheme (Qt apps that use them)."
                 },
+                "kde": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "KDE apps",
+                    "description": "Dolphin, Kate and other KDE apps outside Plasma: the colors go into kdeglobals (yours come back when off), and a Rutile color scheme is installed."
+                },
                 "kitty": {
                     "type": "boolean",
                     "default": false,

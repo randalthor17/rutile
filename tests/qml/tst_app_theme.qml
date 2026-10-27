@@ -16,7 +16,9 @@ TestCase {
     readonly property var rendered: ({ "gtk.css": "@define-color accent_bg_color #aabbcc;\n", "kitty.conf": "cursor #aabbcc\n",
                                        "btop.theme": "theme[main_bg]=\"#000000\"\n", "qtct.conf": "[ColorScheme]\n",
                                        "ghostty": "background = #111111\n", "nvim.lua": "-- rutile\n",
-                                       "pywalfox.conf": "mode dark\n", "niri.kdl": "layout {}\n" })
+                                       "pywalfox.conf": "mode dark\n", "niri.kdl": "layout {}\n",
+                                       "kdeglobals.colors": "# scheme\n[Colors:View]\nBackgroundNormal=1,2,3\nForegroundNormal=4,5,6\n" +
+                                                            "[Colors:Window]\nBackgroundNormal=7,8,9\n[General]\nColorScheme=Rutile\nName=Rutile\n" })
 
     // Runs the plan's ops on a map of files, as the sh script would.
     function run(files, ops) {
@@ -107,6 +109,62 @@ TestCase {
         compare(off.files[btop], r.files[btop], "btop.conf, now a link, untouched");
         compare(off.ops.filter(o => o.path === conf || o.path === btop).length, 0);
         compare(off.files["/h/.config/btop/themes/rutile.theme"], null, "its own files still go");
+    }
+
+    // KDE apps: every key of the scheme into kdeglobals, theirs kept and put back; the rest of the file untouched.
+    function test_kde_keys_into_kdeglobals_and_back() {
+        const kg = "/h/.config/kdeglobals", scheme = "/h/.local/share/color-schemes/Rutile.colors";
+        const theirs = "[General]\nfont=Noto Sans,10\nColorScheme=BreezeDark\n\n[Colors:View]\nBackgroundNormal=20,20,20\nDecorationFocus=1,1,1\n";
+        let r = sync({ [kg]: theirs }, ["kde"]);
+        compare(r.files[scheme], rendered["kdeglobals.colors"], "the scheme installed for KDE's menus");
+        const t = r.files[kg];
+        compare(AppTheme.getKey(t, "Colors:View", "BackgroundNormal"), "1,2,3");
+        compare(AppTheme.getKey(t, "Colors:View", "DecorationFocus"), "1,1,1", "a key the scheme has not: theirs");
+        compare(AppTheme.getKey(t, "Colors:Window", "BackgroundNormal"), "7,8,9", "a group they had not: added");
+        compare(AppTheme.getKey(t, "General", "ColorScheme"), "Rutile");
+        compare(AppTheme.getKey(t, "General", "font"), "Noto Sans,10", "fonts and the rest stay");
+        compare(AppTheme.getKey(t, "General", "Name"), null, "the scheme's own name stays out");
+        compare(r.ops.filter(o => o.path === kg).length, 1, "one write for all its keys");
+        compare(sync(r.files, ["kde"], r.done).ops.length, 0, "a second sync writes nothing");
+        // a KDE app changed one key meanwhile: that one is theirs now
+        const changed = Object.assign({}, r.files, { [kg]: AppTheme.setKey(r.files[kg], "Colors:Window", "BackgroundNormal", "50,50,50") });
+        const off = sync(changed, [], r.done);
+        const back = off.files[kg];
+        compare(AppTheme.getKey(back, "Colors:View", "BackgroundNormal"), "20,20,20", "theirs back");
+        compare(AppTheme.getKey(back, "General", "ColorScheme"), "BreezeDark");
+        compare(AppTheme.getKey(back, "Colors:View", "ForegroundNormal"), null, "a key they had not: gone");
+        compare(AppTheme.getKey(back, "Colors:Window", "BackgroundNormal"), "50,50,50", "changed since: kept");
+        compare(off.files[scheme], null);
+        compare(off.ops.filter(o => o.path === kg).length, 1, "one write back too");
+        // a new palette: theirs is still what comes back, not our first colors
+        const repaint = Object.assign({}, rendered, { "kdeglobals.colors": rendered["kdeglobals.colors"].replace("1,2,3", "9,9,9") });
+        const p2 = AppTheme.plan({ dirs: dirs, wanted: ["kde"], done: r.done, files: r.files, rendered: repaint });
+        const files2 = run(r.files, p2.ops);
+        compare(AppTheme.getKey(files2[kg], "Colors:View", "BackgroundNormal"), "9,9,9");
+        const off2 = sync(files2, [], p2.done);
+        compare(AppTheme.getKey(off2.files[kg], "Colors:View", "BackgroundNormal"), "20,20,20", "theirs, after two palettes");
+        // made for us alone: gone when off
+        const fresh = sync({}, ["kde"]);
+        compare(sync(fresh.files, [], fresh.done).files[kg], null, "a kdeglobals we made goes");
+        // linked: not changed, and said so
+        const linked = sync({ [kg]: theirs, ["!" + kg]: "" }, ["kde"]);
+        compare(linked.files[kg], theirs);
+        verify(linked.errors.join().indexOf("KDE apps: " + kg + " is a link") === 0, linked.errors.join());
+    }
+
+    // home-manager's module writes the line into the linked config itself: then there is nothing to say.
+    function test_a_linked_config_that_has_our_line_is_fine() {
+        const css = "/h/.config/gtk-4.0/gtk.css", kitty = "/h/.config/kitty/kitty.conf", qt6 = "/h/.config/qt6ct/qt6ct.conf";
+        const r = sync({ [css]: '@import url("file:///h/.config/gtk-4.0/rutile.css");\n', ["!" + css]: "",
+                         [kitty]: "font_size 12\ninclude rutile-colors.conf\n", ["!" + kitty]: "",
+                         [qt6]: "[Appearance]\ncolor_scheme_path=/h/.config/qt6ct/colors/rutile.conf\ncustom_palette=true\n", ["!" + qt6]: "" },
+                       ["gtk", "kitty", "qt"]);
+        const errors = r.errors.join("; ");
+        verify(errors.indexOf(css) < 0 && errors.indexOf(kitty) < 0 && errors.indexOf(qt6) < 0, errors);
+        verify(errors.indexOf("/h/.config/gtk-3.0/gtk.css") < 0, "gtk-3.0/gtk.css is no link: edited, no error");
+        compare(r.files["/h/.config/gtk-4.0/rutile.css"], rendered["gtk.css"]);
+        const without = sync({ [kitty]: "include other.conf\n", ["!" + kitty]: "" }, ["kitty"]);
+        verify(without.errors.join().indexOf(kitty + " is a link") > 0, "without our line: said");
     }
 
     function test_niri_gets_its_own_file_only() {
@@ -213,8 +271,9 @@ TestCase {
         verify(p.indexOf("/h/.config/btop/btop.conf") >= 0);
         verify(p.indexOf("!/h/.config/btop/btop.conf") >= 0, "a config it edits is checked for being a link");
         verify(AppTheme.paths(dirs, ["kitty"]).indexOf("!/h/.config/kitty/kitty.conf") >= 0, "one it adds a block to too");
+        verify(AppTheme.paths(dirs, ["kde"]).indexOf("!/h/.config/kdeglobals") >= 0, "and kdeglobals");
         compare(new Set(p).size, p.length, "no path twice");
-        compare(AppTheme.ORDER.join(), "niri,gtk,qt,kitty,ghostty,btop,nvim,firefox");
+        compare(AppTheme.ORDER.join(), "niri,gtk,qt,kde,kitty,ghostty,btop,nvim,firefox");
     }
 
     function test_text_edits() {
@@ -224,6 +283,9 @@ TestCase {
         compare(count(AppTheme.addBlock(AppTheme.addBlock("a\n", c, ["x"], "end"), c, ["x"], "end"), ">>> rutile"), 1,
                 "never twice");
         compare(AppTheme.getKey("[A]\nk=1\n[B]\nk=2\n", "B", "k"), "2");
+        compare(JSON.stringify(AppTheme.iniEntries("# c=1\n; d=2\nk0=v\n[A]\n k = v w \n=x\n[B][C]\nz=\n")),
+                JSON.stringify([{ section: null, key: "k0", value: "v" }, { section: "A", key: "k", value: "v w" },
+                                { section: "B][C", key: "z", value: "" }]), "comments and a nameless key left out");
         compare(AppTheme.getKey("k = 3\n[A]\nk=1\n", null, "k"), "3", "before any section");
         compare(AppTheme.getKey("[A]\n", "A", "k"), null);
         compare(AppTheme.setKey("[A]\nk=1\n[B]\n", "A", "k", null), "[A]\n[B]\n", "null removes");

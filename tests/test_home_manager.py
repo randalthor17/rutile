@@ -141,6 +141,45 @@ class ShellModule(unittest.TestCase):
         self.assertIn("Mod+X", got["included"])
         self.assertNotIn("XF86", got["included"], "your keys replace the defaults")
 
+    def test_theming_sets_up_gtk_qt_kde_and_fonts(self):
+        got, err = module("{ enable = true; theming.enable = true; }")
+        self.assertIsNotNone(got, err)
+        gtk, qt = got["gtk"], got["qt"]
+        self.assertEqual(gtk["colorScheme"], "dark")
+        self.assertEqual(gtk["theme"]["name"], "adw-gtk3-dark", "GTK 3 through the named colors the shell overrides")
+        self.assertIsNone(gtk["gtk4"]["theme"], "libadwaita keeps its own (adw-gtk3's over it broke the accent)")
+        self.assertEqual(gtk["gtk4"]["extraCss"], '@import url("file:///home/test/.config/gtk-4.0/rutile.css");')
+        self.assertEqual(gtk["font"]["name"], "Google Sans Flex")
+        self.assertEqual(qt["platformTheme"]["name"], "qtct")
+        q6 = qt["kde"]["settings"]["qt6ct/qt6ct.conf"]
+        self.assertEqual(q6["Appearance"]["style"], "Fusion")
+        self.assertEqual(q6["Fonts"]["general"], '"Google Sans Flex,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"',
+                         "quoted: QSettings reads an unquoted comma as a list")
+        self.assertEqual(qt["kde"]["settings"]["qt5ct/qt5ct.conf"]["Fonts"]["general"], '"Google Sans Flex,11,-1,5,50,0,0,0,0,0"',
+                         "Qt 5's format")
+        kg = qt["kde"]["settings"]["kdeglobals"]
+        self.assertEqual(kg["General"]["font"], "Google Sans Flex,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1", "KConfig: not quoted")
+        self.assertEqual(kg["Icons"]["Theme"], "Adwaita")
+        self.assertEqual(got["fonts"]["fontconfig"]["defaultFonts"]["sansSerif"], ["Google Sans Flex"])
+        self.assertEqual({k: v for k, v in got["managed"].items() if v is not None},
+                         {"enabled": True, "gtk": True, "qt": True, "kde": True}, "the shell's switches on")
+        self.assertIn("rutile/managed.json", got["files"])
+
+    def test_theming_parts_and_off(self):
+        got, _ = module("{ enable = true; }")
+        self.assertEqual(got["gtk"], {}, "off by default: nothing of the user's GTK or Qt touched")
+        self.assertEqual(got["qt"], {})
+        self.assertEqual(got["fonts"], {})
+        got, _ = module("{ enable = true; theming = { enable = true; qt.enable = false; kde.enable = false; fonts.enable = false; }; }")
+        self.assertEqual(got["qt"], {})
+        self.assertNotIn("font", got["gtk"])
+        self.assertEqual(got["fonts"], {})
+        self.assertEqual({k: v for k, v in got["managed"].items() if v is not None}, {"enabled": True, "gtk": True})
+        got, _ = module("{ enable = true; theming = { enable = true; gtk.plainGtk4 = true; }; }")
+        self.assertEqual(got["gtk"]["gtk4"]["theme"]["name"], "adw-gtk3-dark")
+        got, _ = module("{ enable = true; theming.enable = true; settings.appColors.kde = false; }")
+        self.assertFalse(got["managed"]["kde"], "a switch set by hand wins")
+
     def test_settings_work_without_enable(self):
         got, _ = module("{ settings.motion.speed = 2; }")
         self.assertEqual(got["files"], ["rutile/managed.json"])

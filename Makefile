@@ -1,7 +1,7 @@
 # Every commit must pass `make check`.
 PY ?= python3
 
-.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check native package-check
+.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check native package-check theming-check
 
 check: tokens-check generate-check native test lint qmllint
 
@@ -51,6 +51,11 @@ flake-check:
 # of `make check` (it builds with Nix).
 package-check:
 	$(PY) tools/dev/package_smoke.py "$$(nix build .#default --no-link --print-out-paths)"
+
+# GTK, Qt and KDE apps in the shell's look through programs.rutile.theming (D59), screenshotted in a sandbox.
+# HOME_MANAGER=<home-manager source>; without it, the latest from GitHub. Not in `check`: minutes, and the network.
+theming-check:
+	$(PY) tools/dev/theming_check.py $${HOME_MANAGER:+--home-manager "$$HOME_MANAGER"}
 
 # Open the component gallery in Quickshell (needs a graphical session).
 gallery:

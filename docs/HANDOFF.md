@@ -83,6 +83,7 @@ make check-gpu              # glyph rendering through the real scene graph (need
 python3 tools/qtws.py test tst_settings_app      # one QML test file (a mutation batch: seconds, not a minute)
 make native                 # the Firefox colors' host (C, D54); make check builds it and tests it under ASan/UBSan
 make package-check          # nix build .#default, then run it headless in a sandbox HOME (D55; not in make check)
+make theming-check          # real GTK/Qt/KDE apps through programs.rutile.theming, screenshots (D59; minutes, network)
 ```
 
 In a bare Linux sandbox without Nix, run `tools/dev/setup_sandbox.sh` and export what it prints; see section 7.
@@ -209,7 +210,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings) |
 | `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
-| `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
+| `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call |
 | `native/` | the one C program, the Firefox colors' host (D54); `make native` builds `build/rutile-pywalfox-host` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
@@ -266,6 +267,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PYWALFOX_HOST` | `shell/services/AppColorsService.qml` | the compiled Firefox host when it is not `build/rutile-pywalfox-host` (a package; tests point it at a stand-in) |
 | `RUTILE_SHELL_QML` | `bin/rutile-shell` | the shell to run and call (the package sets it; a checkout uses `../shell/shell.qml`) |
 | `RUTILE_QUICKSHELL` | `bin/rutile-shell` | the quickshell binary, default `quickshell` on PATH (tests point it at a stand-in) |
+| `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | set: check with `programs.rutile.theming.gtk.plainGtk4` on (plain GTK 4 apps must match too) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
 | `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config, merged after any project file |

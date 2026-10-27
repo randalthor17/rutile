@@ -339,3 +339,15 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **`git stash push -- PATH` fails with intent-to-add files (`git add -N`) in the tree, and a following `git stash
   pop` then pops an older, unrelated stash** (October 2026: it tried a stash from another branch, and only a merge
   conflict stopped it). To test a file's old version, copy it aside and `git show HEAD:path > path` instead.
+- **A private session bus started with `dbus-daemon --session` still starts the system's services, with the
+  daemon's environment** (found October 2026 by the theming check): an app asking for the settings portal got the
+  real xdg-desktop-portal, which read the real user's dconf, so the sandbox's GTK font and dark preference were
+  overridden by the maintainer's. Read-only, but it makes a test pass or fail on the machine's state. A bus for a
+  sandbox needs its own config with no service directories (`tools/dev/theming_check.py`, BareBus);
+  `qtws.PrivateBus` still uses `--session`.
+- **On Wayland, GTK takes its settings from GSettings or the portal, not settings.ini.** A test of a GTK app's
+  font or theme must give it GSettings (`GSETTINGS_BACKEND=keyfile` and `~/.config/glib-2.0/settings/keyfile`).
+- **KF6 apps outside Plasma need `[UiSettings] ColorScheme` to use kdeglobals' colors**; without it they pick
+  Breeze Light or Dark from the system's dark preference.
+- **Check a toolkit claim with a screenshot of a real app.** The theming plan read right; three of five toolkits
+  needed something more (adw-gtk3 for GTK 3, the scheme key for KDE, GSettings rather than settings.ini).

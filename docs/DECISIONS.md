@@ -506,3 +506,26 @@ add in the user's home-manager config. niri is a new switch: the shell writes `~
 config.kdl; the home-manager module's KDL has `include optional=true` of it, so with the switch off and the file
 gone niri's own colors apply, and niri reloads by itself (it watches included files, missing optional ones too;
 colors in an included `border {}` do not turn borders on; both from niri's wiki, Include).
+
+**D59. The flake sets apps up for the shell's look: `programs.rutile.theming` (amends D52, D58).** The maintainer
+asked (October 2026) for GTK and Qt theming that works out of the box, kdeglobals, and fonts. Whether the colors
+the shell writes are used depends on how each toolkit is set up, which only the user's configuration can do, so
+the home-manager module does it, off unless `theming.enable` (each part has its own switch), and turns the
+shell's gtk, qt and kde switches on (locked in Settings, as anything set in Nix). Found by screenshotting real apps
+(`make theming-check`, a sandbox HOME, a headless sway, home-manager's real modules):
+- GTK 4 with libadwaita takes the named colors the shell overrides (its CSS variables are set from them), so
+  `gtk.css` importing `rutile.css` is enough. GTK 3's Adwaita compiles its colors in; adw-gtk3 (dark) draws through
+  the same names, so GTK 3 apps follow. Plain GTK 4 apps (no libadwaita) use GTK's own theme, also compiled in:
+  only adw-gtk3's GTK 4 stylesheet makes them follow, and imported in gtk.css it also lies over libadwaita apps
+  and replaced their accent with stock blue, so it is opt-in (`theming.gtk.plainGtk4`).
+- On Wayland, GTK takes theme, font, icons and the dark preference from GSettings (dconf) or the settings portal,
+  not settings.ini; home-manager's gtk module writes both.
+- Qt: qt5ct/qt6ct (`QT_QPA_PLATFORMTHEME=qt5ct`, which qt6ct answers too) with the Fusion style; their fonts and
+  style written with kwriteconfig6 at activation (`qt.kde.settings`), since the shell edits the same files. A font
+  there is quoted (QSettings reads an unquoted comma as a list).
+- KDE apps (KF6) outside Plasma ignore kdeglobals' `[Colors:*]` unless `[UiSettings] ColorScheme` names a scheme:
+  otherwise KColorSchemeManager picks Breeze Light or Dark by itself. The shell's new `appColors.kde` writes the
+  scheme (`~/.local/share/color-schemes/Rutile.colors`) and its keys into kdeglobals (each old value kept and put
+  back, as with the other keys); the module sets kdeglobals' fonts and icon theme.
+- Fonts: Google Sans Flex for GTK, Qt, KDE and fontconfig's default sans-serif; icons: Adwaita. A config that
+  home-manager links and that already has our line (gtk.css importing rutile.css) is not reported.
