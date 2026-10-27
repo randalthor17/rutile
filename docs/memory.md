@@ -72,6 +72,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | WallpaperView | | | one per screen, always: the image decoded at the screen's size (8 MB at 1920x1080), two only during a crossfade |
 | PowerOverlay | | 527.4 | five size-l IconButtons with labels, the veil, PopupMotion; only while the menu is open (LazyLoader). The blur is the compositor's, so it costs the shell nothing |
 | PolkitDialog | | 176.0 | a card: icon, texts, the password field, two Buttons (Chips only for several identities), the veil, PopupMotion; only while polkit asks (LazyLoader). The PolkitAgent beside it is a D-Bus object, always there while `polkit.agent` is on |
+| SettingsApp, on its first page | | 1232 | the sidebar (search, 6 pages as ListItems with icon circles) and a page of SettingRows; its window (a FloatingWindow) only while open (LazyLoader). The open setting's menu is one PopupLoader, loaded only while it shows |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 

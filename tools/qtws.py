@@ -6,7 +6,8 @@ left out of the workspace; singletons get a generated qmldir because Quickshell
 normally registers them itself.
 
     qtws.py lint     qmllint the QML that can be checked without Quickshell
-    qtws.py test     run tests/qml/tst_*.qml with qmltestrunner
+    qtws.py test [tst_name]
+                     run tests/qml/tst_*.qml with qmltestrunner, or only the one named
     qtws.py test-gpu run tests/qml_gpu through the real scene graph (needs a display session)
     qtws.py test-wayland [--screenshot FILE]
                      start the real shell (shell/shell.qml) under a headless sway, open Quick Settings over
@@ -32,7 +33,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -182,7 +183,7 @@ def has_display():
     return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
 
 
-def run_tests(verbose=False, gpu=False):
+def run_tests(verbose=False, gpu=False, only=None):
     runner = qt_tool("qmltestrunner")
     if not runner:
         return SKIPPED, "qmltestrunner not found (set RUTILE_QT_BIN)", None
@@ -197,7 +198,11 @@ def run_tests(verbose=False, gpu=False):
         else:
             env = qml_env(dirs, dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software",
                                      QML_XHR_ALLOW_FILE_READ="1"))
-        cmd = [runner, "-input", str(ws / "tests")]
+        # `only`: one test file by name (tst_foo or tst_foo.qml), for a quick run such as a mutation batch
+        target = ws / "tests" / (only if only.endswith(".qml") else only + ".qml") if only else ws / "tests"
+        if only and not target.exists():
+            return 1, f"no test file {target.name}", None
+        cmd = [runner, "-input", str(target)]
         for d in dirs:
             cmd += ["-import", d]
         proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=300)
@@ -569,6 +574,26 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc polkit state: {pk}, expected the agent off")
                     if ipc("cancel", target="polkit") != "false":
                         problems.append("ipc polkit cancel with no dialog: accepted")
+                    # the settings app: a window of its own, opens on a page, searches, closes and unloads
+                    def settings_state():
+                        try:
+                            return json.loads(ipc("state", target="settings"))
+                        except ValueError:
+                            return {}
+                    if ipc("open", "nope", target="settings") != "false":
+                        problems.append("ipc settings open nope: accepted")
+                    if ipc("open", "security", target="settings") != "true":
+                        problems.append("ipc settings open security: refused")
+                    st = settings_state()
+                    if st.get("open") is not True or st.get("page") != "security":
+                        problems.append(f"ipc settings open security: state {st}")
+                    ipc("search", "idle", target="settings")
+                    st = settings_state()
+                    if (st.get("results") or [""])[0] != "security/lock.idleMinutes":
+                        problems.append(f"ipc settings search idle: results {st.get('results')}")
+                    ipc("close", target="settings")
+                    if settings_state() != {"open": False, "page": "", "query": "", "results": []}:
+                        problems.append(f"ipc settings close: state {settings_state()}")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -1118,7 +1143,7 @@ def main(argv):
             return 0
         print(out.strip() or "qmllint: clean")
         return code
-    code, out, counts = run_tests()
+    code, out, counts = run_tests(only=argv[1] if len(argv) > 1 else None)
     if code == SKIPPED:
         print(f"qml tests: SKIPPED, {out}")
         return 0

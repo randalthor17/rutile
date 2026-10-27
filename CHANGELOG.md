@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Settings app** (plan 5.1): Quick Settings' gear (or `ipc call settings open <page>`) opens Settings, laid out
+  like Googlebook's: search on the left above the pages, the page's settings on the right. Every setting so far is
+  there: wallpaper colors, notification sounds, screen lock, the polkit agent, animation speed; the wallpaper and
+  the shelf's pins show their value (pickers come next). Settings set in Nix show a lock.
 - **Password prompts** (plan 2.8): the shell is now the polkit agent, so `pkexec`, disk mounts and installs ask
   for your password in a card over the blurred desktop (Enter to send, Escape to cancel; a wrong password shakes).
   Run one agent per session: turn off another one (Noctalia's `polkit_agent`), or set `polkit.agent: false` to

@@ -1,5 +1,6 @@
 // An M3 Expressive list item: a headline, optional supporting text (two lines tall then), an optional
-// leading icon, trailing supporting text, and a trailing slot for a control (put a Switch in it).
+// leading icon (in a tonal circle, M3's leading avatar, when `avatarTone` names a container role), trailing
+// supporting text, and a trailing slot for a control (put a Switch in it).
 // Its corners morph with state (4 px at rest, 12 hovered, 16 pressed, focused or selected). In a
 // segmented group (`position` first, middle or last) the group's outer corners stay at 16 px, as in
 // Compose's ListItemDefaults.segmentedShapes. Values come from ControlSpec.listSpec.
@@ -13,6 +14,7 @@ Item {
     property string text: ""                // headline
     property string supportingText: ""
     property string iconName: ""            // leading icon
+    property string avatarTone: ""          // e.g. "primaryContainer": the icon in a circle of that role (its "On" color)
     property string trailingText: ""
     property bool selected: false
     property string position: "single"      // single | first | middle | last (segmented groups)
@@ -25,6 +27,9 @@ Item {
     readonly property bool pressed: stateLayer.pressed
     readonly property bool hovered: stateLayer.hovered
     readonly property bool twoLine: supportingText !== ""
+    readonly property bool hasAvatar: avatarTone !== "" && iconName !== ""
+    readonly property real leadingWidth: iconName === "" ? 0
+        : (hasAvatar ? spec.itemLeadingAvatarSize : spec.itemLeadingIconSize) + spec.itemBetweenSpace
 
     // The shape the state asks for, and the fixed outer corners of a segmented group.
     readonly property real stateRadius: {
@@ -66,7 +71,7 @@ Item {
     }
 
     implicitHeight: twoLine ? spec.itemTwoLineContainerHeight : spec.itemOneLineContainerHeight
-    implicitWidth: spec.itemLeadingSpace + (iconName !== "" ? spec.itemLeadingIconSize + spec.itemBetweenSpace : 0)
+    implicitWidth: spec.itemLeadingSpace + leadingWidth
                    + Math.max(headline.implicitWidth, supporting.implicitWidth)
                    + (trailingRow.implicitWidth > 0 ? spec.itemBetweenSpace + trailingRow.implicitWidth : 0)
                    + spec.itemTrailingSpace
@@ -111,15 +116,34 @@ Item {
         active: root.iconName !== ""
         x: root.spec.itemLeadingSpace
         anchors.verticalCenter: parent.verticalCenter
-        sourceComponent: Icon {
+        sourceComponent: root.hasAvatar ? avatar : plainIcon
+    }
+    Component {
+        id: plainIcon
+        Icon {
             name: root.iconName
             size: root.spec.itemLeadingIconSize
             color: root.leadingColor
         }
     }
+    Component {
+        id: avatar
+        Rectangle {
+            width: root.spec.itemLeadingAvatarSize
+            height: width
+            radius: width / 2
+            color: Colors[root.avatarTone]
+            Icon {
+                anchors.centerIn: parent
+                name: root.iconName
+                size: root.spec.itemLeadingIconSize
+                color: Colors[root.avatarTone + "On"]
+            }
+        }
+    }
 
     Column {
-        x: root.spec.itemLeadingSpace + (leading.active ? root.spec.itemLeadingIconSize + root.spec.itemBetweenSpace : 0)
+        x: root.spec.itemLeadingSpace + root.leadingWidth
         width: Math.max(0, trailingRow.x - x - (trailingRow.implicitWidth > 0 ? root.spec.itemBetweenSpace : 0))
         anchors.verticalCenter: parent.verticalCenter
 

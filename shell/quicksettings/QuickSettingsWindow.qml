@@ -14,6 +14,7 @@ PanelWindow {
 
     signal closeRequested()
     signal powerMenuRequested()
+    signal settingsRequested()
 
     // For `ipc call quicksettings state` (diagnostics and the Wayland smoke test).
     readonly property bool panelHasBackend: !!panel.backend
@@ -51,6 +52,7 @@ PanelWindow {
         onWindowFocusLost: root.close()
         onHidden: root.closeRequested()
         onPowerMenuRequested: root.powerMenuRequested()
+        onSettingsRequested: root.settingsRequested()
         Keys.onEscapePressed: root.close()
     }
 }

@@ -7,7 +7,7 @@ How the shell keeps its settings and what it remembers (D45, plan 2.5).
 | Path | Holds | Written by |
 |---|---|---|
 | `settings/schema.json` (repo) | every setting: type, limits, default, title, description | us |
-| `$XDG_CONFIG_HOME/rutile/settings.json` | your settings | the shell (IPC now, the settings app later), or you |
+| `$XDG_CONFIG_HOME/rutile/settings.json` | your settings | the shell (the settings app, IPC), or you |
 | `$XDG_CONFIG_HOME/rutile/managed.json` | settings set in Nix | home-manager, read-only |
 | `$XDG_STATE_HOME/rutile/state.json` | what the shell remembers: the launcher's view | the shell |
 | `$XDG_CACHE_HOME/rutile/palette.json` | the generated palette | matugen |
@@ -70,7 +70,10 @@ Only the options you set go into `managed.json`; the rest stay the shell's to ch
 2. `make generate` (writes `shell/services/SettingsSchema.js`; `make check` fails on an unsupported schema).
 3. Read it with `Settings.value("group.key")` in a binding (it follows changes); change it with
    `Settings.set(key, value)`, which returns false for a managed key or a value the schema refuses.
-4. Add it to the table above.
+4. Put it on a page of the settings app: its key in a section of `shell/settingsapp/Pages.js` (a test fails
+   while a setting is on no page). Add a hint there when the schema does not say how to show it (`choices`,
+   `kind`, `step`, `label`), or to give search more words (`aliases`), or to put it under Advanced.
+5. Add it to the table above.
 
 Shell state that is not a setting (usage, the last view) goes through `Settings.stateValue(key, fallback)` and
 `Settings.setState(key, value)`, with no schema. It is not configuration and Nix does not touch it.
@@ -87,6 +90,6 @@ Deleting `state.json` forgets all of it; nothing else depends on it.
 
 ## Not done
 
-- The registry's search fields (icon, aliases, children, advanced/hidden) and settings search: with the settings
-  app (plan 5.1).
+- The settings app (plan 5.1, `shell/settingsapp/`) shows every setting and searches them; pickers for the
+  wallpaper and the shelf's pins, and pages beyond the settings here (network, sound, displays), are plan 5.2.
 - A home-manager option that installs the shell: needs the package (plan 6.1).

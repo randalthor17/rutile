@@ -301,3 +301,15 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **Say what is unverified.** Every handoff names what was not tested and why (needs the maintainer's hardware or a
   real session). Do not let a long list of green checks imply it.
 - **Do not tag what the maintainer already has.** If a tag was delivered, add a commit instead.
+
+- **A Column places its children at the next polish, not when they are created** (settings app, October 2026).
+  Code that measures a row right after a Repeater made it (scrolling to it with `mapToItem`) sees y = 0, and a
+  test that clicks before the first frame clicks the wrong place. Call `forceLayout()` on the Columns before
+  measuring; in tests, `waitForRendering(item)` after anything that builds rows. ListView is worse for tests:
+  it makes only the delegates in view, so `findChild` misses the rest; use a Repeater for short lists.
+- **A popup that belongs to a row is drawn under the rows of the next section** (settings app). `z` orders
+  only siblings, so a later sibling Column covers it whatever its z. Put the popup at the top of the view, and
+  its outside-click catcher above the content: a catcher underneath never sees a click on a Flickable.
+- **Mutation-test with the one test file that covers the code** (`qtws.py test tst_name`): the whole QML suite
+  takes about 70 s per mutant, one file a few seconds.
+

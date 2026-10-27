@@ -62,6 +62,10 @@ The polkit agent (`shell/polkit/`, D49) asks for passwords the same way: a card 
 over the blurred desktop (namespace `rutile-polkit`, so the layer rule above needs it too to blur windows).
 `ipc call polkit state` (never the password) and `cancel`.
 
+The gear at the panel's top left opens the settings app (`shell/settingsapp/`, D50) and closes the panel.
+`ipc call settings open <page>` (wallpaper, notifications, security, shelf, accessibility, about; "" for the one
+showing), `close`, `toggle`, `isOpen`, `search <text>` (as typing would), `state`.
+
 A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM
 as Googlebook shows it, or 24-hour when the locale's short time format is), from Quickshell's `SystemClock`.
 Googlebook draws it straight on the wallpaper; Rutile gives it the status pill's tonal container so it reads on

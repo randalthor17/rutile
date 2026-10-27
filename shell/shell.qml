@@ -16,6 +16,7 @@ import qs.lock
 import qs.wallpaper
 import qs.power
 import qs.polkit
+import qs.settingsapp
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -205,6 +206,45 @@ ShellRoot {
         function state(): string {
             return JSON.stringify({ open: shell.powerMenuOpen, loaded: powerMenu.active,
                                     actions: powerMenu.item ? powerMenu.item.overlay.actions.map(a => a.id) : [] });
+        }
+    }
+
+    // The settings app (plan 5.1), a window of its own, created only while open (D31). `page` opens one of its
+    // pages ("" keeps the one showing). Quickshell cannot raise a window that is already open; niri focuses a new one.
+    readonly property bool settingsOpen: settingsApp.active
+    function openSettings(page) {
+        settingsApp.active = true;
+        const app = settingsApp.item?.app;
+        if (!app) return false;
+        return page === "" || app.openPage(page);
+    }
+    LazyLoader {
+        id: settingsApp
+        SettingsWindow {
+            onFinished: Qt.callLater(() => settingsApp.active = false)
+        }
+    }
+    // From a keybind: quickshell -p <path>/shell/shell.qml ipc call settings open wallpaper
+    IpcHandler {
+        target: "settings"
+        function open(page: string): bool { return shell.openSettings(page); }
+        function close(): void { settingsApp.active = false; }
+        function toggle(): void {
+            if (settingsApp.active) settingsApp.active = false;
+            else shell.openSettings("");
+        }
+        function isOpen(): bool { return settingsApp.active; }
+        function state(): string {
+            const app = settingsApp.item?.app;
+            return JSON.stringify({ open: settingsApp.active, page: app?.currentPage ?? "", query: app?.query ?? "",
+                                    results: app ? app.results.map(r => r.page + (r.key ? "/" + r.key : "")) : [] });
+        }
+        // As typing in its search field would (the smoke test).
+        function search(text: string): bool {
+            const app = settingsApp.item?.app;
+            if (!app) return false;
+            app.search.text = text;
+            return true;
         }
     }
 
@@ -550,6 +590,10 @@ ShellRoot {
             onCloseRequested: quickSettings.active = false
             onPowerMenuRequested: {
                 shell.openPowerMenu(screen);
+                shell.closeQuickSettings();
+            }
+            onSettingsRequested: {
+                shell.openSettings("");
                 shell.closeQuickSettings();
             }
         }

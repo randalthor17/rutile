@@ -394,3 +394,14 @@ window is loaded only while polkit asks (D31). Test shells write `polkit.agent: 
 `no_polkit_agent`): polkit is on the system bus, which a test cannot keep private, so a test shell that registered
 would take the user's real password prompts. The dialog is plain QtQuick tested with a fake AuthFlow; the real
 agent is checked by hand (`pkexec true`).
+
+**D50. The settings app is a window in the shell's process, built from the schema (plan 5.1).** The window is a
+Quickshell `FloatingWindow` that the shell creates while it is open and unloads when it is closed (D31), so it
+shares the `Settings` service, the palette, the fonts and the components without a second process to keep in
+step; a separate `qs` instance would duplicate all of that and talk to the shell over IPC. Rows are made from
+`settings/schema.json` (title, description, type, limits), so a new setting needs only a line in the registry
+(`shell/settingsapp/Pages.js`) saying which page shows it; how to show it, when the schema alone does not say,
+is a hint there too, not in the schema, which stays what the store and Nix need (D45). Choices open a menu for
+now; Googlebook's choice dialog comes with the Dialog component (1.5). The "advanced toggle" of the plan became
+an Advanced group at the end of a page, which hides nothing behind a global switch. Quickshell cannot raise a
+window that is already open, so opening it again only changes its page.

@@ -78,6 +78,7 @@ python3 tools/palette.py render --seed '#134aae' --out ~/.cache/rutile/palette.j
 quickshell -p shell/gallery.qml                       # look at the components
 python3 tools/qtws.py render --out render --mode dark # or light: offscreen PNG slices instead
 make check-gpu              # glyph rendering through the real scene graph (needs a display session)
+python3 tools/qtws.py test tst_settings_app      # one QML test file (a mutation batch: seconds, not a minute)
 ```
 
 In a bare Linux sandbox without Nix, run `tools/dev/setup_sandbox.sh` and export what it prints; see section 7.
