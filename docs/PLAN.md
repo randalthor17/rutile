@@ -99,9 +99,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   unknown keys, and refuses changes to managed keys or while a file does not parse; shell state (the launcher's
   view) goes to `$XDG_STATE_HOME/rutile/state.json`. Settings so far: `motion.speed`, `shelf.pins`. The
   home-manager module (`homeManagerModules.default`, `nix/home-manager.nix`) builds `programs.rutile.settings`
-  from the same schema. Not done: the registry's search fields (icon, aliases, children, advanced/hidden) and
-  the settings search service, both with the settings app (5.1; until then the launcher finds the Quick Settings
-  controls, 2.7); a home-manager option to install the shell
+  from the same schema. The registry (pages, icons, aliases, advanced) and settings search came with the
+  settings app (5.1, D50); the launcher does not search settings yet. Not done: a home-manager option to
+  install the shell
   (needs the package, 6.1). The whole item: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
 - [ ] **2.6a** Done (unreleased, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
@@ -178,6 +178,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Not yet: a picker (Settings,
   5.2), per-screen wallpapers, fill modes other than crop, a slideshow.
 
+- [ ] **2.10** App indicators (the maintainer's request, October 2026): a pill at the top right between the
+  notification bell and the status pill, showing the icons apps put in the tray (StatusNotifierItem: Discord,
+  Steam, Nextcloud and the like), with their menus on a click. It appears only while there is at least one
+  indicator, and takes no room otherwise. Types: `SystemTray`, `SystemTrayItem`, `QsMenuOpener`.
+
 ## Phase 3: windows on niri
 
 - [ ] **3.1** Googlebook-like floating windows via niri window rules (default floating, corner radius, shadow,
@@ -211,8 +216,18 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 ## Phase 5: settings app UI
 
-- [ ] **5.1** Separate window with M3E sidebar, hub pages and lazy-loaded page files on the registry from 2.5,
-  an advanced toggle and global search.
+- [ ] **5.1** Started (D50, `shell/settingsapp/`): the settings app, a window of the shell's own (FloatingWindow)
+  created only while open: from Quick Settings' gear, or `ipc call settings open <page>`. Googlebook's layout: a
+  search pill and the pages as a list with tonal icon circles on the left (ListItem's new `avatarTone`), the page
+  on the right with its settings in segmented groups; narrower than 720 px, one side at a time with a back button.
+  The registry (`Pages.js`): pages (id, title, icon, tone, summary, aliases, sections of setting keys) and hints
+  (how to show a setting, its search aliases, advanced). Rows are built from the schema: a switch, a slider
+  (saved once still), a menu of choices, or the value for a path or a list; a key set in Nix shows a lock and
+  takes no change. Advanced settings go in a last Advanced group (instead of a global toggle). Search matches
+  page and setting titles, aliases and descriptions, best first; choosing a result opens its page and marks the
+  setting. Every schema setting must be on a page (a test checks). Not done: lazy-loaded page files (one
+  generic page so far), custom pages (the 5.2 list), a choice dialog as Googlebook's (a menu now), raising a
+  window that is already open (Quickshell cannot).
 - [ ] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
   Widgets, Shelf, Apps, Power, Input, About.
 
