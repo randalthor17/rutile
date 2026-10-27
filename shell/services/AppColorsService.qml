@@ -8,6 +8,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.common
 import "AppTheme.js" as AppTheme
 import "Files.js" as Files
 
@@ -48,11 +49,13 @@ Singleton {
         job.target = wanted.slice();
         job.rendered = {};
         if (job.target.length === 0) return read();
+        // The palette's settings; without a palette file (no wallpaper yet), the shell's own colors: the same
+        // source color, on the palette's defaults.
         let doc;
         try {
             doc = JSON.parse(palette.text());
         } catch (e) {
-            return finish(false, "no palette to take colors from (" + palettePath + ")");
+            doc = { source_color: Colors.sourceColor };
         }
         job.stage = "render";
         job.command = Files.matugenCommand(WallpaperService.matugen, workDir, AppTheme.templates(dirs, job.target),
@@ -96,7 +99,15 @@ Singleton {
         onTriggered: root.sync()
     }
 
-    // The palette changes with the wallpaper: the apps follow.
+    // The palette changes with the wallpaper: the apps follow. The shell's colors are the signal (PaletteWatcher
+    // notices a palette written after start, which this FileView, watching only a file that exists, would not).
+    Connections {
+        target: Colors
+        function onSourceColorChanged() {
+            palette.reload();
+            root.schedule();
+        }
+    }
     FileView {
         id: palette
         path: root.palettePath

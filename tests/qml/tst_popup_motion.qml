@@ -37,6 +37,7 @@ TestCase {
         var p = createTemporaryObject(popupComp, root);
         var hidden = createTemporaryObject(spyComp, root, { target: p.motion, signalName: "hidden" });
         verify(p.scale < 0.9, "starts small");
+        verify(p.opacity < 0.5, "and fades in: " + p.opacity);
         compare(p.scale, p.motion.fromScale);
         compare(p.transformOrigin, Item.TopRight);
         tryCompare(p, "scale", 1, 2000);
@@ -48,6 +49,25 @@ TestCase {
         tryCompare(hidden, "count", 1, 2000);
         compare(p.scale, p.motion.fromScale);
         compare(p.opacity, 0);
+        verify(!p.motion.visible);
+    }
+
+    // Closing ends with the fade, not with the spring's tail: a full-screen popup (the power menu) kept its window and
+    // the blur behind it for ~300 ms after there was nothing left to see.
+    function test_closing_ends_when_it_has_faded() {
+        var p = createTemporaryObject(popupComp, root);
+        var start = Date.now();
+        tryVerify(function () { return p.motion.settled; }, 5000);
+        var springTime = Date.now() - start;
+        var hidden = createTemporaryObject(spyComp, root, { target: p.motion, signalName: "hidden" });
+        start = Date.now();
+        p.shown = false;
+        tryCompare(hidden, "count", 1, 2000);
+        var closeTime = Date.now() - start;
+        verify(closeTime < springTime * 0.7, "closed in " + closeTime + " ms; the spring takes " + springTime + " ms");
+        compare(p.opacity, 0);
+        verify(p.motion.settled, "the spring rests too");
+        compare(p.scale, p.motion.fromScale);
         verify(!p.motion.visible);
     }
 

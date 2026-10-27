@@ -326,3 +326,16 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   f every time). A message that waits on a process (`p.wait`, reading its stderr) hung every passing read of the
   C host's tests. Build costly messages only on failure: `if not x: self.fail(...)`.
 
+- **A `Behavior` does not animate a property's first value.** `property real fade: shown ? 1 : 0` with `Behavior
+  on fade` starts at 1 when created shown, so a popup never faded in (found October 2026, after D43 had shipped).
+  Start at the "from" value and give the binding in `Component.onCompleted`.
+- **A service that reads a file the shell writes later must not depend on FileView noticing it.** FileView watches
+  only a file that exists (Quickshell 0.3.2); PaletteWatcher polls for that reason, but AppColorsService did not, and
+  on a fresh user (no palette yet) other apps' colors never ran. Follow the in-memory state another part already
+  keeps (here `Colors.sourceColor`), or poll.
+- **Test as the user installs it.** The headless tests used a palette fixture and plain files; a real user had no
+  palette yet and home-manager's configs were links into the store. Both broke app theming, and neither showed up
+  until someone used the flake.
+- **`git stash push -- PATH` fails with intent-to-add files (`git add -N`) in the tree, and a following `git stash
+  pop` then pops an older, unrelated stash** (October 2026: it tried a stash from another branch, and only a merge
+  conflict stopped it). To test a file's old version, copy it aside and `git show HEAD:path > path` instead.

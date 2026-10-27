@@ -743,10 +743,17 @@ def run_wayland_smoke(screenshot=None):
                         loaded = None
                     if loaded is not False:
                         problems.append(f"ipc state: loaded {loaded!r} after closing, expected False")
-                    try:
-                        launcher_loaded = json.loads(ipc("state", target="launcher")).get("loaded")
-                    except ValueError:
-                        launcher_loaded = None
+                    # the launcher's fade began at speed 0.1 (1.9 s; an animation keeps the duration it started
+                    # with, D56): wait for it rather than a fixed time
+                    launcher_loaded = None
+                    for _ in range(50):
+                        try:
+                            launcher_loaded = json.loads(ipc("state", target="launcher")).get("loaded")
+                        except ValueError:
+                            launcher_loaded = None
+                        if launcher_loaded is False:
+                            break
+                        time.sleep(0.1)
                     if launcher_loaded is not False:
                         problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
                     # both toasts have shown and gone (4 s each and the motion), and the window with them

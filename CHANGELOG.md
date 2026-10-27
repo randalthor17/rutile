@@ -5,6 +5,14 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Fixes from the first real install:** the power menu (and every popup) is gone as soon as it has faded, not
+  300 ms later, and popups now fade in as they open. `rutile-shell --help` explains the command and lists every
+  call the shell answers (`rutile-shell lock lock`, `rutile-shell osd volumeUp`, ...). Colors in other apps now work
+  before the first wallpaper (they take the shell's own colors) and pick up the first one; configs home-manager
+  manages are left alone, and the log says what to add (`docs/install.md`).
+- **niri in the shell's colors** (Settings > Wallpaper > Colors in other apps > niri, off at first): focus ring,
+  borders, tab indicators and the overview's backdrop follow the wallpaper. The home-manager module includes the
+  file; without it, add `include optional=true "rutile-colors.kdl"` to config.kdl.
 - **On GitHub:** the repository is public at https://github.com/randalthor17/rutile, and the docs use its flake,
   `github:randalthor17/rutile`.
 - **Install with Nix** (`docs/install.md`): the flake now has the shell as a package (`nix run`) and a
@@ -14,7 +22,7 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 - **The shell runs without Python**: the palette from the wallpaper and other apps' colors are done in the shell
   itself, and the Firefox colors' helper is a small C program (`make native`, or the flake's `pywalfox-host`).
 - **Colors in other apps** (preliminary; Settings > Wallpaper & style): a main switch and one per app, all off
-  until you turn them on. GTK, Qt (qt5ct/qt6ct), kitty, Ghostty, btop, Neovim (`:colorscheme rutile`) and Firefox (install the
+  until you turn them on. niri, GTK, Qt (qt5ct/qt6ct), kitty, Ghostty, btop, Neovim (`:colorscheme rutile`) and Firefox (install the
   Pywalfox extension; Rutile is its backend, no pywalfox program needed) follow the wallpaper's colors. Turning
   an app off puts its old look back. If Noctalia themes the same apps, turn that off there first.
 - **Settings app** (plan 5.1): Quick Settings' gear (or `ipc call settings open <page>`) opens Settings, laid out

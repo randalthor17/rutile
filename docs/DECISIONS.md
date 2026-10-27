@@ -476,3 +476,33 @@ for the user to include, since a module cannot edit a hand-written config. The l
 binds are off, because they take keys the user may have bound. Tested without a real login: a headless run of the
 built package (`make package-check`), a real home-manager generation with its niri module (so `niri validate`
 ran), and the module's options against stand-ins.
+
+**D56. A popup is done closing when it has faded out (amends D43).** Found in real use (October 2026): the power
+menu took too long to go. PopupMotion fired `hidden` only once the scale spring had settled, about 500 ms at speed
+1, while the content had faded out after 193 ms (the effects curve); for the full-screen power menu that left the
+window, and the blur behind it, on an empty screen for 300 ms. Now `hidden` fires when the fade reaches 0 and the
+spring is put at rest (the popup ends at its starting scale, as before). What followed the spring's value for
+the closing (the power and polkit veils, a leaving notification's room) follows the fade. In the same change: the
+fade had never played on opening (a Behavior does not animate a property's first value), so popups opened at
+full opacity; it now starts at 0.
+
+**D57. `rutile-shell` is a script of our own (amends D55).** `rutile-shell --help` printed Quickshell's help and
+nothing about the shell. `bin/rutile-shell` (POSIX sh) runs the shell with no arguments (or `run`, or Quickshell's
+options), calls the running one with `rutile-shell TARGET FUNCTION [ARGS]`, passes `ipc ...`, `log` and `kill` to
+Quickshell for this shell, and has a help that lists every IPC target and function with its arguments. A test
+checks that list, and the script's own list of targets, against the IpcHandlers in `shell/shell.qml`, so neither
+can drift. The package wraps it with `RUTILE_SHELL_QML` and the runtime PATH (Quickshell included); in a checkout
+it finds `../shell/shell.qml` itself. `rutile-shell ipc call ...` works as before.
+
+**D58. Colors in other apps: what real use showed, and niri (amends D52).** On a real user, nothing changed. Two
+causes. (1) With no `palette.json` when the shell started (no wallpaper yet, or the first one set later), the
+service stopped at "no palette" and its FileView never noticed the file appear. Now it follows the shell's colors
+(`Colors.sourceColor`, which PaletteWatcher updates) and, without a palette file, uses that color on the
+palette's default scheme, so the apps match the shell either way. (2) Configs home-manager manages are links into
+the read-only store; replacing one with an edited file would make the next switch fail. A config that is a
+symbolic link is never changed (nor undone): the app's own files are still written, and the error says what to
+add in the user's home-manager config. niri is a new switch: the shell writes `~/.config/niri/rutile-colors.kdl`
+(focus ring, border, tab indicator, insert hint and shadow colors, the overview's backdrop) and never touches
+config.kdl; the home-manager module's KDL has `include optional=true` of it, so with the switch off and the file
+gone niri's own colors apply, and niri reloads by itself (it watches included files, missing optional ones too;
+colors in an included `border {}` do not turn borders on; both from niri's wiki, Include).

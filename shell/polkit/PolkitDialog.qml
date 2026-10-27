@@ -81,7 +81,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Colors.surface
-        opacity: 0.5 * Math.max(0, Math.min(1, motion.progress))
+        opacity: 0.5 * motion.fade
     }
     // A click outside the card does nothing: a password prompt is not dismissed by accident.
 

@@ -84,8 +84,9 @@ Item {
                 readonly property real room: card.implicitHeight + Spacing.sm
                 onRoomChanged: Qt.callLater(root.measure)
                 width: column.width
-                // the room it takes opens and closes with its motion, so the cards below move smoothly
-                height: room * motion.progress
+                // the room it takes opens and closes with its fade (which ends when the card is removed), so the
+                // cards below move smoothly
+                height: room * motion.fade
                 NotificationCard {
                     id: card
                     property var kept: ({})          // what it showed, while it leaves

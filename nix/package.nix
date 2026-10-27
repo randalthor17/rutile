@@ -1,6 +1,6 @@
 # Rutile Shell as a package (plan 6.1): the QML shell, the theme templates it renders from, the compiled Firefox
-# host (D54), and `rutile-shell`, which runs it under Quickshell with everything it calls on PATH and its fonts
-# visible to Qt. `rutile-shell ipc call lock lock` and the like reach the running shell (Quickshell's own CLI).
+# host (D54), and `rutile-shell` (bin/rutile-shell), which runs it under Quickshell with everything it calls on PATH
+# and its fonts visible to Qt, and calls the running one (`rutile-shell lock lock`; `rutile-shell --help` lists all).
 {
   lib,
   stdenv,
@@ -42,6 +42,7 @@ stdenv.mkDerivation {
     root = ../.;
     fileset = lib.fileset.unions [
       ../Makefile
+      ../bin
       ../native
       ../shell
       ../theme/apps
@@ -64,9 +65,10 @@ stdenv.mkDerivation {
     mkdir -p $out/share/rutile/build
     cp -r shell theme $out/share/rutile/
     install -Dm755 build/rutile-pywalfox-host $out/share/rutile/build/rutile-pywalfox-host
-    makeWrapper ${lib.getExe quickshell} $out/bin/rutile-shell \
-      --add-flags "-p $out/share/rutile/shell/shell.qml" \
-      --prefix PATH : ${lib.makeBinPath runtime} \
+    install -Dm755 bin/rutile-shell $out/share/rutile/bin/rutile-shell
+    makeWrapper $out/share/rutile/bin/rutile-shell $out/bin/rutile-shell \
+      --set RUTILE_SHELL_QML $out/share/rutile/shell/shell.qml \
+      --prefix PATH : ${lib.makeBinPath ([ quickshell ] ++ runtime)} \
       --set FONTCONFIG_FILE ${fontsConf}
     runHook postInstall
   '';

@@ -1,6 +1,7 @@
 """The home-manager module (nix/home-manager.nix, D45, D55): its settings options come from settings/schema.json, and
 what is set lands in managed.json; `enable` gives the user service, the package, and niri's part (the layer rule,
-opt-in binds), into home-manager's niri config when that is on, else a file; the KDL passes `niri validate`.
+opt-in binds, the optional include of the shell's niri colors), into home-manager's niri config when that is on,
+else a file; the KDL passes `niri validate`.
 Evaluated with nixpkgs from NIX_PATH and stand-ins for home-manager; skipped (loudly) without nix or nixpkgs."""
 import json
 import shutil
@@ -112,6 +113,8 @@ class ShellModule(unittest.TestCase):
         kdl = got["niriFile"]
         self.assertIn('match namespace="^rutile-(power|polkit)$"', kdl)
         self.assertIn("xray false", kdl)
+        self.assertIn('include optional=true "/home/test/.config/niri/rutile-colors.kdl"', kdl,
+                      "the shell's niri colors, when that switch is on (the file is missing otherwise: still valid)")
         self.assertNotIn("binds", kdl, "binds are opt-in")
         valid = niri_valid(kdl)
         if valid is not None:
