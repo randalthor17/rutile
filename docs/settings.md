@@ -27,6 +27,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `motion.speed` | number, 0 to 4 | 1 | how fast every animation runs (D43): 2 twice as fast, 0 no motion |
+| `notifications.sound` | true or false | true | a sound when a notification pops up (pw-play): the sender's, or the sound theme's message sound; none in Do not disturb, except for critical ones |
 | `shelf.pins` | list of desktop ids | unset | the shelf's pinned apps, in order; unset: the first installed file manager, browser and terminal |
 
 `settings.json` nests the keys:

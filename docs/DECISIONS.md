@@ -358,3 +358,8 @@ Quickshell's objects and hands the UI plain data, so the cards test offscreen. C
   released (probed), so the shell never takes notifications from a running daemon.
 - Tests run the shell on a private session bus (`tools/qtws.py` `PrivateBus`), so a test's server never meets
   the user's session.
+- Sounds play through `pw-play` (PipeWire's player, approved by the maintainer; already on a PipeWire system,
+  `pkgs.pipewire` in the dev shell) with the Notification media role, not canberra: one process per sound, no
+  library in the shell. The sound comes from the sender's `sound-file` or `sound-name` hint, else the freedesktop
+  theme's `message-new-instant`, looked up in the XDG data dirs; no theme installed means no sound. Tests put a
+  fake `pw-play` first on PATH (tests/qs/bin), so they never make a sound.

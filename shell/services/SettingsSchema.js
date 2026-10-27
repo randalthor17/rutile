@@ -35,6 +35,18 @@ var schema = {
                     "description": "Desktop entry ids pinned to the shelf, in order. Unset: the first installed file manager, browser and terminal."
                 }
             }
+        },
+        "notifications": {
+            "type": "object",
+            "title": "Notifications",
+            "properties": {
+                "sound": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Notification sound",
+                    "description": "Play a sound when a notification pops up (with pw-play): the sender's sound, or the sound theme's message sound. Never in Do not disturb, except for critical ones."
+                }
+            }
         }
     }
 };

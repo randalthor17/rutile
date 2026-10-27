@@ -3,9 +3,11 @@ pragma Singleton
 // notification is kept for the list (`list`, newest first, at most `maxKept`) and, unless Do not disturb is on
 // (critical ones still do), pops up (`popups`, NotificationModel's data plus `timeout`). Both are plain data;
 // the actions go back through dismiss(), invoke() and popupDone(). If another server holds the name (a second
-// shell, another daemon), Quickshell waits and takes over when it is released.
+// shell, another daemon), Quickshell waits and takes over when it is released. A notification that pops up plays a
+// sound (the notifications.sound setting) with pw-play; while one plays, the next ones in a burst stay silent.
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Notifications
 import "../notifications/NotificationModel.js" as NotificationModel
 
@@ -92,6 +94,20 @@ Singleton {
         times = t;
     }
 
+    // Where sound themes are; the files tried for the last sound (diagnostics and tests).
+    readonly property var dataDirs: NotificationModel.dataDirs(Quickshell.env("XDG_DATA_HOME"),
+                                                                Quickshell.env("XDG_DATA_DIRS"), Quickshell.env("HOME"))
+    property var lastSound: []
+    function playSound(hints) {
+        if (Settings.value("notifications.sound") !== true || player.running) return;
+        const files = NotificationModel.soundFiles(hints, dataDirs);
+        if (files.length === 0) return;
+        lastSound = files;
+        player.command = NotificationModel.playCommand(files);
+        player.running = true;
+    }
+    Process { id: player }
+
     NotificationServer {
         id: server
         actionsSupported: true
@@ -104,8 +120,10 @@ Singleton {
             const id = n.id;
             root.times = Object.assign({}, root.times, { [id]: Date.now() });
             n.closed.connect(() => root.forget(id));
-            if (!n.lastGeneration && NotificationModel.pops(n.urgency, root.dnd))
+            if (!n.lastGeneration && NotificationModel.pops(n.urgency, root.dnd)) {
                 root.popupIds = root.popupIds.filter(x => x !== id).concat([id]);
+                root.playSound(n.hints);
+            }
             Qt.callLater(root.trim);         // the model adds it after this handler
         }
     }

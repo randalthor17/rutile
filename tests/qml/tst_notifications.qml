@@ -42,6 +42,39 @@ TestCase {
         compare(Model.plain(42), "42");
     }
 
+    function test_sound_files() {
+        const dirs = ["/home/u/.local/share", "/usr/share/"];
+        const theme = d => d.replace(/\/$/, "") + "/sounds/freedesktop/stereo/";
+        const all = name => [].concat(...dirs.map(d => [".oga", ".ogg", ".wav"].map(e => theme(d) + name + e)));
+        compare(Model.soundFiles({}, dirs), all("message-new-instant"), "the theme's message sound, in every dir");
+        compare(Model.soundFiles(null, dirs), all("message-new-instant"));
+        compare(Model.soundFiles({ "sound-name": "bell" }, dirs), all("bell").concat(all("message-new-instant")),
+                "the sender's name first, the message sound if it has none");
+        compare(Model.soundFiles({ "sound-name": "../../etc/passwd" }, dirs), all("message-new-instant"),
+                "a name never leaves the theme");
+        compare(Model.soundFiles({ "sound-name": ".hidden" }, dirs), all("message-new-instant"));
+        compare(Model.soundFiles({ "sound-file": "/tmp/a b.ogg", "sound-name": "bell" }, dirs), ["/tmp/a b.ogg"],
+                "a file comes before a name");
+        compare(Model.soundFiles({ "sound-file": "file:///tmp/a%20b.ogg" }, dirs), ["/tmp/a b.ogg"], "a file URL");
+        compare(Model.soundFiles({ "sound-file": "relative.ogg" }, dirs), all("message-new-instant"),
+                "a relative file is not a file");
+        compare(Model.soundFiles({ "suppress-sound": true, "sound-file": "/tmp/a.ogg" }, dirs), [], "suppressed");
+        compare(Model.soundFiles({ "suppress-sound": false }, dirs), all("message-new-instant"));
+        compare(Model.soundFiles({}, []), [], "no dirs: nothing to play");
+    }
+
+    function test_sound_dirs_and_command() {
+        compare(Model.dataDirs("/d/home", "/a:/b", "/home/u"), ["/d/home", "/a", "/b"]);
+        compare(Model.dataDirs("", "", "/home/u"), ["/home/u/.local/share", "/usr/local/share", "/usr/share"],
+                "the base directory spec's defaults");
+        compare(Model.dataDirs("", "/a::relative:/b", ""), ["/a", "/b"], "only absolute dirs");
+        const cmd = Model.playCommand(["/x/a.oga", "/x/$(b).oga"]);
+        compare(cmd.slice(0, 2), ["sh", "-c"]);
+        verify(cmd[2].indexOf("pw-play --media-role=Notification") > 0, "pw-play, as a notification");
+        verify(cmd[2].indexOf("/x/") < 0, "the files are not in the script");
+        compare(cmd.slice(3), ["sh", "/x/a.oga", "/x/$(b).oga"], "they are its arguments");
+    }
+
     function test_timeout() {
         compare(Model.timeout(-1, 1), Model.defaultTimeout, "the sender does not mind: ours");
         compare(Model.timeout(undefined, 1), Model.defaultTimeout);

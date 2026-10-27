@@ -50,6 +50,45 @@ function pops(urgency, dnd) {
     return !dnd || urgency === urgencyCritical;
 }
 
+// The sound files to try for a notification that pops up, in order (the player plays the first that exists); []
+// for none. The sender's hints (the Desktop Notifications spec) come first: suppress-sound, then sound-file (an
+// absolute path or a file:// URL), then sound-name from the freedesktop sound theme; otherwise the theme's
+// message-new-instant. `dataDirs` are where sound themes live ($XDG_DATA_HOME, then $XDG_DATA_DIRS).
+var defaultSound = "message-new-instant";
+var soundExtensions = [".oga", ".ogg", ".wav"];
+function soundFiles(hints, dataDirs) {
+    hints = hints || {};
+    if (hints["suppress-sound"] === true) return [];
+    var file = String(hints["sound-file"] || "");
+    if (file.indexOf("file://") === 0) file = decodeURIComponent(file.slice(7));
+    if (file.charAt(0) === "/") return [file];
+    var name = String(hints["sound-name"] || "");
+    // a name is one path segment, never a way out of the theme
+    if (!/^[A-Za-z0-9._-]+$/.test(name) || name.charAt(0) === ".") name = defaultSound;
+    var names = name === defaultSound ? [name] : [name, defaultSound];
+    var out = [];
+    for (var n = 0; n < names.length; n++)
+        for (var d = 0; d < dataDirs.length; d++)
+            for (var e = 0; e < soundExtensions.length; e++)
+                out.push(dataDirs[d].replace(/\/+$/, "") + "/sounds/freedesktop/stereo/" + names[n] + soundExtensions[e]);
+    return out;
+}
+
+// The player's command: pw-play (PipeWire) on the first of `files` that exists, with the Notification media role
+// so the session's policy can treat it as one. The files are arguments, never part of the script.
+function playCommand(files) {
+    return ["sh", "-c", 'for f; do [ -f "$f" ] && exec pw-play --media-role=Notification "$f"; done', "sh"]
+        .concat(files);
+}
+
+// $XDG_DATA_HOME (or ~/.local/share) and then $XDG_DATA_DIRS (or /usr/local/share:/usr/share), as the base
+// directory spec says; empty entries dropped.
+function dataDirs(dataHome, dataDirsVar, home) {
+    var first = dataHome || (home ? home + "/.local/share" : "");
+    var rest = (dataDirsVar || "/usr/local/share:/usr/share").split(":");
+    return [first].concat(rest).filter(function (d) { return d.charAt(0) === "/"; });
+}
+
 // The list's rows, grouped by app (D47): each app in the order of its newest notification; its newest card, then
 // the rest when the app is in `expanded` ({appName: true}), and one "more" row while it has more than one:
 // [{key, kind: "card", id} | {key, kind: "more", app, count, expanded}]. `list` is newest first.

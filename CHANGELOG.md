@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Notification sounds** (plan 2.8): a notification that pops up plays a sound through PipeWire's `pw-play`: the
+  sound the app asks for, or the freedesktop sound theme's message sound. Apps can ask for silence; Do not disturb
+  is silent except for critical ones, and a burst plays once. `notifications.sound` in settings.json turns it off.
 - **Volume and brightness OSD** (plan 2.8): changing the volume (from any key or app) or the brightness (through
   `ipc call osd brightnessUp` and the other `osd` calls, for the media keys) shows the level at the bottom of the
   screen as Quick Settings' slider, which can be dragged. It goes after 1.5 s, not while the pointer is on it.

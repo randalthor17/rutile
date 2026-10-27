@@ -349,6 +349,7 @@ def run_wayland_smoke(screenshot=None):
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
+            "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             "FAKE_APP_LOG": str(comp.runtime / "apps.log"),
             "RUTILE_ANIMATION_SPEED": "1.5",
             "DBUS_SESSION_BUS_ADDRESS": bus.address,
@@ -763,6 +764,7 @@ def run_wayland_surfaces():
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(comp.runtime / "fake-brightness"),
+            "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             "DBUS_SESSION_BUS_ADDRESS": bus.address,
             "WAYLAND_DEBUG": "1",
             "XDG_CONFIG_HOME": str(comp.runtime / "config"),

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# A stand-in for pw-play in tests, so a test never makes a sound. Each call appends its arguments as one line to
+# $FAKE_PW_PLAY (default: a file beside this script's directory) and "plays" for a moment, like a short sound.
+log="${FAKE_PW_PLAY:-$(dirname "$0")/../fake-pw-play.log}"
+echo "$*" >> "$log"
+sleep 0.4

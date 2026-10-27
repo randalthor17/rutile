@@ -2,6 +2,8 @@
 // up, Do not disturb, transient and critical notifications, replacing (in place, no new popup), actions and
 // dismissing. busctl sends.
 // env XDG_STATE_HOME=@WS@/state
+// env PATH=@WS@/bin:@PATH@
+// env FAKE_PW_PLAY=@WS@/played.log
 import QtQuick
 import Quickshell
 import Quickshell.Io

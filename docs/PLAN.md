@@ -147,8 +147,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   motion stutter. Clear all sweeps the cards off to the side, the top one first, and dismisses only those
   it swept. The OSD (`shell/osd/`): a volume change from anywhere, or a brightness step through `ipc call osd`,
   shows the level at the bottom centre as Quick Settings' slider (draggable), for 1.5 s or while the pointer is on
-  it; not while Quick Settings is open. Not done: sounds (needs a player such as
-  pw-play or canberra-gtk-play: a dependency to decide), per-app settings. Then the rest of the item: toasts, lock screen (PAM); a full-screen power menu over the blurred desktop
+  it; not while Quick Settings is open. Sounds: a popup plays the sender's sound-file or sound-name, or the
+  freedesktop theme's message-new-instant, with pw-play (approved; `pkgs.pipewire` in the dev shell); not with
+  suppress-sound, in Do not disturb (unless critical), with `notifications.sound` off, or while one plays. Not
+  done: per-app settings. Then the rest of the item: toasts, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
