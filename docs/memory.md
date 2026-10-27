@@ -71,6 +71,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | LockPanel | | 88.0 | one per screen: the time, date, user and a password field; only while locked (LazyLoader), with the WlSessionLock and PamContext around it; with a wallpaper, the full-size image (8 MB at 1920x1080) only while locked. The shell keeps a 480x270 copy decoded at all times (about 0.5 MB), and runs `dbus-monitor` and `systemd-inhibit` (two small processes) for the lock triggers |
 | WallpaperView | | | one per screen, always: the image decoded at the screen's size (8 MB at 1920x1080), two only during a crossfade |
 | PowerOverlay | | 527.4 | five size-l IconButtons with labels, the veil, PopupMotion; only while the menu is open (LazyLoader). The blur is the compositor's, so it costs the shell nothing |
+| PolkitDialog | | 176.0 | a card: icon, texts, the password field, two Buttons (Chips only for several identities), the veil, PopupMotion; only while polkit asks (LazyLoader). The PolkitAgent beside it is a D-Bus object, always there while `polkit.agent` is on |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 

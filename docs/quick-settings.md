@@ -58,6 +58,10 @@ layer-rule {
 
 which the home-manager module will write (plan 6.1); the maintainer keeps it out of their own config until then.
 
+The polkit agent (`shell/polkit/`, D49) asks for passwords the same way: a card in the middle of the focused screen
+over the blurred desktop (namespace `rutile-polkit`, so the layer rule above needs it too to blur windows).
+`ipc call polkit state` (never the password) and `cancel`.
+
 A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM
 as Googlebook shows it, or 24-hour when the locale's short time format is), from Quickshell's `SystemClock`.
 Googlebook draws it straight on the wallpaper; Rutile gives it the status pill's tonal container so it reads on

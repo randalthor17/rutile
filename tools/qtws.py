@@ -32,9 +32,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
+
+
+def no_polkit_agent(config):
+    """A test shell must not become the session's polkit agent: that is the system bus, shared with the real session
+    (it would take the user's password prompts, or fail beside the real agent)."""
+    (config / "rutile").mkdir(parents=True, exist_ok=True)
+    (config / "rutile" / "settings.json").write_text(json.dumps({"polkit": {"agent": False}}))
 
 
 def qt_tool(name):
@@ -374,6 +381,7 @@ def run_wayland_smoke(screenshot=None):
             "RUTILE_PALETTE": str(comp.runtime / "palette.json"),
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
+        no_polkit_agent(comp.runtime / "config")
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
@@ -551,6 +559,16 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc power close: state {power_state()}, expected unloaded")
                     if ipc("isLocked", target="lock") != "false":
                         problems.append("closing the power menu locked the screen")
+                    # the polkit agent: off in tests (no_polkit_agent), so nothing registers on the system bus
+                    try:
+                        pk = json.loads(ipc("state", target="polkit"))
+                    except ValueError:
+                        pk = {}
+                    if pk != {"enabled": False, "registered": False, "active": False, "open": False, "loaded": False,
+                              "actionId": "", "asking": False, "wrong": False}:
+                        problems.append(f"ipc polkit state: {pk}, expected the agent off")
+                    if ipc("cancel", target="polkit") != "false":
+                        problems.append("ipc polkit cancel with no dialog: accepted")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -925,6 +943,7 @@ def run_wayland_surfaces():
             "RUTILE_PALETTE": str(comp.runtime / "palette.json"),     # a copy, as in the smoke test
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
+        no_polkit_agent(comp.runtime / "config")
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)

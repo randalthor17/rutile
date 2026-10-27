@@ -4,6 +4,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Polkit
 import Quickshell.Wayland
 import qs.common
 import qs.bar
@@ -14,6 +15,7 @@ import qs.toast
 import qs.lock
 import qs.wallpaper
 import qs.power
+import qs.polkit
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -203,6 +205,44 @@ ShellRoot {
         function state(): string {
             return JSON.stringify({ open: shell.powerMenuOpen, loaded: powerMenu.active,
                                     actions: powerMenu.item ? powerMenu.item.overlay.actions.map(a => a.id) : [] });
+        }
+    }
+
+    // The polkit agent (plan 2.8): an app asking for an administrator's permission gets the shell's password dialog
+    // on the focused screen, loaded only while polkit asks (D31). polkit allows one agent per session, so with
+    // another one running (polkit.agent off, or it registered first) this one stays out of the way.
+    readonly property var polkitFlow: polkitAgent.item?.flow ?? null
+    onPolkitFlowChanged: if (polkitFlow) polkitDialog.active = true
+    LazyLoader {
+        id: polkitAgent
+        active: Settings.value("polkit.agent") === true
+        PolkitAgent {
+            path: "/org/rutile/PolkitAgent"
+            onIsRegisteredChanged: console.info("rutile: polkit agent " + (isRegistered ? "registered" : "not registered"))
+        }
+    }
+    LazyLoader {
+        id: polkitDialog
+        PolkitWindow {
+            flow: shell.polkitFlow
+            onFinished: polkitDialog.active = false
+        }
+    }
+    // Diagnostics and tests: never the password; cancel is what the dialog's Cancel does.
+    IpcHandler {
+        target: "polkit"
+        function cancel(): bool {
+            const d = polkitDialog.item?.dialog;
+            if (!d?.shown) return false;
+            d.cancel();
+            return true;
+        }
+        function state(): string {
+            const a = polkitAgent.item;
+            const d = polkitDialog.item?.dialog;
+            return JSON.stringify({ enabled: polkitAgent.active, registered: a?.isRegistered ?? false,
+                                    active: a?.isActive ?? false, open: d?.shown ?? false, loaded: polkitDialog.active,
+                                    actionId: d?.actionId ?? "", asking: d?.asking ?? false, wrong: d?.wrong ?? false });
         }
     }
 

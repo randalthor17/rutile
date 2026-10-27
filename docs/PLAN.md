@@ -162,7 +162,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (`shell/power/`, the maintainer's request): full screen over the desktop, blurred by the compositor
   (BackgroundEffect; niri needs `xray false` for it to blur windows too, see 6.1), Lock, Sleep, Sign out, Restart
   and Shut down as large round buttons; keyboard (arrows, Enter, Escape); the action runs once the menu has gone.
-  It replaces Quick Settings' power dropdown; `ipc call power toggle`. Then the rest of the item: polkit agent.
+  It replaces Quick Settings' power dropdown; `ipc call power toggle`. The polkit agent (`shell/polkit/`, D49):
+  Quickshell's `PolkitAgent`, on unless `polkit.agent` is off; a request opens a password card on the focused
+  screen over the blurred desktop (what is asked, as whom with chips for several identities, the field, Cancel /
+  Authenticate; Enter, Escape; a wrong password shakes and says so, polkit retries by itself); the window is
+  loaded only while polkit asks. `ipc call polkit state`, `cancel`. Checked on the maintainer's session: the live
+  shell registered (beside Noctalia's agent) and a real `pkexec true` opened the dialog; cancelling over IPC
+  dismissed it (pkexec exit 126). Not verified: a real password through it (tested with a fake AuthFlow).
   Types: `NotificationServer`, `WlSessionLock`, `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
 - [ ] **2.9** Started (D48, `shell/wallpaper/`, the maintainer's choice over an outside app): the wallpaper.

@@ -84,6 +84,18 @@ var schema = {
                     "description": "Lock when the computer suspends or hibernates, so it wakes up locked."
                 }
             }
+        },
+        "polkit": {
+            "type": "object",
+            "title": "Authentication",
+            "properties": {
+                "agent": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Ask for passwords",
+                    "description": "Be the session's polkit agent: apps that need an administrator's permission ask for the password in the shell. Turn off when another agent does it."
+                }
+            }
         }
     }
 };

@@ -32,6 +32,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
+| `polkit.agent` | true or false | true | be the session's polkit agent (an app asking for an administrator's password asks in the shell); turn off when another agent does it (polkit allows one per session) |
 | `shelf.pins` | list of desktop ids | unset | the shelf's pinned apps, in order; unset: the first installed file manager, browser and terminal |
 
 `settings.json` nests the keys:

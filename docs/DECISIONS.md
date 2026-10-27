@@ -385,3 +385,12 @@ shell watching its config. Cost: one image decoded at the screen's size per scre
 a crossfade. The palette is rendered by running `tools/palette.py` (python3 and matugen, both already needed for
 the theme pipeline), found beside the shell directory (`../tools` from `Quickshell.shellDir`); a packaged shell must
 ship it there. Video and animated wallpapers stay with outside programs.
+
+**D49. The shell is the session's polkit agent, behind a setting (plan 2.8).** Quickshell's `PolkitAgent` gives
+the shell's own password dialog for pkexec, mounts and package installs, in the same style as the lock screen.
+Two agents in one session is a muddle: on the maintainer's machine (polkit 127, October 2026) Rutile's registered
+after Noctalia's and took the requests from then on. So `polkit.agent: false` is for whoever keeps another agent. The agent's D-Bus object is small and always loaded while the setting is on; the dialog's
+window is loaded only while polkit asks (D31). Test shells write `polkit.agent: false` (`tools/qtws.py`
+`no_polkit_agent`): polkit is on the system bus, which a test cannot keep private, so a test shell that registered
+would take the user's real password prompts. The dialog is plain QtQuick tested with a fake AuthFlow; the real
+agent is checked by hand (`pkexec true`).

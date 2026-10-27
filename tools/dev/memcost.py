@@ -33,6 +33,7 @@ import qs.toast
 import qs.lock
 import qs.wallpaper
 import qs.power
+import qs.polkit
 
 Window {
     width: 1200; height: 900; visible: true

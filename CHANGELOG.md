@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Password prompts** (plan 2.8): the shell is now the polkit agent, so `pkexec`, disk mounts and installs ask
+  for your password in a card over the blurred desktop (Enter to send, Escape to cancel; a wrong password shakes).
+  Run one agent per session: turn off another one (Noctalia's `polkit_agent`), or set `polkit.agent: false` to
+  keep yours.
 - **Dev shell**: `nix develop` now includes Python's `jsonschema`, so the widget checker's cross-check runs
   instead of skipping (D29; the checker itself still uses only the standard library).
 - **Power menu** (plan 2.8): Quick Settings' power button now opens a full-screen menu over the blurred desktop:
