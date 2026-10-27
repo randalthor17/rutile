@@ -322,4 +322,7 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **`select()` on a buffered pipe misses data already read into the buffer.** A test that reads two messages
   through `proc.stdout` (buffered) and then waits on `select` hangs: the second one was buffered by the first
   read. Use `bufsize=0` and read exact byte counts.
+- **unittest builds an assertion's message even when the assertion passes** (`assertTrue(x, "..." + f())` calls
+  f every time). A message that waits on a process (`p.wait`, reading its stderr) hung every passing read of the
+  C host's tests. Build costly messages only on failure: `if not x: self.fail(...)`.
 

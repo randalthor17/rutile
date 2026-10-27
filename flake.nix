@@ -23,6 +23,18 @@
 
       packages = forAllSystems (pkgs: {
         google-sans-flex = googleSansFlex pkgs;
+        # The Firefox colors' native-messaging host (D54), the shell's one compiled program.
+        pywalfox-host = pkgs.stdenv.mkDerivation {
+          pname = "rutile-pywalfox-host";
+          version = "0.1.0";
+          src = pkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = pkgs.lib.fileset.unions [ ./Makefile ./native ];
+          };
+          buildPhase = "make native CC=$CC";
+          installPhase = "install -Dm755 build/rutile-pywalfox-host $out/bin/rutile-pywalfox-host";
+          meta.mainProgram = "rutile-pywalfox-host";
+        };
       });
 
       # `nix develop` gives everything `make check` needs, with Qt's QML modules on

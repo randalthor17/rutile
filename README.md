@@ -17,6 +17,7 @@ and a component gallery, with the checks every later commit has to pass. No shel
 | `tokens/` | M3E tokens: vendored sources, checksums, generated `m3e.json` |
 | `theme/` | matugen config + template, role list, golden palette, `fonts.json` |
 | `tools/` | `gen_tokens.py`, `gen_components.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `fontconf.py`, `otinfo.py`, `lint_hardcoded.py` |
+| `native/` | the Firefox colors' host, the one C program (`make native`) |
 | `tests/` | unit tests (stdlib `unittest`) |
 | `shell/common/` | QML singletons (mostly generated), `Spring`, `EffectsColor`, `EffectsNumber`, `PaletteWatcher` |
 | `shell/components/` | M3E components: Surface, StateLayer, Icon, Button, IconButton |

@@ -12,7 +12,7 @@ DOC_PATHS = ["docs/HANDOFF.md", "docs/PLAN.md", "docs/DECISIONS.md", "docs/LESSO
 # Paths the docs mention that do not exist (yet) on purpose: planned work, user-generated or output directories.
 PLANNED = {
     "docs/reference", "widgets/spec.schema.json", "docs/llm/TOKENS.md", "docs/llm/COMPONENTS.md",
-    "docs/sidework/tasks", "render", "render-modern",
+    "docs/sidework/tasks", "render", "render-modern", "build/rutile-pywalfox-host",  # build outputs
 }
 
 

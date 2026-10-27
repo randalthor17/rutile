@@ -427,7 +427,7 @@ It changes only what it can undo: its own files, a marked block in a config that
 `@import` goes after the others, so ours wins over an earlier theme's), or one key whose previous value it keeps
 and puts back only if the key still holds ours. What it did is in state.json (`appColors.done`), so
 turning an app off takes exactly that back out. Terminal ANSI colors are left alone (readability). Firefox goes
-through the Pywalfox extension with our own native-messaging host (`tools/pywalfox_host.py`, written from
+through the Pywalfox extension with our own native-messaging host (in Python at first, C since D54; written from
 Pywalfox's protocol, as Noctalia does), so no pywalfox program is needed; it pushes new colors when the file
 changes. Its manifest replaces another one at the same path (Noctalia's), which is kept aside and put back. The
 shell (`AppColorsService`) runs the tool when a switch or the palette changes, and never when nothing is on and
@@ -440,7 +440,23 @@ apply a list of changes (each write to a temporary file renamed over the target,
 moves; removals; signals) and run matugen with a config made on the spot; paths and texts go as arguments, never
 into the script. `Palette.js` is `palette.py validate` in JS; `AppTheme.js` is the theming plan as pure functions of
 the files' text, so the edge cases test offscreen and the file work is one end-to-end test in a sandbox HOME.
-`palette.py` stays as the developer's tool (fixtures, the golden test against matugen). The one exception is
-`tools/pywalfox_host.py`: Firefox starts it as its own process and talks over its stdin and stdout, which a
-Quickshell shell cannot be; it runs only while Firefox's colors are on. Quickshell tests now get a sandbox HOME,
+`palette.py` stays as the developer's tool (fixtures, the golden test against matugen). The one exception was the
+Pywalfox host: Firefox starts it as its own process and talks over its stdin and stdout, which a Quickshell
+shell cannot be; it is C now (D54). Quickshell tests now get a sandbox HOME,
 cache and data directory by default.
+
+**D54. The Firefox host is a small C program (plan 2.11).** The maintainer (October 2026): with the host in C, the
+user's system needs no Python for Rutile at all. `native/pywalfox-host.c` is one file, no dependencies, built
+with strict warnings as errors (`-Wconversion`, `-Wshadow` and more) and hardening (`_FORTIFY_SOURCE`, stack
+protector, PIE, full RELRO); `make check` builds it, so a warning fails the gate. It is written to be hard to
+break, since C is easy to get wrong: one thread (poll() on stdin, a timeout to look at the colors file); every
+read and write loops to completion and retries on EINTR; a frame over 1 MiB ends it (the stream cannot be framed
+after one); the JSON reader is strict (RFC 8259, valid UTF-8, surrogates paired), limited to 64 levels, and only
+ever reads inside the message; every string sent is escaped and made valid UTF-8; SIGPIPE is ignored so a
+vanished Firefox ends it with status 1, not a signal; output never goes through stdio. The colors file is now
+plain `key value` lines (`theme/apps/pywalfox.conf`), so the host never parses JSON from disk. The manifest
+points at the binary itself (no wrapper); while it is not built, the shell leaves Firefox out and says why.
+Tests build it with AddressSanitizer and UBSan (any finding aborts): the protocol, broken JSON and text,
+nesting bombs, frame errors, a hostile colors file, the push on change, and seeded fuzzing of both inputs;
+mutants of every bounds check are caught. gcc `-fanalyzer` and clang-tidy (bugprone, cert, clang-analyzer)
+found nothing beyond Annex K noise. The flake has it as `packages.pywalfox-host`.

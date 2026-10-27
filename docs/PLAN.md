@@ -190,8 +190,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [x] **2.11** No Python in the running shell (D53, the maintainer's request, October 2026): the palette from the
   wallpaper and other apps' colors run matugen and change files from QML and JS (`Files.js`, `Palette.js`,
-  `AppTheme.js`), with `sh` doing the file work. Python stays for development (`tools/`) and for one program
-  Firefox starts itself, `tools/pywalfox_host.py`, which only runs while Firefox's colors are on.
+  `AppTheme.js`), with `sh` doing the file work. Python stays for development (`tools/`) only: the one program
+  Firefox starts itself, the Pywalfox host, is C (D54, `native/pywalfox-host.c`, `make native`, flake package
+  `pywalfox-host`), tested under AddressSanitizer and UBSan with malformed frames and fuzzing.
 
 ## Phase 3: windows on niri
 

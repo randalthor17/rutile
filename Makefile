@@ -1,9 +1,20 @@
 # Every commit must pass `make check`.
 PY ?= python3
 
-.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check
+.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check native
 
-check: tokens-check generate-check test lint qmllint
+check: tokens-check generate-check native test lint qmllint
+
+# The one compiled program (D54): the Firefox colors' host. Strict warnings, hardened; tests build their own
+# copy with AddressSanitizer and UBSan (tests/test_pywalfox_host.py).
+CC ?= cc
+NATIVE_FLAGS = -std=c11 -O2 -g -Wall -Wextra -Werror -Wshadow -Wconversion -Wformat=2 -Wstrict-prototypes \
+	-Wmissing-prototypes -Wvla -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -pie -Wl,-z,relro,-z,now
+native: build/rutile-pywalfox-host
+
+build/rutile-pywalfox-host: native/pywalfox-host.c
+	@mkdir -p build
+	$(CC) $(NATIVE_FLAGS) -o $@ $<
 
 tokens:
 	$(PY) tools/gen_tokens.py

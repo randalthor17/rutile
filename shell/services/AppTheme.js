@@ -41,7 +41,7 @@ function apps(dirs) {
                 keys: [{ file: c + "/btop/btop.conf", section: null, key: "color_theme", value: '"rutile"' }],
                 reload: ["USR2", "(^|/)\\.?btop(-wrapped)?( |$)"] },
         nvim: { title: "Neovim (:colorscheme rutile)", files: [["nvim.lua", c + "/nvim/colors/rutile.lua"]] },
-        firefox: { title: "Firefox (Pywalfox)", files: [["pywalfox.json", dirs.cache + "/rutile/pywalfox.json"]],
+        firefox: { title: "Firefox (Pywalfox)", files: [["pywalfox.conf", dirs.cache + "/rutile/pywalfox.conf"]],
                    firefox: true }
     };
 }
@@ -49,7 +49,7 @@ function apps(dirs) {
 function firefoxPaths(dirs) {
     var hosts = dirs.home + "/.mozilla/native-messaging-hosts";
     return { manifest: hosts + "/pywalfox.json", backup: hosts + "/pywalfox.json.rutile-backup",
-             wrapper: dirs.data + "/rutile/pywalfox-host" };
+             host: "?" + dirs.host };            // only whether it is there (the compiled host, D54)
 }
 
 // ---- text edits ----
@@ -157,7 +157,7 @@ function paths(dirs, names) {
             var fx = firefoxPaths(dirs);
             add(fx.manifest);
             add(fx.backup);
-            add(fx.wrapper);
+            add(fx.host);
         }
     });
     return out;
@@ -175,15 +175,13 @@ function templates(dirs, wanted) {
 
 function firefoxManifest(dirs) {
     return JSON.stringify({ name: "pywalfox", description: "Rutile Shell's colors for Firefox (Pywalfox)",
-                            path: firefoxPaths(dirs).wrapper, type: "stdio",
+                            path: dirs.host, type: "stdio",
                             allowed_extensions: ["pywalfox@frewacom.org"] }, null, 2) + "\n";
-}
-function firefoxWrapper(dirs) {
-    return "#!/bin/sh\n# Rutile Shell's Pywalfox host (written by the shell, D52)\nexec python3 '" + dirs.host + "' \"$@\"\n";
 }
 
 // input: {dirs, wanted: [app], done: {app: record}, files: {path: text|null}, rendered: {template: text}}
-// Returns {ops: [Files.js ops], done: the new records, themed: [app], unknown: [app]}.
+// Returns {ops: [Files.js ops], done: the new records, themed: [app], unknown: [app], errors: [text]}. Firefox is left
+// out (an error says why) while its host is not built.
 function plan(input) {
     var dirs = input.dirs;
     var all = apps(dirs);
@@ -191,7 +189,14 @@ function plan(input) {
     var done = JSON.parse(JSON.stringify(input.done || {}));
     var ops = [];
     var unknown = input.wanted.filter(function (n) { return !all[n]; });
-    if (unknown.length) return { ops: [], done: input.done || {}, themed: Object.keys(input.done || {}), unknown: unknown };
+    if (unknown.length)
+        return { ops: [], done: input.done || {}, themed: Object.keys(input.done || {}), unknown: unknown, errors: [] };
+    var errors = [];
+    var wanted = input.wanted.filter(function (n) {
+        if (!all[n].firefox || typeof files[firefoxPaths(dirs).host] === "string") return true;
+        errors.push("Firefox: its host " + dirs.host + " is not built (make native)");
+        return false;
+    });
 
     function write(path, text, mode) {
         if (files[path] === text) return false;
@@ -216,7 +221,7 @@ function plan(input) {
 
     // apps themed before and no longer wanted: take it back out
     Object.keys(done).sort().forEach(function (app) {
-        if (input.wanted.indexOf(app) >= 0) return;
+        if (wanted.indexOf(app) >= 0 || (input.wanted.indexOf(app) >= 0 && done[app])) return;   // a skipped app keeps what it has
         var a = all[app] || {};
         var record = done[app];
         var changed = false;
@@ -240,7 +245,6 @@ function plan(input) {
             var fx = firefoxPaths(dirs);
             if (record.backup && files[fx.backup] !== null && files[fx.backup] !== undefined) move(fx.backup, fx.manifest);
             else remove(fx.manifest);
-            remove(fx.wrapper);
             changed = true;
         }
         delete done[app];
@@ -248,7 +252,7 @@ function plan(input) {
     });
 
     // apps wanted: wear the colors
-    input.wanted.forEach(function (app) {
+    wanted.forEach(function (app) {
         var a = all[app];
         var record = done[app] || (done[app] = {});
         record.files = record.files || [];
@@ -274,12 +278,11 @@ function plan(input) {
                 move(fx.manifest, fx.backup);
                 record.backup = true;
             }
-            write(fx.wrapper, firefoxWrapper(dirs), "755");
             write(fx.manifest, manifest);
         }
         if (changed) signal(app);
     });
 
     var themed = Object.keys(done).sort(function (x, y) { return ORDER.indexOf(x) - ORDER.indexOf(y); });
-    return { ops: ops, done: done, themed: themed, unknown: [] };
+    return { ops: ops, done: done, themed: themed, unknown: [], errors: errors };
 }

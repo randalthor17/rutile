@@ -11,11 +11,12 @@ TestCase {
     name: "AppTheme"
 
     readonly property var dirs: ({ config: "/h/.config", cache: "/h/.cache", data: "/h/.local/share", home: "/h",
-                                   theme: "/r/theme/apps", host: "/r/tools/pywalfox_host.py" })
+                                   theme: "/r/theme/apps", host: "/r/build/rutile-pywalfox-host" })
+    readonly property string built: "?/r/build/rutile-pywalfox-host"     // the host's existence check
     readonly property var rendered: ({ "gtk.css": "@define-color accent_bg_color #aabbcc;\n", "kitty.conf": "cursor #aabbcc\n",
                                        "btop.theme": "theme[main_bg]=\"#000000\"\n", "qtct.conf": "[ColorScheme]\n",
                                        "ghostty": "background = #111111\n", "nvim.lua": "-- rutile\n",
-                                       "pywalfox.json": "{}\n" })
+                                       "pywalfox.conf": "mode dark\n" })
 
     // Runs the plan's ops on a map of files, as the sh script would.
     function run(files, ops) {
@@ -29,8 +30,9 @@ TestCase {
     }
     // One sync: plan from the files, then apply. Returns {files, done, ops}.
     function sync(files, wanted, done) {
-        const p = AppTheme.plan({ dirs: dirs, wanted: wanted, done: done ?? {}, files: files, rendered: rendered });
-        return { files: run(files, p.ops), done: p.done, ops: p.ops, themed: p.themed, unknown: p.unknown };
+        const withHost = Object.assign({ [built]: "" }, files);
+        const p = AppTheme.plan({ dirs: dirs, wanted: wanted, done: done ?? {}, files: withHost, rendered: rendered });
+        return { files: run(files, p.ops), done: p.done, ops: p.ops, themed: p.themed, unknown: p.unknown, errors: p.errors };
     }
     function count(text, part) { return text.split(part).length - 1; }
 
@@ -121,22 +123,37 @@ TestCase {
         let r = sync({ [hosts + "pywalfox.json"]: theirs }, ["firefox"]);
         const manifest = JSON.parse(r.files[hosts + "pywalfox.json"]);
         compare(manifest.allowed_extensions.join(), "pywalfox@frewacom.org");
-        compare(manifest.path, "/h/.local/share/rutile/pywalfox-host");
-        verify(r.files[manifest.path].indexOf("exec python3 '/r/tools/pywalfox_host.py'") > 0);
-        compare(r.ops.filter(o => o.op === "write" && o.path === manifest.path)[0].mode, "755", "the wrapper runs");
+        compare(manifest.path, "/r/build/rutile-pywalfox-host", "the compiled host itself, no wrapper (D54)");
+        compare(manifest.type, "stdio");
         compare(r.files[hosts + "pywalfox.json.rutile-backup"], theirs);
-        compare(r.files["/h/.cache/rutile/pywalfox.json"], rendered["pywalfox.json"]);
+        compare(r.files["/h/.cache/rutile/pywalfox.conf"], rendered["pywalfox.conf"]);
+        compare(r.errors.length, 0);
         r = sync(r.files, ["firefox"], r.done);
         compare(r.files[hosts + "pywalfox.json.rutile-backup"], theirs, "theirs kept once, not ours");
         const off = sync(r.files, [], r.done);
         compare(off.files[hosts + "pywalfox.json"], theirs, "theirs back");
-        compare(off.files[manifest.path], null);
         compare(off.files[hosts + "pywalfox.json.rutile-backup"], null);
+        compare(off.files["/h/.cache/rutile/pywalfox.conf"], null);
         // its own manifest, after its records were lost, is never kept aside as if it were someone else's
         const lost = sync(r.files, ["firefox"], {});
         compare(lost.ops.filter(o => o.op === "move").length, 0);
-        const alone = sync(sync({}, ["firefox"]).files, [], sync({}, ["firefox"]).done);
-        compare(alone.files[hosts + "pywalfox.json"], null, "no other host: nothing left");
+        const alone = sync({}, ["firefox"]);
+        compare(sync(alone.files, [], alone.done).files[hosts + "pywalfox.json"], null, "no other host: nothing left");
+    }
+
+    function test_firefox_without_its_host_built() {
+        const hosts = "/h/.mozilla/native-messaging-hosts/";
+        const theirs = '{"name": "pywalfox"}\n';
+        const p = AppTheme.plan({ dirs: dirs, wanted: ["firefox", "nvim"], done: {}, rendered: rendered,
+                                  files: { [built]: null, [hosts + "pywalfox.json"]: theirs } });
+        compare(p.errors.join(), "Firefox: its host /r/build/rutile-pywalfox-host is not built (make native)");
+        compare(p.themed.join(), "nvim", "the others go ahead");
+        verify(!p.ops.some(o => (o.path ?? o.from ?? "").indexOf(".mozilla") >= 0), "no manifest pointing nowhere");
+        const r = sync({}, ["firefox"]);                      // themed while it was built...
+        const gone = AppTheme.plan({ dirs: dirs, wanted: ["firefox"], done: r.done, rendered: rendered,
+                                     files: Object.assign({}, r.files, { [built]: null }) });
+        compare(gone.ops.length, 0, "...and then not: what is there stays until it is turned off");
+        compare(gone.themed.join(), "firefox");
     }
 
     function test_unknown_app() {
@@ -150,6 +167,7 @@ TestCase {
         compare(AppTheme.templates(dirs, ["gtk"])[0].input, "/r/theme/apps/gtk.css");
         const p = AppTheme.paths(dirs, ["firefox", "btop"]);
         verify(p.indexOf("/h/.mozilla/native-messaging-hosts/pywalfox.json") >= 0);
+        verify(p.indexOf(built) >= 0, "the host only checked for, never read");
         verify(p.indexOf("/h/.config/btop/btop.conf") >= 0);
         compare(new Set(p).size, p.length, "no path twice");
         compare(AppTheme.ORDER.join(), "gtk,qt,kitty,ghostty,btop,nvim,firefox");

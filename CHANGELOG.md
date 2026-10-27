@@ -6,7 +6,7 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 ## Unreleased
 
 - **The shell runs without Python**: the palette from the wallpaper and other apps' colors are done in the shell
-  itself (only the Firefox colors' helper is Python, and only while it is on).
+  itself, and the Firefox colors' helper is a small C program (`make native`, or the flake's `pywalfox-host`).
 - **Colors in other apps** (preliminary; Settings > Wallpaper & style): a main switch and one per app, all off
   until you turn them on. GTK, Qt (qt5ct/qt6ct), kitty, Ghostty, btop, Neovim (`:colorscheme rutile`) and Firefox (install the
   Pywalfox extension; Rutile is its backend, no pywalfox program needed) follow the wallpaper's colors. Turning

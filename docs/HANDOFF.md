@@ -79,6 +79,7 @@ quickshell -p shell/gallery.qml                       # look at the components
 python3 tools/qtws.py render --out render --mode dark # or light: offscreen PNG slices instead
 make check-gpu              # glyph rendering through the real scene graph (needs a display session)
 python3 tools/qtws.py test tst_settings_app      # one QML test file (a mutation batch: seconds, not a minute)
+make native                 # the Firefox colors' host (C, D54); make check builds it and tests it under ASan/UBSan
 ```
 
 In a bare Linux sandbox without Nix, run `tools/dev/setup_sandbox.sh` and export what it prints; see section 7.
@@ -202,6 +203,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
+| `native/` | the one C program, the Firefox colors' host (D54); `make native` builds `build/rutile-pywalfox-host` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
 | `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`, `settings.md`) |
 | `flake.nix` | dev shells (`default`, and x86_64-only `local-ai`), the font package, the NixOS module, the home-manager module |
@@ -252,7 +254,8 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `XDG_CONFIG_HOME`, `XDG_STATE_HOME` | `shell/services/Settings.qml` | where `$XDG_CONFIG_HOME/rutile/settings.json`, `managed.json` and `$XDG_STATE_HOME/rutile/state.json` live (D45); the tests point them at temporary directories |
 | `RUTILE_PALETTE` | `shell/common/PaletteWatcher.qml` | `palette.json` path, default `~/.cache/rutile/palette.json` |
 | `RUTILE_PAM_DIR`, `RUTILE_PAM_CONFIG` | `shell/lock/LockScreen.qml` | tests only: the PAM directory and service the lock screen uses instead of `/etc/pam.d` and `login` |
-| `RUTILE_PYWALFOX_POLL` | `tools/pywalfox_host.py` | seconds between checks of the Firefox colors file (default 1; tests use less) |
+| `RUTILE_PYWALFOX_POLL` | `native/pywalfox-host.c` | seconds between checks of the Firefox colors file (0.01 to 60, default 1; tests use less) |
+| `RUTILE_PYWALFOX_HOST` | `shell/services/AppColorsService.qml` | the compiled Firefox host when it is not `build/rutile-pywalfox-host` (a package; tests point it at a stand-in) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
 | `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config, merged after any project file |

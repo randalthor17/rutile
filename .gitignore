@@ -4,3 +4,4 @@ __pycache__/
 render/
 .aider*
 aider.model.settings.yml
+build/

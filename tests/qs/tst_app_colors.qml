@@ -5,6 +5,7 @@
 // env PATH=@WS@/bin:@PATH@
 // env FAKE_PKILL_LOG=@WS@/pkill.log
 // env RUTILE_PALETTE=@WS@/palette.json
+// env RUTILE_PYWALFOX_HOST=@WS@/bin/fake-pywalfox-host
 // Another program's Firefox host (as Noctalia's) is there first: kept aside while ours is in, then put back.
 import QtQuick
 import Quickshell
@@ -20,7 +21,7 @@ ShellRoot {
                                     home + "/config/gtk-4.0/gtk.css", home + "/config/gtk-4.0/rutile.css",
                                     home + "/.mozilla/native-messaging-hosts/pywalfox.json",
                                     home + "/.mozilla/native-messaging-hosts/pywalfox.json.rutile-backup",
-                                    home + "/data/rutile/pywalfox-host", home + "/cache/rutile/pywalfox.json",
+                                    home + "/cache/rutile/pywalfox.conf",
                                     Quickshell.env("FAKE_PKILL_LOG")]
     QsTest { id: t }
     readonly property string theirs: '{"name": "pywalfox", "path": "/nix/store/x-noctalia"}'
@@ -88,10 +89,9 @@ ShellRoot {
                 t.verify((root.file("/config/gtk-4.0/gtk.css") ?? "").indexOf("@import 'rutile.css';") > 0, "gtk imports it");
                 t.verify((root.file("/config/gtk-4.0/rutile.css") ?? "").indexOf("accent_bg_color #b2c5ff") > 0, "gtk's colors");
                 const manifest = JSON.parse(root.file("/.mozilla/native-messaging-hosts/pywalfox.json") ?? "{}");
-                t.compare(manifest.path, root.home + "/data/rutile/pywalfox-host", "Firefox's host manifest");
+                t.compare(manifest.path, Quickshell.env("RUTILE_PYWALFOX_HOST"), "Firefox's host manifest: the host itself");
                 t.compare(root.file("/.mozilla/native-messaging-hosts/pywalfox.json.rutile-backup"), root.theirs, "theirs kept aside");
-                t.verify((root.file("/data/rutile/pywalfox-host") ?? "").indexOf("/tools/pywalfox_host.py") > 0, "the wrapper");
-                t.compare(JSON.parse(root.file("/cache/rutile/pywalfox.json") ?? "{}").colors?.color1, "#b2c5ff", "Firefox's colors");
+                t.verify((root.file("/cache/rutile/pywalfox.conf") ?? "").indexOf("\ncolor1 #b2c5ff\n") > 0, "Firefox's colors");
                 t.verify((root.files[Quickshell.env("FAKE_PKILL_LOG")] ?? "").indexOf("-USR1 -f") === 0, "kitty told to reload");
                 t.compare(S.synced.join(), "gtk,kitty,firefox", "remembered");
                 repaint.running = true;

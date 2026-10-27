@@ -27,7 +27,8 @@ Singleton {
         data: Quickshell.env("XDG_DATA_HOME") || home + "/.local/share",
         home: home,
         theme: Quickshell.shellDir + "/../theme/apps",
-        host: Quickshell.shellDir + "/../tools/pywalfox_host.py"
+        // the compiled Firefox host (D54): `make native` builds it; RUTILE_PYWALFOX_HOST: elsewhere (a package, tests)
+        host: Quickshell.env("RUTILE_PYWALFOX_HOST") || Quickshell.shellDir + "/../build/rutile-pywalfox-host"
     })
     readonly property string workDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/rutile-appcolors-" + Quickshell.processId
     property string lastError: ""
@@ -67,6 +68,7 @@ Singleton {
     function apply(files) {
         const p = AppTheme.plan({ dirs: dirs, wanted: job.target, done: done, files: files, rendered: job.rendered });
         job.done = p.done;
+        job.warning = p.errors.join("; ");
         if (p.ops.length === 0) return finish(true, "");
         job.stage = "apply";
         job.command = Files.applyCommand(p.ops);
@@ -74,7 +76,8 @@ Singleton {
     }
     function finish(ok, error) {
         runs++;
-        lastError = error;
+        lastError = error || (ok ? job.warning : "");
+        if (ok && job.warning) console.warn("rutile: other apps' colors: " + job.warning);
         if (ok) Settings.setState("appColors.done", job.done);
         else console.warn("rutile: other apps' colors: " + error);
         if (again || JSON.stringify(job.target) !== JSON.stringify(wanted)) {
@@ -109,6 +112,7 @@ Singleton {
         property var target: []
         property var rendered: ({})
         property var done: ({})
+        property string warning: ""
         stdout: StdioCollector { id: out }
         stderr: StdioCollector { id: errors }
         onExited: code => {
