@@ -18,10 +18,19 @@
       # Ollama as a NixOS service on the AMD GPU (see nix/local-ai-module.nix and docs/sidework.md).
       nixosModules.local-ai = import ./nix/local-ai-module.nix;
 
-      # programs.rutile.settings, written to $XDG_CONFIG_HOME/rutile/managed.json (D45, nix/home-manager.nix).
-      homeManagerModules.default = import ./nix/home-manager.nix;
+      # programs.rutile: the shell as a user service, its niri rules and binds, and its settings (D45, D55,
+      # nix/home-manager.nix). The package defaults to this flake's.
+      homeManagerModules.default =
+        { lib, pkgs, ... }:
+        {
+          imports = [ ./nix/home-manager.nix ];
+          programs.rutile.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+        };
 
-      packages = forAllSystems (pkgs: {
+      packages = forAllSystems (pkgs: rec {
+        # Rutile Shell: `nix run .` starts it (D55, nix/package.nix).
+        default = rutile-shell;
+        rutile-shell = pkgs.callPackage ./nix/package.nix { google-sans-flex = googleSansFlex pkgs; };
         google-sans-flex = googleSansFlex pkgs;
         # The Firefox colors' native-messaging host (D54), the shell's one compiled program.
         pywalfox-host = pkgs.stdenv.mkDerivation {

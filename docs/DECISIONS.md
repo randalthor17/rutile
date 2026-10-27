@@ -460,3 +460,19 @@ Tests build it with AddressSanitizer and UBSan (any finding aborts): the protoco
 nesting bombs, frame errors, a hostile colors file, the push on change, and seeded fuzzing of both inputs;
 mutants of every bounds check are caught. gcc `-fanalyzer` and clang-tidy (bugprone, cert, clang-analyzer)
 found nothing beyond Annex K noise. The flake has it as `packages.pywalfox-host`.
+
+**D55. The flake installs the shell as a package and a home-manager module (plan 6.1).** The maintainer (October
+2026) wants to test it as a real user. `packages.default` copies `shell/`, `theme/` (templates, roles) and the
+compiled host into the package's `share` folder, under `rutile` (the shell finds `../theme` and `../build` beside itself, as in the checkout) and
+wraps Quickshell as `rutile-shell` with what the shell runs on PATH and `FONTCONFIG_FILE` pointing at a file that
+includes the system's configuration and adds the two fonts, so nothing has to be installed system-wide.
+`rutile-shell` with arguments is Quickshell's CLI for the same shell, so `rutile-shell ipc call ...` reaches it.
+The home-manager module runs it as a user service bound to `graphical-session.target` (niri-session starts it;
+the shell restarts on failure and stops with the session) rather than niri's `spawn-at-startup`, so it can be
+restarted and read with systemctl and journalctl. niri's part is one generated KDL file: with home-manager's
+niri module it is `include`d at the end of config.kdl (niri merges binds across includes, the later one winning,
+and home-manager validates the whole config at switch); without it, it is written to `~/.config/niri/rutile.kdl`
+for the user to include, since a module cannot edit a hand-written config. The layer rule is on by default; the
+binds are off, because they take keys the user may have bound. Tested without a real login: a headless run of the
+built package (`make package-check`), a real home-manager generation with its niri module (so `niri validate`
+ran), and the module's options against stand-ins.

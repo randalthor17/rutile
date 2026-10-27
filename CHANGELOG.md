@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Install with Nix** (`docs/install.md`): the flake now has the shell as a package (`nix run`) and a
+  home-manager module, `programs.rutile.enable = true`: the shell as a user service, the `rutile-shell` command,
+  niri's blur rule for the power menu and password dialog, and keybinds if you want them
+  (`programs.rutile.niri.binds.enable`).
 - **The shell runs without Python**: the palette from the wallpaper and other apps' colors are done in the shell
   itself, and the Firefox colors' helper is a small C program (`make native`, or the flake's `pywalfox-host`).
 - **Colors in other apps** (preliminary; Settings > Wallpaper & style): a main switch and one per app, all off

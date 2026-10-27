@@ -5,6 +5,9 @@ let
   lib = pkgs.lib;
   stub = { lib, ... }: {
     options.xdg.configFile = lib.mkOption { type = lib.types.attrsOf (lib.types.submodule { options.source = lib.mkOption { type = lib.types.path; }; }); default = { }; };
+    options.home.packages = lib.mkOption { type = lib.types.listOf lib.types.package; default = [ ]; };
+    options.systemd.user.services = lib.mkOption { type = lib.types.attrsOf lib.types.anything; default = { }; };
+    options.assertions = lib.mkOption { type = lib.types.listOf lib.types.anything; default = [ ]; };
   };
   eval = lib.evalModules {
     modules = [ module stub { programs.rutile.settings = settings; } ];

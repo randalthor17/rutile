@@ -245,14 +245,18 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 ## Phase 6: NixOS distro (the v1 goal)
 
-- [ ] **6.1** NixOS flake modules for niri config, shell, settings, widgets, matugen, fonts; home-manager
-  integration; default config. Must enable xdg-desktop-portal with a FileChooser backend (gtk or gnome) for
-  the settings app's file chooser (D51).
-  niri settings the shell needs, to write from the home-manager module (the maintainer's call: not in their
-  config by hand): blur the real desktop behind the power menu, not only the wallpaper (niri's xray, on by
-  default for layer surfaces): `layer-rule { match namespace="^rutile-power$"; background-effect { xray false; }; }`
-  (as KDL, one statement per line). Also the media keys bound to `ipc call osd ...` and a lock keybind
-  (`docs/quick-settings.md`).
+- [ ] **6.1** Started (D55, `docs/install.md`): the flake's package (`packages.default`, `nix/package.nix`:
+  the shell, its theme templates, the compiled Firefox host, `rutile-shell` with its runtime tools on PATH and its
+  fonts through a fontconfig file that includes the system's) and the home-manager module
+  (`programs.rutile.enable`: the `rutile-shell` command, a systemd user service on graphical-session.target, and
+  niri's part: the blur layer rule for `rutile-power` and `rutile-polkit`, opt-in binds for the media keys,
+  lock, power, settings and launcher, included into home-manager's niri config (validated at switch) or written
+  as `~/.config/niri/rutile.kdl` to include; `programs.rutile.settings` as before). Checked: the package builds
+  and runs headless (`make package-check`: loads, IPC, palette from a wallpaper in the store, fonts); a real
+  home-manager generation builds with it and home-manager's niri module, including `niri validate`; the module's
+  options in tests with `niri validate` on the KDL. Not checked: a real login with it (the maintainer's test
+  user). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
+  config beyond the settings' defaults.
 - [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
 - [ ] **6.3** Installer ISO.
 
