@@ -405,3 +405,13 @@ is a hint there too, not in the schema, which stays what the store and Nix need 
 now; Googlebook's choice dialog comes with the Dialog component (1.5). The "advanced toggle" of the plan became
 an Advanced group at the end of a page, which hides nothing behind a global switch. Quickshell cannot raise a
 window that is already open, so opening it again only changes its page.
+
+**D51. Files are chosen with the desktop portal's file chooser (plan 5.1).** The maintainer's call (October 2026):
+the wallpaper is picked with the portal instead of a picker of our own. `shell.qml` starts with
+`//@ pragma Env QT_QPA_PLATFORMTHEME = xdgdesktopportal`, so Qt's FileDialog asks
+`org.freedesktop.portal.FileChooser` and the user gets their desktop's chooser (GNOME's or GTK's under niri), with
+its previews and recent files, at no cost to the shell. The pragma is read when Quickshell starts (a hot reload
+does not apply it) and overrides a `QT_QPA_PLATFORMTHEME` of the user's for the shell only; nothing else the
+shell draws depends on the platform theme. Without a portal, Qt falls back to its own Qt Quick dialog. The theme
+learns the portal's version a moment after start, so a dialog opened in the first second is Qt's own; a click in
+Settings always comes later. The NixOS module must enable xdg-desktop-portal with a FileChooser backend (plan 6.1).

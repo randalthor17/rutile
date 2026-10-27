@@ -4,7 +4,8 @@
 // settings instead (Model.search); choosing one opens its page and marks the setting for a moment. Narrower than
 // `narrowWidth`, only one side shows: the list, or the page with a back button.
 // `store` is the Settings service, or anything with value(key), set(key, value), isManaged(key) and configDir (the
-// tests' fake). Plain QtQuick, so it tests offscreen; SettingsWindow puts it in a window.
+// tests' fake). A path setting asks for a file (`pathRequested`); the window has the file chooser. Plain QtQuick,
+// so it tests offscreen; SettingsWindow puts it in a window.
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
@@ -30,6 +31,8 @@ Rectangle {
     readonly property var sections: Model.sections(page, Schema.schema, Pages.hints)
     readonly property var results: Model.search(query, Pages.pages, Schema.schema, Pages.hints)
     readonly property alias search: searchInput
+
+    signal pathRequested(string key, var filters)
 
     // Opens a page (and marks one of its settings); false for an unknown page.
     function openPage(id, key) {
@@ -330,6 +333,7 @@ Rectangle {
                                 highlighted: root.highlightKey === modelData.key
                                 menuOpen: root.menuKey === modelData.key
                                 onToggleMenu: root.toggleMenu(settingRow)
+                                onPickPath: root.pathRequested(modelData.key, modelData.filters)
                             }
                         }
                     }

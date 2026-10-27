@@ -1,3 +1,5 @@
+//@ pragma Env QT_QPA_PLATFORMTHEME = xdgdesktopportal
+// (Above: file dialogs go through the desktop portal, the user's own file chooser; read at start, D51.)
 // Rutile Shell. Run with:   quickshell -p shell/shell.qml   (or `qs -p shell`)
 // A clock sits at the top left of every screen, a status pill at the top right and the shelf along the bottom; clicking it opens Quick Settings on that screen.
 // From a niri keybind:   quickshell -p <path>/shell/shell.qml ipc call quicksettings toggle

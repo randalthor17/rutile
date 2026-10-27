@@ -3,7 +3,8 @@
 // of settings by their key in settings/schema.json. A setting's title, description, limits and default come from
 // the schema; `hints` here only say how to show it when the schema alone does not (D45 keeps the schema to what
 // Nix and the store need). Hints: `kind` (path, list), `choices` (values offered in a menu) with `label(value)`,
-// `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section).
+// `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section), `filters` for a
+// path's file chooser ("Name (*.ext ...)").
 .pragma library
 
 var pages = [
@@ -43,7 +44,10 @@ var pages = [
 ];
 
 var hints = {
-    "wallpaper.path": { kind: "path", aliases: ["image", "picture"] },
+    "wallpaper.path": {
+        kind: "path", aliases: ["image", "picture"],
+        filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
+    },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
     "lock.idleMinutes": {

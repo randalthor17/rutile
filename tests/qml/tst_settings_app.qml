@@ -39,6 +39,7 @@ TestCase {
         }
     }
     Component { id: appComp; SettingsApp { anchors.fill: parent } }
+    Component { id: spyComp; SignalSpy {} }
 
     function make(storeProps) {
         const s = createTemporaryObject(storeComp, root, storeProps ?? {});
@@ -265,9 +266,29 @@ TestCase {
         verify(!idle.menuOpen, "no menu");
     }
 
-    function test_read_only_kinds() {
+    function test_path_asks_for_a_file() {
         const t = make();
-        compare(findChild(t.a, "setting_wallpaper.path").item.supportingText, "/pics/a.png");
+        const asked = createTemporaryObject(spyComp, root, { target: t.a, signalName: "pathRequested" });
+        const row = findChild(t.a, "setting_wallpaper.path");
+        compare(row.item.supportingText, "/pics/a.png");
+        mouseClick(findChild(row, "settingChoose_wallpaper.path"));
+        compare(asked.count, 1);
+        compare(asked.signalArguments[0][0], "wallpaper.path");
+        compare(asked.signalArguments[0][1], ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"], "the hint's filters");
+        mouseClick(row, 40, row.height / 2);
+        compare(asked.count, 2, "a click on the row asks too");
+        compare(t.s.sets.length, 0, "the window sets what was chosen");
+
+        const m = make({ managed: { "wallpaper.path": true } });
+        const mAsked = createTemporaryObject(spyComp, root, { target: m.a, signalName: "pathRequested" });
+        const mRow = findChild(m.a, "setting_wallpaper.path");
+        verify(!findChild(mRow, "settingChoose_wallpaper.path"), "set in Nix: no Choose button");
+        mouseClick(mRow, 40, mRow.height / 2);
+        compare(mAsked.count, 0);
+    }
+
+    function test_list_shows_its_value() {
+        const t = make();
         open(t, "shelf");
         const pins = findChild(t.a, "setting_shelf.pins");
         compare(pins.item.supportingText, "firefox, foot");

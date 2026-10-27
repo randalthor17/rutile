@@ -225,8 +225,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (saved once still), a menu of choices, or the value for a path or a list; a key set in Nix shows a lock and
   takes no change. Advanced settings go in a last Advanced group (instead of a global toggle). Search matches
   page and setting titles, aliases and descriptions, best first; choosing a result opens its page and marks the
-  setting. Every schema setting must be on a page (a test checks). Not done: lazy-loaded page files (one
-  generic page so far), custom pages (the 5.2 list), a choice dialog as Googlebook's (a menu now), raising a
+  setting. Every schema setting must be on a page (a test checks). A path setting (the wallpaper) has a Choose…
+  button that opens the desktop portal's file chooser (D51; the maintainer's choice over our own picker). Not
+  done: lazy-loaded page files (one generic page so far), custom pages (the 5.2 list), a choice dialog as Googlebook's (a menu now), raising a
   window that is already open (Quickshell cannot).
 - [ ] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
   Widgets, Shelf, Apps, Power, Input, About.
@@ -234,7 +235,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 ## Phase 6: NixOS distro (the v1 goal)
 
 - [ ] **6.1** NixOS flake modules for niri config, shell, settings, widgets, matugen, fonts; home-manager
-  integration; default config.
+  integration; default config. Must enable xdg-desktop-portal with a FileChooser backend (gtk or gnome) for
+  the settings app's file chooser (D51).
   niri settings the shell needs, to write from the home-manager module (the maintainer's call: not in their
   config by hand): blur the real desktop behind the power menu, not only the wallpaper (niri's xray, on by
   default for layer surfaces): `layer-rule { match namespace="^rutile-power$"; background-effect { xray false; }; }`

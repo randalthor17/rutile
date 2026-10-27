@@ -312,4 +312,8 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   its outside-click catcher above the content: a catcher underneath never sees a click on a Flickable.
 - **Mutation-test with the one test file that covers the code** (`qtws.py test tst_name`): the whole QML suite
   takes about 70 s per mutant, one file a few seconds.
+- **Qt's portal file dialog needs real Wayland and a moment** (D51). Under `QT_QPA_PLATFORM=offscreen` the platform
+  theme is never used, so an offscreen check proves nothing; and right after start the xdgdesktopportal theme has
+  not yet learned the portal's version, so a dialog opened then falls back to Qt's own. Check with `dbus-monitor
+  --session "type='method_call',interface='org.freedesktop.portal.FileChooser'"` and open it a few seconds in.
 
