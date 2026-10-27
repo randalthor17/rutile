@@ -13,7 +13,7 @@ var pages = [
         summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette", "matugen"],
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
-            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
+            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
         ]
     },
     {

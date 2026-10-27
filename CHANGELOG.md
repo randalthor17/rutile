@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **GTK, Qt and KDE apps in the shell's look** (`programs.rutile.theming.enable = true`, home-manager): GTK 3 and
+  libadwaita apps, Qt apps and KDE apps (Dolphin, Kate) take the shell's colors, Google Sans Flex and the Adwaita
+  icons; checked by screenshotting real apps (`make theming-check`). New switch in Settings: KDE apps
+  (kdeglobals). See `docs/install.md`.
 - **Fixes from the first real install:** the power menu (and every popup) is gone as soon as it has faded, not
   300 ms later, and popups now fade in as they open. `rutile-shell --help` explains the command and lists every
   call the shell answers (`rutile-shell lock lock`, `rutile-shell osd volumeUp`, ...). Colors in other apps now work

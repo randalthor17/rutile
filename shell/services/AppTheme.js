@@ -10,14 +10,15 @@
 
 var BEGIN = ">>> rutile colors >>>";
 var END = "<<< rutile colors <<<";
-var ORDER = ["niri", "gtk", "qt", "kitty", "ghostty", "btop", "nvim", "firefox"];
+var ORDER = ["niri", "gtk", "qt", "kde", "kitty", "ghostty", "btop", "nvim", "firefox"];
 
-// dirs: {config, cache, data, home, theme (the templates' folder), host (tools/pywalfox_host.py)}
+// dirs: {config, cache, data, home, theme (the templates' folder), host (the compiled Firefox host)}
+// A block's `present` matches a linked config that already has the line (home-manager's module writes it).
 function apps(dirs) {
     var c = dirs.config;
     function gtk(v) {
         return { file: c + "/gtk-" + v + ".0/gtk.css", comment: ["/* ", " */"], lines: ["@import 'rutile.css';"],
-                 where: "after-imports" };
+                 where: "after-imports", present: /@import[^;]*rutile\.css/ };
     }
     function qtKeys(v) {
         return [{ file: c + "/" + v + "/" + v + ".conf", section: "Appearance", key: "color_scheme_path",
@@ -34,12 +35,17 @@ function apps(dirs) {
         qt: { title: "Qt (qt5ct, qt6ct)",
               files: [["qtct.conf", c + "/qt5ct/colors/rutile.conf"], ["qtct.conf", c + "/qt6ct/colors/rutile.conf"]],
               keys: qtKeys("qt5ct").concat(qtKeys("qt6ct")) },
+        // KDE apps outside Plasma read their colors from kdeglobals' [Colors:*] groups: every key of the rendered
+        // scheme goes there (each one's old value kept), and the scheme itself is installed for their menus.
+        kde: { title: "KDE apps", files: [["kdeglobals.colors", dirs.data + "/color-schemes/Rutile.colors"]],
+               ini: { file: c + "/kdeglobals", from: "kdeglobals.colors", skip: ["General|Name"] } },
         kitty: { title: "kitty", files: [["kitty.conf", c + "/kitty/rutile-colors.conf"]],
                  blocks: [{ file: c + "/kitty/kitty.conf", comment: ["# ", ""], lines: ["include rutile-colors.conf"],
-                            where: "end" }],
+                            where: "end", present: /^\s*include\s+\S*rutile-colors\.conf\s*$/m }],
                  reload: ["USR1", "(^|/)\\.?kitty(-wrapped)?( |$)"] },
         ghostty: { title: "Ghostty", files: [["ghostty", c + "/ghostty/themes/rutile"]],
-                   blocks: [{ file: c + "/ghostty/config", comment: ["# ", ""], lines: ["theme = rutile"], where: "end" }],
+                   blocks: [{ file: c + "/ghostty/config", comment: ["# ", ""], lines: ["theme = rutile"], where: "end",
+                              present: /^\s*theme\s*=\s*rutile\s*$/m }],
                    reload: ["USR2", "(^|/)\\.?ghostty(-wrapped)?( |$)"] },
         btop: { title: "btop", files: [["btop.theme", c + "/btop/themes/rutile.theme"]],
                 keys: [{ file: c + "/btop/btop.conf", section: null, key: "color_theme", value: '"rutile"' }],
@@ -144,6 +150,20 @@ function setKey(text, section, key, value) {
     return joined(out);
 }
 
+// [{section, key, value}] of an INI text, in order (comments and blank lines left out).
+function iniEntries(text) {
+    var out = [];
+    var section = null;
+    lines(text || "").forEach(function (row) {
+        var s = row.trim();
+        if (s === "" || s[0] === "#" || s[0] === ";") return;
+        if (s[0] === "[" && s[s.length - 1] === "]") { section = s.slice(1, -1); return; }
+        var eq = s.indexOf("=");
+        if (eq > 0) out.push({ section: section, key: s.slice(0, eq).trim(), value: s.slice(eq + 1).trim() });
+    });
+    return out;
+}
+
 // ---- the plan ----
 
 // Every file the plan reads, for these apps (switched on, or themed before).
@@ -157,6 +177,7 @@ function paths(dirs, names) {
         a.files.forEach(function (f) { add(f[1]); });
         (a.blocks || []).forEach(function (b) { add(b.file); add("!" + b.file); });
         (a.keys || []).forEach(function (k) { add(k.file); add("!" + k.file); });
+        if (a.ini) { add(a.ini.file); add("!" + a.ini.file); }
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             add(fx.manifest);
@@ -202,9 +223,18 @@ function plan(input) {
         return false;
     });
 
+    // Several edits of one file (a key at a time) make one write: the last op on that path, if a write, is updated.
     function write(path, text, mode) {
         if (files[path] === text) return false;
         files[path] = text;
+        for (var i = ops.length - 1; i >= 0; i--) {
+            if (ops[i].path !== path && ops[i].from !== path && ops[i].to !== path) continue;
+            if (ops[i].op === "write" && (ops[i].mode === (mode || "644"))) {
+                ops[i].text = text;
+                return true;
+            }
+            break;
+        }
         ops.push({ op: "write", path: path, text: text, mode: mode || "644" });
         return true;
     }
@@ -242,12 +272,17 @@ function plan(input) {
         Object.keys(record.previous || {}).forEach(function (slot) {
             var parts = slot.split("|");
             var section = parts[1] === "" ? null : parts[1];
-            var ours = (a.keys || []).filter(function (k) {
+            var key = (a.keys || []).filter(function (k) {
                 return k.file === parts[0] && (k.section || "") === parts[1] && k.key === parts[2];
             })[0];
-            if (ours && !linked(parts[0]) && getKey(files[parts[0]], section, parts[2]) === ours.value)   // still ours: put theirs back
+            var ours = key ? key.value : (record.values || {})[slot];
+            if (ours !== undefined && !linked(parts[0]) && getKey(files[parts[0]], section, parts[2]) === ours)   // still ours: put theirs back
                 changed = write(parts[0], setKey(files[parts[0]], section, parts[2], record.previous[slot])) || changed;
         });
+        // a kdeglobals made for us alone, now holding only empty sections, goes
+        if (a.ini && typeof files[a.ini.file] === "string" && !linked(a.ini.file) &&
+                lines(files[a.ini.file]).every(function (r) { return r.trim() === "" || /^\[.*\]$/.test(r.trim()); }))
+            changed = remove(a.ini.file) || changed;
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             if (record.backup && files[fx.backup] !== null && files[fx.backup] !== undefined) move(fx.backup, fx.manifest);
@@ -270,12 +305,14 @@ function plan(input) {
             if (record.files.indexOf(f[1]) < 0) record.files.push(f[1]);
         });
         (a.blocks || []).forEach(function (b) {
+            if (linked(b.file) && b.present && b.present.test(files[b.file] || "")) return;   // home-manager's has it
             if (linked(b.file))
                 return errors.push(a.title + ": " + b.file + " is a link (home-manager?), not changed; add " +
                                    b.lines.join(" ") + " to it there");
             changed = write(b.file, addBlock(files[b.file], b.comment, b.lines, b.where)) || changed;
         });
         (a.keys || []).forEach(function (k) {
+            if (linked(k.file) && getKey(files[k.file], k.section, k.key) === k.value) return;
             if (linked(k.file))
                 return errors.push(a.title + ": " + k.file + " is a link (home-manager?), not changed; set " +
                                    (k.section ? "[" + k.section + "] " : "") + k.key + " = " + k.value + " there");
@@ -283,6 +320,21 @@ function plan(input) {
             if (!(slot in record.previous)) record.previous[slot] = getKey(files[k.file], k.section, k.key);
             changed = write(k.file, setKey(files[k.file], k.section, k.key, k.value)) || changed;
         });
+        if (a.ini && linked(a.ini.file)) {
+            errors.push(a.title + ": " + a.ini.file + " is a link (home-manager?), not changed; it needs the " +
+                        "[Colors:*] groups of " + a.files[0][1]);
+        } else if (a.ini) {
+            var text = files[a.ini.file] || "";
+            record.values = record.values || {};
+            iniEntries(input.rendered[a.ini.from]).forEach(function (e) {
+                var slot = a.ini.file + "|" + (e.section || "") + "|" + e.key;
+                if (a.ini.skip.indexOf((e.section || "") + "|" + e.key) >= 0) return;
+                if (!(slot in record.previous)) record.previous[slot] = getKey(text, e.section, e.key);
+                record.values[slot] = e.value;
+                text = setKey(text, e.section, e.key, e.value);
+            });
+            changed = write(a.ini.file, text) || changed;
+        }
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             var manifest = firefoxManifest(dirs);

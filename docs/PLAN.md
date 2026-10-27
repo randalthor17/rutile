@@ -259,7 +259,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   options in tests with `niri validate` on the KDL. The maintainer's test user ran it (October 2026); what that
   found is fixed: the power menu closed slowly (D56), `rutile-shell --help` was Quickshell's (now our own CLI with
   the IPC reference, D57), and other apps' colors never applied (no palette yet; home-manager's linked configs;
-  D58), with niri colors added (`appColors.niri`, an optional include in the module's KDL). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
+  D58), with niri colors added (`appColors.niri`, an optional include in the module's KDL). Then
+  `programs.rutile.theming` (D59): GTK, Qt and KDE apps set up for the shell's colors, font and icons, checked
+  with screenshots of real apps in a sandbox (`make theming-check`). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
   config beyond the settings' defaults.
 - [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
 - [ ] **6.3** Installer ISO.

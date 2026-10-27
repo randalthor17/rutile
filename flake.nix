@@ -25,6 +25,7 @@
         {
           imports = [ ./nix/home-manager.nix ];
           programs.rutile.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+          programs.rutile.theming.fonts.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.google-sans-flex;
         };
 
       packages = forAllSystems (pkgs: rec {
