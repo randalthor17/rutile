@@ -5,6 +5,11 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Toasts** (plan 2.8): short messages at the bottom left, one at a time, e.g. from a screenshot script:
+  `ipc call toast send "Screenshot saved" photo_camera` (the icon may be ""). Each stays 4 s, longer while the
+  pointer is on it; the same message again keeps it up instead of queueing. The shell can give one an action.
+- **Fix:** `ipc call osd show` never worked from the command line (the CLI takes `show` for its own command); it
+  is now `ipc call osd display volume`.
 - **Notification sounds** (plan 2.8): a notification that pops up plays a sound through PipeWire's `pw-play`: the
   sound the app asks for, or the freedesktop sound theme's message sound. Apps can ask for silence; Do not disturb
   is silent except for critical ones, and a burst plays once. `notifications.sound` in settings.json turns it off.

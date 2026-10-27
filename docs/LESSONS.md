@@ -67,6 +67,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   item's. Headless QML tests cannot see this (the mask exists only under a compositor); `qtws.py
   run_wayland_surfaces` checks the masks and sizes the shell sends under headless sway.
 
+- **Never name an IpcHandler function `show`.** `quickshell ipc call osd show volume` fails with "The following
+  argument was not expected: volume": the CLI reads `show` as its own `ipc show` command (Quickshell 0.3.2). An
+  IPC function is not done until a test calls it through the real CLI.
+
 ## Testing method
 
 - **A test that cannot fail proves nothing.** Mutate the code and watch the test fail. Several guards turned out

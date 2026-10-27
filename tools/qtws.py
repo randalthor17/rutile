@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -451,6 +451,11 @@ def run_wayland_smoke(screenshot=None):
                             return json.loads(ipc("state", target="osd"))
                         except ValueError:
                             return {}
+                    shown = ipc("display", "volume", target="osd")
+                    time.sleep(0.3)
+                    osd = osd_state()
+                    if shown != "" or not (osd.get("open") and osd.get("kind") == "volume"):
+                        problems.append(f"ipc osd display volume: {shown!r}, state {osd}, expected the volume OSD")
                     got = ipc("brightnessUp", target="osd")
                     time.sleep(0.5)
                     osd = osd_state()
@@ -468,6 +473,19 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc osd state 4 s after a key: {osd}, expected unloaded and no volume")
                     if fake.read_text().strip() != str(want_raw):
                         problems.append(f"fake backlight after brightnessUp: {fake.read_text().strip()}, expected {want_raw}")
+                    # toasts: one at a time, in order; the same text again is not queued
+                    first = ipc("send", "Screenshot saved", "photo_camera", target="toast")
+                    second = ipc("send", "Copied", "", target="toast")
+                    again = ipc("send", "Screenshot saved", "", target="toast")
+                    time.sleep(0.5)
+                    try:
+                        toast = json.loads(ipc("state", target="toast"))
+                    except ValueError:
+                        toast = {}
+                    want = {"loaded": True, "open": True, "current": "Screenshot saved", "queued": ["Copied"]}
+                    if toast != want or again != first or second == first:
+                        problems.append(f"ipc toast: ids {first}, {second}, {again}; state {toast}, expected {want}")
+                    toast_sent = time.time()
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -609,6 +627,18 @@ def run_wayland_smoke(screenshot=None):
                         launcher_loaded = None
                     if launcher_loaded is not False:
                         problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
+                    # both toasts have shown and gone (4 s each and the motion), and the window with them
+                    toast = {}
+                    while time.time() < toast_sent + 15:
+                        try:
+                            toast = json.loads(ipc("state", target="toast"))
+                        except ValueError:
+                            toast = {}
+                        if toast.get("loaded") is False:
+                            break
+                        time.sleep(0.2)
+                    if toast != {"loaded": False, "open": False, "current": None, "queued": []}:
+                        problems.append(f"ipc toast state 15 s after two toasts: {toast}, expected none left")
                     # a notification (plan 2.8) on the private bus: kept, popped up in its window, gone when dismissed
                     # notify-send (libnotify, as apps send) when the dev shell has it, else busctl
                     if shutil.which("notify-send"):
@@ -752,7 +782,8 @@ def run_wayland_surfaces():
     cards come and go, not on every frame of their motion (each resize is a compositor round trip, and the
     motion stuttered); the list's never; and a popup window's input mask covers the whole panel, not the panel
     as its opening motion had scaled it (Quickshell's Region measures an item with its scale and keeps that).
-    The OSD's surface is sized once, also when a second key comes while it shows. Returns (code, report)."""
+    The OSD's surface is sized once, also when a second key comes while it shows; the toasts' once per toast.
+    Returns (code, report)."""
     qs, sway = shutil.which("quickshell"), shutil.which("sway")
     if not qs or not sway:
         return SKIPPED, "needs quickshell and sway"
@@ -805,6 +836,9 @@ def run_wayland_surfaces():
                 time.sleep(0.5)
                 ipc("osd", "brightnessUp")             # while it shows: the same surface, not resized
                 time.sleep(3)
+                ipc("toast", "send", "Short", "")
+                ipc("toast", "send", "A much longer message than the first one", "")
+                time.sleep(10)                           # both shown and gone (4 s each, and the motion)
             finally:
                 shell_proc.terminate()
                 try:
@@ -836,6 +870,9 @@ def run_wayland_surfaces():
     osd = surfaces.get("rutile-osd", {"sizes": []})["sizes"]
     if len(set(osd)) != 1:                       # Quickshell repeats the first size; one value is fine
         problems.append(f"rutile-osd: sizes {osd} for two brightness keys, expected one size")
+    toast = surfaces.get("rutile-toast", {"sizes": []})["sizes"]
+    if len(set(toast)) != 2:                     # resized from one toast to the next, never in between
+        problems.append(f"rutile-toast: sizes {toast} for two toasts, expected two sizes")
     return (1 if problems else 0), "\n".join(problems)
 
 

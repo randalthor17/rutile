@@ -10,6 +10,7 @@ import qs.bar
 import qs.launcher
 import qs.notifications
 import qs.osd
+import qs.toast
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -332,7 +333,8 @@ ShellRoot {
         // false without a backlight
         function brightnessUp(): bool { return shell.stepBrightness(shell.osdStep); }
         function brightnessDown(): bool { return shell.stepBrightness(-shell.osdStep); }
-        function show(kind: string): void { shell.showOsd(kind === "brightness" ? "brightness" : "volume"); }
+        // not `show`: the CLI takes `ipc call <target> show` for its own `ipc show` command
+        function display(kind: string): void { shell.showOsd(kind === "brightness" ? "brightness" : "volume"); }
         function state(): string {
             const p = osd.item?.panel;
             return JSON.stringify({ loaded: osd.active, open: p?.open ?? false, kind: p?.kind ?? "",
@@ -345,6 +347,28 @@ ShellRoot {
         BrightnessService.set(BrightnessService.value + step);
         showOsd("brightness");
         return true;
+    }
+
+    // Toasts (plan 2.8), on the screen the keyboard is on; loaded while there is one.
+    LazyLoader {
+        id: toasts
+        active: ToastService.current !== null
+        ToastWindow {
+            screen: Quickshell.screens.find(s => s.name === NiriService.focusedOutput) ?? Quickshell.screens[0]
+        }
+    }
+    // From scripts and keybinds: quickshell -p <path>/shell/shell.qml ipc call toast send "Screenshot saved" photo_camera
+    IpcHandler {
+        target: "toast"
+        // `icon`: a Material Symbols name, or "" for none; returns the toast's id
+        // not `show`, which the CLI takes for its own `ipc show` command
+        function send(text: string, icon: string): int { return ToastService.show(text, { icon: icon }); }
+        function state(): string {
+            const w = toasts.item;
+            return JSON.stringify({ loaded: toasts.active, open: w?.toast.open ?? false,
+                                    current: ToastService.current?.text ?? null,
+                                    queued: ToastService.queue.map(q => q.text) });
+        }
     }
 
     LazyLoader {
