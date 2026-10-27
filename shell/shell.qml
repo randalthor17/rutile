@@ -11,6 +11,7 @@ import qs.launcher
 import qs.notifications
 import qs.osd
 import qs.toast
+import qs.lock
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -118,7 +119,36 @@ ShellRoot {
     }
 
     // Not named `backend`: inside a window, `backend: backend` would bind the property to itself.
-    QuickSettingsBackend { id: shellBackend }
+    QuickSettingsBackend {
+        id: shellBackend
+        onLockRequested: {
+            shell.closeQuickSettings();
+            shell.lock();
+        }
+    }
+
+    // The lock screen (plan 2.8), loaded only while locked (D31). Only a correct password unlocks it.
+    function lock() {
+        lockScreen.active = true;
+    }
+    LazyLoader {
+        id: lockScreen
+        LockScreen {
+            onUnlocked: Qt.callLater(() => lockScreen.active = false)
+        }
+    }
+    // From a niri keybind: quickshell -p <path>/shell/shell.qml ipc call lock lock. There is deliberately no unlock.
+    IpcHandler {
+        target: "lock"
+        function lock(): void { shell.lock(); }
+        function isLocked(): bool { return lockScreen.active; }
+        // diagnostics and tests: never the password
+        function state(): string {
+            const l = lockScreen.item;
+            return JSON.stringify({ locked: lockScreen.active, secure: l?.secure ?? false, busy: l?.busy ?? false,
+                                    error: l?.error ?? "", attempts: l?.attempts ?? 0 });
+        }
+    }
 
     Variants {
         id: statusWindows

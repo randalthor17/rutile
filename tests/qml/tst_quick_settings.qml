@@ -283,7 +283,7 @@ TestCase {
 
     function test_power_commands() {
         compare(PowerActions.actions.map(a => a.id).join(), "lock,logout,reboot,poweroff");
-        compare(PowerActions.command("lock").join(" "), "loginctl lock-session");
+        compare(PowerActions.command("lock"), null, "the shell locks itself");
         compare(PowerActions.command("logout").join(" "), "niri msg action quit --skip-confirmation");
         compare(PowerActions.command("reboot").join(" "), "systemctl reboot");
         compare(PowerActions.command("poweroff").join(" "), "systemctl poweroff");

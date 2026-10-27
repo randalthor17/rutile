@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -210,6 +210,7 @@ def qs_workspace(test):
     shutil.copytree(ROOT / "tests" / "qs" / "bin", ws / "bin")
     shutil.copytree(ROOT / "tests" / "qs" / "apps", ws / "apps")
     shutil.copytree(ROOT / "tests" / "qs" / "config", ws / "config")
+    shutil.copytree(ROOT / "tests" / "qs" / "pam", ws / "pam")
     shutil.copy(test, ws / "shell.qml")
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
     return ws
@@ -739,6 +740,22 @@ def run_wayland_smoke(screenshot=None):
                     calls = (fake.parent / (fake.name + ".log"))
                     if not calls.exists() or "info" not in calls.read_text():
                         problems.append("opening the panel did not read the brightness")
+                    # last, as nothing unlocks it here: the lock screen covers the screen (the compositor says
+                    # secure) and there is no IPC call that unlocks it
+                    ipc("lock", target="lock")
+                    lock = {}
+                    for _ in range(30):
+                        try:
+                            lock = json.loads(ipc("state", target="lock"))
+                        except ValueError:
+                            lock = {}
+                        if lock.get("secure"):
+                            break
+                        time.sleep(0.1)
+                    if lock != {"locked": True, "secure": True, "busy": False, "error": "", "attempts": 0}:
+                        problems.append(f"ipc lock lock: state {lock}, expected locked and secure")
+                    if "not found" not in ipc("unlock", target="lock") or ipc("isLocked", target="lock") != "true":
+                        problems.append("ipc lock: an unlock call exists or it unlocked")
             finally:
                 shell_proc.terminate()
                 try:

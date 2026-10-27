@@ -363,3 +363,9 @@ Quickshell's objects and hands the UI plain data, so the cards test offscreen. C
   library in the shell. The sound comes from the sender's `sound-file` or `sound-name` hint, else the freedesktop
   theme's `message-new-instant`, looked up in the XDG data dirs; no theme installed means no sound. Tests put a
   fake `pw-play` first on PATH (tests/qs/bin), so they never make a sound.
+- The lock screen (plan 2.8) authenticates with the system's `login` PAM service (Quickshell's default), which
+  every distro has, instead of shipping a PAM file of our own. There is no unlock over IPC: anything that can
+  call IPC could otherwise unlock. RUTILE_PAM_DIR and RUTILE_PAM_CONFIG point it at another PAM directory, for
+  tests only (pam_permit, pam_deny); they give nothing to someone who can already set the shell's environment.
+  If the shell dies while locked, niri keeps the screens locked and blank (ext-session-lock); starting the
+  shell and locking again brings the lock screen back.

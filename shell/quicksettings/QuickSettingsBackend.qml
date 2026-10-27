@@ -35,8 +35,14 @@ QtObject {
     function setWifiEnabled(on) { NetworkService.setWifiEnabled(on); }
     function setBluetoothEnabled(on) { BluetoothService.setEnabled(on); }
     function setDarkTheme(on) { Colors.mode = on ? "dark" : "light"; }
-    // Lock, sign out, restart or shut down (PowerActions.js), detached so it outlives the shell.
+    // Lock (the shell's own lock screen: lockRequested), or sign out, restart or shut down (PowerActions.js),
+    // detached so it outlives the shell.
+    signal lockRequested()
     function powerAction(id) {
+        if (id === "lock") {
+            lockRequested();
+            return;
+        }
         const command = PowerActions.command(id);
         if (command) Quickshell.execDetached(command);
     }

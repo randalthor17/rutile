@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Lock screen** (plan 2.8): Lock in Quick Settings' power menu, or `ipc call lock lock` from a keybind, covers
+  every screen with the time, the date, your name and a password field, and only your password unlocks it (the
+  system's `login` PAM service). A wrong one says so and the field shakes. Nothing unlocks it over IPC. If the
+  shell crashes while locked, the screens stay locked and blank: that is how the protocol keeps the session safe.
 - **Palette from the wallpaper**: `tools/palette.py render --image <wallpaper> --out ~/.cache/rutile/palette.json`
   colors the shell from the image's dominant color; the shell picks the new file up at once.
 - **Fix:** a palette rendered while the shell ran without one was ignored until a restart; now it is picked up

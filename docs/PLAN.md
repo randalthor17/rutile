@@ -152,7 +152,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   suppress-sound, in Do not disturb (unless critical), with `notifications.sound` off, or while one plays. Heard on the maintainer's niri session (2026-10-27). Toasts (`shell/toast/`, `ToastService`): M3 snackbars at the
   bottom left, one at a time in order, 4 s or while hovered, an optional icon and action; the same text again
   shows the current one longer; `ipc call toast send <text> <icon>`. Not
-  done: per-app settings. Then the rest of the item: lock screen (PAM); a full-screen power menu over the blurred desktop
+  done: per-app settings. The lock screen (`shell/lock/`): WlSessionLock with a LockPanel per screen, PAM's `login`
+  service, the power menu's Lock and `ipc call lock lock`, no unlock over IPC; checked in a nested niri with the
+  maintainer's real password and a wrong one (2026-10-27). Not yet: logind's Lock signal (`loginctl
+  lock-session`, idle tools), locking on idle (IdleMonitor), a blurred wallpaper behind it. Then the rest of the item: a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
