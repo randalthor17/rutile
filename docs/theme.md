@@ -17,9 +17,11 @@ switch needs no re-render. The producer can change without touching QML.
 Usage:
 
     python3 tools/palette.py render --seed '#134aae' --out ~/.cache/rutile/palette.json
+    python3 tools/palette.py render --image ~/Pictures/wallpaper.jpg --out ~/.cache/rutile/palette.json
     python3 tools/palette.py validate ~/.cache/rutile/palette.json
 
-`render` refuses bad input, validates matugen's output against `theme/roles.json`
+`--image` seeds the palette with the image's most dominant color (matugen's `image` source with
+`--source-color-index 0`, so it never asks). `render` refuses bad input, validates matugen's output against `theme/roles.json`
 (49 roles, `#rrggbb`) and replaces the target atomically (mode 0644). If anything
 fails the previous palette is left in place.
 

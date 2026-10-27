@@ -73,18 +73,26 @@ def validate(doc):
     return errs
 
 
-def render(seed, scheme, mode, contrast, out, matugen="matugen"):
+def render(seed, scheme, mode, contrast, out, matugen="matugen", image=None):
+    """Render from a seed color, or from an image (a wallpaper: matugen picks its dominant color); exactly one."""
     if scheme not in SCHEMES:
         raise PaletteError(f"unknown scheme {scheme!r}")
-    if not re.fullmatch(r"#[0-9a-fA-F]{6}", seed):
+    if (seed is None) == (image is None):
+        raise PaletteError("give a seed or an image, not both or neither")
+    if image is not None and not Path(image).is_file():
+        raise PaletteError(f"image not found: {image}")
+    if seed is not None and not re.fullmatch(r"#[0-9a-fA-F]{6}", seed):
         raise PaletteError(f"seed must be #rrggbb, got {seed!r}")
     if not -1 <= contrast <= 1:
         raise PaletteError("contrast must be within -1..1")
     if shutil.which(matugen) is None and not os.path.exists(matugen):
         raise PaletteError(f"matugen not found ({matugen})")
     with tempfile.TemporaryDirectory() as prefix:
-        cmd = [matugen, "-q", "-c", str(CONFIG), "-p", prefix, "color", "hex", seed,
-               "-t", scheme, "-m", mode, "--contrast", str(contrast)]
+        source = ["image", str(Path(image).resolve())] if image is not None else ["color", "hex", seed]
+        # --source-color-index 0: an image's most dominant color, never matugen's interactive choice
+        pick = ["--source-color-index", "0"] if image is not None else []
+        cmd = [matugen, "-q", "-c", str(CONFIG), "-p", prefix, *source,
+               "-t", scheme, "-m", mode, "--contrast", str(contrast), *pick]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         produced = Path(prefix) / str(TEMPLATE_OUT).lstrip("/")
         if proc.returncode != 0 or not produced.exists():
@@ -116,7 +124,9 @@ def main(argv):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("render")
-    r.add_argument("--seed", required=True)
+    src = r.add_mutually_exclusive_group(required=True)
+    src.add_argument("--seed", help="a #rrggbb seed color")
+    src.add_argument("--image", help="an image, e.g. the wallpaper: its dominant color is the seed")
     r.add_argument("--scheme", default="scheme-tonal-spot", choices=SCHEMES)
     r.add_argument("--mode", default="dark", choices=("dark", "light"))
     r.add_argument("--contrast", type=float, default=0.0)
@@ -127,7 +137,7 @@ def main(argv):
     a = p.parse_args(argv)
     try:
         if a.cmd == "render":
-            render(a.seed, a.scheme, a.mode, a.contrast, a.out, a.matugen)
+            render(a.seed, a.scheme, a.mode, a.contrast, a.out, a.matugen, image=a.image)
             print(f"wrote {a.out}")
         else:
             errs = validate(json.loads(Path(a.path).read_text()))

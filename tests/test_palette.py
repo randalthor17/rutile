@@ -80,6 +80,27 @@ class Validator(unittest.TestCase):
                 pal.render(out="/tmp/never-written.json", matugen="/nonexistent/matugen", **args)
         self.assertFalse(os.path.exists("/tmp/never-written.json"))
 
+    def test_render_takes_a_seed_or_an_image_not_both_or_neither(self):
+        base = dict(scheme="scheme-tonal-spot", mode="dark", contrast=0.0, out="/tmp/never-written.json",
+                    matugen="/nonexistent/matugen")
+        for kw, why in (({"seed": None}, "not both or neither"),
+                        ({"seed": "#134aae", "image": __file__}, "not both or neither"),
+                        ({"seed": None, "image": "/nonexistent.png"}, "image not found")):
+            with self.assertRaisesRegex(pal.PaletteError, why, msg=kw):
+                pal.render(**base, **kw)
+        self.assertFalse(os.path.exists("/tmp/never-written.json"))
+
+
+def solid_png(path, rgb, size=32):
+    """A PNG of one color, written without an imaging library."""
+    import struct
+    import zlib
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+    rows = b"".join(b"\0" + bytes(rgb) * size for _ in range(size))
+    Path(path).write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0))
+                          + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b""))
+
 
 @need_matugen
 class WithMatugen(unittest.TestCase):
@@ -108,6 +129,20 @@ class WithMatugen(unittest.TestCase):
         for scheme in pal.SCHEMES:
             doc, _ = self.render(scheme=scheme)
             self.assertEqual(pal.validate(doc), [], scheme)
+
+    def test_an_image_seeds_the_palette_with_its_color(self):
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        green, red = d / "green.png", d / "red.png"
+        solid_png(green, (0x2e, 0x7d, 0x32))
+        solid_png(red, (0xc6, 0x28, 0x28))
+        g, _ = self.render(seed=None, image=str(green))
+        r, _ = self.render(seed=None, image=str(red))
+        self.assertEqual(pal.validate(g), [])
+        primary = lambda doc: [int(doc["colors"]["dark"]["primary"][i:i + 2], 16) for i in (1, 3, 5)]
+        pg, pr = primary(g), primary(r)
+        self.assertEqual(max(range(3), key=lambda i: pg[i]), 1, f"green image, green primary: {pg}")
+        self.assertEqual(max(range(3), key=lambda i: pr[i]), 0, f"red image, red primary: {pr}")
 
     def test_contrast_changes_output(self):
         base, _ = self.render(contrast=0.0)
