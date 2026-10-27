@@ -10,7 +10,7 @@ pragma ComponentBehavior: Bound
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
 // darkTheme; and setBrightness(v), setVolume(v), setMicMuted(b), setWifiEnabled(b),
-// setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), powerAction(id) (PowerActions.js), refresh().
+// setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), refresh(). The power button asks for the power menu (powerMenuRequested).
 import QtQuick
 import qs.common
 import qs.components
@@ -29,17 +29,9 @@ Rectangle {
         { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }
     ]
     property alias editMode: grid.editMode
-    property bool powerMenuOpen: false
     // Open and close motion: false shrinks and fades the panel away, then `hidden` fires.
     property bool shown: true
     readonly property real appearProgress: appear.progress
-    // The open power menu and where it ends: it can reach below the panel (with no brightness row the panel is
-    // shorter than the menu), so the window grows to fit it.
-    readonly property Item powerMenu: powerMenuLoader.item as Item
-    readonly property real menuBottom: powerMenu ? powerMenuLoader.y + powerMenu.height : 0
-    // where the power menu is when fully open, for the window's input mask
-    readonly property rect menuRect: powerMenu ? Qt.rect(powerMenuLoader.x, powerMenuLoader.y, powerMenu.width, powerMenu.height)
-                                               : Qt.rect(0, 0, 0, 0)
     readonly property bool brightnessShown: brightnessRow.visible
     readonly property real panelWidth: 412
 
@@ -68,15 +60,8 @@ Rectangle {
         Controls.toggle(id, wanted, backend);
     }
 
-    // A power action waits until the panel has gone (menu and panel play their closing motion first), so a lock
-    // screen or a shutdown never shows the panel. Opening it again before then cancels the action.
-    property string pendingPower: ""
-    function choosePower(id) {
-        powerMenuOpen = false;
-        pendingPower = id;
-        shown = false;
-    }
-    onShownChanged: if (shown) pendingPower = ""
+    // The power button asks for the full-screen power menu (shell/power/); the shell closes this panel.
+    signal powerMenuRequested()
 
     function removeSelected() {
         if (grid.selectedIndex < 0) return;
@@ -99,12 +84,7 @@ Rectangle {
         target: root
         shown: root.shown
         origin: Item.TopRight
-        onHidden: {
-            const id = root.pendingPower;
-            root.pendingPower = "";
-            if (id !== "") root.backend.powerAction(id);
-            root.hidden();
-        }
+        onHidden: root.hidden()
     }
 
     // The backend may arrive after creation (a binding through the window): refresh when it does.
@@ -137,8 +117,8 @@ Rectangle {
                     onClicked: root.settingsRequested()
                 }
             }
-            // Googlebook's power button: the power icon and a smaller chevron, opening the menu. Two Icons: one Icon
-            // with two ligatures puts the font's wide space between them.
+            // Googlebook's power button: the power icon and a smaller chevron, opening the power menu. Two Icons: one
+            // Icon with two ligatures puts the font's wide space between them.
             Rectangle {
                 id: powerButton
                 objectName: "qsPower"
@@ -148,9 +128,8 @@ Rectangle {
                 width: powerIcons.width + 2 * Spacing.sm
                 height: ControlSpec.iconButtonSizes.s.height
                 radius: height / 2
-                color: root.powerMenuOpen ? Colors.secondaryContainer : Colors.surfaceContainer
-                Behavior on color { EffectsColor {} }
-                readonly property color contentColor: root.powerMenuOpen ? Colors.secondaryContainerOn : Colors.surfaceVariantOn
+                color: Colors.surfaceContainer
+                readonly property color contentColor: Colors.surfaceVariantOn
                 Row {
                     id: powerIcons
                     anchors.centerIn: parent
@@ -166,20 +145,13 @@ Rectangle {
                         name: "expand_more"
                         size: Spacing.lg
                         color: powerButton.contentColor
-                        rotation: 180 * chevronTurn.value     // turns to point up while the menu is open
-                        Spring {
-                            id: chevronTurn
-                            target: root.powerMenuOpen ? 1 : 0
-                            stiffness: Motion.spring("spatial", "fast").stiffness
-                            dampingRatio: Motion.spring("spatial", "fast").dampingRatio
-                        }
                     }
                 }
                 StateLayer {
                     anchors.fill: parent
                     radius: powerButton.radius
                     stateColor: powerButton.contentColor
-                    onClicked: root.powerMenuOpen = !root.powerMenuOpen
+                    onClicked: root.powerMenuRequested()
                 }
             }
 
@@ -316,22 +288,6 @@ Rectangle {
                     onClicked: root.detailsRequested(tile.modelData.id)
                 }
             }
-        }
-    }
-
-    // The power menu over the tiles, under the power button; created only while it shows (D31), and it grows
-    // from the button like every popup (D43).
-    PopupLoader {
-        id: powerMenuLoader
-        objectName: "qsPowerMenu"
-        open: root.powerMenuOpen && !root.editMode
-        origin: Item.TopRight
-        z: 1
-        anchors.right: parent.right
-        anchors.rightMargin: Spacing.lg
-        y: Spacing.lg + ControlSpec.iconButtonSizes.s.height + Spacing.xs
-        sourceComponent: PowerMenu {
-            onChosen: id => root.choosePower(id)
         }
     }
 }

@@ -158,9 +158,12 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   field rise; unlocking runs it back), the wallpaper (`wallpaper.path`, a small copy kept decoded so it shows at
   once, the full-size one loaded while locked for a sharp end), logind's Lock signal, locking before suspend (a
   delay inhibitor held until the lock is secure) and on idle (`lock.idleMinutes`). Checked in a nested niri by the
-  maintainer. Not verified: idle and suspend on the real machine (tested with fakes). Then the rest of the item: a full-screen power menu over the blurred desktop
-  (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
-  `PamContext`, `IdleMonitor`, `PolkitAgent`.
+  maintainer. Not verified: idle and suspend on the real machine (tested with fakes). The power menu
+  (`shell/power/`, the maintainer's request): full screen over the desktop, blurred by the compositor
+  (BackgroundEffect; niri needs `xray false` for it to blur windows too, see 6.1), Lock, Sleep, Sign out, Restart
+  and Shut down as large round buttons; keyboard (arrows, Enter, Escape); the action runs once the menu has gone.
+  It replaces Quick Settings' power dropdown; `ipc call power toggle`. Then the rest of the item: polkit agent.
+  Types: `NotificationServer`, `WlSessionLock`, `PamContext`, `IdleMonitor`, `PolkitAgent`.
 
 - [ ] **2.9** Started (D48, `shell/wallpaper/`, the maintainer's choice over an outside app): the wallpaper.
   `wallpaper.path` shows on every screen on the background layer, decoded at the screen's size; a new one fades in
@@ -211,6 +214,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [ ] **6.1** NixOS flake modules for niri config, shell, settings, widgets, matugen, fonts; home-manager
   integration; default config.
+  niri settings the shell needs, to write from the home-manager module (the maintainer's call: not in their
+  config by hand): blur the real desktop behind the power menu, not only the wallpaper (niri's xray, on by
+  default for layer surfaces): `layer-rule { match namespace="^rutile-power$"; background-effect { xray false; }; }`
+  (as KDL, one statement per line). Also the media keys bound to `ipc call osd ...` and a lock keybind
+  (`docs/quick-settings.md`).
 - [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
 - [ ] **6.3** Installer ISO.
 

@@ -13,11 +13,13 @@ import qs.osd
 import qs.toast
 import qs.lock
 import qs.wallpaper
+import qs.power
 import qs.quicksettings
 import qs.services
 import qs.shelf
 import "quicksettings/Controls.js" as Controls
 import "lock/LockWallpaper.js" as LockWallpaper
+import "power/PowerActions.js" as PowerActions
 
 ShellRoot {
     id: shell
@@ -144,17 +146,74 @@ ShellRoot {
     }
 
     // Not named `backend`: inside a window, `backend: backend` would bind the property to itself.
-    QuickSettingsBackend {
-        id: shellBackend
-        onLockRequested: {
-            shell.closeQuickSettings();
-            if (!lockScreen.active) shell.lockReason = "menu";
-            shell.lock();
+    QuickSettingsBackend { id: shellBackend }
+
+    // The full-screen power menu (plan 2.8), on a screen (null: the compositor's choice), loaded only while open.
+    // The action runs once the menu has played its closing motion and gone (PowerWindow.finished).
+    property var powerScreen: null
+    readonly property bool powerMenuOpen: powerMenu.active && !(powerMenu.item?.closing ?? false)
+    function openPowerMenu(screen) {
+        if (powerMenu.item?.closing) {
+            powerMenu.item.reopen();
+            return;
+        }
+        if (powerMenu.active) return;
+        powerScreen = screen;
+        powerMenu.active = true;
+    }
+    function closePowerMenu() {
+        if (powerMenu.item) powerMenu.item.close();
+    }
+    function runPower(id) {
+        if (id === "lock") {
+            shell.lock("menu");
+            return;
+        }
+        const command = PowerActions.command(id);
+        if (command) Quickshell.execDetached(command);
+    }
+    LazyLoader {
+        id: powerMenu
+        PowerWindow {
+            screen: shell.powerScreen
+            onFinished: id => {
+                powerMenu.active = false;
+                shell.runPower(id);
+            }
+        }
+    }
+    // From a keybind: quickshell -p <path>/shell/shell.qml ipc call power toggle
+    IpcHandler {
+        target: "power"
+        function toggle(): void {
+            if (shell.powerMenuOpen) shell.closePowerMenu();
+            else shell.openPowerMenu(null);
+        }
+        function open(): void { shell.openPowerMenu(null); }
+        function close(): void { shell.closePowerMenu(); }
+        function isOpen(): bool { return shell.powerMenuOpen; }
+        // As a click on its button would (the smoke test): false when the menu is not open or the id is unknown.
+        function choose(id: string): bool {
+            const o = powerMenu.item?.overlay;
+            const i = o ? o.actions.findIndex(a => a.id === id) : -1;
+            if (i < 0) return false;            // no menu, or not one of its entries
+            o.choose(i);
+            return true;
+        }
+        function state(): string {
+            return JSON.stringify({ open: shell.powerMenuOpen, loaded: powerMenu.active,
+                                    actions: powerMenu.item ? powerMenu.item.overlay.actions.map(a => a.id) : [] });
         }
     }
 
     // The lock screen (plan 2.8), loaded only while locked (D31). Only a correct password unlocks it.
-    function lock() {
+    // `reason`: menu, ipc, logind, sleep or idle. The first one of a lock is its reason; every request is kept
+    // (the last 10) for the state, so a test can see one that came while it was already locked.
+    property string lockReason: ""
+    property var lockRequests: []
+    function lock(reason) {
+        lockRequests = lockRequests.concat([reason]).slice(-10);
+        if (!lockScreen.active) lockReason = reason;
         lockScreen.active = true;
     }
     LazyLoader {
@@ -173,29 +232,22 @@ ShellRoot {
     }
 
     // logind's Lock (loginctl lock-session), suspend and idle (LockTriggers.qml).
-    property string lockReason: ""
     LockTriggers {
         locked: lockScreen.active
         secure: lockScreen.item?.secure ?? false
-        onLockRequested: reason => {
-            if (!lockScreen.active) shell.lockReason = reason;
-            shell.lock();
-        }
+        onLockRequested: reason => shell.lock(reason)
     }
     // From a niri keybind: quickshell -p <path>/shell/shell.qml ipc call lock lock. There is deliberately no unlock.
     IpcHandler {
         target: "lock"
-        function lock(): void {
-            if (!lockScreen.active) shell.lockReason = "ipc";
-            shell.lock();
-        }
+        function lock(): void { shell.lock("ipc"); }
         function isLocked(): bool { return lockScreen.active; }
         // diagnostics and tests: never the password
         function state(): string {
             const l = lockScreen.item;
             return JSON.stringify({ locked: lockScreen.active, secure: l?.secure ?? false, busy: l?.busy ?? false,
                                     error: l?.error ?? "", attempts: l?.attempts ?? 0,
-                                    reason: lockScreen.active ? shell.lockReason : "" });
+                                    reason: lockScreen.active ? shell.lockReason : "", requests: shell.lockRequests });
         }
     }
 
@@ -456,6 +508,10 @@ ShellRoot {
             screen: shell.quickSettingsScreen
             backend: shellBackend
             onCloseRequested: quickSettings.active = false
+            onPowerMenuRequested: {
+                shell.openPowerMenu(screen);
+                shell.closeQuickSettings();
+            }
         }
     }
 

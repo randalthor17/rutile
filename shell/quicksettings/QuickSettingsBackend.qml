@@ -5,7 +5,6 @@ import QtQuick
 import Quickshell
 import qs.common
 import qs.services
-import "PowerActions.js" as PowerActions
 
 QtObject {
     readonly property bool brightnessAvailable: BrightnessService.available
@@ -35,17 +34,6 @@ QtObject {
     function setWifiEnabled(on) { NetworkService.setWifiEnabled(on); }
     function setBluetoothEnabled(on) { BluetoothService.setEnabled(on); }
     function setDarkTheme(on) { Colors.mode = on ? "dark" : "light"; }
-    // Lock (the shell's own lock screen: lockRequested), or sign out, restart or shut down (PowerActions.js),
-    // detached so it outlives the shell.
-    signal lockRequested()
-    function powerAction(id) {
-        if (id === "lock") {
-            lockRequested();
-            return;
-        }
-        const command = PowerActions.command(id);
-        if (command) Quickshell.execDetached(command);
-    }
     // Airplane mode turns every radio off; turning it off turns them back on.
     function setAirplaneMode(on) {
         NetworkService.setWifiEnabled(!on);

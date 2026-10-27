@@ -192,7 +192,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
-| `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`) |
+| `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |

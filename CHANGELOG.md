@@ -5,6 +5,10 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Power menu** (plan 2.8): Quick Settings' power button now opens a full-screen menu over the blurred desktop:
+  Lock, Sleep (new), Sign out, Restart, Shut down, as large round buttons. Arrow keys and Enter work; Escape or a
+  click elsewhere closes it. `ipc call power toggle` from a keybind. On niri, add the layer rule in
+  `docs/quick-settings.md` to blur your windows too, not only the wallpaper. The old dropdown is gone.
 - **Wallpaper** (plan 2.9): the shell draws the wallpaper itself. `ipc call wallpaper set /path/to/image.png`
   (or `wallpaper.path` in settings.json) shows it on every screen with a crossfade, colors the shell from it
   (matugen; `wallpaper.palette: false` keeps the palette) and the lock screen blurs it. Turn off another

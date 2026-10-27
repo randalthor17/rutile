@@ -40,13 +40,23 @@ Escape closes the panel, and so does the panel's window losing keyboard focus, e
 every popup shares, D43) and fades in; closing shrinks and fades it, and the window is unloaded once the motion ends (`isOpen` turns false
 at once; opening again mid-close grows it back).
 
-The power button at the panel's top right (the power icon and a chevron, as Googlebook) opens a menu: Lock
-(`loginctl lock-session`), Sign out (`niri msg action quit --skip-confirmation`), Restart (`systemctl reboot`)
-and Shut down (`systemctl poweroff`), from `shell/quicksettings/PowerActions.js`. A choice closes the menu and the
-panel first and runs once the panel has gone (no confirmation, as Googlebook), so a lock screen or shutdown never
-shows it; opening the panel again before then cancels it. The menu opens with the same popup motion from under the
-button, and the chevron turns to point up while it is open.
-Clicking empty desktop or another program's bar does not close it: those clicks do not move focus on niri.
+The power button at the panel's top right (the power icon and a chevron, as Googlebook) opens the full-screen power
+menu (`shell/power/`) and closes the panel: Lock (the shell's lock screen), Sleep (`systemctl suspend`), Sign out
+(`niri msg action quit --skip-confirmation`), Restart (`systemctl reboot`) and Shut down (`systemctl poweroff`). The
+action runs once the menu has gone. `ipc call power toggle`, `open`, `close`, `isOpen`, `choose <id>` (as a click
+would; the smoke test), `state`. The desktop behind it is blurred by the compositor (ext-background-effect-v1);
+niri blurs only the wallpaper there (its "xray", the default for layer surfaces) unless the config has
+
+```
+layer-rule {
+    match namespace="^rutile-power$"
+    background-effect {
+        xray false
+    }
+}
+```
+
+which the home-manager module will write (plan 6.1); the maintainer keeps it out of their own config until then.
 
 A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM
 as Googlebook shows it, or 24-hour when the locale's short time format is), from Quickshell's `SystemClock`.

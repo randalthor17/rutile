@@ -32,6 +32,7 @@ import qs.osd
 import qs.toast
 import qs.lock
 import qs.wallpaper
+import qs.power
 
 Window {
     width: 1200; height: 900; visible: true

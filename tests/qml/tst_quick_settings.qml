@@ -4,7 +4,7 @@ import qs.common
 import qs.components
 import qs.quicksettings
 import "../qs/services/BrightnessCtl.js" as Ctl
-import "../qs/quicksettings/PowerActions.js" as PowerActions
+import "../qs/power/PowerActions.js" as PowerActions
 
 TestCase {
     id: root
@@ -41,7 +41,6 @@ TestCase {
             function setBluetoothEnabled(b) { log("bluetooth " + b); }
             function setDarkTheme(b) { log("dark " + b); }
             function setAirplaneMode(b) { log("airplane " + b); }
-            function powerAction(id) { log("power " + id); }
             function refresh() { log("refresh"); }
         }
     }
@@ -220,69 +219,19 @@ TestCase {
         compare(t.backend.calls[t.backend.calls.length - 1], "dark false");
     }
 
-    function test_power_button_opens_the_power_menu() {
+    function test_power_button_asks_for_the_power_menu() {
         var t = make();
-        var hidden = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "hidden" });
-        var button = findChild(t.panel, "qsPower");
-        var chevron = findChild(t.panel, "qsPowerChevron");
-        compare(chevron.name, "expand_more", "power and a chevron");
-        compare(chevron.rotation, 0);
-        compare(findChild(t.panel, "qsPowerMenu").item, null, "the menu exists only while open");
-        clickItem(button);
-        verify(t.panel.powerMenuOpen);
-        tryCompare(chevron, "rotation", 180, 2000, "the chevron turns to point up");
-        var menu = findChild(t.panel, "qsPowerMenu").item;
-        tryCompare(menu, "scale", 1, 2000, "the menu grows in like every popup");
-        verify(menu);
-        ["lock", "logout", "reboot", "poweroff"].forEach(id => verify(findChild(menu, "qsPower_" + id), id));
-        compare(findChild(menu, "qsPower_lock").position, "first");
-        compare(findChild(menu, "qsPower_poweroff").position, "last");
-        compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "opening the menu does nothing yet");
-        clickItem(button);
-        verify(!t.panel.powerMenuOpen, "the button closes it again");
-        tryCompare(chevron, "rotation", 0, 2000);
-        tryCompare(findChild(t.panel, "qsPowerMenu"), "item", null, 2000, "unloaded once it has closed");
-        clickItem(button);
-        var reopened = findChild(t.panel, "qsPowerMenu").item;
-        tryCompare(reopened, "scale", 1, 2000);
-        clickItem(findChild(reopened, "qsPower_reboot"));
-        verify(!t.panel.powerMenuOpen, "choosing closes the menu");
-        verify(!t.panel.shown, "and the panel");
-        compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "first hide, then run");
-        tryCompare(hidden, "count", 1, 2000);
-        compare(t.backend.calls[t.backend.calls.length - 1], "power reboot", "run once the panel has gone");
-        compare(t.backend.calls.filter(c => c.indexOf("power") === 0).length, 1);
-        compare(chevron.rotation, 0, "the chevron turned back");
-        compare(findChild(t.panel, "qsPowerMenu").item, null, "the menu has gone");
-        // opened again before it has gone: the action is cancelled
-        var u = make();
-        var uh = createTemporaryObject(spyComp, root, { target: u.panel, signalName: "hidden" });
-        clickItem(findChild(u.panel, "qsPower"));
-        tryCompare(u.panel.powerMenu, "scale", 1, 2000);
-        clickItem(findChild(u.panel.powerMenu, "qsPower_poweroff"));
-        u.panel.shown = true;
-        wait(500);
-        compare(uh.count, 0);
-        u.panel.shown = false;
-        tryCompare(uh, "count", 1, 2000);
-        compare(u.backend.calls.filter(c => c.indexOf("power") === 0).length, 0, "never shut down");
-        // the menu can reach below a short panel (no brightness, no volume); the window grows to menuBottom
-        var short = make({ brightnessAvailable: false, volumeAvailable: false });
-        compare(short.panel.menuBottom, 0, "no menu, nothing to fit");
-        clickItem(findChild(short.panel, "qsPower"));
-        var m = short.panel.powerMenu;
-        verify(m);
-        tryCompare(m, "scale", 1, 2000);
-        compare(short.panel.menuBottom, m.mapToItem(short.panel, 0, m.height).y);
-        verify(short.panel.menuBottom > short.panel.height, "taller than the panel here");
-        // edit mode hides the button and the menu
-        short.panel.editMode = true;
-        verify(!findChild(short.panel, "qsPower").visible);
-        tryCompare(findChild(short.panel, "qsPowerMenu"), "item", null, 2000);
+        var asked = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "powerMenuRequested" });
+        compare(findChild(t.panel, "qsPowerChevron").name, "expand_more", "power and a chevron, as Googlebook");
+        clickItem(findChild(t.panel, "qsPower"));
+        compare(asked.count, 1, "the full-screen power menu is the shell's");
+        t.panel.editMode = true;
+        verify(!findChild(t.panel, "qsPower").visible, "no power button in edit mode");
     }
 
     function test_power_commands() {
-        compare(PowerActions.actions.map(a => a.id).join(), "lock,logout,reboot,poweroff");
+        compare(PowerActions.actions.map(a => a.id).join(), "lock,suspend,logout,reboot,poweroff");
+        compare(PowerActions.command("suspend").join(" "), "systemctl suspend");
         compare(PowerActions.command("lock"), null, "the shell locks itself");
         compare(PowerActions.command("logout").join(" "), "niri msg action quit --skip-confirmation");
         compare(PowerActions.command("reboot").join(" "), "systemctl reboot");

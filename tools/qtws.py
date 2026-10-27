@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -527,6 +527,30 @@ def run_wayland_smoke(screenshot=None):
                     rgb = [int(primary[i:i + 2], 16) for i in (1, 3, 5)] if primary.startswith("#") else [0, 0, 0]
                     if max(range(3), key=lambda i: rgb[i]) != 1:
                         problems.append(f"palette after a green wallpaper: primary {primary}, expected green")
+                    # the power menu: opens full-screen, refuses an unknown choice, closes and unloads
+                    def power_state():
+                        try:
+                            return json.loads(ipc("state", target="power"))
+                        except ValueError:
+                            return {}
+                    if ipc("choose", "lock", target="power") != "false":
+                        problems.append("ipc power choose while closed: accepted")
+                    ipc("open", target="power")
+                    time.sleep(0.5)
+                    pw = power_state()
+                    if pw != {"open": True, "loaded": True, "actions": ["lock", "suspend", "logout", "reboot", "poweroff"]}:
+                        problems.append(f"ipc power open: state {pw}")
+                    if ipc("choose", "format-disk", target="power") != "false":
+                        problems.append("ipc power choose format-disk: accepted")
+                    ipc("close", target="power")
+                    for _ in range(30):
+                        if power_state().get("loaded") is False:
+                            break
+                        time.sleep(0.1)
+                    if power_state() != {"open": False, "loaded": False, "actions": []}:
+                        problems.append(f"ipc power close: state {power_state()}, expected unloaded")
+                    if ipc("isLocked", target="lock") != "false":
+                        problems.append("closing the power menu locked the screen")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -799,8 +823,20 @@ def run_wayland_smoke(screenshot=None):
                     time.sleep(0.5)
                     if ipc("isLocked", target="lock") != "false":
                         problems.append("another session's Lock locked the screen")
-                    logind_signal(session, "Session", "Lock")
+                    # the power menu's Lock: chosen, the menu closes and unloads, then the lock comes
+                    ipc("open", target="power")
+                    time.sleep(0.5)
+                    if ipc("choose", "lock", target="power") != "true":
+                        problems.append("ipc power choose lock: refused")
+                    for _ in range(30):
+                        if ipc("isLocked", target="lock") == "true":
+                            break
+                        time.sleep(0.1)
+                    if power_state() != {"open": False, "loaded": False, "actions": []}:
+                        problems.append(f"after choosing Lock: power menu state {power_state()}, expected gone")
+                    logind_signal(session, "Session", "Lock")   # our session's: heard, while already locked
                     ipc("lock", target="lock")              # already locked: changes nothing
+                    time.sleep(0.5)
                     lock = {}
                     for _ in range(30):
                         try:
@@ -810,8 +846,9 @@ def run_wayland_smoke(screenshot=None):
                         if lock.get("secure"):
                             break
                         time.sleep(0.1)
-                    if lock != {"locked": True, "secure": True, "busy": False, "error": "", "attempts": 0, "reason": "logind"}:
-                        problems.append(f"logind Lock: state {lock}, expected locked and secure, by logind")
+                    if lock != {"locked": True, "secure": True, "busy": False, "error": "", "attempts": 0, "reason": "menu",
+                                "requests": ["menu", "logind", "ipc"]}:
+                        problems.append(f"lock: state {lock}, expected locked and secure by the menu, then logind and ipc heard")
                     # suspend: locked and secure already, so the delay inhibitor is let go; on resume it is taken again
                     logind_signal("/org/freedesktop/login1", "Manager", "PrepareForSleep", "true")
                     time.sleep(1.5)
