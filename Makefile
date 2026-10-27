@@ -1,7 +1,7 @@
 # Every commit must pass `make check`.
 PY ?= python3
 
-.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check native
+.PHONY: gallery render check-gpu check tokens tokens-check generate generate-check test lint qmllint flake-check native package-check
 
 check: tokens-check generate-check native test lint qmllint
 
@@ -46,6 +46,11 @@ qmllint:
 # Needs nix with flakes and network on first run; not part of `make check`.
 flake-check:
 	nix flake check --no-build
+
+# Builds the package (nix build .#default) and runs it under a headless sway in a sandbox HOME (D55); not part
+# of `make check` (it builds with Nix).
+package-check:
+	$(PY) tools/dev/package_smoke.py "$$(nix build .#default --no-link --print-out-paths)"
 
 # Open the component gallery in Quickshell (needs a graphical session).
 gallery:

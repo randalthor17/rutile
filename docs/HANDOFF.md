@@ -80,6 +80,7 @@ python3 tools/qtws.py render --out render --mode dark # or light: offscreen PNG 
 make check-gpu              # glyph rendering through the real scene graph (needs a display session)
 python3 tools/qtws.py test tst_settings_app      # one QML test file (a mutation batch: seconds, not a minute)
 make native                 # the Firefox colors' host (C, D54); make check builds it and tests it under ASan/UBSan
+make package-check          # nix build .#default, then run it headless in a sandbox HOME (D55; not in make check)
 ```
 
 In a bare Linux sandbox without Nix, run `tools/dev/setup_sandbox.sh` and export what it prints; see section 7.
@@ -199,10 +200,10 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
 | `settings/` | `schema.json`: every setting of the shell, read by the shell and the home-manager module (D45) |
-| `nix/` | `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile.settings`) |
+| `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings) |
 | `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
-| `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
+| `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `native/` | the one C program, the Firefox colors' host (D54); `make native` builds `build/rutile-pywalfox-host` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
 | `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`, `settings.md`) |

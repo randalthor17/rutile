@@ -2,6 +2,8 @@
 
 **Resuming this project (new session, new person, or a different AI)? Start with `docs/HANDOFF.md`.**
 
+**Installing it (Nix flake, home-manager): see `docs/install.md`.**
+
 A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
