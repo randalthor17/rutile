@@ -1,4 +1,4 @@
-/* Rutile Shell's colors for GTK 3 and 4 (libadwaita's named colors), from matugen. Written by tools/apptheme.py;
+/* Rutile Shell's colors for GTK 3 and 4 (libadwaita's named colors), from matugen. Written by the shell (AppColorsService);
    turn "GTK apps" off in Settings to remove it. */
 @define-color accent_color {{colors.primary.default.hex}};
 @define-color accent_bg_color {{colors.primary.default.hex}};

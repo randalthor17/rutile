@@ -52,7 +52,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Colors.surface
-        opacity: 0.5 * Math.max(0, Math.min(1, motion.progress))
+        opacity: 0.5 * motion.fade
     }
     MouseArea {
         anchors.fill: parent

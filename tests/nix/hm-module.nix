@@ -10,6 +10,7 @@ let
   anything = lib.mkOption { type = lib.types.anything; default = { }; };
   stub = { lib, ... }: {
     options = {
+      xdg.configHome = lib.mkOption { type = lib.types.str; default = "/home/test/.config"; };
       xdg.configFile = lib.mkOption {
         type = lib.types.attrsOf (lib.types.submodule { options.source = lib.mkOption { type = lib.types.path; }; });
         default = { };

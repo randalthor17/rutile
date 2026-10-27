@@ -1,0 +1,30 @@
+// Rutile Shell's colors for niri, from matugen. Written by the shell (Settings, Wallpaper, Colors in other apps);
+// niri reads it through `include optional=true "rutile-colors.kdl"` (home-manager's module adds that), so with the
+// switch off, and the file gone, niri's own colors come back. Colors only: borders stay off unless your config turns
+// them on (niri wiki, Include: the border special case).
+layout {
+    focus-ring {
+        active-color "{{colors.primary.default.hex}}"
+        inactive-color "{{colors.outline.default.hex}}"
+        urgent-color "{{colors.error.default.hex}}"
+    }
+    border {
+        active-color "{{colors.primary.default.hex}}"
+        inactive-color "{{colors.outline_variant.default.hex}}"
+        urgent-color "{{colors.error.default.hex}}"
+    }
+    tab-indicator {
+        active-color "{{colors.primary.default.hex}}"
+        inactive-color "{{colors.outline_variant.default.hex}}"
+        urgent-color "{{colors.error.default.hex}}"
+    }
+    insert-hint {
+        color "{{colors.primary.default.hex}}80"
+    }
+    shadow {
+        color "{{colors.shadow.default.hex}}70"
+    }
+}
+overview {
+    backdrop-color "{{colors.surface_container_lowest.default.hex}}"
+}

@@ -16,7 +16,7 @@ TestCase {
     readonly property var rendered: ({ "gtk.css": "@define-color accent_bg_color #aabbcc;\n", "kitty.conf": "cursor #aabbcc\n",
                                        "btop.theme": "theme[main_bg]=\"#000000\"\n", "qtct.conf": "[ColorScheme]\n",
                                        "ghostty": "background = #111111\n", "nvim.lua": "-- rutile\n",
-                                       "pywalfox.conf": "mode dark\n" })
+                                       "pywalfox.conf": "mode dark\n", "niri.kdl": "layout {}\n" })
 
     // Runs the plan's ops on a map of files, as the sh script would.
     function run(files, ops) {
@@ -75,6 +75,48 @@ TestCase {
         const off = sync(r.files, [], r.done);
         compare(off.files[conf], original);
         compare(off.ops.filter(o => o.op === "signal").length, 1, "turned off: it reloads its own colors");
+    }
+
+    // home-manager's configs are links into the read-only store: replacing one would break the next switch.
+    function test_a_linked_config_is_left_alone() {
+        const conf = "/h/.config/kitty/kitty.conf", qt6 = "/h/.config/qt6ct/qt6ct.conf";
+        const theirs = "font_size 12\n";
+        let r = sync({ [conf]: theirs, ["!" + conf]: "", [qt6]: "[Appearance]\n", ["!" + qt6]: "" }, ["kitty", "qt"]);
+        compare(r.files[conf], theirs, "not changed");
+        compare(r.ops.filter(o => o.path === conf || o.path === qt6).length, 0, "no op touches a link");
+        compare(r.files["/h/.config/kitty/rutile-colors.conf"], rendered["kitty.conf"], "its own file still comes");
+        const errors = r.errors.join("; ");
+        verify(errors.indexOf("kitty: " + conf + " is a link (home-manager?), not changed; add include rutile-colors.conf") === 0, errors);
+        verify(errors.indexOf(qt6 + " is a link (home-manager?), not changed; set [Appearance] color_scheme_path = ") > 0, errors);
+        verify(!(qt6 + "|Appearance|color_scheme_path" in r.done.qt.previous), "nothing to put back");
+        const off = sync(Object.assign({}, r.files, { ["!" + conf]: "", ["!" + qt6]: "" }), [], r.done);
+        compare(off.files[conf], theirs, "turned off: still not touched");
+        compare(off.files["/h/.config/kitty/rutile-colors.conf"], null);
+        // not a link: changed as before
+        verify(sync({ [conf]: theirs, ["!" + conf]: null }, ["kitty"]).files[conf].indexOf("include rutile-colors.conf") > 0);
+    }
+
+    // Themed while a plain file, then home-manager took the file over (keeping our lines in it): turning off does not
+    // write to the link either.
+    function test_a_config_that_became_a_link_is_not_undone() {
+        const conf = "/h/.config/kitty/kitty.conf", btop = "/h/.config/btop/btop.conf";
+        const r = sync({ [conf]: "font_size 12\n", [btop]: "color_theme = \"Default\"\n" }, ["kitty", "btop"]);
+        const linked = Object.assign({}, r.files, { ["!" + conf]: "", ["!" + btop]: "" });
+        const off = sync(linked, [], r.done);
+        compare(off.files[conf], r.files[conf], "kitty.conf, now a link, untouched");
+        compare(off.files[btop], r.files[btop], "btop.conf, now a link, untouched");
+        compare(off.ops.filter(o => o.path === conf || o.path === btop).length, 0);
+        compare(off.files["/h/.config/btop/themes/rutile.theme"], null, "its own files still go");
+    }
+
+    function test_niri_gets_its_own_file_only() {
+        const r = sync({ "/h/.config/niri/config.kdl": "layout {}\n" }, ["niri"]);
+        compare(r.files["/h/.config/niri/rutile-colors.kdl"], rendered["niri.kdl"]);
+        compare(r.ops.map(o => o.op + " " + o.path).join(), "write /h/.config/niri/rutile-colors.kdl", "config.kdl never");
+        compare(AppTheme.paths(dirs, ["niri"]).join(), "/h/.config/niri/rutile-colors.kdl", "nothing else read");
+        const off = sync(r.files, [], r.done);
+        compare(off.files["/h/.config/niri/rutile-colors.kdl"], null, "off: gone, so niri's own colors apply");
+        compare(off.files["/h/.config/niri/config.kdl"], "layout {}\n");
     }
 
     function test_btop_key_comes_back_unless_changed_since() {
@@ -169,8 +211,10 @@ TestCase {
         verify(p.indexOf("/h/.mozilla/native-messaging-hosts/pywalfox.json") >= 0);
         verify(p.indexOf(built) >= 0, "the host only checked for, never read");
         verify(p.indexOf("/h/.config/btop/btop.conf") >= 0);
+        verify(p.indexOf("!/h/.config/btop/btop.conf") >= 0, "a config it edits is checked for being a link");
+        verify(AppTheme.paths(dirs, ["kitty"]).indexOf("!/h/.config/kitty/kitty.conf") >= 0, "one it adds a block to too");
         compare(new Set(p).size, p.length, "no path twice");
-        compare(AppTheme.ORDER.join(), "gtk,qt,kitty,ghostty,btop,nvim,firefox");
+        compare(AppTheme.ORDER.join(), "niri,gtk,qt,kitty,ghostty,btop,nvim,firefox");
     }
 
     function test_text_edits() {

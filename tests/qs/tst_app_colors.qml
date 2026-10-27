@@ -7,6 +7,8 @@
 // env RUTILE_PALETTE=@WS@/palette.json
 // env RUTILE_PYWALFOX_HOST=@WS@/bin/fake-pywalfox-host
 // Another program's Firefox host (as Noctalia's) is there first: kept aside while ours is in, then put back.
+// Ghostty's config is a link, as home-manager makes it: never changed, and the error says what to add. niri gets its
+// own rutile-colors.kdl.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -22,13 +24,15 @@ ShellRoot {
                                     home + "/.mozilla/native-messaging-hosts/pywalfox.json",
                                     home + "/.mozilla/native-messaging-hosts/pywalfox.json.rutile-backup",
                                     home + "/cache/rutile/pywalfox.conf",
+                                    home + "/config/niri/rutile-colors.kdl", home + "/config/ghostty/themes/rutile",
+                                    home + "/hm-ghostty",
                                     Quickshell.env("FAKE_PKILL_LOG")]
     QsTest { id: t }
     readonly property string theirs: '{"name": "pywalfox", "path": "/nix/store/x-noctalia"}'
     Process {
         id: other
         running: true
-        command: ["sh", "-c", 'mkdir -p "$HOME/.mozilla/native-messaging-hosts" && printf "%s" "$1" > "$HOME/.mozilla/native-messaging-hosts/pywalfox.json"',
+        command: ["sh", "-c", 'mkdir -p "$HOME/.mozilla/native-messaging-hosts" "$HOME/config/ghostty" && printf "%s" "$1" > "$HOME/.mozilla/native-messaging-hosts/pywalfox.json" && printf "font-size = 12\\n" > "$HOME/hm-ghostty" && ln -s "$HOME/hm-ghostty" "$HOME/config/ghostty/config"',
                   "sh", root.theirs]
     }
     Process {
@@ -64,12 +68,14 @@ ShellRoot {
                 reader.running = true;
                 break;
             case 1:
-                t.compare(Object.keys(root.files).join(), root.home + "/.mozilla/native-messaging-hosts/pywalfox.json",
-                          "all off: nothing written (only the other program's host)");
+                t.compare(Object.keys(root.files).join(), root.home + "/.mozilla/native-messaging-hosts/pywalfox.json," + root.home + "/hm-ghostty",
+                          "all off: nothing written (only the other program's host and the linked config)");
                 t.compare(S.runs, 0, "nothing run");
                 Settings.set("appColors.kitty", true);
                 Settings.set("appColors.gtk", true);
                 Settings.set("appColors.firefox", true);
+                Settings.set("appColors.niri", true);
+                Settings.set("appColors.ghostty", true);
                 break;
             case 2:
                 t.compare(JSON.stringify(S.wanted), "[]", "apps on, the main switch off: nothing");
@@ -82,7 +88,11 @@ ShellRoot {
                 root.stage = 4;
                 break;
             case 5: {
-                t.compare(S.lastError, "", "no error");
+                t.verify(S.lastError.indexOf("Ghostty: " + root.home + "/config/ghostty/config is a link (home-manager?), not changed; add theme = rutile") === 0,
+                         "only the linked config's warning: " + S.lastError);
+                t.compare(root.file("/hm-ghostty"), "font-size = 12\n", "the linked config is not changed");
+                t.verify((root.file("/config/ghostty/themes/rutile") ?? "").indexOf("cursor-color = #b2c5ff") >= 0, "Ghostty's theme still comes");
+                t.verify((root.file("/config/niri/rutile-colors.kdl") ?? "").indexOf('active-color "#b2c5ff"') > 0, "niri's colors");
                 const colors = root.file("/config/kitty/rutile-colors.conf") ?? "";
                 t.verify(colors.indexOf("cursor #b2c5ff") >= 0, "kitty wears the palette's primary: " + colors.slice(0, 200));
                 t.verify((root.file("/config/kitty/kitty.conf") ?? "").indexOf("include rutile-colors.conf") > 0, "kitty includes it");
@@ -93,7 +103,7 @@ ShellRoot {
                 t.compare(root.file("/.mozilla/native-messaging-hosts/pywalfox.json.rutile-backup"), root.theirs, "theirs kept aside");
                 t.verify((root.file("/cache/rutile/pywalfox.conf") ?? "").indexOf("\ncolor1 #b2c5ff\n") > 0, "Firefox's colors");
                 t.verify((root.files[Quickshell.env("FAKE_PKILL_LOG")] ?? "").indexOf("-USR1 -f") === 0, "kitty told to reload");
-                t.compare(S.synced.join(), "gtk,kitty,firefox", "remembered");
+                t.compare(S.synced.join(), "niri,gtk,kitty,ghostty,firefox", "remembered");
                 repaint.running = true;
                 break;
             }
@@ -118,8 +128,9 @@ ShellRoot {
                 break;
             case 11: {
                 const left = Object.keys(root.files).filter(f => f !== Quickshell.env("FAKE_PKILL_LOG"));
-                t.compare(left.join(), root.home + "/.mozilla/native-messaging-hosts/pywalfox.json",
+                t.compare(left.join(), root.home + "/.mozilla/native-messaging-hosts/pywalfox.json," + root.home + "/hm-ghostty",
                           "the main switch off: everything taken back out");
+                t.compare(root.file("/hm-ghostty"), "font-size = 12\n", "the linked config never changed");
                 t.compare(root.file("/.mozilla/native-messaging-hosts/pywalfox.json"), root.theirs, "theirs back");
                 t.compare(S.synced.join(), "", "nothing themed");
                 t.compare(S.lastError, "", "no error");

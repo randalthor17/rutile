@@ -4,12 +4,13 @@
 // templates with matugen, and runs the plan's ops (Files.js).
 // It changes only what it can undo: its own files, a marked block in a config that includes them, or one key whose
 // previous value it keeps and puts back only while the key still holds ours. `done` (kept in state.json) is what
-// it did, per app.
+// it did, per app. A config that is a symbolic link (home-manager's, into the read-only store) is never changed:
+// replacing the link would break the next switch; the plan says what to add there instead.
 .pragma library
 
 var BEGIN = ">>> rutile colors >>>";
 var END = "<<< rutile colors <<<";
-var ORDER = ["gtk", "qt", "kitty", "ghostty", "btop", "nvim", "firefox"];
+var ORDER = ["niri", "gtk", "qt", "kitty", "ghostty", "btop", "nvim", "firefox"];
 
 // dirs: {config, cache, data, home, theme (the templates' folder), host (tools/pywalfox_host.py)}
 function apps(dirs) {
@@ -24,6 +25,9 @@ function apps(dirs) {
                 { file: c + "/" + v + "/" + v + ".conf", section: "Appearance", key: "custom_palette", value: "true" }];
     }
     return {
+        // niri's config is never edited: it includes our file (home-manager's module does; by hand:
+        // include optional=true "rutile-colors.kdl"). niri watches included files, a missing optional one too.
+        niri: { title: "niri", files: [["niri.kdl", c + "/niri/rutile-colors.kdl"]] },
         gtk: { title: "GTK 3 and 4",
                files: [["gtk.css", c + "/gtk-3.0/rutile.css"], ["gtk.css", c + "/gtk-4.0/rutile.css"]],
                blocks: [gtk(3), gtk(4)] },
@@ -151,8 +155,8 @@ function paths(dirs, names) {
         var a = all[n];
         if (!a) return;
         a.files.forEach(function (f) { add(f[1]); });
-        (a.blocks || []).forEach(function (b) { add(b.file); });
-        (a.keys || []).forEach(function (k) { add(k.file); });
+        (a.blocks || []).forEach(function (b) { add(b.file); add("!" + b.file); });
+        (a.keys || []).forEach(function (k) { add(k.file); add("!" + k.file); });
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             add(fx.manifest);
@@ -218,6 +222,9 @@ function plan(input) {
     function signal(app) {
         if (all[app].reload) ops.push({ op: "signal", sig: all[app].reload[0], pattern: all[app].reload[1] });
     }
+    function linked(path) {
+        return typeof files["!" + path] === "string";
+    }
 
     // apps themed before and no longer wanted: take it back out
     Object.keys(done).sort().forEach(function (app) {
@@ -227,7 +234,7 @@ function plan(input) {
         var changed = false;
         (record.files || []).forEach(function (f) { changed = remove(f) || changed; });
         (a.blocks || []).forEach(function (b) {
-            if (files[b.file] === null || files[b.file] === undefined) return;
+            if (files[b.file] === null || files[b.file] === undefined || linked(b.file)) return;
             var text = stripBlock(files[b.file], b.comment);
             if (text === files[b.file]) return;
             changed = (text.trim() === "" ? remove(b.file) : write(b.file, text)) || changed;
@@ -238,7 +245,7 @@ function plan(input) {
             var ours = (a.keys || []).filter(function (k) {
                 return k.file === parts[0] && (k.section || "") === parts[1] && k.key === parts[2];
             })[0];
-            if (ours && getKey(files[parts[0]], section, parts[2]) === ours.value)   // still ours: put theirs back
+            if (ours && !linked(parts[0]) && getKey(files[parts[0]], section, parts[2]) === ours.value)   // still ours: put theirs back
                 changed = write(parts[0], setKey(files[parts[0]], section, parts[2], record.previous[slot])) || changed;
         });
         if (a.firefox) {
@@ -263,9 +270,15 @@ function plan(input) {
             if (record.files.indexOf(f[1]) < 0) record.files.push(f[1]);
         });
         (a.blocks || []).forEach(function (b) {
+            if (linked(b.file))
+                return errors.push(a.title + ": " + b.file + " is a link (home-manager?), not changed; add " +
+                                   b.lines.join(" ") + " to it there");
             changed = write(b.file, addBlock(files[b.file], b.comment, b.lines, b.where)) || changed;
         });
         (a.keys || []).forEach(function (k) {
+            if (linked(k.file))
+                return errors.push(a.title + ": " + k.file + " is a link (home-manager?), not changed; set " +
+                                   (k.section ? "[" + k.section + "] " : "") + k.key + " = " + k.value + " there");
             var slot = k.file + "|" + (k.section || "") + "|" + k.key;
             if (!(slot in record.previous)) record.previous[slot] = getKey(files[k.file], k.section, k.key);
             changed = write(k.file, setKey(files[k.file], k.section, k.key, k.value)) || changed;

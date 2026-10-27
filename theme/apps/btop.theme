@@ -1,4 +1,4 @@
-# Rutile Shell's colors for btop, from matugen. Written by tools/apptheme.py.
+# Rutile Shell's colors for btop, from matugen. Written by the shell (AppColorsService).
 theme[main_bg]="{{colors.surface.default.hex}}"
 theme[main_fg]="{{colors.on_surface.default.hex}}"
 theme[title]="{{colors.on_surface.default.hex}}"

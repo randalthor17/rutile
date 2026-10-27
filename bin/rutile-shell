@@ -1,0 +1,134 @@
+#!/bin/sh
+# rutile-shell: run Rutile Shell under Quickshell, or talk to the running one (plan 6.1). The package wraps this with
+# RUTILE_SHELL_QML set and everything the shell calls on PATH; from a checkout it finds ../shell/shell.qml.
+# The IPC reference in usage() must match the IpcHandlers in shell/shell.qml (tests/test_cli.py checks).
+set -eu
+
+here=$(dirname -- "$(readlink -f -- "$0")")
+qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
+qs=${RUTILE_QUICKSHELL:-quickshell}
+
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings"
+
+usage() {
+    cat <<'EOF'
+Usage:
+  rutile-shell [run] [QUICKSHELL OPTIONS]   start the shell (one per session; it is a user service with the
+                                            home-manager module: systemctl --user restart rutile-shell)
+  rutile-shell TARGET FUNCTION [ARGS...]    call the running shell, e.g. rutile-shell power toggle
+  rutile-shell ipc                          list what the running shell answers, with argument types
+  rutile-shell ipc call|show|... [...]      Quickshell's own ipc command, for this shell
+  rutile-shell log [OPTIONS]                the running shell's log (quickshell log)
+  rutile-shell kill                         stop the running shell
+  rutile-shell -h | --help | help           this help
+  rutile-shell quickshell-help              Quickshell's own options (for run)
+
+IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diagnostics):
+  wallpaper      set PATH          set the wallpaper (absolute path; "" removes it); false if set in Nix
+                 get               the wallpaper's path
+                 state
+  motion         setSpeed N        animation speed, 0 (off) to 4, saved; false if out of range or set in Nix
+                 speed             the current speed
+  power          toggle | open | close
+                 isOpen
+                 choose ID         lock, suspend, logout, reboot or poweroff, as a click in the open menu
+                 state
+  settings       open PAGE         open the Settings app on a page ("" keeps the current one): wallpaper,
+                                   notifications, security, shelf, accessibility, about
+                 close | toggle
+                 isOpen
+                 search TEXT       type into the open Settings app's search
+                 state
+  appcolors      state             colors for other apps (Settings, Wallpaper: off unless switched on)
+  polkit         cancel            cancel the open password dialog
+                 state
+  lock           lock              lock the screen
+                 isLocked
+                 state
+  launcher       toggle | open | close
+                 isOpen
+                 search QUERY      type into the open launcher; the first results' ids
+                 category ID       choose a category ("" is All); the first results' ids
+                 launch ID         open an app, or a setting such as qs:dark, from the open launcher
+                 actions APP       an app's desktop actions
+                 chooseAction APP ACTION
+                 togglePin APP     pin or unpin an app; false if the pins are set in Nix
+                 setListView BOOL  apps as a list (true) or a grid
+                 state
+  notifications  toggle            the notification list
+                 isOpen
+                 dnd               whether Do not disturb is on
+                 setDnd BOOL
+                 dismiss ID | dismissAll
+                 invoke ID ACTION  as a click on a notification's action
+                 reply ID TEXT
+                 state
+  osd            volumeUp | volumeDown | toggleMute
+                 brightnessUp | brightnessDown    false without a backlight
+                 display KIND      show the volume or brightness OSD
+                 state
+  toast          send TEXT ICON    a short message (ICON: a Material Symbols name, or ""); its id
+                 state
+  quicksettings  toggle | open | close
+                 isOpen
+                 state
+
+Examples:
+  rutile-shell lock lock
+  rutile-shell osd volumeUp
+  rutile-shell wallpaper set ~/Pictures/wall.png
+  rutile-shell toast send "Screenshot saved" photo_camera
+EOF
+}
+
+is_target() {
+    for t in $TARGETS; do
+        [ "$t" = "$1" ] && return 0
+    done
+    return 1
+}
+
+if [ $# -eq 0 ]; then
+    exec "$qs" -p "$qml"
+fi
+
+case "$1" in
+    -h|--help|help)
+        usage
+        ;;
+    quickshell-help)
+        exec "$qs" --help
+        ;;
+    run)
+        shift
+        exec "$qs" -p "$qml" "$@"
+        ;;
+    -*)
+        exec "$qs" -p "$qml" "$@"
+        ;;
+    ipc)
+        shift
+        if [ $# -eq 0 ]; then
+            exec "$qs" ipc -p "$qml" show
+        fi
+        exec "$qs" ipc -p "$qml" "$@"
+        ;;
+    log)
+        shift
+        exec "$qs" log -p "$qml" "$@"
+        ;;
+    kill)
+        exec "$qs" kill -p "$qml"
+        ;;
+    *)
+        if is_target "$1"; then
+            if [ $# -lt 2 ]; then
+                echo "rutile-shell: $1 needs a function; see rutile-shell --help" >&2
+                exit 2
+            fi
+            exec "$qs" ipc -p "$qml" call "$@"
+        fi
+        echo "rutile-shell: unknown command '$1'; see rutile-shell --help" >&2
+        exit 2
+        ;;
+esac

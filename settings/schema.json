@@ -91,6 +91,12 @@
           "title": "Colors in other apps",
           "description": "Give other apps the shell's colors (matugen) whenever the palette changes. Each app has its own switch; off takes the colors back out."
         },
+        "niri": {
+          "type": "boolean",
+          "default": false,
+          "title": "niri",
+          "description": "Window borders, focus ring, tab indicators and the overview's backdrop: a rutile-colors.kdl that niri includes (the home-manager module adds the include)."
+        },
         "gtk": {
           "type": "boolean",
           "default": false,

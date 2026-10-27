@@ -1,4 +1,4 @@
--- Rutile Shell's colors for Neovim, from matugen: `:colorscheme rutile`. Written by tools/apptheme.py.
+-- Rutile Shell's colors for Neovim, from matugen: `:colorscheme rutile`. Written by the shell (AppColorsService).
 vim.cmd("highlight clear")
 vim.g.colors_name = "rutile"
 vim.o.background = "{{mode}}"

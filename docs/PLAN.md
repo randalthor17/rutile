@@ -192,7 +192,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   wallpaper and other apps' colors run matugen and change files from QML and JS (`Files.js`, `Palette.js`,
   `AppTheme.js`), with `sh` doing the file work. Python stays for development (`tools/`) only: the one program
   Firefox starts itself, the Pywalfox host, is C (D54, `native/pywalfox-host.c`, `make native`, flake package
-  `pywalfox-host`), tested under AddressSanitizer and UBSan with malformed frames and fuzzing.
+  `pywalfox-host`), tested under AddressSanitizer and UBSan with malformed frames and fuzzing. Real use (D58):
+  without a palette file the apps take the shell's own colors and follow them; a config that is a link
+  (home-manager's) is never changed; niri is a new app (`rutile-colors.kdl`, included by the module).
 
 ## Phase 3: windows on niri
 
@@ -254,8 +256,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   as `~/.config/niri/rutile.kdl` to include; `programs.rutile.settings` as before). Checked: the package builds
   and runs headless (`make package-check`: loads, IPC, palette from a wallpaper in the store, fonts); a real
   home-manager generation builds with it and home-manager's niri module, including `niri validate`; the module's
-  options in tests with `niri validate` on the KDL. Not checked: a real login with it (the maintainer's test
-  user). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
+  options in tests with `niri validate` on the KDL. The maintainer's test user ran it (October 2026); what that
+  found is fixed: the power menu closed slowly (D56), `rutile-shell --help` was Quickshell's (now our own CLI with
+  the IPC reference, D57), and other apps' colors never applied (no palette yet; home-manager's linked configs;
+  D58), with niri colors added (`appColors.niri`, an optional include in the module's KDL). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
   config beyond the settings' defaults.
 - [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
 - [ ] **6.3** Installer ISO.

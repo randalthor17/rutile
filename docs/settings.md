@@ -33,6 +33,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
 | `appColors.enabled` | true or false | false | give other apps the shell's colors (D52); each app below also needs its own switch on |
+| `appColors.niri` | true or false | false | niri's focus ring, borders, tab indicators and overview backdrop (a rutile-colors.kdl that niri includes) |
 | `appColors.gtk` | true or false | false | GTK 3 and 4 (a rutile.css that gtk.css imports) |
 | `appColors.qt` | true or false | false | qt5ct and qt6ct's color scheme |
 | `appColors.kitty` | true or false | false | kitty's colors (not the 16 terminal colors); reloads at once |

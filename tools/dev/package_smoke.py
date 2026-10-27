@@ -24,6 +24,9 @@ from test_palette import solid_png  # noqa: E402
 def main(pkg):
     exe = str(Path(pkg) / "bin" / "rutile-shell")
     problems = []
+    usage = subprocess.run([exe, "--help"], capture_output=True, text=True, timeout=10).stdout
+    if "rutile-shell TARGET FUNCTION" not in usage or "quicksettings" not in usage:
+        problems.append("rutile-shell --help does not give the shell's own help")
     with qtws.HeadlessSway() as comp, qtws.PrivateBus() as bus:
         rt = comp.runtime
         env = comp.env({"DBUS_SESSION_BUS_ADDRESS": bus.address, "XDG_SESSION_ID": "", "HOME": str(rt / "home"),

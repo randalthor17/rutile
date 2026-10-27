@@ -7,9 +7,12 @@
 var MARK = "@@rutile-file:";
 
 // Prints each file as "\n@@rutile-file:<1 or 0>:<path>\n" and its text (1: it exists, 0: it does not). A path given
-// as "?<path>" is only checked for existence: its text is "" (it exists) or null, under the key "?<path>".
+// as "?<path>" is only checked for existence: its text is "" (it exists) or null, under the key "?<path>"; one
+// given as "!<path>" likewise for being a symbolic link (a file home-manager or the like manages).
 var READ_SCRIPT = 'for f do\n' +
     '  case "$f" in "?"*) if [ -e "${f#?}" ]; then printf "\\n' + MARK + '1:%s\\n" "$f"; ' +
+    'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi; continue;; esac\n' +
+    '  case "$f" in "!"*) if [ -L "${f#?}" ]; then printf "\\n' + MARK + '1:%s\\n" "$f"; ' +
     'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi; continue;; esac\n' +
     '  if [ -f "$f" ]; then printf "\\n' + MARK + '1:%s\\n" "$f"; cat -- "$f"; ' +
     'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi\n' +
