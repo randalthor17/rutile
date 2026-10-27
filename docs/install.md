@@ -6,7 +6,7 @@ user service and adds its part of niri's configuration. It is early: try it on a
 ## Try it once, in the current session
 
 ```
-nix run /home/rand/Downloads/rutile
+nix run github:randalthor17/rutile
 ```
 
 Not beside another running Rutile (or a second bar of another shell): stop that first.
@@ -17,7 +17,7 @@ In the flake of your system or home configuration:
 
 ```nix
 {
-  inputs.rutile.url = "git+file:///home/rand/Downloads/rutile";   # a GitHub URL once it is published
+  inputs.rutile.url = "github:randalthor17/rutile";             # or path:/where/the/checkout/is for local changes
   inputs.rutile.inputs.nixpkgs.follows = "nixpkgs";
 
   # ...in the home-manager configuration of the test user:

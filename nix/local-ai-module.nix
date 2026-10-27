@@ -1,6 +1,6 @@
 # NixOS module: run Ollama as a system service on the AMD GPU, for the local side-work agent.
 #
-#   inputs.rutile.url = "path:/home/you/Downloads/rutile";           # or wherever the repo lives
+#   inputs.rutile.url = "github:randalthor17/rutile";                # or path:/where/the/checkout/is
 #   modules = [ rutile.nixosModules.local-ai ];
 #
 # Tuned for a 16 GB Radeon RX 9060 XT (RDNA4, gfx1200). The ROCm build is selected through
