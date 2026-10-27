@@ -145,8 +145,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   reaches the sender (NotificationReplied, checked on the bus). The windows are not resized while things move
   (the popups' grows when a card comes and shrinks once it has gone, the list's is fixed), which made the
   motion stutter. Clear all sweeps the cards off to the side, the top one first, and dismisses only those
-  it swept. Not done: sounds (needs a player such as
-  pw-play or canberra-gtk-play: a dependency to decide), per-app settings. Then the rest of the item: toasts, OSD, lock screen (PAM); a full-screen power menu over the blurred desktop
+  it swept. The OSD (`shell/osd/`): a volume change from anywhere, or a brightness step through `ipc call osd`,
+  shows the level at the bottom centre as Quick Settings' slider (draggable), for 1.5 s or while the pointer is on
+  it; not while Quick Settings is open. Not done: sounds (needs a player such as
+  pw-play or canberra-gtk-play: a dependency to decide), per-app settings. Then the rest of the item: toasts, lock screen (PAM); a full-screen power menu over the blurred desktop
   (maintainer's request), replacing Quick Settings' power dropdown. Types: `NotificationServer`, `WlSessionLock`,
   `PamContext`, `IdleMonitor`, `PolkitAgent`.
 

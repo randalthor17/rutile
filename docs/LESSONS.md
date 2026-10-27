@@ -90,6 +90,10 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **Don't assert what you cannot justify.** A threshold guessed too high (95% agreement vs a measured 94.7%) was a
   guess; set bounds from measurement and say so in a comment.
 
+- **A fake that nothing reads back can be wrong for a long time.** The fake brightnessctl in tests/qs/bin wrote all
+  its arguments ("-m -c backlight -d intel_backlight set 565") into its state file instead of the value; no test
+  read the state back after a set until the OSD smoke check did. When a fake keeps state, check it once.
+
 ## Nix and environment
 
 - **Flakes only see git-tracked files.** `git add` before evaluating. A new file missing from the commit breaks the

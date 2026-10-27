@@ -9,6 +9,7 @@ import qs.common
 import qs.bar
 import qs.launcher
 import qs.notifications
+import qs.osd
 import qs.quicksettings
 import qs.services
 import qs.shelf
@@ -274,6 +275,76 @@ ShellRoot {
                 shown: notificationPopups.item ? notificationPopups.item.popups.popups.map(n => n.id) : []
             });
         }
+    }
+
+    // The volume and brightness OSD (plan 2.8), on the screen the keyboard is on; loaded from a change until it has
+    // played its closing motion. A change while it shows, or closes, keeps it open on the new kind.
+    property bool osdShown: false
+    property string osdKind: "volume"
+    readonly property real osdStep: 0.05
+    function showOsd(kind) {
+        osdKind = kind;
+        if (osd.item) osd.item.panel.show(kind);
+        else osdShown = true;
+    }
+    LazyLoader {
+        id: osd
+        active: shell.osdShown
+        OsdWindow {
+            screen: Quickshell.screens.find(s => s.name === NiriService.focusedOutput) ?? Quickshell.screens[0]
+            Component.onCompleted: panel.show(shell.osdKind)
+            onFinished: shell.osdShown = false
+        }
+    }
+
+    // A volume change from anywhere (keys bound to wpctl, an app, the OSD's own slider) shows the OSD, except while
+    // Quick Settings is open: its slider shows the level already. The default output's first values, in the half
+    // second after it appears or changes, are not changes.
+    property bool volumeArmed: false
+    function armVolume() {
+        volumeArmed = false;
+        volumeArm.restart();
+    }
+    Timer {
+        id: volumeArm
+        interval: 500
+        onTriggered: shell.volumeArmed = AudioService.ready
+    }
+    function volumeChanged() {
+        if (volumeArmed && !quickSettingsOpen) showOsd("volume");
+    }
+    Connections {
+        target: AudioService
+        function onReadyChanged() { shell.armVolume(); }
+        function onSinkChanged() { shell.armVolume(); }
+        function onVolumeChanged() { shell.volumeChanged(); }
+        function onMutedChanged() { shell.volumeChanged(); }
+    }
+    Component.onCompleted: armVolume()
+
+    // From niri's media keys, e.g. XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "-p" "<path>/shell/shell.qml"
+    // "ipc" "call" "osd" "volumeUp"; } (brightnessctl reports no changes, so brightness keys must come here to show it).
+    IpcHandler {
+        target: "osd"
+        function volumeUp(): void { AudioService.setVolume(AudioService.volume + shell.osdStep); }
+        function volumeDown(): void { AudioService.setVolume(AudioService.volume - shell.osdStep); }
+        function toggleMute(): void { AudioService.setMuted(!AudioService.muted); }
+        // false without a backlight
+        function brightnessUp(): bool { return shell.stepBrightness(shell.osdStep); }
+        function brightnessDown(): bool { return shell.stepBrightness(-shell.osdStep); }
+        function show(kind: string): void { shell.showOsd(kind === "brightness" ? "brightness" : "volume"); }
+        function state(): string {
+            const p = osd.item?.panel;
+            return JSON.stringify({ loaded: osd.active, open: p?.open ?? false, kind: p?.kind ?? "",
+                                    value: p?.value ?? 0, muted: p?.muted ?? false,
+                                    volumeReady: AudioService.ready, brightness: BrightnessService.available });
+        }
+    }
+    function stepBrightness(step) {
+        if (!BrightnessService.available) return false;
+        BrightnessService.set(BrightnessService.value + step);
+        showOsd("brightness");
+        return true;
     }
 
     LazyLoader {

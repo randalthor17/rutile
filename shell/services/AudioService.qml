@@ -12,6 +12,8 @@ Singleton {
     readonly property PwNode source: Pipewire.defaultAudioSource
 
     readonly property bool available: !!sink && !!sink.audio
+    // The default output is bound and its volume and mute are its own, not placeholders.
+    readonly property bool ready: available && sink.ready
     readonly property real volume: sink?.audio?.volume ?? 0
     readonly property bool muted: sink?.audio?.muted ?? false
     readonly property bool micAvailable: !!source && !!source.audio

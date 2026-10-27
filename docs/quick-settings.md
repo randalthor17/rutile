@@ -21,6 +21,12 @@ All, returns the best ids), `setListView <true|false>`, `actions <appId>` (the d
 under the bell, `isOpen`, `setDnd <true|false>`, `dnd`, `dismiss <id>`, `dismissAll`, `invoke <id> <action>` and
 `state` (what is kept and popping up, the windows, each screen's bell). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
+The OSD (volume and brightness, `shell/osd/`): `ipc call osd volumeUp`, `volumeDown`, `toggleMute`, `brightnessUp`,
+`brightnessDown` (5% steps; the brightness calls return false without a backlight), `show <volume|brightness>` and
+`state`. Bind the media keys to them, e.g. `XF86MonBrightnessUp allow-when-locked=true { spawn "quickshell" "-p"
+"/path/to/shell/shell.qml" "ipc" "call" "osd" "brightnessUp"; }`. A volume change from anywhere else (keys bound to
+`wpctl`, an app) shows the OSD too, but brightnessctl reports no changes, so brightness keys must go through the
+shell to show it. It is not shown while Quick Settings is open, whose sliders show the level.
 Escape closes the panel, and so does the panel's window losing keyboard focus, e.g. by clicking into a window
 (D41); clicks inside the panel do not. The panel grows in from the corner under the pill (`PopupMotion`, the motion
 every popup shares, D43) and fades in; closing shrinks and fades it, and the window is unloaded once the motion ends (`isOpen` turns false

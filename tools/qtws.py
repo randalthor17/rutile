@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -443,6 +443,30 @@ def run_wayland_smoke(screenshot=None):
                         got = ipc(call)
                         if got != want:
                             problems.append(f"ipc {call}: got {got!r}, expected {want!r}")
+                    # the OSD: a brightness key steps the fake backlight and shows the level; it closes and
+                    # unloads after its hold. No Pipewire here, so the volume is not ready and shows nothing.
+                    def osd_state():
+                        try:
+                            return json.loads(ipc("state", target="osd"))
+                        except ValueError:
+                            return {}
+                    got = ipc("brightnessUp", target="osd")
+                    time.sleep(0.5)
+                    osd = osd_state()
+                    want_raw = round((512 / 1060 + 0.05) * 1060)
+                    if got != "true" or not (osd.get("loaded") and osd.get("open") and osd.get("kind") == "brightness"
+                                             and abs(osd.get("value", 0) - want_raw / 1060) < 1e-6):
+                        problems.append(f"ipc osd brightnessUp: {got}, state {osd}, expected the brightness OSD "
+                                        f"at {want_raw}/1060")
+                    for _ in range(40):
+                        if not osd_state().get("loaded", True):
+                            break
+                        time.sleep(0.1)
+                    osd = osd_state()
+                    if osd.get("loaded") is not False or osd.get("volumeReady") is not False:
+                        problems.append(f"ipc osd state 4 s after a key: {osd}, expected unloaded and no volume")
+                    if fake.read_text().strip() != str(want_raw):
+                        problems.append(f"fake backlight after brightnessUp: {fake.read_text().strip()}, expected {want_raw}")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -727,7 +751,7 @@ def run_wayland_surfaces():
     cards come and go, not on every frame of their motion (each resize is a compositor round trip, and the
     motion stuttered); the list's never; and a popup window's input mask covers the whole panel, not the panel
     as its opening motion had scaled it (Quickshell's Region measures an item with its scale and keeps that).
-    Returns (code, report)."""
+    The OSD's surface is sized once, also when a second key comes while it shows. Returns (code, report)."""
     qs, sway = shutil.which("quickshell"), shutil.which("sway")
     if not qs or not sway:
         return SKIPPED, "needs quickshell and sway"
@@ -775,6 +799,10 @@ def run_wayland_surfaces():
                 time.sleep(1.5)
                 ipc("quicksettings", "toggle")
                 time.sleep(2)
+                ipc("osd", "brightnessUp")
+                time.sleep(0.5)
+                ipc("osd", "brightnessUp")             # while it shows: the same surface, not resized
+                time.sleep(3)
             finally:
                 shell_proc.terminate()
                 try:
@@ -803,6 +831,9 @@ def run_wayland_surfaces():
         else:
             if not got["inputs"]:
                 problems.append(f"{name}: no input mask")
+    osd = surfaces.get("rutile-osd", {"sizes": []})["sizes"]
+    if len(set(osd)) != 1:                       # Quickshell repeats the first size; one value is fine
+        problems.append(f"rutile-osd: sizes {osd} for two brightness keys, expected one size")
     return (1 if problems else 0), "\n".join(problems)
 
 

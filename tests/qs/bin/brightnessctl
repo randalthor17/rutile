@@ -9,7 +9,7 @@ max=1060
 case " $* " in
   *" set "*)
     sleep 0.3
-    value="${*##* }"
+    value="${!#}"
     echo "$value" > "$state"
     ;;
 esac

@@ -5,6 +5,9 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Volume and brightness OSD** (plan 2.8): changing the volume (from any key or app) or the brightness (through
+  `ipc call osd brightnessUp` and the other `osd` calls, for the media keys) shows the level at the bottom of the
+  screen as Quick Settings' slider, which can be dragged. It goes after 1.5 s, not while the pointer is on it.
 - **Clicks reach the whole panel** (fix): Clear all at the bottom of the notification list took no clicks, nor
   did the left and bottom edges of Quick Settings or the part of its power menu below the panel; clicks went
   to the window behind. The windows' click areas had been measured mid-opening, at 85% of the panel's size.

@@ -66,6 +66,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | NotificationCard, one action button | 315.6 | 406.2 | header, summary and body, a tonal button, close button, state layer; the image, the button row and the reply field load only when needed. The swipe (a DragHandler, a Spring and a Translate) and the reply added the 90. Popups: at most 3 cards, in a window that exists only while there are popups (LazyLoader); the stack itself is 14.4 |
 | NotificationBell | | 66.2 | always on screen (one per screen, left of the status pill): one icon on a tonal circle |
 | NotificationPanel, 3 notifications | 1006 | 1084 | header with a Switch, a ListView of cards (rows in a ListModel synced by key, so changes animate; grouped by app) (only those in view are created; the list scrolls past 480 px), Clear all (its sweep: about 11 KiB a row, 1050 without it); only while open (LazyLoader) |
+| OsdPanel | | 136.1 | a tonal pill with a size m Slider and its PopupMotion; only from a level change until it has closed (LazyLoader) |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
 
