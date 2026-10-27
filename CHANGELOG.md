@@ -5,6 +5,8 @@ ships as an untagged `rutile-dev-<sha>.bundle`. Every tag must have a section he
 
 ## Unreleased
 
+- **Dev shell**: `nix develop` now includes Python's `jsonschema`, so the widget checker's cross-check runs
+  instead of skipping (D29; the checker itself still uses only the standard library).
 - **Power menu** (plan 2.8): Quick Settings' power button now opens a full-screen menu over the blurred desktop:
   Lock, Sleep (new), Sign out, Restart, Shut down, as large round buttons. Arrow keys and Enter work; Escape or a
   click elsewhere closes it. `ipc call power toggle` from a keybind. On niri, add the layer rule in

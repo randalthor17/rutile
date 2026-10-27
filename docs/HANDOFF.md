@@ -70,7 +70,7 @@ git fetch --tags ../rutile-X.Y.Z.bundle 'refs/tags/*:refs/tags/*'     # pull doe
 ```
 
 On the maintainer's NixOS: `nix develop` provides everything (Qt with its QML path, matugen, Quickshell,
-Python with materialyoucolor, git, make, the fonts). Then:
+Python with materialyoucolor and jsonschema, git, make, the fonts). Then:
 
 ```
 make check                  # the gate for every commit: generation freshness, tests, lint, qmllint

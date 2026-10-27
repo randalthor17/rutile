@@ -38,8 +38,11 @@
             "${googleSansFlex pkgs}/share/fonts"
             "${pkgs.material-symbols}/share/fonts"
           ];
-          # materialyoucolor is only used by an optional test cross-check; include it when nixpkgs has it.
-          python = pkgs.python3.withPackages (ps: lib.optional (ps ? materialyoucolor) ps.materialyoucolor);
+          # Test cross-checks only, never imported by the tools: materialyoucolor (palette, when nixpkgs has
+          # it) and jsonschema (tools/widget_check.py, D29), so those tests run instead of skipping.
+          python = pkgs.python3.withPackages (
+            ps: [ ps.jsonschema ] ++ lib.optional (ps ? materialyoucolor) ps.materialyoucolor
+          );
 
           # The everyday shell's tools and setup, shared by every shell: an agent in local-ai must be
           # able to run `make check` and the brief's acceptance check without leaving it.
