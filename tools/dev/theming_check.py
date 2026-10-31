@@ -6,7 +6,8 @@
    profile, the kwriteconfig6 lines; nothing else of activation runs, so nothing reaches the real user);
 2. run the packaged shell from that profile under a headless sway with a private bus, until it has written the
    gtk, qt and kde colors (no wallpaper: the shell's own colors, D58);
-3. open a GTK 4 app, a libadwaita app, a GTK 3 app, a Qt 6 app and a KDE app one at a time, screenshot each
+3. open a GTK 4 app, a libadwaita app, a GTK 3 app, Qt 6 and Qt 5 apps and KDE apps (kcalc, Dolphin, Kate) one at
+   a time, screenshot each
    (grim), and check that its most common color is one of the shell's; then the same with theming off, to show the
    difference. Fonts: fontconfig's sans-serif and GTK's font setting.
 
@@ -41,6 +42,9 @@ APPS = [
     ("gtk3", "gtk3.dev", "gtk3-widget-factory", []),
     ("qt6", "qt6Packages.qt6ct", "qt6ct", []),
     ("kde", "kdePackages.kcalc", "kcalc", []),
+    ("dolphin", "kdePackages.dolphin", "dolphin", []),
+    ("kate", "kdePackages.kate", "kate", []),
+    ("qt5", "libsForQt5.qt5ct", "qt5ct", []),            # Qt 5: qt5ct's own window
 ]
 
 

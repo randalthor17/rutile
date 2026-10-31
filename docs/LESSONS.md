@@ -351,3 +351,6 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   Breeze Light or Dark from the system's dark preference.
 - **Check a toolkit claim with a screenshot of a real app.** The theming plan read right; three of five toolkits
   needed something more (adw-gtk3 for GTK 3, the scheme key for KDE, GSettings rather than settings.ini).
+- **The test apps see the real system bus.** In the theming check, Dolphin listed the machine's real drives
+  (UDisks2 on the system bus, read-only). Harmless for a screenshot, but a sandbox HOME and session bus do not
+  isolate an app from the system bus; nothing that writes there may run in a test.
