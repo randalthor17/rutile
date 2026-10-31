@@ -2,7 +2,7 @@
 # real gtk, qt, fontconfig and dconf modules, a user whose home is the check's sandbox folder.
 #   nix-build tools/dev/theming-home.nix --arg homeManager /nix/store/...-source --argstr home /tmp/x/home
 { homeManager, home, flake ? builtins.getFlake (toString ../..), system ? builtins.currentSystem, theming ? true,
-  plainGtk4 ? false }:
+  plainGtk4 ? true }:
 let
   pkgs = import flake.inputs.nixpkgs { inherit system; };
   hm = import "${homeManager}/modules" {

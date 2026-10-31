@@ -30,7 +30,7 @@ function apps(dirs) {
         // include optional=true "rutile-colors.kdl"). niri watches included files, a missing optional one too.
         niri: { title: "niri", files: [["niri.kdl", c + "/niri/rutile-colors.kdl"]] },
         gtk: { title: "GTK 3 and 4",
-               files: [["gtk.css", c + "/gtk-3.0/rutile.css"], ["gtk.css", c + "/gtk-4.0/rutile.css"]],
+               files: [["gtk.css", c + "/gtk-3.0/rutile.css"], ["gtk4.css", c + "/gtk-4.0/rutile.css"]],
                blocks: [gtk(3), gtk(4)] },
         qt: { title: "Qt (qt5ct, qt6ct)",
               files: [["qtct.conf", c + "/qt5ct/colors/rutile.conf"], ["qtct.conf", c + "/qt6ct/colors/rutile.conf"]],

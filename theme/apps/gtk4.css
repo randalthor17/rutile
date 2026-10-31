@@ -1,0 +1,65 @@
+/* Rutile Shell's colors for GTK 4 (libadwaita's named colors, and its CSS variables), from matugen. Written by the
+   shell (AppColorsService); turn "GTK apps" off in Settings to remove it. The variables are set here too, at user
+   priority: a stylesheet under it that sets them to fixed colors (adw-gtk3's, for plain GTK 4 apps through
+   GTK_THEME) would otherwise win over the named colors. Keep the colors the same as gtk.css (GTK 3's copy; GTK 3
+   does not read CSS variables): a test compares them. */
+@define-color accent_color {{colors.primary.default.hex}};
+@define-color accent_bg_color {{colors.primary.default.hex}};
+@define-color accent_fg_color {{colors.on_primary.default.hex}};
+@define-color destructive_color {{colors.error.default.hex}};
+@define-color destructive_bg_color {{colors.error_container.default.hex}};
+@define-color destructive_fg_color {{colors.on_error_container.default.hex}};
+@define-color window_bg_color {{colors.surface.default.hex}};
+@define-color window_fg_color {{colors.on_surface.default.hex}};
+@define-color view_bg_color {{colors.surface_container_low.default.hex}};
+@define-color view_fg_color {{colors.on_surface.default.hex}};
+@define-color headerbar_bg_color {{colors.surface_container.default.hex}};
+@define-color headerbar_fg_color {{colors.on_surface.default.hex}};
+@define-color headerbar_border_color {{colors.outline_variant.default.hex}};
+@define-color headerbar_backdrop_color {{colors.surface.default.hex}};
+@define-color sidebar_bg_color {{colors.surface_container_low.default.hex}};
+@define-color sidebar_fg_color {{colors.on_surface.default.hex}};
+@define-color sidebar_backdrop_color {{colors.surface.default.hex}};
+@define-color card_bg_color {{colors.surface_container.default.hex}};
+@define-color card_fg_color {{colors.on_surface.default.hex}};
+@define-color dialog_bg_color {{colors.surface_container_high.default.hex}};
+@define-color dialog_fg_color {{colors.on_surface.default.hex}};
+@define-color popover_bg_color {{colors.surface_container_high.default.hex}};
+@define-color popover_fg_color {{colors.on_surface.default.hex}};
+@define-color thumbnail_bg_color {{colors.surface_container_high.default.hex}};
+@define-color thumbnail_fg_color {{colors.on_surface.default.hex}};
+/* GTK 3 themes (Adwaita) */
+@define-color theme_bg_color {{colors.surface.default.hex}};
+@define-color theme_fg_color {{colors.on_surface.default.hex}};
+@define-color theme_base_color {{colors.surface_container_low.default.hex}};
+@define-color theme_text_color {{colors.on_surface.default.hex}};
+@define-color theme_selected_bg_color {{colors.primary.default.hex}};
+@define-color theme_selected_fg_color {{colors.on_primary.default.hex}};
+
+:root {
+    --accent-color: @accent_color;
+    --accent-bg-color: @accent_bg_color;
+    --accent-fg-color: @accent_fg_color;
+    --destructive-color: @destructive_color;
+    --destructive-bg-color: @destructive_bg_color;
+    --destructive-fg-color: @destructive_fg_color;
+    --window-bg-color: @window_bg_color;
+    --window-fg-color: @window_fg_color;
+    --view-bg-color: @view_bg_color;
+    --view-fg-color: @view_fg_color;
+    --headerbar-bg-color: @headerbar_bg_color;
+    --headerbar-fg-color: @headerbar_fg_color;
+    --headerbar-border-color: @headerbar_border_color;
+    --headerbar-backdrop-color: @headerbar_backdrop_color;
+    --sidebar-bg-color: @sidebar_bg_color;
+    --sidebar-fg-color: @sidebar_fg_color;
+    --sidebar-backdrop-color: @sidebar_backdrop_color;
+    --card-bg-color: @card_bg_color;
+    --card-fg-color: @card_fg_color;
+    --dialog-bg-color: @dialog_bg_color;
+    --dialog-fg-color: @dialog_fg_color;
+    --popover-bg-color: @popover_bg_color;
+    --popover-fg-color: @popover_fg_color;
+    --thumbnail-bg-color: @thumbnail_bg_color;
+    --thumbnail-fg-color: @thumbnail_fg_color;
+}

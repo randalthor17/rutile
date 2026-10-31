@@ -12,7 +12,7 @@
    difference. Fonts: fontconfig's sans-serif and GTK's font setting.
 
     tools/dev/theming_check.py [--home-manager /nix/store/...-source] [--out DIR]    (make theming-check)
-    RUTILE_PLAIN_GTK4=1 ...: with programs.rutile.theming.gtk.plainGtk4, where plain GTK 4 apps must match too
+    RUTILE_PLAIN_GTK4=0 ...: with programs.rutile.theming.gtk.plainGtk4 off (plain GTK 4 apps not expected to match)
 
 Not covered: GTK and libadwaita take theme, font, icons and the dark preference from GSettings (dconf, which
 home-manager writes) or the settings portal; here the same keys go through GSettings' keyfile backend, and there is
@@ -59,7 +59,7 @@ def nix_out(attr):
 def generation(home_manager, home, theming):
     r = subprocess.run(["nix-build", str(ROOT / "tools/dev/theming-home.nix"), "--arg", "homeManager", home_manager,
                         "--argstr", "home", str(home), "--arg", "theming", "true" if theming else "false",
-                        "--arg", "plainGtk4", "true" if os.environ.get("RUTILE_PLAIN_GTK4") else "false",
+                        "--arg", "plainGtk4", "false" if os.environ.get("RUTILE_PLAIN_GTK4") == "0" else "true",
                         "--no-out-link"], capture_output=True, text=True, timeout=1800, cwd=ROOT)
     if r.returncode != 0:
         raise RuntimeError("home-manager generation: " + r.stderr[-1500:])
@@ -285,7 +285,7 @@ def main():
         problems.append(f"fontconfig's sans-serif is {on['fc-match sans-serif']!r}")
     if not on["gtk4 settings"].get("gtk-font-name", "").startswith("Google Sans Flex"):
         problems.append(f"GTK's font is {on['gtk4 settings']}")
-    plain = bool(os.environ.get("RUTILE_PLAIN_GTK4"))
+    plain = os.environ.get("RUTILE_PLAIN_GTK4") != "0"
     for name, _, _, _ in APPS:
         got, before = on["apps"].get(name, {}), off["apps"].get(name, {})
         if name == "gtk4" and not plain:

@@ -13,7 +13,8 @@ TestCase {
     readonly property var dirs: ({ config: "/h/.config", cache: "/h/.cache", data: "/h/.local/share", home: "/h",
                                    theme: "/r/theme/apps", host: "/r/build/rutile-pywalfox-host" })
     readonly property string built: "?/r/build/rutile-pywalfox-host"     // the host's existence check
-    readonly property var rendered: ({ "gtk.css": "@define-color accent_bg_color #aabbcc;\n", "kitty.conf": "cursor #aabbcc\n",
+    readonly property var rendered: ({ "gtk.css": "@define-color accent_bg_color #aabbcc;\n",
+                                       "gtk4.css": "@define-color accent_bg_color #aabbcc;\n:root { --accent-bg-color: @accent_bg_color; }\n", "kitty.conf": "cursor #aabbcc\n",
                                        "btop.theme": "theme[main_bg]=\"#000000\"\n", "qtct.conf": "[ColorScheme]\n",
                                        "ghostty": "background = #111111\n", "nvim.lua": "-- rutile\n",
                                        "pywalfox.conf": "mode dark\n", "niri.kdl": "layout {}\n",
@@ -162,7 +163,7 @@ TestCase {
         const errors = r.errors.join("; ");
         verify(errors.indexOf(css) < 0 && errors.indexOf(kitty) < 0 && errors.indexOf(qt6) < 0, errors);
         verify(errors.indexOf("/h/.config/gtk-3.0/gtk.css") < 0, "gtk-3.0/gtk.css is no link: edited, no error");
-        compare(r.files["/h/.config/gtk-4.0/rutile.css"], rendered["gtk.css"]);
+        compare(r.files["/h/.config/gtk-4.0/rutile.css"], rendered["gtk4.css"], "GTK 4's own copy");
         const without = sync({ [kitty]: "include other.conf\n", ["!" + kitty]: "" }, ["kitty"]);
         verify(without.errors.join().indexOf(kitty + " is a link") > 0, "without our line: said");
     }
@@ -263,7 +264,7 @@ TestCase {
     }
 
     function test_templates_and_paths() {
-        compare(AppTheme.templates(dirs, ["gtk", "kitty"]).map(t => t.name).join(), "gtk.css,kitty.conf", "once each");
+        compare(AppTheme.templates(dirs, ["gtk", "kitty"]).map(t => t.name).join(), "gtk.css,gtk4.css,kitty.conf", "once each");
         compare(AppTheme.templates(dirs, ["gtk"])[0].input, "/r/theme/apps/gtk.css");
         const p = AppTheme.paths(dirs, ["firefox", "btop"]);
         verify(p.indexOf("/h/.mozilla/native-messaging-hosts/pywalfox.json") >= 0);

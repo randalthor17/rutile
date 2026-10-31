@@ -267,7 +267,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PYWALFOX_HOST` | `shell/services/AppColorsService.qml` | the compiled Firefox host when it is not `build/rutile-pywalfox-host` (a package; tests point it at a stand-in) |
 | `RUTILE_SHELL_QML` | `bin/rutile-shell` | the shell to run and call (the package sets it; a checkout uses `../shell/shell.qml`) |
 | `RUTILE_QUICKSHELL` | `bin/rutile-shell` | the quickshell binary, default `quickshell` on PATH (tests point it at a stand-in) |
-| `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | set: check with `programs.rutile.theming.gtk.plainGtk4` on (plain GTK 4 apps must match too) |
+| `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |
 | `OPENCODE_CONFIG_CONTENT` | set by `tools/sidework.py agent` | inline opencode config, merged after any project file |

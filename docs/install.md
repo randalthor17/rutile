@@ -74,8 +74,9 @@ fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that 
 programs.rutile.theming.enable = true;
 ```
 
-sets up GTK (adw-gtk3 dark for GTK 3 apps, libadwaita's own theme for GTK 4, a dark color scheme, gtk.css
-importing the shell's colors), Qt (qt5ct and qt6ct with the Fusion style) and KDE apps (kdeglobals' fonts and
+sets up GTK (adw-gtk3 dark for GTK 3 apps and for GTK 4 apps without libadwaita, libadwaita's own theme for the
+rest, a dark color scheme, gtk.css importing the shell's colors), Qt (qt5ct and qt6ct with the Breeze style;
+`theming.qt.style = "Fusion"` for Qt's own) and KDE apps (kdeglobals' fonts and
 icons), the font (Google Sans Flex, also fontconfig's default sans-serif) and icons (Adwaita for GTK, Breeze Dark
 for Qt and KDE apps), and turns on the
 shell's GTK, Qt and KDE color switches. Each part can be left out: `theming.gtk.enable`, `theming.qt.enable`,
@@ -83,8 +84,8 @@ shell's GTK, Qt and KDE color switches. Each part can be left out: `theming.gtk.
 for GTK, `theming.icons.qt.name`, `.package` for Qt and KDE).
 Apps pick the colors up when they start.
 
-Plain GTK 4 apps (those without libadwaita) keep GTK's own colors; `theming.gtk.plainGtk4 = true` themes them too,
-with adw-gtk3's GTK 4 stylesheet, but that also lies over libadwaita apps (their accent goes back to stock blue).
+GTK 4 apps without libadwaita get adw-gtk3 through `GTK_THEME` (`theming.gtk.plainGtk4 = false` leaves them on
+GTK's own theme, whose colors are fixed).
 
 This takes over `gtk`, `qt` and `fonts.fontconfig` settings in your home-manager configuration (set them
 yourself to override; Nix reports a conflict for a plain value set twice).

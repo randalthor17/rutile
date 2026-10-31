@@ -147,12 +147,13 @@ class ShellModule(unittest.TestCase):
         gtk, qt = got["gtk"], got["qt"]
         self.assertEqual(gtk["colorScheme"], "dark")
         self.assertEqual(gtk["theme"]["name"], "adw-gtk3-dark", "GTK 3 through the named colors the shell overrides")
-        self.assertIsNone(gtk["gtk4"]["theme"], "libadwaita keeps its own (adw-gtk3's over it broke the accent)")
+        self.assertIsNone(gtk["gtk4"]["theme"], "libadwaita keeps its own (adw-gtk3's imported over it broke the accent)")
+        self.assertEqual(got["sessionVariables"]["GTK_THEME"], "adw-gtk3-dark", "plain GTK 4 apps, on by default")
         self.assertEqual(gtk["gtk4"]["extraCss"], '@import url("file:///home/test/.config/gtk-4.0/rutile.css");')
         self.assertEqual(gtk["font"]["name"], "Google Sans Flex")
         self.assertEqual(qt["platformTheme"]["name"], "qtct")
         q6 = qt["kde"]["settings"]["qt6ct/qt6ct.conf"]
-        self.assertEqual(q6["Appearance"]["style"], "Fusion")
+        self.assertEqual(q6["Appearance"]["style"], "Breeze", "Fusion looked plain; KDE apps use Breeze anyway")
         self.assertEqual(q6["Fonts"]["general"], '"Google Sans Flex,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"',
                          "quoted: QSettings reads an unquoted comma as a list")
         self.assertEqual(qt["kde"]["settings"]["qt5ct/qt5ct.conf"]["Fonts"]["general"], '"Google Sans Flex,11,-1,5,50,0,0,0,0,0"',
@@ -177,8 +178,10 @@ class ShellModule(unittest.TestCase):
         self.assertNotIn("font", got["gtk"])
         self.assertEqual(got["fonts"], {})
         self.assertEqual({k: v for k, v in got["managed"].items() if v is not None}, {"enabled": True, "gtk": True})
-        got, _ = module("{ enable = true; theming = { enable = true; gtk.plainGtk4 = true; }; }")
-        self.assertEqual(got["gtk"]["gtk4"]["theme"]["name"], "adw-gtk3-dark")
+        got, _ = module("{ enable = true; theming = { enable = true; gtk.plainGtk4 = false; }; }")
+        self.assertNotIn("GTK_THEME", got["sessionVariables"])
+        got, _ = module('{ enable = true; theming = { enable = true; qt.style = "Fusion"; }; }')
+        self.assertEqual(got["qt"]["kde"]["settings"]["qt6ct/qt6ct.conf"]["Appearance"]["style"], "Fusion")
         got, _ = module("{ enable = true; theming.enable = true; settings.appColors.kde = false; }")
         self.assertFalse(got["managed"]["kde"], "a switch set by hand wins")
 

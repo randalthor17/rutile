@@ -120,7 +120,7 @@ let
   quoted = s: "\"${s}\"";
   qtctSettings = fontOf: {
     Appearance = {
-      style = "Fusion";
+      style = th.qt.style;
       custom_palette = true;
     } // lib.optionalAttrs (th.icons.qt.name != null) { icon_theme = th.icons.qt.name; };
   } // lib.optionalAttrs font.enable {
@@ -192,17 +192,25 @@ in
       };
       gtk.plainGtk4 = lib.mkOption {
         type = lib.types.bool;
-        default = false;
+        default = th.gtk.enable;
+        defaultText = lib.literalExpression "config.programs.rutile.theming.gtk.enable";
         description = ''
-          Also theme GTK 4 apps that do not use libadwaita (they draw with GTK's own theme, whose colors are fixed):
-          adw-gtk3's GTK 4 stylesheet, imported by gtk.css. It is loaded over libadwaita apps too, which home-manager
-          warns may cause issues.'';
+          Also theme GTK 4 apps that do not use libadwaita (GTK's own theme has its colors compiled in):
+          GTK_THEME=adw-gtk3-dark gives them adw-gtk3's libadwaita-like stylesheet. It lies under libadwaita apps
+          too; the shell's GTK 4 colors set libadwaita's CSS variables at user priority, so theirs stay right.'';
       };
       qt.enable = lib.mkOption {
         type = lib.types.bool;
         default = th.enable;
         defaultText = lib.literalExpression "config.programs.rutile.theming.enable";
-        description = "Qt: qt5ct and qt6ct as the platform theme, with the Fusion style (it follows the palette).";
+        description = "Qt: qt5ct and qt6ct as the platform theme, with the shell's palette and `theming.qt.style`.";
+      };
+      qt.style = lib.mkOption {
+        type = lib.types.str;
+        default = "Breeze";
+        description = ''
+          The Qt style (both follow the palette): Breeze (KDE's, installed for Qt 5 and 6, as KDE apps use) or
+          Fusion (Qt's own, plainer).'';
       };
       kde.enable = lib.mkOption {
         type = lib.types.bool;
@@ -321,16 +329,8 @@ in
           name = "adw-gtk3-dark";
           package = pkgs.adw-gtk3;
         };
-        # libadwaita's own, with the shell's colors over it; adw-gtk3's (imported before ours) for plain GTK 4
-        gtk4.theme = lib.mkDefault (
-          if th.gtk.plainGtk4 then
-            {
-              name = "adw-gtk3-dark";
-              package = pkgs.adw-gtk3;
-            }
-          else
-            null
-        );
+        # libadwaita's own, with the shell's colors over it (plain GTK 4 apps: GTK_THEME below)
+        gtk4.theme = lib.mkDefault null;
         # absolute: home-manager's gtk.css is a link into the store
         gtk3.extraCss = ''@import url("file://${config.xdg.configHome}/gtk-3.0/rutile.css");'';
         gtk4.extraCss = ''@import url("file://${config.xdg.configHome}/gtk-4.0/rutile.css");'';
@@ -342,11 +342,18 @@ in
         };
       };
     })
+    (lib.mkIf (th.gtk.enable && th.gtk.plainGtk4) {
+      home.sessionVariables.GTK_THEME = "adw-gtk3-dark";
+    })
     (lib.mkIf th.qt.enable {
       qt = {
         enable = true;
         platformTheme.name = "qtct"; # QT_QPA_PLATFORMTHEME=qt5ct, which qt6ct answers too
       };
+      home.packages = lib.optionals (th.qt.style == "Breeze") [
+        pkgs.kdePackages.breeze
+        pkgs.kdePackages.breeze.qt5
+      ];
       # written into their (mutable) files at activation: the shell sets the color keys in the same files
       qt.kde.settings = {
         "qt5ct/qt5ct.conf" = qtctSettings qt5Font;

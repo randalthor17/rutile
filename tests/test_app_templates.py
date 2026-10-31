@@ -67,6 +67,17 @@ class AppTemplates(unittest.TestCase):
         for name in ("window_bg_color", "view_bg_color", "headerbar_bg_color", "theme_bg_color", "theme_selected_bg_color"):
             self.assertIn(name, defined)
 
+    def test_gtk4_has_the_same_colors_and_sets_libadwaitas_variables(self):
+        three = dict(re.findall(r"@define-color (\w+) (#[0-9a-f]{6});", self.out["gtk.css"]))
+        four = dict(re.findall(r"@define-color (\w+) (#[0-9a-f]{6});", self.out["gtk4.css"]))
+        self.assertEqual(three, four)
+        variables = dict(re.findall(r"--([a-z-]+): @(\w+);", self.out["gtk4.css"]))
+        self.assertEqual(variables["accent-bg-color"], "accent_bg_color", "what keeps the accent under adw-gtk3's sheet")
+        for var, name in variables.items():
+            self.assertEqual(var.replace("-", "_"), name)
+            self.assertIn(name, four)
+        self.assertNotIn("--", self.out["gtk.css"].split("*/", 1)[1], "GTK 3 reads no CSS variables")
+
     def test_niri_kdl_is_valid(self):
         if not shutil.which("niri"):
             self.skipTest("SKIPPED: needs niri")

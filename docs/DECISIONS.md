@@ -516,8 +516,12 @@ shell's gtk, qt and kde switches on (locked in Settings, as anything set in Nix)
 - GTK 4 with libadwaita takes the named colors the shell overrides (its CSS variables are set from them), so
   `gtk.css` importing `rutile.css` is enough. GTK 3's Adwaita compiles its colors in; adw-gtk3 (dark) draws through
   the same names, so GTK 3 apps follow. Plain GTK 4 apps (no libadwaita) use GTK's own theme, also compiled in:
-  only adw-gtk3's GTK 4 stylesheet makes them follow, and imported in gtk.css it also lies over libadwaita apps
-  and replaced their accent with stock blue, so it is opt-in (`theming.gtk.plainGtk4`).
+  only adw-gtk3's GTK 4 stylesheet makes them follow. Imported in gtk.css it lay over libadwaita apps, flattened
+  their buttons and set their accent back to stock blue (its sheet sets libadwaita's CSS variables to fixed
+  colors). Now it comes through `GTK_THEME=adw-gtk3-dark` (theme priority, under libadwaita's own: the buttons stay
+  right), and GTK 4's rutile.css (gtk4.css) sets libadwaita's variables from the named colors at user priority, so
+  the accent stays ours; on with the GTK part (`theming.gtk.plainGtk4`). Qt's style is Breeze (Fusion looked plain;
+  `theming.qt.style`).
 - On Wayland, GTK takes theme, font, icons and the dark preference from GSettings (dconf) or the settings portal,
   not settings.ini; home-manager's gtk module writes both.
 - Qt: qt5ct/qt6ct (`QT_QPA_PLATFORMTHEME=qt5ct`, which qt6ct answers too) with the Fusion style; their fonts and
