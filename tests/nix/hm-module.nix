@@ -21,6 +21,7 @@ let
       assertions = lib.mkOption { type = lib.types.listOf lib.types.anything; default = [ ]; };
       # home-manager's gtk, qt and fontconfig options, as plain values (programs.rutile.theming sets them)
       gtk = anything;
+      home.sessionVariables = anything;
       qt = anything;
       fonts = anything;
     } // lib.optionalAttrs niriModule {
@@ -48,6 +49,7 @@ builtins.toJSON {
   included = if niriModule && c.wayland.windowManager.niri.extraConfig != "" then c.programs.rutile.niri.config else null;
   exe = lib.getExe pkg;
   gtk = c.gtk;
+  sessionVariables = c.home.sessionVariables;
   qt = c.qt;
   fonts = c.fonts;
   managed = c.programs.rutile.settings.appColors;

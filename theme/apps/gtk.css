@@ -1,5 +1,5 @@
-/* Rutile Shell's colors for GTK 3 and 4 (libadwaita's named colors), from matugen. Written by the shell (AppColorsService);
-   turn "GTK apps" off in Settings to remove it. */
+/* Rutile Shell's colors for GTK 3 (adw-gtk3's named colors, libadwaita's names), from matugen. Written by the shell
+   (AppColorsService); turn "GTK apps" off in Settings to remove it. GTK 4's copy is gtk4.css. */
 @define-color accent_color {{colors.primary.default.hex}};
 @define-color accent_bg_color {{colors.primary.default.hex}};
 @define-color accent_fg_color {{colors.on_primary.default.hex}};
