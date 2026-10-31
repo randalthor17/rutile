@@ -527,5 +527,8 @@ shell's gtk, qt and kde switches on (locked in Settings, as anything set in Nix)
   otherwise KColorSchemeManager picks Breeze Light or Dark by itself. The shell's new `appColors.kde` writes the
   scheme (`~/.local/share/color-schemes/Rutile.colors`) and its keys into kdeglobals (each old value kept and put
   back, as with the other keys); the module sets kdeglobals' fonts and icon theme.
-- Fonts: Google Sans Flex for GTK, Qt, KDE and fontconfig's default sans-serif; icons: Adwaita. A config that
+- Fonts: Google Sans Flex for GTK, Qt, KDE and fontconfig's default sans-serif. Icons: Adwaita for GTK; Breeze Dark
+  for Qt and KDE apps, since Adwaita's icons have fixed dark colors (Kate's sidebar was dark on dark) and lack many
+  KDE names (Dolphin's toolbar was empty), while KDE recolors Breeze's to the scheme. Checked in kcalc, Dolphin,
+  Kate, a Qt 6 and a Qt 5 app (qt5ct's own windows; qt5ct.conf gets Qt 5's font format). A config that
   home-manager links and that already has our line (gtk.css importing rutile.css) is not reported.

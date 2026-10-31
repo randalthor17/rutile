@@ -159,7 +159,9 @@ class ShellModule(unittest.TestCase):
                          "Qt 5's format")
         kg = qt["kde"]["settings"]["kdeglobals"]
         self.assertEqual(kg["General"]["font"], "Google Sans Flex,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1", "KConfig: not quoted")
-        self.assertEqual(kg["Icons"]["Theme"], "Adwaita")
+        self.assertEqual(kg["Icons"]["Theme"], "breeze-dark", "Adwaita's icons are dark on dark in Qt apps")
+        self.assertEqual(q6["Appearance"]["icon_theme"], "breeze-dark")
+        self.assertEqual(gtk["iconTheme"]["name"], "Adwaita")
         self.assertEqual(got["fonts"]["fontconfig"]["defaultFonts"]["sansSerif"], ["Google Sans Flex"])
         self.assertEqual({k: v for k, v in got["managed"].items() if v is not None},
                          {"enabled": True, "gtk": True, "qt": True, "kde": True}, "the shell's switches on")

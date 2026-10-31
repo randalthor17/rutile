@@ -122,7 +122,7 @@ let
     Appearance = {
       style = "Fusion";
       custom_palette = true;
-    } // lib.optionalAttrs (th.icons.name != null) { icon_theme = th.icons.name; };
+    } // lib.optionalAttrs (th.icons.qt.name != null) { icon_theme = th.icons.qt.name; };
   } // lib.optionalAttrs font.enable {
     Fonts.general = quoted (fontOf font.size);
   };
@@ -237,13 +237,28 @@ in
         name = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = "Adwaita";
-          description = "Icon theme for GTK, Qt and KDE apps (null: leave it).";
+          description = "Icon theme for GTK apps (null: leave it).";
         };
         package = lib.mkOption {
           type = lib.types.nullOr lib.types.package;
           default = pkgs.adwaita-icon-theme;
           defaultText = lib.literalExpression "pkgs.adwaita-icon-theme";
-          description = "The icon theme's package.";
+          description = "The GTK icon theme's package.";
+        };
+        # Adwaita's icons have fixed dark colors (unreadable on the dark palette) and lack many KDE names;
+        # KDE recolors Breeze's to the color scheme
+        qt = {
+          name = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = "breeze-dark";
+            description = "Icon theme for Qt and KDE apps (null: leave it).";
+          };
+          package = lib.mkOption {
+            type = lib.types.nullOr lib.types.package;
+            default = pkgs.kdePackages.breeze-icons;
+            defaultText = lib.literalExpression "pkgs.kdePackages.breeze-icons";
+            description = "The Qt icon theme's package.";
+          };
         };
       };
     };
@@ -349,7 +364,7 @@ in
           };
           WM.activeFont = qt6Font font.size;
         }
-        // lib.optionalAttrs (th.icons.name != null) { Icons.Theme = th.icons.name; };
+        // lib.optionalAttrs (th.icons.qt.name != null) { Icons.Theme = th.icons.qt.name; };
     })
     (lib.mkIf (th.fonts.enable && (th.gtk.enable || th.qt.enable || th.kde.enable)) {
       fonts.fontconfig = {
@@ -357,7 +372,9 @@ in
         defaultFonts.sansSerif = [ font.name ];
       };
       home.packages = lib.optional (font.package != null) font.package
-        ++ lib.optional (th.icons.package != null && th.icons.name != null) th.icons.package;
+        ++ lib.optional (th.gtk.enable && th.icons.package != null && th.icons.name != null) th.icons.package
+        ++ lib.optional ((th.qt.enable || th.kde.enable) && th.icons.qt.package != null && th.icons.qt.name != null)
+          th.icons.qt.package;
     })
 
     # niri's part: into home-manager's niri config when that module is on (validated there), else a file to include
