@@ -200,6 +200,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/components/` | Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem, EditableGrid, ShapeMorph |
 | `shell/shell.qml` | the shell's entry point (`quickshell -p shell/shell.qml`): palette watcher, Quick Settings, IPC |
 | `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`), niri; `Settings` (the settings and state files, `docs/settings.md`) |
+| `shell/settingsapp/` | the Settings app (D50): the registry `Pages.js`, `Model.js`, rows, the window; `shell/settingsapp/pages/` holds pages of their own, each a view and maybe a backend (D67) |
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |

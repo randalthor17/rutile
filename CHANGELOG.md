@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings > Sound**: the output and the microphone, each with its volume, mute and the devices to choose
+  from. Search finds them ("microphone", "headphones").
 - **Flatpak apps in the shell's look** (Settings > Wallpaper & style > Flatpak apps > Set up…, or
   `rutile-shell flatpak-theming`): installs adw-gtk3 and Kvantum from Flathub and lets Flatpak apps read the
   shell's colors, Kvantum theme, kdeglobals, icons and font. Inkscape (GTK 3) and KDiskMark (Qt) were the ones

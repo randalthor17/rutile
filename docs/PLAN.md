@@ -244,14 +244,17 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   takes no change. Advanced settings go in a last Advanced group (instead of a global toggle). Search matches
   page and setting titles, aliases and descriptions, best first; choosing a result opens its page and marks the
   setting. Every schema setting must be on a page (a test checks). A path setting (the wallpaper) has a Choose…
-  button that opens the desktop portal's file chooser (D51; the maintainer's choice over our own picker). Not
-  done: lazy-loaded page files (one generic page so far), custom pages (the 5.2 list), a choice dialog as Googlebook's (a menu now), raising a
-  window that is already open (Quickshell cannot).
+  button that opens the desktop portal's file chooser (D51; the maintainer's choice over our own picker). Pages
+  of their own (D67): a page names a `view` (a QML file in `shell/settingsapp/pages/`, loaded only while open) and a
+  `backend` (its Quickshell services, loaded by the window only while open; tests give a fake), and `entries`
+  for search. About is one now. Not done: a choice dialog as Googlebook's (a menu now), raising a window that
+  is already open (Quickshell cannot).
 - [ ] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
   Widgets, Shelf, Apps, Power, Input, About. Wallpaper & style done (D65): mode (dark or light), color style,
   contrast, the seed color (a swatch row, the first custom row); the palette renders again on any of them, and
-  everything that takes the shell's colors follows (checked by screenshots in light mode). Next: the custom-page
-  support the others need (5.1's lazy page files).
+  everything that takes the shell's colors follows (checked by screenshots in light mode). Sound done (D67): the
+  output and input, each with volume, mute and the devices to choose from (PipeWire through Quickshell). Next:
+  Network & Bluetooth, Display, Power, Input, Apps, Widgets.
 
 ## Phase 6: NixOS distro (the v1 goal)
 

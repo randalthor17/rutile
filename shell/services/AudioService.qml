@@ -18,6 +18,7 @@ Singleton {
     readonly property bool muted: sink?.audio?.muted ?? false
     readonly property bool micAvailable: !!source && !!source.audio
     readonly property bool micMuted: source?.audio?.muted ?? false
+    readonly property real micVolume: source?.audio?.volume ?? 0
 
     function setVolume(v) {
         if (!available) return;
@@ -31,6 +32,12 @@ Singleton {
 
     function setMicMuted(m) {
         if (micAvailable) source.audio.muted = m;
+    }
+
+    function setMicVolume(v) {
+        if (!micAvailable) return;
+        source.audio.volume = Math.max(0, Math.min(1, v));
+        if (v > 0 && source.audio.muted) source.audio.muted = false;
     }
 
     PwObjectTracker {

@@ -131,7 +131,8 @@ def workspace(tests_dir="qml"):
     qs/common and qs/components hold copies of shell/common and shell/components with
     generated qmldir files, so tests and lint use `import qs.common` exactly as the shell
     does (Quickshell registers singletons itself; plain Qt needs a qmldir). tests/ and
-    data/ sit beside qs/. Files importing Quickshell are left out.
+    data/ sit beside qs/. Files importing Quickshell are left out. A module's subfolder (settingsapp/pages) is
+    copied too, without qmldir entries.
     """
     ws = Path(tempfile.mkdtemp(prefix="rutile-qtws-"))
     tests, data = ws / "tests", ws / "data"
@@ -143,6 +144,13 @@ def workspace(tests_dir="qml"):
         dst.mkdir(parents=True)
         entries = [f"module qs.{module}"]
         for f in sorted(src.iterdir()) if src.is_dir() else []:
+            if f.is_dir():
+                # a module's own folder (settingsapp/pages): files loaded by URL, not types of the module
+                (dst / f.name).mkdir()
+                for g in sorted(f.iterdir()):
+                    if g.is_file() and not any(i in g.read_text() for i in QUICKSHELL_IMPORTS):
+                        shutil.copy(g, dst / f.name / g.name)
+                continue
             text = f.read_text()
             if any(i in text for i in QUICKSHELL_IMPORTS):
                 continue
@@ -1103,7 +1111,7 @@ def run_lint():
         return SKIPPED, "qmllint not found (set RUTILE_QT_BIN)"
     ws = workspace()
     try:
-        files = sorted(str(p) for m in MODULES for p in (ws / "qs" / m).glob("*.qml"))
+        files = sorted(str(p) for m in MODULES for p in (ws / "qs" / m).rglob("*.qml"))
         incs = ["-I", str(ws)]
         for d in qml_import_dirs(linter):
             incs += ["-I", d]

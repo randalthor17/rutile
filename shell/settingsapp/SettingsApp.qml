@@ -31,6 +31,9 @@ Rectangle {
     readonly property var sections: Model.sections(page, Schema.schema, Pages.hints)
     readonly property var results: Model.search(query, Pages.pages, Schema.schema, Pages.hints)
     readonly property alias search: searchInput
+    // the open page's backend (Pages.js `backend`), which the window loads; null for the others
+    property var backend: null
+    readonly property alias pageView: pageView
 
     signal pathRequested(string key, var filters)
     signal actionRequested(string key)
@@ -341,37 +344,19 @@ Rectangle {
                     }
                 }
 
-                // About: where the settings live (D45).
+                // A page of its own (plan 5.2): its view, loaded only while the page is open (D31). It gets the
+                // app (for segment()), the store, and the page's backend.
                 Loader {
-                    active: root.currentPage === "about"
+                    id: pageView
+                    objectName: "settingsPageView"
+                    active: !!root.page?.view
                     visible: active
                     width: pageColumn.width
-                    sourceComponent: Column {
-                        spacing: ControlSpec.listSpec.segmentedGap
-                        ListItem {
-                            objectName: "aboutSettingsFile"
-                            width: parent.width
-                            position: "first"
-                            iconName: "description"
-                            text: "Your settings"
-                            supportingText: root.store.configDir + "/settings.json"
-                        }
-                        ListItem {
-                            width: parent.width
-                            position: "middle"
-                            iconName: "lock"
-                            text: "Set in Nix (home-manager)"
-                            supportingText: root.store.configDir + "/managed.json"
-                        }
-                        ListItem {
-                            width: parent.width
-                            position: "last"
-                            iconName: "terminal"
-                            text: "From a script or keybind"
-                            supportingText: "quickshell ipc call settings open <page>"
-                        }
-                    }
+                    source: active ? Qt.resolvedUrl(root.page.view) : ""
                 }
+                Binding { target: pageView.item; property: "app"; value: root; when: pageView.status === Loader.Ready }
+                Binding { target: pageView.item; property: "store"; value: root.store; when: pageView.status === Loader.Ready }
+                Binding { target: pageView.item; property: "backend"; value: root.backend; when: pageView.status === Loader.Ready }
             }
         }
     }

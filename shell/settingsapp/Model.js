@@ -100,6 +100,11 @@ function search(query, pages, schema, hints) {
                                         order: order++ });
             }
         }
+        for (const e of p.entries ?? []) {
+            const es = Math.max(score(e.title, query) * 10, ...(e.aliases ?? []).map(a => score(a, query) * 6),
+                                score(e.description, query) * 2);
+            if (es > 0) hits.push({ page: p.id, key: e.key, title: e.title, detail: p.title, score: es, order: order++ });
+        }
     }
     hits.sort((a, b) => b.score - a.score || a.order - b.order);
     return hits;

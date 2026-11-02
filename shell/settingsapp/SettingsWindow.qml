@@ -28,6 +28,7 @@ FloatingWindow {
         id: app
         anchors.fill: parent
         store: Settings
+        backend: pageBackend.item
         focus: true
         onPathRequested: (key, filters) => {
             const current = Settings.value(key) ?? "";
@@ -42,6 +43,13 @@ FloatingWindow {
             if (key === "action.flatpak")
                 Quickshell.execDetached([Quickshell.env("RUTILE_CLI") || "rutile-shell", "flatpak-theming", "--terminal"]);
         }
+    }
+
+    // the open page's backend (Pages.js), loaded only while that page is open (D31)
+    Loader {
+        id: pageBackend
+        active: !!app.page?.backend
+        source: active ? Qt.resolvedUrl(app.page.backend) : ""
     }
 
     FileDialog {

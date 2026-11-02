@@ -7,6 +7,10 @@
 // path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply),
 // `swatches` (the colors a color setting offers). A key that is no setting can be an action: its hint has
 // `kind: "action"`, a `title`, a `description` and the `button`'s text; the app asks for it (actionRequested).
+// A page of its own making (plan 5.2) names its `view` (a QML file under pages/, loaded only while the page is
+// open, after its sections) and may name a `backend` (the Quickshell services it shows, which the window loads
+// only while the page is open; tests give the app a fake). Its `entries` ({key, title, description, aliases})
+// are what search finds on it; the view names the matching item `setting_<key>`, so it can be marked.
 .pragma library
 
 var pages = [
@@ -17,6 +21,18 @@ var pages = [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
             { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed"] },
             { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] }
+        ]
+    },
+    {
+        id: "sound", title: "Sound", icon: "volume_up", tone: "primaryContainer",
+        summary: "Speakers, microphone", aliases: ["audio", "pipewire"],
+        sections: [],
+        view: "pages/SoundPage.qml", backend: "pages/SoundBackend.qml",
+        entries: [
+            { key: "sound.output", title: "Output", description: "Where sound plays, and its volume",
+              aliases: ["speakers", "headphones", "volume", "mute"] },
+            { key: "sound.input", title: "Input", description: "The microphone, and its volume",
+              aliases: ["microphone", "mic", "recording"] }
         ]
     },
     {
@@ -45,7 +61,8 @@ var pages = [
     {
         id: "about", title: "About Rutile", icon: "info", tone: "secondaryContainer",
         summary: "Where settings are kept", aliases: ["version", "files", "nix", "home-manager"],
-        sections: []
+        sections: [],
+        view: "pages/AboutPage.qml"
     }
 ];
 

@@ -622,3 +622,16 @@ surface in color0 in both modes, and a test ports Pywalfox's palette math to che
 Pywalfox's light background stays its own light grey (it clamps it). Not checked on a real session: the portal's
 theme and font names reaching Flatpak apps.
 
+**D67. Settings pages of their own: a view and a backend, each loaded only while the page is open (plan 5.1,
+5.2).** Most pages are settings from the schema; Sound, Network, Display and the like show live devices instead.
+Such a page names, in `Pages.js`, a `view` (a QML file in `shell/settingsapp/pages/`, which SettingsApp loads
+after the page's sections while it is open, giving it `app`, `store` and `backend`) and a `backend` (the
+Quickshell services it shows, which SettingsWindow loads only while the page is open, D31). SettingsApp stays
+plain QtQuick, so its tests give it a fake backend; the real backend is tested under Quickshell against the
+session's own PipeWire, read only, skipping without one. `entries` ({key, title, description, aliases}) are
+what search finds on such a page; the view names the matching item `setting_<key>` so it is marked and scrolled
+to. About moved onto this. Sound is the first: output and input, each a volume row (slider, mute) and the
+devices (`Pipewire.nodes` that have audio and are not streams), choosing one sets Quickshell's
+`preferredDefaultAudioSink` (or Source), a hint PipeWire follows when it can; the page shows the default in use.
+No per-app volumes (Googlebook's page has none).
+

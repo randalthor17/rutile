@@ -44,6 +44,29 @@ TestCase {
         }
     }
     Component { id: appComp; SettingsApp { anchors.fill: parent } }
+    // the Sound page's backend (SoundPage.qml's interface), recording what it is asked
+    Component {
+        id: soundComp
+        QtObject {
+            property bool available: true
+            property var outputs: [{ id: 41, name: "Speakers" }, { id: 42, name: "Headphones" }]
+            property var inputs: [{ id: 51, name: "Built-in microphone" }]
+            property int output: 41
+            property int input: 51
+            property real volume: 0.4
+            property bool muted: false
+            property real inputVolume: 0.7
+            property bool inputMuted: false
+            property var calls: []
+            function call(name, arg) { calls = calls.concat([name + ":" + arg]); }
+            function setOutput(id) { call("setOutput", id); output = id; }
+            function setInput(id) { call("setInput", id); input = id; }
+            function setVolume(v) { call("setVolume", v.toFixed(2)); volume = v; }
+            function setMuted(m) { call("setMuted", m); muted = m; }
+            function setInputVolume(v) { call("setInputVolume", v.toFixed(2)); inputVolume = v; }
+            function setInputMuted(m) { call("setInputMuted", m); inputMuted = m; }
+        }
+    }
     Component { id: spyComp; SignalSpy {} }
 
     function make(storeProps) {
@@ -133,7 +156,8 @@ TestCase {
         compare(keys("animation speed")[0], "accessibility/motion.speed", "every word, by title");
         compare(keys("dock")[0], "shelf/", "aliases");
         compare(keys("pkexec")[0], "security/polkit.agent", "a setting's aliases");
-        compare(keys("SOUND")[0], "notifications/notifications.sound", "any case");
+        compare(keys("SOUND")[0], "sound/", "any case");
+        verify(keys("SOUND").indexOf("notifications/notifications.sound") > 0);
         verify(keys("suspends").indexOf("security/lock.beforeSleep") >= 0, "descriptions");
         compare(keys("zzzz").length, 0);
         compare(Model.score("Lock when idle", "when id"), 2);
@@ -426,6 +450,82 @@ TestCase {
         compare(findChild(t.a, "aboutSettingsFile").supportingText, "/home/u/.config/rutile/settings.json");
         open(t, "wallpaper");
         tryVerify(() => !findChild(t.a, "aboutSettingsFile"), 1000, "only on its page");
+    }
+
+    // pages of their own (plan 5.2): a view loaded only while open, with the page's backend
+    function test_sound_page() {
+        const t = make();
+        const b = createTemporaryObject(soundComp, root);
+        verify(!findChild(t.a, "setting_sound.output"), "not loaded before it is open");
+        t.a.backend = b;
+        open(t, "sound");
+        compare(t.a.pageView.status, Loader.Ready);
+        const out = findChild(t.a, "setting_sound.output");
+        verify(out && out.visible);
+        verify(!findChild(t.a, "soundUnavailable").visible);
+        compare(findChild(t.a, "soundVolume_output").trailingText, "40%");
+        compare(findChild(t.a, "soundVolume_input").trailingText, "70%");
+        compare(findChild(t.a, "soundSlider_output").value, 0.4);
+        const speakers = findChild(t.a, "soundDevice_output_0");
+        const phones = findChild(t.a, "soundDevice_output_1");
+        compare(speakers.text, "Speakers");
+        verify(speakers.selected && !phones.selected, "the default is marked");
+        compare(findChild(t.a, "soundVolume_output").position, "first");
+        compare(phones.position, "last");
+
+        mouseClick(phones);
+        compare(b.calls, ["setOutput:42"]);
+        verify(phones.selected && !speakers.selected, "follows the backend");
+        mouseClick(findChild(t.a, "soundMute_output"));
+        compare(b.calls[1], "setMuted:true");
+        compare(findChild(t.a, "soundVolume_output").trailingText, "Muted");
+        compare(findChild(t.a, "soundVolume_output").iconName, "volume_off");
+        const slider = findChild(t.a, "soundSlider_input");
+        mouseClick(slider, slider.width - 2, slider.height / 2);
+        verify(/^setInputVolume:(0\.9\d|1\.00)$/.test(b.calls[2]), b.calls[2]);
+        mouseClick(findChild(t.a, "soundMute_input"));
+        compare(b.calls[3], "setInputMuted:true");
+        compare(findChild(t.a, "soundVolume_input").iconName, "mic_off");
+        mouseClick(findChild(t.a, "soundDevice_input_0"));
+        compare(b.calls[4], "setInput:51");
+
+        b.inputs = [];
+        b.input = -1;
+        waitForRendering(t.a);
+        verify(!findChild(t.a, "soundSlider_input").enabled, "no microphone: nothing to change");
+        verify(!findChild(t.a, "soundDevice_input_0"));
+
+        b.available = false;
+        waitForRendering(t.a);
+        verify(findChild(t.a, "soundUnavailable").visible, "PipeWire not running: says so");
+        verify(!findChild(t.a, "setting_sound.output"));
+
+        open(t, "wallpaper");
+        tryVerify(() => !findChild(t.a, "soundUnavailable"), 1000, "unloaded when another page opens");
+        compare(t.a.pageView.status, Loader.Null);
+    }
+
+    function test_sound_without_a_backend() {
+        const t = make();
+        open(t, "sound");
+        verify(findChild(t.a, "soundUnavailable").visible, "no backend yet: no devices, no error");
+    }
+
+    function test_page_entries_are_searched_and_marked() {
+        const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.page + "/" + h.key);
+        compare(keys("microphone")[0], "sound/sound.input");
+        compare(keys("headphones")[0], "sound/sound.output");
+        verify(keys("sound").indexOf("sound/") >= 0, "the page itself");
+        const t = make();
+        t.a.backend = createTemporaryObject(soundComp, root);
+        mouseClick(t.a.search);
+        type("microphone");
+        waitForRendering(t.a);
+        mouseClick(findChild(t.a, "settingsResult_0"));
+        waitForRendering(t.a);
+        compare(t.a.currentPage, "sound");
+        compare(t.a.highlightKey, "sound.input");
+        verify(t.a.findRow("sound.input"), "the view's group is found to scroll to");
     }
 
     function test_narrow() {
