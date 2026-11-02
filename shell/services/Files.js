@@ -9,12 +9,17 @@ var MAX_ARG = 120000;        // characters; under Linux's 131072-byte cap per ar
 
 // Prints each file as "\n@@rutile-file:<1 or 0>:<path>\n" and its text (1: it exists, 0: it does not). A path given
 // as "?<path>" is only checked for existence: its text is "" (it exists) or null, under the key "?<path>"; one
-// given as "!<path>" likewise for being a symbolic link (a file home-manager or the like manages).
+// given as "!<path>" likewise for being a symbolic link (a file home-manager or the like manages), and one given as
+// "^<path>" for sitting in a folder that cannot be written (its nearest existing folder: home-manager can link a
+// whole folder into the read-only store).
 var READ_SCRIPT = 'for f do\n' +
     '  case "$f" in "?"*) if [ -e "${f#?}" ]; then printf "\\n' + MARK + '1:%s\\n" "$f"; ' +
     'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi; continue;; esac\n' +
     '  case "$f" in "!"*) if [ -L "${f#?}" ]; then printf "\\n' + MARK + '1:%s\\n" "$f"; ' +
     'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi; continue;; esac\n' +
+    '  case "$f" in "^"*) d=$(dirname -- "${f#?}"); while [ ! -e "$d" ]; do d=$(dirname -- "$d"); done; ' +
+    'if [ -w "$d" ]; then printf "\\n' + MARK + '0:%s\\n" "$f"; ' +
+    'else printf "\\n' + MARK + '1:%s\\n" "$f"; fi; continue;; esac\n' +
     '  if [ -f "$f" ]; then printf "\\n' + MARK + '1:%s\\n" "$f"; cat -- "$f"; ' +
     'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi\n' +
     'done\n';
@@ -23,14 +28,15 @@ var READ_SCRIPT = 'for f do\n' +
 // (or copy) goes to a temporary file beside the target and is renamed over it, so a reader never sees half a file. It goes on after a failed op
 // and exits 1 at the end; a signal no program took is not a failure.
 var APPLY_SCRIPT = 'rc=0\n' +
+    'fail() { echo "$1 failed" >&2; rc=1; }\n' +
     'while [ $# -gt 0 ]; do\n' +
     '  case "$1" in\n' +
     '  write) mkdir -p -- "$(dirname -- "$2")" && printf "%s" "$3" > "$2.rutile-new" && chmod "$4" "$2.rutile-new" ' +
-    '&& mv -f -- "$2.rutile-new" "$2" || rc=1; shift 4;;\n' +
+    '&& mv -f -- "$2.rutile-new" "$2" || fail "writing $2"; shift 4;;\n' +
     '  copy) mkdir -p -- "$(dirname -- "$3")" && cp -- "$2" "$3.rutile-new" && chmod "$4" "$3.rutile-new" ' +
-    '&& mv -f -- "$3.rutile-new" "$3" || rc=1; shift 4;;\n' +
-    '  remove) rm -f -- "$2" || rc=1; shift 2;;\n' +
-    '  move) mkdir -p -- "$(dirname -- "$3")" && mv -f -- "$2" "$3" || rc=1; shift 3;;\n' +
+    '&& mv -f -- "$3.rutile-new" "$3" || fail "writing $3"; shift 4;;\n' +
+    '  remove) rm -f -- "$2" || fail "removing $2"; shift 2;;\n' +
+    '  move) mkdir -p -- "$(dirname -- "$3")" && mv -f -- "$2" "$3" || fail "moving $2"; shift 3;;\n' +
     '  signal) pkill "-$2" -f "$3"; shift 3;;\n' +
     '  *) echo "unknown op $1" >&2; exit 2;;\n' +
     '  esac\n' +

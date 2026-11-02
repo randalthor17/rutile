@@ -168,11 +168,28 @@ TestCase {
         verify(without.errors.join().indexOf(kitty + " is a link") > 0, "without our line: said");
     }
 
+    // home-manager can link a whole folder into the read-only store (xdg.configFile."nvim".source = ./nvim): a file
+    // there cannot be written; the write failed, the whole apply step with it, and only a vague error came back.
+    function test_a_read_only_folder_is_skipped_and_said() {
+        const lua = "/h/.config/nvim/colors/rutile.lua", conf = "/h/.config/kitty/kitty.conf";
+        const r = sync({ ["^" + lua]: "", [conf]: "x\n", ["^" + conf]: "" }, ["nvim", "kitty"]);
+        compare(r.ops.filter(o => o.path === lua || o.path === conf).length, 0, "nothing written there");
+        const errors = r.errors.join("; ");
+        verify(errors.indexOf("Neovim (:colorscheme rutile): /h/.config/nvim/colors cannot be written (a home-manager link?), " + lua + " not written") >= 0, errors);
+        verify(errors.indexOf("kitty: /h/.config/kitty cannot be written") >= 0, errors);
+        verify(r.done.nvim.files.indexOf(lua) < 0, "not recorded as ours");
+        const fine = sync({ ["^" + lua]: null }, ["nvim"]);
+        compare(fine.files[lua], rendered["nvim.lua"], "a writable folder: written");
+        verify(AppTheme.paths(dirs, ["nvim"]).indexOf("^" + lua) >= 0, "every written path's folder is checked");
+        verify(AppTheme.paths(dirs, ["kitty"]).indexOf("^" + conf) >= 0);
+    }
+
     function test_niri_gets_its_own_file_only() {
         const r = sync({ "/h/.config/niri/config.kdl": "layout {}\n" }, ["niri"]);
         compare(r.files["/h/.config/niri/rutile-colors.kdl"], rendered["niri.kdl"]);
         compare(r.ops.map(o => o.op + " " + o.path).join(), "write /h/.config/niri/rutile-colors.kdl", "config.kdl never");
-        compare(AppTheme.paths(dirs, ["niri"]).join(), "/h/.config/niri/rutile-colors.kdl", "nothing else read");
+        compare(AppTheme.paths(dirs, ["niri"]).join(), "/h/.config/niri/rutile-colors.kdl,^/h/.config/niri/rutile-colors.kdl",
+                "nothing else read (and its folder checked)");
         const off = sync(r.files, [], r.done);
         compare(off.files["/h/.config/niri/rutile-colors.kdl"], null, "off: gone, so niri's own colors apply");
         compare(off.files["/h/.config/niri/config.kdl"], "layout {}\n");

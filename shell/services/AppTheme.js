@@ -179,10 +179,10 @@ function paths(dirs, names) {
     names.forEach(function (n) {
         var a = all[n];
         if (!a) return;
-        a.files.forEach(function (f) { add(f[1]); });
-        (a.blocks || []).forEach(function (b) { add(b.file); add("!" + b.file); });
-        (a.keys || []).forEach(function (k) { add(k.file); add("!" + k.file); });
-        if (a.ini) { add(a.ini.file); add("!" + a.ini.file); }
+        a.files.forEach(function (f) { add(f[1]); add("^" + f[1]); });
+        (a.blocks || []).forEach(function (b) { add(b.file); add("!" + b.file); add("^" + b.file); });
+        (a.keys || []).forEach(function (k) { add(k.file); add("!" + k.file); add("^" + k.file); });
+        if (a.ini) { add(a.ini.file); add("!" + a.ini.file); add("^" + a.ini.file); }
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             add(fx.manifest);
@@ -262,6 +262,16 @@ function plan(input) {
     function linked(path) {
         return typeof files["!" + path] === "string";
     }
+    // in a folder that cannot be written (home-manager linked the whole folder into the store, say)
+    function readOnly(path) {
+        return typeof files["^" + path] === "string";
+    }
+    function folder(path) {
+        return path.substring(0, path.lastIndexOf("/"));
+    }
+    function readOnlyError(a, path) {
+        errors.push(a.title + ": " + folder(path) + " cannot be written (a home-manager link?), " + path + " not written");
+    }
 
     // apps themed before and no longer wanted: take it back out
     Object.keys(done).sort().forEach(function (app) {
@@ -308,6 +318,7 @@ function plan(input) {
         record.previous = record.previous || {};
         var changed = false;
         a.files.forEach(function (f) {
+            if (readOnly(f[1])) return readOnlyError(a, f[1]);
             var source = (input.sources || {})[f[0]];
             if (source && files[f[1]] !== input.rendered[f[0]]) {
                 files[f[1]] = input.rendered[f[0]];
@@ -320,6 +331,7 @@ function plan(input) {
         });
         (a.blocks || []).forEach(function (b) {
             if (linked(b.file) && b.present && b.present.test(files[b.file] || "")) return;   // home-manager's has it
+            if (readOnly(b.file) && !linked(b.file)) return readOnlyError(a, b.file);
             if (linked(b.file))
                 return errors.push(a.title + ": " + b.file + " is a link (home-manager?), not changed; add " +
                                    b.lines.join(" ") + " to it there");
@@ -327,6 +339,7 @@ function plan(input) {
         });
         (a.keys || []).forEach(function (k) {
             if (linked(k.file) && getKey(files[k.file], k.section, k.key) === k.value) return;
+            if (readOnly(k.file) && !linked(k.file)) return readOnlyError(a, k.file);
             if (linked(k.file))
                 return errors.push(a.title + ": " + k.file + " is a link (home-manager?), not changed; set " +
                                    (k.section ? "[" + k.section + "] " : "") + k.key + " = " + k.value + " there");
@@ -334,7 +347,9 @@ function plan(input) {
             if (!(slot in record.previous)) record.previous[slot] = getKey(files[k.file], k.section, k.key);
             changed = write(k.file, setKey(files[k.file], k.section, k.key, k.value)) || changed;
         });
-        if (a.ini && linked(a.ini.file)) {
+        if (a.ini && readOnly(a.ini.file) && !linked(a.ini.file)) {
+            readOnlyError(a, a.ini.file);
+        } else if (a.ini && linked(a.ini.file)) {
             errors.push(a.title + ": " + a.ini.file + " is a link (home-manager?), not changed; it needs the " +
                         "[Colors:*] groups of " + a.files[0][1]);
         } else if (a.ini) {

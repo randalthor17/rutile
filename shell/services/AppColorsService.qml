@@ -132,9 +132,35 @@ Singleton {
         property var rendered: ({})
         property var done: ({})
         property string warning: ""
-        stdout: StdioCollector { id: out }
-        stderr: StdioCollector { id: errors }
+        // The result once the process has exited and both its outputs are read: at `exited` the text may not have
+        // arrived yet (an error's message was lost that way: "could not change the apps' files").
+        property int exitCode: -1
+        property bool outRead: false
+        property bool errRead: false
+        onRunningChanged: if (running) {
+            exitCode = -1;
+            outRead = false;
+            errRead = false;
+        }
+        stdout: StdioCollector {
+            id: out
+            onStreamFinished: { job.outRead = true; job.settle(); }
+        }
+        stderr: StdioCollector {
+            id: errors
+            onStreamFinished: { job.errRead = true; job.settle(); }
+        }
         onExited: code => {
+            exitCode = code;
+            settle();
+        }
+        function settle() {
+            if (exitCode < 0 || !outRead || !errRead) return;
+            const code = exitCode;
+            exitCode = -1;
+            handle(code);
+        }
+        function handle(code) {
             if (stage === "render") {
                 if (code !== 0) return root.finish(false, errors.text.trim() || "matugen exited " + code);
                 rendered = Files.parseRead(out.text);

@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Colors in other apps keep going when one app's folder is read-only** (home-manager can link a whole config
+  folder, Neovim's say): that app is skipped and named in the message, the others are themed. Errors now say which
+  file failed.
 - **App indicators** (plan 2.10): apps' tray icons (Discord, Steam, Nextcloud and the like) in a pill between the
   bell and the status pill, there only while an app has one. Click opens the app, right click its menu, in the
   shell's style (submenus open in place). `rutile-shell tray state` lists them. Icons come from Papirus-Dark, which has most apps' (the shell's icon theme, and the apps'

@@ -8,7 +8,8 @@
 // env RUTILE_PYWALFOX_HOST=@WS@/bin/fake-pywalfox-host
 // Another program's Firefox host (as Noctalia's) is there first: kept aside while ours is in, then put back.
 // Ghostty's config is a link, as home-manager makes it: never changed, and the error says what to add. niri gets its
-// own rutile-colors.kdl.
+// own rutile-colors.kdl. Neovim's whole folder is a link into a read-only folder (home-manager can do that): its
+// file is skipped with a message, and the rest is themed (it used to fail the whole run, with a vague error).
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -32,7 +33,7 @@ ShellRoot {
     Process {
         id: other
         running: true
-        command: ["sh", "-c", 'mkdir -p "$HOME/.mozilla/native-messaging-hosts" "$HOME/config/ghostty" && printf "%s" "$1" > "$HOME/.mozilla/native-messaging-hosts/pywalfox.json" && printf "font-size = 12\\n" > "$HOME/hm-ghostty" && ln -s "$HOME/hm-ghostty" "$HOME/config/ghostty/config"',
+        command: ["sh", "-c", 'mkdir -p "$HOME/.mozilla/native-messaging-hosts" "$HOME/config/ghostty" && printf "%s" "$1" > "$HOME/.mozilla/native-messaging-hosts/pywalfox.json" && printf "font-size = 12\\n" > "$HOME/hm-ghostty" && ln -s "$HOME/hm-ghostty" "$HOME/config/ghostty/config" && mkdir "$HOME/hm-nvim" && chmod 555 "$HOME/hm-nvim" && ln -s "$HOME/hm-nvim" "$HOME/config/nvim"',
                   "sh", root.theirs]
     }
     Process {
@@ -76,6 +77,7 @@ ShellRoot {
                 Settings.set("appColors.firefox", true);
                 Settings.set("appColors.niri", true);
                 Settings.set("appColors.ghostty", true);
+                Settings.set("appColors.nvim", true);
                 break;
             case 2:
                 t.compare(JSON.stringify(S.wanted), "[]", "apps on, the main switch off: nothing");
@@ -88,8 +90,10 @@ ShellRoot {
                 root.stage = 4;
                 break;
             case 5: {
-                t.verify(S.lastError.indexOf("Ghostty: " + root.home + "/config/ghostty/config is a link (home-manager?), not changed; add theme = rutile") === 0,
-                         "only the linked config's warning: " + S.lastError);
+                t.verify(S.lastError.indexOf("Ghostty: " + root.home + "/config/ghostty/config is a link (home-manager?), not changed; add theme = rutile") >= 0,
+                         "the linked config's warning: " + S.lastError);
+                t.verify(S.lastError.indexOf("Neovim (:colorscheme rutile): " + root.home + "/config/nvim/colors cannot be written") >= 0,
+                         "the read-only folder's: " + S.lastError);
                 t.compare(root.file("/hm-ghostty"), "font-size = 12\n", "the linked config is not changed");
                 t.verify((root.file("/config/ghostty/themes/rutile") ?? "").indexOf("cursor-color = #b2c5ff") >= 0, "Ghostty's theme still comes");
                 t.verify((root.file("/config/niri/rutile-colors.kdl") ?? "").indexOf('active-color "#b2c5ff"') > 0, "niri's colors");
@@ -103,7 +107,7 @@ ShellRoot {
                 t.compare(root.file("/.mozilla/native-messaging-hosts/pywalfox.json.rutile-backup"), root.theirs, "theirs kept aside");
                 t.verify((root.file("/cache/rutile/pywalfox.conf") ?? "").indexOf("\ncolor1 #b2c5ff\n") > 0, "Firefox's colors");
                 t.verify((root.files[Quickshell.env("FAKE_PKILL_LOG")] ?? "").indexOf("-USR1 -f") === 0, "kitty told to reload");
-                t.compare(S.synced.join(), "niri,gtk,kitty,ghostty,firefox", "remembered");
+                t.compare(S.synced.join(), "niri,gtk,kitty,ghostty,nvim,firefox", "remembered");
                 repaint.running = true;
                 break;
             }

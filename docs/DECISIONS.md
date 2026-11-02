@@ -572,3 +572,13 @@ the user's data folders (an app's own icon in hicolor is still found); `programs
 Qt and KDE apps (`theming.icons`). `rutile-shell tray iconPath NAME` says where the shell finds an icon. Found on
 the way: a Qt tray app resolves its icon name in its own process and sends an empty image when it has no such
 icon, so the demo app cannot stand in for apps that send a bare name; its `--icon-name` was removed.
+
+**D63. Colors in other apps: a folder that cannot be written is skipped, and every failure says what failed
+(amends D58).** On the maintainer's test user a run ended with "could not change the apps' files" and nothing
+recorded: one failed step failed the whole run, and its message was lost. Home-manager can link a whole folder
+into the read-only store (`xdg.configFile."nvim".source = ./nvim`), and a file there cannot be written; the read
+step now checks each written path's folder (`^PATH`: its nearest existing folder writable?), and the plan skips
+such a file with a message, as it does a linked config, so the other apps are themed. The apply script names each
+failed step on stderr, and the service handles a step's result only once both of its outputs are read (Quickshell's
+collectors have their text at `streamFinished`, which can come after `exited`). Not known: what failed on that
+user; the next run's message will say.
