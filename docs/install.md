@@ -116,12 +116,13 @@ Firefox needs the Pywalfox extension; Rutile is its backend. Qt apps follow qt6c
 ## Trying the app indicators
 
 ```
-nix run github:randalthor17/rutile#tray-demo                          # its own image
-nix run github:randalthor17/rutile#tray-demo -- --icon-name steam     # a theme icon by name, as most apps send
+nix run --refresh github:randalthor17/rutile#tray-demo
 ```
 
-A small tray app (a teal circle, or the named icon) with a menu: Open, a check, a submenu and Quit; each choice
-prints `chose <entry>`. `rutile-shell tray state` shows what the shell sees.
+A small tray app (a teal circle) with a menu: Open, a check, a submenu and Quit; each choice prints
+`chose <entry>`. `rutile-shell tray state` shows what the shell sees, each item's icon included;
+`rutile-shell tray iconPath steam` where the shell finds an icon by name (its theme is Papirus-Dark; an app's own
+icon in hicolor is found too).
 
 ## Things that clash with another shell
 

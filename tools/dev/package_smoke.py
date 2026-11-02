@@ -52,6 +52,10 @@ def main(pkg):
                         problems.append("ipc motion speed did not answer 1")
                     if ipc("settings", "open", "wallpaper") != "true":
                         problems.append("ipc settings open wallpaper refused")
+                    # icons by name, as tray apps send them, from the package's Papirus-Dark (D62)
+                    for name in ("steam", "discord"):
+                        if not ipc("tray", "iconPath", name):
+                            problems.append(f"no icon {name!r}: Papirus-Dark is not the shell's icon theme")
                     wall = rt / "green.png"
                     solid_png(wall, (40, 160, 60))
                     ipc("wallpaper", "set", str(wall))

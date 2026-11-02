@@ -8,7 +8,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 - **App indicators** (plan 2.10): apps' tray icons (Discord, Steam, Nextcloud and the like) in a pill between the
   bell and the status pill, there only while an app has one. Click opens the app, right click its menu, in the
   shell's style (submenus open in place). `rutile-shell tray state` lists them; `nix run .#tray-demo` is a small
-  tray app to try it.
+  tray app to try it. Icons come from Papirus-Dark, which has most apps' (the shell's icon theme, and the apps'
+  with `programs.rutile.theming`).
 - **Qt and KDE apps look like the GTK apps**: Rutile's own Kvantum theme (rounded, filled buttons and fields,
   accent checks and sliders, thin scrollbars, rounded menus) in the shell's colors, the default Qt style with
   `programs.rutile.theming`. GTK 4 apps without libadwaita (the print editor and the like) are themed too.

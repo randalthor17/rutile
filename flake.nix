@@ -33,7 +33,7 @@
         default = rutile-shell;
         rutile-shell = pkgs.callPackage ./nix/package.nix { google-sans-flex = googleSansFlex pkgs; };
         google-sans-flex = googleSansFlex pkgs;
-        # A tray app to try the app indicators by hand (plan 2.10): `nix run .#tray-demo [-- --icon-name steam]`.
+        # A tray app to try the app indicators by hand (plan 2.10): `nix run .#tray-demo`.
         # tests/qs/apps/tray-app.qml under Qt's qml runtime, wrapped so it finds QtQuick, Qt.labs and Wayland.
         tray-demo = pkgs.stdenv.mkDerivation {
           pname = "rutile-tray-demo";
@@ -106,6 +106,8 @@
             # Deliberately no QT_QPA_PLATFORM here: tools/qtws.py sets offscreen for tests only,
             # so Quickshell launched from this shell still opens real windows.
             export RUTILE_FONT_DIRS=${fontDirs}
+            # the shell's icon theme (D62), after the system's
+            export XDG_DATA_DIRS=''${XDG_DATA_DIRS:+$XDG_DATA_DIRS:}${pkgs.papirus-icon-theme}/share
             # Add those font dirs on top of the system fontconfig (it is included, nothing is lost).
             if root=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f "$root/tools/fontconf.py" ]; then
               if conf=$(python3 "$root/tools/fontconf.py" write); then

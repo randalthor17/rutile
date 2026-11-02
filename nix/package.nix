@@ -1,6 +1,6 @@
 # Rutile Shell as a package (plan 6.1): the QML shell, the theme templates it renders from, the compiled Firefox
 # host (D54), and `rutile-shell` (bin/rutile-shell), which runs it under Quickshell with everything it calls on PATH
-# and its fonts visible to Qt, and calls the running one (`rutile-shell lock lock`; `rutile-shell --help` lists all).
+# and its fonts visible to Qt, Papirus-Dark for its icons (after the user's own folders; D62), and calls the running one (`rutile-shell lock lock`; `rutile-shell --help` lists all).
 {
   lib,
   stdenv,
@@ -17,6 +17,7 @@
   bash,
   material-symbols,
   google-sans-flex,
+  papirus-icon-theme,
 }:
 let
   # The system's fontconfig first (every other font keeps working), then the two fonts the shell is drawn with.
@@ -69,7 +70,8 @@ stdenv.mkDerivation {
     makeWrapper $out/share/rutile/bin/rutile-shell $out/bin/rutile-shell \
       --set RUTILE_SHELL_QML $out/share/rutile/shell/shell.qml \
       --prefix PATH : ${lib.makeBinPath ([ quickshell ] ++ runtime)} \
-      --set FONTCONFIG_FILE ${fontsConf}
+      --set FONTCONFIG_FILE ${fontsConf} \
+      --suffix XDG_DATA_DIRS : ${papirus-icon-theme}/share
     runHook postInstall
   '';
 

@@ -358,3 +358,7 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   150 KB file's text to `sh -c` as an argument made the Process never start, and the service waited forever with
   no error (November 2026, the Kvantum SVG). Pass files by path or on stdin; `Files.applyCommand` now refuses an
   argument over 120 000 characters.
+- **A Qt tray app does not send its icon's name as given.** QSystemTrayIcon (and Qt.labs.platform) resolves the
+  name in the app's own icon theme and sends the result; a name it cannot find goes out as an empty pixmap
+  (Quickshell: "Unable to create pixmap"). To test a host's name lookup, use an app that sends the bare name
+  (libappindicator, Electron) or check the lookup itself (`rutile-shell tray iconPath NAME`).

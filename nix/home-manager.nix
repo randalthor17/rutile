@@ -244,27 +244,27 @@ in
       icons = {
         name = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
-          default = "Adwaita";
-          description = "Icon theme for GTK apps (null: leave it).";
+          default = "Papirus-Dark";
+          description = "Icon theme for GTK apps (null: leave it); the shell's own (D62).";
         };
         package = lib.mkOption {
           type = lib.types.nullOr lib.types.package;
-          default = pkgs.adwaita-icon-theme;
-          defaultText = lib.literalExpression "pkgs.adwaita-icon-theme";
+          default = pkgs.papirus-icon-theme;
+          defaultText = lib.literalExpression "pkgs.papirus-icon-theme";
           description = "The GTK icon theme's package.";
         };
-        # Adwaita's icons have fixed dark colors (unreadable on the dark palette) and lack many KDE names;
-        # KDE recolors Breeze's to the color scheme
+        # Papirus-Dark too (light symbolic icons, made for dark themes, and KDE's names); breeze-dark is the other
+        # good choice for KDE apps (Adwaita's have fixed dark colors and lack many KDE names)
         qt = {
           name = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
-            default = "breeze-dark";
+            default = "Papirus-Dark";
             description = "Icon theme for Qt and KDE apps (null: leave it).";
           };
           package = lib.mkOption {
             type = lib.types.nullOr lib.types.package;
-            default = pkgs.kdePackages.breeze-icons;
-            defaultText = lib.literalExpression "pkgs.kdePackages.breeze-icons";
+            default = pkgs.papirus-icon-theme;
+            defaultText = lib.literalExpression "pkgs.papirus-icon-theme";
             description = "The Qt icon theme's package.";
           };
         };

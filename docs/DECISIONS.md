@@ -562,3 +562,13 @@ submenu replaces the list in place with a Back row (as GNOME's), not a cascade o
 removes DBusMenu's mnemonic marks (seen with a real app), so the text is shown as given: stripping "_" again
 would eat real underscores. Tested offscreen with stand-in items, and end to end with a real tray app (Qt's
 SystemTrayIcon under the `qml` runtime, `tests/qs/apps/tray-app.qml`) under headless sway on a private bus.
+
+**D62. Papirus-Dark is the shell's icon theme, and the apps' with theming (the maintainer's choice).** Most tray
+apps send an icon name (libappindicator, Electron), which the shell resolves in its own icon theme; the shell had
+none set (Qt's default, through the portal platform theme), and neither Adwaita (one app icon) nor Breeze Dark
+(684, no Steam or Discord) cover apps. Papirus-Dark has most apps' icons, light symbolic ones made for dark
+themes, and KDE's names. `//@ pragma IconTheme Papirus-Dark` sets it for the shell; the package adds it after
+the user's data folders (an app's own icon in hicolor is still found); `programs.rutile.theming` uses it for GTK,
+Qt and KDE apps (`theming.icons`). `rutile-shell tray iconPath NAME` says where the shell finds an icon. Found on
+the way: a Qt tray app resolves its icon name in its own process and sends an empty image when it has no such
+icon, so the demo app cannot stand in for apps that send a bare name; its `--icon-name` was removed.

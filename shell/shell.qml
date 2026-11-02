@@ -1,5 +1,8 @@
 //@ pragma Env QT_QPA_PLATFORMTHEME = xdgdesktopportal
-// (Above: file dialogs go through the desktop portal, the user's own file chooser; read at start, D51.)
+//@ pragma IconTheme Papirus-Dark
+// (Above: file dialogs go through the desktop portal, the user's own file chooser; read at start, D51. Icons from
+// Papirus-Dark, which has most apps' (tray icons sent by name; D62): the package brings it; an app's own icon in
+// hicolor is still found.)
 // Rutile Shell. Run with:   quickshell -p shell/shell.qml   (or `qs -p shell`)
 // A clock sits at the top left of every screen, a status pill at the top right and the shelf along the bottom; clicking it opens Quick Settings on that screen.
 // From a niri keybind:   quickshell -p <path>/shell/shell.qml ipc call quicksettings toggle
@@ -401,7 +404,7 @@ ShellRoot {
         target: "tray"
         function state(): string {
             const w = trayMenu.item;
-            return JSON.stringify({ items: shell.trayItems.map(e => ({ id: e.id, title: e.title, attention: e.attention })),
+            return JSON.stringify({ items: shell.trayItems.map(e => ({ id: e.id, title: e.title, attention: e.attention, icon: e.icon })),
                                     menuOpen: shell.trayMenuOpen, loaded: trayMenu.active, menuFor: shell.trayMenuId,
                                     entries: w ? w.panel.entries.map(e => e.separator ? "-" : e.text) : [],
                                     depth: w ? w.levels.length - 1 : 0 });
@@ -430,6 +433,8 @@ ShellRoot {
             return i >= 0 && w.choose(i);
         }
         function back(): void { trayMenu.item?.pop(); }
+        // Where the shell finds an icon by name ("": nowhere): to see why a tray icon is missing.
+        function iconPath(name: string): string { return Quickshell.iconPath(name, true); }
     }
 
     ShelfBackend { id: shelfBackend }
