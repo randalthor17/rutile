@@ -113,6 +113,16 @@ remove the line. Neovim needs `:colorscheme rutile` (or `vim.cmd.colorscheme("ru
 Firefox needs the Pywalfox extension; Rutile is its backend. Qt apps follow qt6ct only with
 `QT_QPA_PLATFORMTHEME=qt6ct`.
 
+## Trying the app indicators
+
+```
+nix run github:randalthor17/rutile#tray-demo                          # its own image
+nix run github:randalthor17/rutile#tray-demo -- --icon-name steam     # a theme icon by name, as most apps send
+```
+
+A small tray app (a teal circle, or the named icon) with a menu: Open, a check, a submenu and Quit; each choice
+prints `chose <entry>`. `rutile-shell tray state` shows what the shell sees.
+
 ## Things that clash with another shell
 
 One program per session can own each of these; turn them off in the other shell (Noctalia, for example) or the

@@ -33,6 +33,26 @@
         default = rutile-shell;
         rutile-shell = pkgs.callPackage ./nix/package.nix { google-sans-flex = googleSansFlex pkgs; };
         google-sans-flex = googleSansFlex pkgs;
+        # A tray app to try the app indicators by hand (plan 2.10): `nix run .#tray-demo [-- --icon-name steam]`.
+        # tests/qs/apps/tray-app.qml under Qt's qml runtime, wrapped so it finds QtQuick, Qt.labs and Wayland.
+        tray-demo = pkgs.stdenv.mkDerivation {
+          pname = "rutile-tray-demo";
+          version = "0.1.0";
+          src = pkgs.lib.fileset.toSource {
+            root = ./tests/qs/apps;
+            fileset = pkgs.lib.fileset.unions [ ./tests/qs/apps/tray-app.qml ./tests/qs/apps/tray-icon.png ];
+          };
+          nativeBuildInputs = [ pkgs.qt6.wrapQtAppsHook ];
+          buildInputs = [ pkgs.qt6.qtbase pkgs.qt6.qtdeclarative pkgs.qt6.qtwayland pkgs.qt6.qtsvg ];
+          dontWrapQtApps = true;
+          installPhase = ''
+            install -Dm644 -t $out/share/rutile-tray-demo tray-app.qml tray-icon.png
+            makeQtWrapper ${pkgs.qt6.qtdeclarative}/bin/qml $out/bin/rutile-tray-demo \
+              --add-flags "-a gui $out/share/rutile-tray-demo/tray-app.qml --" \
+              --set QT_FORCE_STDERR_LOGGING 1
+          '';
+          meta.mainProgram = "rutile-tray-demo";
+        };
         # The Firefox colors' native-messaging host (D54), the shell's one compiled program.
         pywalfox-host = pkgs.stdenv.mkDerivation {
           pname = "rutile-pywalfox-host";
