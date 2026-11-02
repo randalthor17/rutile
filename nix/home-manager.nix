@@ -101,6 +101,9 @@ let
       // Window borders, focus ring and the like in the shell's colors, while Settings > Wallpaper > Colors in other
       // apps > niri is on: the shell writes this file, and removes it when off (niri's own colors then apply).
       include optional=true "${config.xdg.configHome}/niri/rutile-colors.kdl"
+      // Keyboard, mouse and touchpad from Settings > Input, while its switch is on: the shell writes this file,
+      // and removes it when off (niri's own input settings then apply).
+      include optional=true "${config.xdg.configHome}/niri/rutile-input.kdl"
     ''
     + lib.optionalString cfg.niri.binds.enable ''
       binds {

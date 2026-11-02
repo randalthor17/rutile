@@ -47,6 +47,15 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `appColors.btop` | true or false | false | btop's theme; the previous one comes back when off |
 | `appColors.nvim` | true or false | false | a `rutile` colorscheme for Neovim |
 | `appColors.firefox` | true or false | false | Firefox through the Pywalfox extension, with Rutile's own host |
+| `input.enabled` | true or false | false | apply the input settings below to niri: a rutile-input.kdl that niri includes after its own config (the home-manager module adds the include; D70) |
+| `input.repeatDelay` | integer, 100 to 1000 | 600 | milliseconds a key is held before it repeats |
+| `input.repeatRate` | integer, 5 to 80 | 25 | repeats per second |
+| `input.touchpadTap` | true or false | true | tap to click; off leaves niri's config as it is (an included file cannot turn a flag off) |
+| `input.touchpadNaturalScroll` | true or false | true | content moves with the fingers; off leaves niri's config as it is |
+| `input.touchpadSpeed` | -1 to 1 | 0 | touchpad pointer speed (niri's accel-speed) |
+| `input.mouseNaturalScroll` | true or false | false | the wheel moves content the other way; off leaves niri's config as it is |
+| `input.mouseSpeed` | -1 to 1 | 0 | mouse pointer speed |
+| `input.mouseFlat` | true or false | false | no mouse acceleration (niri's flat profile) |
 | `polkit.agent` | true or false | true | be the session's polkit agent (an app asking for an administrator's password asks in the shell); turn off when another agent does it (polkit allows one per session) |
 | `shelf.pins` | list of desktop ids | unset | the shelf's pinned apps, in order; unset: the first installed file manager, browser and terminal |
 

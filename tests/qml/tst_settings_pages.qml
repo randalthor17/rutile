@@ -195,6 +195,68 @@ TestCase {
         verify(!findChild(a, "displayOn_0"));
     }
 
+    Component {
+        id: powerComp
+        QtObject {
+            property bool batteryAvailable: true
+            property real battery: 0.43
+            property string state: "discharging"
+            property real timeToFull: 0
+            property real timeToEmpty: 7500
+            property real health: 0.91
+            property bool profilesAvailable: true
+            property bool hasPerformance: true
+            property string profile: "balanced"
+            property var holds: []
+            property var calls: []
+            function setProfile(name) { calls = calls.concat([name]); profile = name; }
+        }
+    }
+
+    function test_power() {
+        const t = make("power", powerComp);
+        const a = t.a, b = t.b;
+        const bat = findChild(a, "powerBattery");
+        compare(bat.text, "43%");
+        compare(bat.supportingText, "2 h 5 min left");
+        compare(bat.iconName, "battery_3_bar");
+        compare(findChild(a, "powerHealth").trailingText, "91%");
+        verify(!findChild(a, "powerNothing").visible);
+        verify(findChild(a, "powerMode_balanced").selected);
+
+        mouseClick(findChild(a, "powerMode_power-saver"));
+        compare(b.calls, ["power-saver"]);
+        verify(findChild(a, "powerMode_power-saver").selected && !findChild(a, "powerMode_balanced").selected);
+
+        b.state = "charging";
+        b.timeToFull = 2400;
+        compare(bat.supportingText, "Charging, full in 40 min");
+        compare(bat.iconName, "battery_charging_full");
+        b.timeToFull = 0;
+        compare(bat.supportingText, "Charging", "no estimate: none shown");
+        b.state = "full";
+        compare(bat.supportingText, "Fully charged");
+        b.state = "pending";
+        compare(bat.supportingText, "Plugged in, not charging");
+        b.health = -1;
+        waitForRendering(a);
+        verify(!findChild(a, "powerHealth").visible, "no health from UPower: no row");
+
+        b.holds = [{ profile: "performance", app: "Steam", reason: "Game running" }];
+        compare(findChild(a, "powerMode_performance").supportingText, "Held by Steam: Game running");
+        b.hasPerformance = false;
+        waitForRendering(a);
+        verify(!findChild(a, "powerMode_performance"), "no performance mode on this machine: not offered");
+
+        b.batteryAvailable = false;
+        waitForRendering(a);
+        verify(!findChild(a, "setting_power.battery").visible, "a desktop: no battery group");
+        verify(findChild(a, "setting_power.mode").visible);
+        b.profilesAvailable = false;
+        waitForRendering(a);
+        verify(findChild(a, "powerNothing").visible);
+    }
+
     function make(page, backendComp) {
         const s = createTemporaryObject(storeComp, root);
         const a = createTemporaryObject(appComp, root, { store: s });
@@ -336,6 +398,8 @@ TestCase {
         compare(keys("ethernet")[0], "network/network.ethernet");
         compare(keys("resolution")[0], "display/display.outputs");
         compare(keys("monitor")[0], "display/");
+        compare(keys("power saver")[0], "power/power.mode");
+        compare(keys("battery")[0], "power/power.battery");
         compare(keys("bluetooth")[0], "bluetooth/");
         compare(keys("add device")[0], "bluetooth/bluetooth.available");
         verify(keys("pair").slice(0, 2).indexOf("bluetooth/bluetooth.available") >= 0);

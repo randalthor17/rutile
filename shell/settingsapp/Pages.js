@@ -70,6 +70,28 @@ var pages = [
         ]
     },
     {
+        id: "power", title: "Power", icon: "battery_charging_full", tone: "primaryContainer",
+        summary: "Battery, power mode", aliases: ["upower", "power-profiles-daemon"],
+        sections: [],
+        view: "pages/PowerPage.qml", backend: "pages/PowerBackend.qml",
+        entries: [
+            { key: "power.battery", title: "Battery", description: "Charge, time left and health",
+              aliases: ["charge", "charging", "time left"] },
+            { key: "power.mode", title: "Power mode", description: "Power saver, balanced or performance",
+              aliases: ["power profile", "power saver", "performance", "balanced", "energy"] }
+        ]
+    },
+    {
+        id: "input", title: "Keyboard, mouse & touchpad", icon: "keyboard", tone: "secondaryContainer",
+        summary: "Key repeat, pointer speed, tap to click", aliases: ["input", "trackpad", "pointer", "niri input"],
+        sections: [
+            { title: "", keys: ["input.enabled"] },
+            { title: "Keyboard", keys: ["input.repeatDelay", "input.repeatRate"] },
+            { title: "Touchpad", keys: ["input.touchpadTap", "input.touchpadNaturalScroll", "input.touchpadSpeed"] },
+            { title: "Mouse", keys: ["input.mouseSpeed", "input.mouseFlat", "input.mouseNaturalScroll"] }
+        ]
+    },
+    {
         id: "notifications", title: "Notifications", icon: "notifications", tone: "errorContainer",
         summary: "Sounds", aliases: ["alerts", "popups"],
         sections: [{ title: "", keys: ["notifications.sound"] }]
@@ -136,6 +158,17 @@ var hints = {
         description: "Install the GTK and Kvantum themes for Flatpak apps and let them read these colors",
         aliases: ["flatpak", "flathub", "sandbox", "inkscape"]
     },
+    "input.enabled": { aliases: ["niri", "rutile-input.kdl"] },
+    "input.repeatDelay": { requires: "input.enabled", step: 50, label: v => v + " ms", aliases: ["keyboard", "typing"] },
+    "input.repeatRate": { requires: "input.enabled", step: 5, label: v => v + " per second", aliases: ["keyboard", "typing"] },
+    "input.touchpadTap": { requires: "input.enabled", aliases: ["click", "trackpad"] },
+    "input.touchpadNaturalScroll": { requires: "input.enabled", aliases: ["reverse scrolling", "trackpad"] },
+    "input.touchpadSpeed": { requires: "input.enabled", step: 0.1, label: v => (v > 0 ? "+" : "") + v.toFixed(1),
+                             aliases: ["pointer speed", "sensitivity", "trackpad"] },
+    "input.mouseNaturalScroll": { requires: "input.enabled", aliases: ["reverse scrolling", "wheel"] },
+    "input.mouseSpeed": { requires: "input.enabled", step: 0.1, label: v => (v > 0 ? "+" : "") + v.toFixed(1),
+                          aliases: ["pointer speed", "sensitivity", "dpi"] },
+    "input.mouseFlat": { requires: "input.enabled", aliases: ["acceleration", "accel", "raw input", "gaming"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
     "lock.idleMinutes": {
         choices: [0, 1, 2, 5, 10, 15, 30, 60],

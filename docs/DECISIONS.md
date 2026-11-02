@@ -657,3 +657,15 @@ off from here. Flipped orientations are left to niri's config. Menus on such pag
 (ChoiceRow, which SettingsApp.choose tells instead of saving a setting). Tested with niri's real JSON and a
 stand-in `niri` (tests/qs/bin/niri); the session's niri was not touched.
 
+**D70. Power and Input pages (plan 5.2).** Power is a page of its own (D67) over Quickshell's UPower (the
+display device, when it is a laptop battery) and PowerProfiles; Quickshell cannot tell whether
+power-profiles-daemon is there, so the backend asks `busctl --system list` once when the page opens, and offers
+the modes only then (Performance only where the daemon has it). Input is plain settings (`input.*` in the
+schema), because niri has no command to change input at run time: while `input.enabled` is on, NiriInputService
+writes them to `$XDG_CONFIG_HOME/niri/rutile-input.kdl`, which the home-manager module includes (optionally)
+after niri's own config, so these values win and niri applies them at once; off removes the file. niri 26.04
+cannot turn a flag off from an included file (`tap false` does not parse), so tap to click and natural
+scrolling are written only when on, and their descriptions say that off leaves niri's config as it is. Not
+writing niri's config itself keeps the maintainer's rule. Keyboard layouts are left to niri's config for now (a
+text setting needs an editor the app does not have yet).
+

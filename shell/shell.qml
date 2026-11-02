@@ -257,6 +257,8 @@ ShellRoot {
 
     // Other apps in the shell's colors (D52; all off by default): created at start so it follows the palette.
     readonly property var appColorsWanted: AppColorsService.wanted
+    // Settings > Input into niri (D70): created with the shell, so the file follows the settings
+    readonly property string niriInputError: NiriInputService.error
     IpcHandler {
         target: "appcolors"
         function state(): string {

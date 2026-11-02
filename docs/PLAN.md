@@ -258,8 +258,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   password asked under the network, saved ones forgotten, Ethernet's state; Bluetooth's switch, paired devices
   (connect, disconnect, forget, battery) and the devices around to pair (discovering while open). Display done
   (D69): each niri output's resolution, refresh rate, size, orientation, variable refresh rate and on or off,
-  through `niri msg output` (until niri restarts; a Copy button gives the KDL for niri's config). Next: Power,
-  Input, Apps, Widgets.
+  through `niri msg output` (until niri restarts; a Copy button gives the KDL for niri's config). Power and Input
+  done (D70): the battery (charge, time, health) and the power mode (power-profiles-daemon, holds shown); key
+  repeat, touchpad and mouse settings that the shell writes to rutile-input.kdl for niri to include, behind a
+  switch that is off by default. Next: Apps (default apps), Widgets (after Phase 4's widget system).
 
 ## Phase 6: NixOS distro (the v1 goal)
 

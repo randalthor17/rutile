@@ -216,6 +216,74 @@ var schema = {
                     "description": "Be the session's polkit agent: apps that need an administrator's permission ask for the password in the shell. Turn off when another agent does it."
                 }
             }
+        },
+        "input": {
+            "type": "object",
+            "title": "Keyboard, mouse and touchpad",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Set niri's input here",
+                    "description": "Apply these to niri, through a file it includes after its own config. Off: niri's config alone."
+                },
+                "repeatDelay": {
+                    "type": "integer",
+                    "default": 600,
+                    "minimum": 100,
+                    "maximum": 1000,
+                    "title": "Key repeat delay",
+                    "description": "Milliseconds a key is held before it repeats."
+                },
+                "repeatRate": {
+                    "type": "integer",
+                    "default": 25,
+                    "minimum": 5,
+                    "maximum": 80,
+                    "title": "Key repeat rate",
+                    "description": "Repeats per second while a key is held."
+                },
+                "touchpadTap": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Tap to click",
+                    "description": "A tap on the touchpad clicks. Off leaves niri's config as it is (niri cannot turn it off from an included file)."
+                },
+                "touchpadNaturalScroll": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Touchpad natural scrolling",
+                    "description": "Content moves with the fingers. Off leaves niri's config as it is."
+                },
+                "touchpadSpeed": {
+                    "type": "number",
+                    "default": 0,
+                    "minimum": -1,
+                    "maximum": 1,
+                    "title": "Touchpad speed",
+                    "description": "Pointer speed with the touchpad, -1 to 1."
+                },
+                "mouseNaturalScroll": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Mouse natural scrolling",
+                    "description": "The wheel moves content the other way. Off leaves niri's config as it is."
+                },
+                "mouseSpeed": {
+                    "type": "number",
+                    "default": 0,
+                    "minimum": -1,
+                    "maximum": 1,
+                    "title": "Mouse speed",
+                    "description": "Pointer speed with the mouse, -1 to 1."
+                },
+                "mouseFlat": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Mouse acceleration off",
+                    "description": "The pointer moves the same distance however fast the mouse moves (a flat profile)."
+                }
+            }
         }
     }
 };

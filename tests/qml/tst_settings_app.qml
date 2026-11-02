@@ -240,7 +240,7 @@ TestCase {
         mouseClick(t.a, t.a.width - 300, t.a.height - 40);
         verify(!row.menuOpen, "a click on the page's empty space closes it");
         mouseClick(row);
-        mouseClick(findChild(t.a, "settingsPage_shelf"));
+        mouseClick(findChild(t.a, "settingsPage_network"));
         verify(!row.menuOpen, "a click on the sidebar only closes it");
         compare(t.a.currentPage, "security");
         compare(t.s.sets.length, 1, "and chooses nothing");
@@ -537,7 +537,7 @@ TestCase {
         verify(t.a.narrow);
         verify(findChild(t.a, "settingsPages").visible, "the list first");
         verify(!findChild(t.a, "settingsPage_wallpaper").selected, "nothing marked in a list alone");
-        mouseClick(findChild(t.a, "settingsPage_shelf"));
+        mouseClick(findChild(t.a, "settingsPage_network"));
         verify(t.a.pageShown);
         waitForRendering(t.a);
         verify(!findChild(t.a, "settingsPages").visible, "then the page alone");
@@ -545,12 +545,12 @@ TestCase {
         verify(back.visible);
         mouseClick(back);
         verify(!t.a.pageShown);
-        mouseClick(findChild(t.a, "settingsPage_shelf"));
+        mouseClick(findChild(t.a, "settingsPage_network"));
         verify(t.a.pageShown);
         t.a.search.text = "dock";
         verify(!t.a.pageShown, "a search shows the results, not the page");
         t.a.search.text = "";
-        mouseClick(findChild(t.a, "settingsPage_shelf"));
+        mouseClick(findChild(t.a, "settingsPage_network"));
         t.a.forceActiveFocus();
         keyClick(Qt.Key_F, Qt.ControlModifier);
         verify(!t.a.pageShown && t.a.search.activeFocus, "Ctrl+F brings the search back");
