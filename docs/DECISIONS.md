@@ -607,3 +607,18 @@ choice on every switch); the Rutile folder theme inherits Papirus or Papirus-Dar
 sets `style.mode` (it had only flipped the shell's own colors, unsaved). Checked by screenshots in light mode
 (`make theming-check` takes `--mode light`): GTK 3 and 4, libadwaita, Qt 5 and 6 with Kvantum, KDE apps, and the
 shell. Not checked: the real dconf path on a session (the checks use GSettings' keyfile backend).
+
+**D66. Flatpak apps, Java apps, and Pywalfox's light mode.** Flatpak apps cannot see the host's themes or settings,
+and installing runtime extensions is a user action, so `rutile-shell flatpak-theming` does it (Settings runs it in a
+terminal through a new "action" row kind, a key whose hint has `kind: "action"`): adw-gtk3 and adw-gtk3-dark, and
+Kvantum for each installed KDE runtime Flathub has it for, into the user installation; then user overrides giving
+read-only access to gtk-3.0, gtk-4.0, Kvantum, kdeglobals and /nix/store (home-manager's links point there),
+`QT_QPA_PLATFORMTHEME=kde` (the KDE runtime's platform theme reads kdeglobals) and the Java variable. Home-manager
+links the icon themes (Papirus-Dark, and Papirus for light mode) and the font into ~/.local/share
+(`theming.icons.flatpak`), the only host places Flatpak apps look. Java apps get `_JAVA_AWT_WM_NONREPARENTING=1`
+(niri's advice for xwayland-satellite; `programs.rutile.javaApps`). Pywalfox's light template reads colors 0-15 as
+pywal's dark palette (color0 the text, color7 the background's tint); `pywalfox.conf` now puts the dark scheme's
+surface in color0 in both modes, and a test ports Pywalfox's palette math to check text contrast in each.
+Pywalfox's light background stays its own light grey (it clamps it). Not checked on a real session: the portal's
+theme and font names reaching Flatpak apps.
+

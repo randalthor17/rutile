@@ -11,6 +11,7 @@ let
     options.xdg.configHome = lib.mkOption { type = lib.types.str; default = "/home/test/.config"; };
     options.gtk = lib.mkOption { type = lib.types.anything; default = { }; };
     options.home.sessionVariables = lib.mkOption { type = lib.types.anything; default = { }; };
+    options.xdg.dataFile = lib.mkOption { type = lib.types.anything; default = { }; };
     options.qt = lib.mkOption { type = lib.types.anything; default = { }; };
     options.fonts = lib.mkOption { type = lib.types.anything; default = { }; };
   };

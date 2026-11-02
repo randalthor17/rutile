@@ -1,8 +1,10 @@
 """The `rutile-shell` command (bin/rutile-shell, plan 6.1): its help lists exactly the IPC targets and functions that
 shell/shell.qml's IpcHandlers answer, with their arguments, and each form of the command reaches Quickshell with
-the right arguments (a stand-in quickshell prints what it got)."""
+the right arguments (a stand-in quickshell prints what it got). `flatpak-theming` (D66) against a stand-in flatpak
+that logs its calls."""
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -122,6 +124,100 @@ class Forwarding(unittest.TestCase):
             env["RUTILE_QUICKSHELL"] = str(fake)
             r = subprocess.run([str(CLI), "kill"], capture_output=True, text=True, env=env, timeout=10)
         self.assertEqual(r.stdout.strip(), f"[kill][-p][{ROOT / 'bin' / '..' / 'shell' / 'shell.qml'}]")
+
+
+FAKE_FLATPAK = """#!/bin/sh
+printf '%s\\n' "$*" >> "$LOG"
+case "$1" in
+    list) printf 'org.freedesktop.Platform\\t25.08\\norg.kde.Platform\\t6.10\\norg.kde.Platform\\t5.15-24.08\\n'
+          printf 'org.kde.Platform\\t6.10\\norg.kde.Platform\\t6.2\\n' ;;
+    remote-info) case "$*" in *//6.2*) exit 1 ;; esac ;;
+    install) [ -n "${FAIL_INSTALL-}" ] && exit 1 ;;
+esac
+exit 0
+"""
+
+
+class FlatpakTheming(unittest.TestCase):
+    def run_it(self, *args, path_extra=(), env=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            for name, text in (("flatpak", FAKE_FLATPAK), *path_extra):
+                (bindir / name).write_text(text)
+                (bindir / name).chmod(0o755)
+            log = Path(tmp) / "log"
+            log.touch()
+            # only the stand-ins and what the script itself needs
+            tools = Path(tmp) / "tools"
+            tools.mkdir()
+            for t in ("sh", "sort", "readlink", "printf", "cat", "dirname", "basename"):
+                real = subprocess.run(["sh", "-c", f"command -v {t}"], capture_output=True, text=True).stdout.strip()
+                if real.startswith("/"):
+                    (tools / t).symlink_to(real)
+            e = {"PATH": f"{bindir}:{tools}", "LOG": str(log), "HOME": tmp, **(env or {})}
+            r = subprocess.run(["sh", str(CLI), "flatpak-theming", *args], capture_output=True, text=True, env=e,
+                               timeout=10, stdin=subprocess.DEVNULL)
+            return r, log.read_text().splitlines()
+
+    def test_installs_and_overrides(self):
+        r, calls = self.run_it("-y")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(calls[0], "remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo")
+        install = [c for c in calls if c.startswith("install")]
+        self.assertEqual(install, ["install --user --or-update -y flathub org.gtk.Gtk3theme.adw-gtk3 "
+                                   "org.gtk.Gtk3theme.adw-gtk3-dark org.kde.KStyle.Kvantum//5.15-24.08 "
+                                   "org.kde.KStyle.Kvantum//6.10"], "one Kvantum per KDE runtime Flathub has it for")
+        self.assertIn("no Kvantum for KDE runtime 6.2", r.stdout)
+        override = [c for c in calls if c.startswith("override")]
+        self.assertEqual(len(override), 1)
+        for arg in ("--filesystem=xdg-config/gtk-3.0:ro", "--filesystem=xdg-config/gtk-4.0:ro",
+                    "--filesystem=xdg-config/Kvantum:ro", "--filesystem=xdg-config/kdeglobals:ro",
+                    "--env=QT_QPA_PLATFORMTHEME=kde", "--env=_JAVA_AWT_WM_NONREPARENTING=1"):
+            self.assertIn(arg, override[0].split())
+        self.assertEqual("--filesystem=/nix/store:ro" in override[0].split(), Path("/nix/store").is_dir())
+        self.assertTrue(override[0].startswith("override --user "))
+
+    def test_asks_without_y(self):
+        r, calls = self.run_it()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("-y", [c for c in calls if c.startswith("install")][0].split())
+
+    def test_a_failed_install_stops_before_the_overrides(self):
+        r, calls = self.run_it("-y", env={"FAIL_INSTALL": "1"})
+        self.assertEqual(r.returncode, 1)
+        self.assertFalse([c for c in calls if c.startswith("override")])
+
+    def test_without_flatpak(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for t in ("dirname", "readlink"):
+                (Path(tmp) / t).symlink_to(shutil.which(t))
+            r = subprocess.run([shutil.which("sh"), str(CLI), "flatpak-theming"], capture_output=True, text=True,
+                               env={"PATH": tmp, "HOME": tmp}, timeout=10)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("flatpak is not installed", r.stderr)
+
+    def test_terminal(self):
+        # the first terminal found runs the command again with --pause; TERMINAL comes first, with -e
+        echo = '#!/bin/sh\nprintf "[%s]" "$(basename "$0")" "$@" >> "$LOG"\n'
+        r, calls = self.run_it("--terminal", path_extra=(("foot", echo), ("alacritty", echo)),
+                               env={"RUTILE_CLI": "/p/rutile-shell"})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(calls, ["[foot][/p/rutile-shell][flatpak-theming][--pause]"])
+        r, calls = self.run_it("--terminal", path_extra=(("foot", echo), ("myterm", echo)),
+                               env={"RUTILE_CLI": "/p/rutile-shell", "TERMINAL": "myterm"})
+        self.assertEqual(calls, ["[myterm][-e][/p/rutile-shell][flatpak-theming][--pause]"])
+
+    def test_no_terminal(self):
+        r, calls = self.run_it("--terminal", env={"RUTILE_CLI": "/nonexistent/rutile-shell"})
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no terminal found", r.stderr)
+
+    def test_pause_waits_and_keeps_the_status(self):
+        r, calls = self.run_it("--pause", env={"FAIL_INSTALL": "1"})
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("Not finished", r.stdout)
+        self.assertIn("Press Enter to close", r.stdout)
 
 
 if __name__ == "__main__":

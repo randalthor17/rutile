@@ -16,6 +16,10 @@ let
         type = lib.types.attrsOf (lib.types.submodule { options.source = lib.mkOption { type = lib.types.path; }; });
         default = { };
       };
+      xdg.dataFile = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.submodule { options.source = lib.mkOption { type = lib.types.str; }; });
+        default = { };
+      };
       home.packages = lib.mkOption { type = lib.types.listOf lib.types.package; default = [ ]; };
       systemd.user.services = lib.mkOption { type = lib.types.attrsOf lib.types.anything; default = { }; };
       assertions = lib.mkOption { type = lib.types.listOf lib.types.anything; default = [ ]; };
@@ -44,6 +48,7 @@ builtins.toJSON {
   packages = map (p: p.name) c.home.packages;
   service = c.systemd.user.services.rutile-shell or null;
   files = builtins.attrNames c.xdg.configFile;
+  dataFiles = lib.mapAttrs (_: f: f.source) c.xdg.dataFile;
   niriFile = if c.xdg.configFile ? "niri/rutile.kdl" then c.programs.rutile.niri.config else null;
   extraConfig = if niriModule then c.wayland.windowManager.niri.extraConfig else null;
   included = if niriModule && c.wayland.windowManager.niri.extraConfig != "" then c.programs.rutile.niri.config else null;

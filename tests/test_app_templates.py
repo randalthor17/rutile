@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 APPS = ROOT / "theme" / "apps"
 
 
-def render():
+def render(mode="dark"):
     """{template name: rendered text}"""
     with tempfile.TemporaryDirectory() as d:
         conf = ["[config]", "version_check = false", "caching = false"]
@@ -21,9 +21,35 @@ def render():
                      f'output_path = "{d}/out/{t.name}"']
         (Path(d) / "m.toml").write_text("\n".join(conf) + "\n")
         r = subprocess.run(["matugen", "-q", "-c", f"{d}/m.toml", "color", "hex", "#134aae", "-t", "scheme-tonal-spot",
-                            "-m", "dark", "--contrast", "0"], capture_output=True, text=True, timeout=60)
+                            "-m", mode, "--contrast", "0"], capture_output=True, text=True, timeout=60)
         assert r.returncode == 0, r.stderr
         return {p.name: p.read_text() for p in (Path(d) / "out").iterdir()}
+
+
+def pywalfox_contrasts(colors, mode):
+    """{(text role, background role): contrast ratio} for the pairs Firefox shows, from Pywalfox 2.x's
+    EXTENDED_PYWAL_COLORS, its palette templates and changeLuminance (src/config/default-themes.ts,
+    src/utils/colors.ts)."""
+    def luminance_changed(hex_, lum, lo=0, hi=255):
+        return "#" + "".join(f"{round(min(max(lo, c + c * lum), hi)):02x}"
+                             for c in (int(hex_[i:i + 2], 16) for i in (1, 3, 5)))
+    full = list(colors) + [luminance_changed(colors[0], 1.25), "#ffffff", luminance_changed(colors[0], 1.85),
+                           luminance_changed(colors[7], 0.1, 205, 220)]
+    roles = ({"background": 0, "backgroundLight": 16, "backgroundExtra": 18, "text": 15, "textFocus": 17}
+             if mode == "dark" else
+             {"background": 19, "backgroundLight": 17, "backgroundExtra": 7, "text": 16, "textFocus": 0})
+
+    def lum(hex_):
+        c = [int(hex_[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    pairs = [("text", "background"), ("textFocus", "backgroundLight"), ("text", "backgroundLight"),
+             ("textFocus", "backgroundExtra"), ("textFocus", "background")]
+    out = {}
+    for t, g in pairs:
+        a, b = sorted((lum(full[roles[t]]), lum(full[roles[g]])), reverse=True)
+        out[(t, g)] = (a + 0.05) / (b + 0.05)
+    return out
 
 
 @unittest.skipUnless(shutil.which("matugen"), "SKIPPED: needs matugen")
@@ -77,6 +103,15 @@ class AppTemplates(unittest.TestCase):
             self.assertEqual(var.replace("-", "_"), name)
             self.assertIn(name, four)
         self.assertNotIn("--", self.out["gtk.css"].split("*/", 1)[1], "GTK 3 reads no CSS variables")
+
+    def test_pywalfox_text_reads_in_both_modes(self):
+        # Pywalfox builds Firefox's theme from colors 0-15 with its own templates, and its light one reads them as
+        # pywal's dark palette (color0 is the text); its palette math, ported, must give readable text either way
+        for mode, out in (("dark", self.out), ("light", render("light"))):
+            colors = dict(re.findall(r"^(color\d+) (#[0-9a-f]{6})$", out["pywalfox.conf"], re.M))
+            self.assertIn(f"mode {mode}\n", out["pywalfox.conf"])
+            for (text, ground), ratio in pywalfox_contrasts([colors[f"color{i}"] for i in range(16)], mode).items():
+                self.assertGreaterEqual(ratio, 4.5, f"{mode}: {text} on {ground}")
 
     def test_niri_kdl_is_valid(self):
         if not shutil.which("niri"):

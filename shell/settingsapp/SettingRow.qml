@@ -1,6 +1,6 @@
 // One setting in the settings app (plan 5.1), as a list item built from its row (Model.sections): a switch for a
 // boolean, a slider for a number with limits, a menu of choices, a file for a path (`pickPath`: the app opens the
-// file chooser), swatches for a color (D65), or the value as text for a list (its editor comes with its page,
+// file chooser), swatches for a color (D65), a button for an action (`runAction`, D66), or the value as text for a list (its editor comes with its page,
 // 5.2). A setting set in Nix shows its value with a lock and takes no changes (D45). Changes go through `store.set(key, value)`; a slider saves once it has been still for a moment, so
 // a drag does not write the file at every step. A choice asks the app for its menu (`toggleMenu`): the app shows one
 // menu above everything, which a row of its own could not be (later sections are drawn over it).
@@ -22,6 +22,7 @@ Item {
 
     signal toggleMenu()
     signal pickPath()
+    signal runAction()
 
     readonly property var current: store?.value(row.key)
     readonly property bool managed: store?.isManaged(row.key) ?? false
@@ -55,6 +56,7 @@ Item {
             if (root.row.kind === "switch") root.store.set(root.row.key, !root.current);
             else if (root.row.kind === "choice") root.toggleMenu();
             else if (root.row.kind === "path") root.pickPath();
+            else if (root.row.kind === "action") root.runAction();
         }
 
         // ---- the control, by kind ----
@@ -167,6 +169,17 @@ Item {
                 size: "xs"
                 text: "Choose…"
                 onClicked: root.pickPath()
+            }
+        }
+        Loader {
+            active: root.row.kind === "action"
+            visible: active
+            sourceComponent: Button {
+                objectName: "settingAction_" + root.row.key
+                type: "tonal"
+                size: "xs"
+                text: root.row.button
+                onClicked: root.runAction()
             }
         }
         Loader {

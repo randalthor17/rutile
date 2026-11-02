@@ -197,6 +197,27 @@ class ShellModule(unittest.TestCase):
         got, _ = module("{ enable = true; theming.enable = true; settings.appColors.kde = false; }")
         self.assertFalse(got["managed"]["kde"], "a switch set by hand wins")
 
+    def test_java_apps(self):
+        got, err = module("{ enable = true; }")
+        self.assertEqual(got["sessionVariables"].get("_JAVA_AWT_WM_NONREPARENTING"), "1", err)
+        got, _ = module("{ enable = true; javaApps = false; }")
+        self.assertNotIn("_JAVA_AWT_WM_NONREPARENTING", got["sessionVariables"])
+        self.assertNotIn("_JAVA_AWT_WM_NONREPARENTING", module("{ }")[0]["sessionVariables"], "nothing while off")
+
+    def test_flatpak_links_icons_and_font(self):
+        got, err = module("{ enable = true; theming.enable = true; }")
+        data = got["dataFiles"]
+        self.assertEqual(sorted(data), ["fonts/rutile", "icons/Papirus", "icons/Papirus-Dark"], err)
+        self.assertRegex(data["icons/Papirus-Dark"], r"^/nix/store/[^/]+-papirus-icon-theme[^/]*/share/icons/Papirus-Dark$")
+        self.assertTrue(data["icons/Papirus"].endswith("/share/icons/Papirus"), "the folder theme's parent in light mode")
+        self.assertTrue(data["fonts/rutile"].endswith("/share/fonts"))
+        got, _ = module("{ enable = true; theming = { enable = true; icons.followWallpaper = false; fonts.enable = false; }; }")
+        self.assertEqual(sorted(got["dataFiles"]), ["icons/Papirus-Dark"])
+        got, _ = module('{ enable = true; theming = { enable = true; icons.qt.name = "breeze-dark"; icons.qt.package = (import <nixpkgs> { }).kdePackages.breeze-icons; }; }')
+        self.assertIn("icons/breeze-dark", got["dataFiles"])
+        self.assertEqual(module("{ enable = true; theming = { enable = true; icons.flatpak = false; }; }")[0]["dataFiles"], {})
+        self.assertEqual(module("{ enable = true; }")[0]["dataFiles"], {}, "no theming: nothing")
+
     def test_settings_work_without_enable(self):
         got, _ = module("{ settings.motion.speed = 2; }")
         self.assertEqual(got["files"], ["rutile/managed.json"])

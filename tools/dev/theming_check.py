@@ -11,7 +11,10 @@
    (grim), and check that its most common color is one of the shell's; then the same with theming off, to show the
    difference. Fonts: fontconfig's sans-serif and GTK's font setting.
 
-    tools/dev/theming_check.py [--home-manager /nix/store/...-source] [--out DIR]    (make theming-check)
+    tools/dev/theming_check.py [--home-manager /nix/store/...-source] [--out DIR] [--mode light] [--flatpak]
+                                                                                     (make theming-check)
+    --flatpak: also Flatpak apps (D66), after `rutile-shell flatpak-theming -y` in the sandbox's own Flatpak user
+    installation (it downloads adw-gtk3 and Kvantum from Flathub each time)
     RUTILE_PLAIN_GTK4=0 ...: with programs.rutile.theming.gtk.plainGtk4 off (plain GTK 4 apps not expected to match)
 
 Not covered: GTK and libadwaita take theme, font, icons and the dark preference from GSettings (dconf, which
@@ -47,6 +50,13 @@ APPS = [
     ("qt5", "libsForQt5.qt5ct", "qt5ct", []),            # Qt 5: qt5ct's own window
 ]
 
+# --flatpak (D66): Flatpak apps installed on the system, after `rutile-shell flatpak-theming -y` in the sandbox HOME
+# (its Flatpak user installation, with the extensions it downloads, and its overrides, are in there)
+FLATPAK_APPS = [
+    ("flatpak-gtk3", "org.inkscape.Inkscape"),
+    ("flatpak-qt6", "io.github.jonmagon.kdiskmark"),
+]
+FLATPAK = [False]
 
 MODE = ["dark"]                  # --mode: the shell's style.mode in the generation (D65)
 
@@ -144,6 +154,13 @@ def distance(a, b):
     return max(abs(int(a[i:i + 2], 16) - int(b[i:i + 2], 16)) for i in (1, 3, 5))
 
 
+def flatpak_apps():
+    """FLATPAK_APPS installed system-wide."""
+    r = subprocess.run(["flatpak", "list", "--system", "--app", "--columns=application"], capture_output=True, text=True)
+    have = set(r.stdout.split())
+    return [(name, app) for name, app in FLATPAK_APPS if app in have]
+
+
 def shell_colors(home):
     """Every color the shell wrote for these apps."""
     out = set()
@@ -205,13 +222,20 @@ def run(home_manager, theming, out_dir, programs):
             report["gtk4 settings"] = {k: v.strip('"') for k, v in re.findall(r"(gtk-(?:font|theme|icon-theme)-name):\s*(.*)", q)}
             palette = shell_colors(home)
             report["shell colors"] = len(palette)
-            for name, attr, prog, args in APPS:
+            apps = [(name, [str(Path(programs[name]) / "bin" / prog), *args], 100) for name, _, prog, args in APPS]
+            if FLATPAK[0]:
+                if theming:
+                    with open(root / "flatpak-theming.log", "w") as log:
+                        r = subprocess.run([exe, "flatpak-theming", "-y"], env=env, stdout=log,
+                                           stderr=subprocess.STDOUT, timeout=1800, stdin=subprocess.DEVNULL)
+                    report["flatpak-theming"] = r.returncode
+                apps += [(name, ["flatpak", "run", app], 600) for name, app in flatpak_apps()]
+            for name, command, wait in apps:
                 app_env = dict(env, QT_QPA_PLATFORM="wayland")
                 log = open(root / f"{name}.log", "w")
-                p = subprocess.Popen([str(Path(programs[name]) / "bin" / prog), *args], env=app_env,
-                                     stdout=log, stderr=subprocess.STDOUT)
+                p = subprocess.Popen(command, env=app_env, stdout=log, stderr=subprocess.STDOUT)
                 rect = None
-                for _ in range(100):
+                for _ in range(wait):
                     tree = comp.msg("-t", "get_tree")
                     views = []
 
@@ -266,8 +290,11 @@ def main():
     ap.add_argument("--home-manager", help="home-manager's source (a store path or checkout); default: GitHub's")
     ap.add_argument("--out", default=None, help="folder for the screenshots (default: a temporary one)")
     ap.add_argument("--mode", default="dark", choices=["dark", "light"], help="the shell's style.mode (D65)")
+    ap.add_argument("--flatpak", action="store_true",
+                    help="also Inkscape and KDiskMark from Flatpak, where installed (downloads Flathub extensions)")
     a = ap.parse_args()
     MODE[0] = a.mode
+    FLATPAK[0] = a.flatpak
     for tool in ("sway", "swaymsg", "grim", "nix", "nix-build", "fc-match", "dbus-daemon"):
         if not shutil.which(tool):
             print(f"theming check: SKIPPED (needs {tool})")
@@ -292,7 +319,9 @@ def main():
     if not on["gtk4 settings"].get("gtk-font-name", "").startswith("Google Sans Flex"):
         problems.append(f"GTK's font is {on['gtk4 settings']}")
     plain = os.environ.get("RUTILE_PLAIN_GTK4") != "0"
-    for name, _, _, _ in APPS:
+    if FLATPAK[0] and on.get("flatpak-theming") != 0:
+        problems.append(f"rutile-shell flatpak-theming: exit {on.get('flatpak-theming')} (see on/flatpak-theming.log)")
+    for name in [n for n, _, _, _ in APPS] + ([n for n, _ in flatpak_apps()] if FLATPAK[0] else []):
         got, before = on["apps"].get(name, {}), off["apps"].get(name, {})
         if name == "gtk4" and not plain:
             # GTK's own theme has fixed colors: themed only with programs.rutile.theming.gtk.plainGtk4

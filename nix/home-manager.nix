@@ -120,6 +120,13 @@ let
   gtkIcons = if followFolders && th.icons.name == "Papirus-Dark" then "Rutile" else th.icons.name;
   qtIcons = if followFolders && th.icons.qt.name == "Papirus-Dark" then "Rutile" else th.icons.qt.name;
   font = th.fonts;
+  themed = th.gtk.enable || th.qt.enable || th.kde.enable;
+  # [{name, package}] once each: the GTK and Qt icon themes, and Papirus beside Papirus-Dark, the folder theme's
+  # parent in light mode
+  flatpakIcons = lib.unique (lib.filter (t: t.name != null && t.package != null) (
+    [ { inherit (th.icons) name package; } { inherit (th.icons.qt) name package; } ]
+    ++ lib.optional (followFolders && th.icons.name == "Papirus-Dark") { name = "Papirus"; inherit (th.icons) package; }
+  ));
   # QFont::toString: family, size, pixel size, style hint, weight, style, underline, strike out, fixed pitch, ...
   qt6Font = size: "${font.name},${toString size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1";
   qt5Font = size: "${font.name},${toString size},-1,5,50,0,0,0,0,0";
@@ -183,6 +190,15 @@ in
           description = "Keys and the shell IPC call each makes (`rutile-shell ipc call <target> <function> [args]`).";
         };
       };
+    };
+
+    javaApps = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Java apps (Ghidra and others) drawn whole under niri's xwayland-satellite, not blank:
+        _JAVA_AWT_WM_NONREPARENTING=1 for the session (niri's advice). Flatpak apps get it from
+        `rutile-shell flatpak-theming`.'';
     };
 
     theming = {
@@ -267,6 +283,13 @@ in
             Folder icons in the wallpaper's accent (D64): the shell recolors Papirus-Dark's folders into an icon theme
             named Rutile, on top of Papirus-Dark, and apps get Rutile in its place (when the icons above are
             Papirus-Dark). Apps show new folder colors when they start.'';
+        };
+        flatpak = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Links to the icon themes and the font in ~/.local/share, the only places Flatpak apps look besides their
+            runtime (D66). They point into /nix/store, which `rutile-shell flatpak-theming` lets the apps read.'';
         };
         # Papirus-Dark too (light symbolic icons, made for dark themes, and KDE's names); breeze-dark is the other
         # good choice for KDE apps (Adwaita's have fixed dark colors and lack many KDE names)
@@ -405,6 +428,19 @@ in
         ++ lib.optional (th.gtk.enable && th.icons.package != null && th.icons.name != null) th.icons.package
         ++ lib.optional ((th.qt.enable || th.kde.enable) && th.icons.qt.package != null && th.icons.qt.name != null)
           th.icons.qt.package;
+    })
+
+    (lib.mkIf (cfg.enable && cfg.javaApps) {
+      home.sessionVariables._JAVA_AWT_WM_NONREPARENTING = "1";
+    })
+    # Flatpak apps (D66): the themes Rutile's icon theme inherits (Papirus in light mode), and the font
+    (lib.mkIf (themed && th.icons.flatpak) {
+      xdg.dataFile = lib.listToAttrs (map (t: lib.nameValuePair "icons/${t.name}" {
+        source = "${t.package}/share/icons/${t.name}";
+      }) flatpakIcons)
+      // lib.optionalAttrs (font.enable && font.package != null) {
+        "fonts/rutile".source = "${font.package}/share/fonts";
+      };
     })
 
     # niri's part: into home-manager's niri config when that module is on (validated there), else a file to include

@@ -22,6 +22,10 @@ Usage:
   rutile-shell kill                         stop the running shell
   rutile-shell -h | --help | help           this help
   rutile-shell quickshell-help              Quickshell's own options (for run)
+  rutile-shell flatpak-theming [-y]         let Flatpak apps wear the shell's look: install adw-gtk3 and Kvantum
+                                            from Flathub (for this user) and give apps your GTK, Kvantum and KDE
+                                            settings, read-only; -y: no questions (Settings, Wallpaper & style)
+  rutile-shell flatpak-theming --terminal   the same in a new terminal window
 
 IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diagnostics):
   wallpaper      set PATH          set the wallpaper (absolute path; "" removes it); false if set in Nix
@@ -88,12 +92,66 @@ Examples:
 EOF
 }
 
+# Flatpak apps see none of the host's themes and settings (D66). GTK 3 apps get adw-gtk3 as a Flathub extension,
+# Qt apps the Kvantum style for each KDE runtime installed, and every app read-only access to gtk.css, the Kvantum
+# theme and kdeglobals (the KDE runtime's platform theme reads colors, fonts, icons and the widget style there), and
+# to /nix/store, where home-manager's links point. Java apps get niri's fix for blank windows (as on the host).
+flatpak_theming() {
+    if ! command -v flatpak >/dev/null 2>&1; then
+        echo "rutile-shell: flatpak is not installed" >&2
+        return 1
+    fi
+    yes=
+    [ "${1-}" = "-y" ] && yes=-y
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || return 1
+    refs="org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark"
+    kde=$(flatpak list --runtime --columns=application,branch | while read -r id branch; do
+        [ "$id" = org.kde.Platform ] && echo "$branch"
+    done | sort -u)
+    for branch in $kde; do
+        if flatpak remote-info --user flathub "org.kde.KStyle.Kvantum//$branch" >/dev/null 2>&1; then
+            refs="$refs org.kde.KStyle.Kvantum//$branch"
+        else
+            echo "rutile-shell: Flathub has no Kvantum for KDE runtime $branch; its apps keep their style"
+        fi
+    done
+    # shellcheck disable=SC2086
+    flatpak install --user --or-update $yes flathub $refs || return 1
+    set -- --filesystem=xdg-config/gtk-3.0:ro --filesystem=xdg-config/gtk-4.0:ro \
+        --filesystem=xdg-config/Kvantum:ro --filesystem=xdg-config/kdeglobals:ro \
+        --env=QT_QPA_PLATFORMTHEME=kde --env=_JAVA_AWT_WM_NONREPARENTING=1
+    [ -d /nix/store ] && set -- "$@" --filesystem=/nix/store:ro
+    flatpak override --user "$@" || return 1
+    echo "Done. Flatpak apps wear the shell's look from their next start."
+}
+
+# Runs flatpak-theming in a new terminal window, so its downloads and questions show (Settings starts it this way).
+in_terminal() {
+    self=$RUTILE_CLI
+    for t in ${TERMINAL:-} xdg-terminal-exec kitty ghostty foot alacritty wezterm konsole gnome-terminal xterm; do
+        command -v "$t" >/dev/null 2>&1 || continue
+        case "$t" in
+            xdg-terminal-exec|kitty|foot) exec "$t" "$self" flatpak-theming --pause ;;
+            wezterm) exec "$t" start -- "$self" flatpak-theming --pause ;;
+            gnome-terminal) exec "$t" -- "$self" flatpak-theming --pause ;;
+            *) exec "$t" -e "$self" flatpak-theming --pause ;;
+        esac
+    done
+    echo "rutile-shell: no terminal found (set TERMINAL)" >&2
+    "$self" toast send "No terminal found to set up Flatpak apps (set TERMINAL)" "error" >/dev/null 2>&1 || true
+    return 1
+}
+
 is_target() {
     for t in $TARGETS; do
         [ "$t" = "$1" ] && return 0
     done
     return 1
 }
+
+# this command, which the shell starts again for Settings' Flatpak button (the package sets its wrapper)
+RUTILE_CLI=${RUTILE_CLI:-$(readlink -f -- "$0")}
+export RUTILE_CLI
 
 if [ $# -eq 0 ]; then
     exec "$qs" -p "$qml"
@@ -105,6 +163,21 @@ case "$1" in
         ;;
     quickshell-help)
         exec "$qs" --help
+        ;;
+    flatpak-theming)
+        shift
+        case "${1-}" in
+            --terminal) in_terminal ;;
+            --pause)
+                status=0
+                flatpak_theming || status=$?
+                [ "$status" -eq 0 ] || echo "Not finished: see above."
+                printf 'Press Enter to close. '
+                read -r _ || true
+                exit "$status"
+                ;;
+            *) flatpak_theming "$@" ;;
+        esac
         ;;
     run)
         shift

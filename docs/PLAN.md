@@ -270,7 +270,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   D58), with niri colors added (`appColors.niri`, an optional include in the module's KDL). Then
   `programs.rutile.theming` (D59): GTK, Qt and KDE apps set up for the shell's colors, font and icons, checked
   with screenshots of real apps in a sandbox (`make theming-check`); Papirus-Dark icons (D62), its folders following
-  the wallpaper (D64). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
+  the wallpaper (D64); Flatpak apps through `rutile-shell flatpak-theming` and a Settings action row, Java apps'
+`_JAVA_AWT_WM_NONREPARENTING` (D66). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
   config beyond the settings' defaults.
 - [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
 - [ ] **6.3** Installer ISO.

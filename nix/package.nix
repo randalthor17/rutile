@@ -73,6 +73,7 @@ stdenv.mkDerivation {
     install -Dm755 bin/rutile-shell $out/share/rutile/bin/rutile-shell
     makeWrapper $out/share/rutile/bin/rutile-shell $out/bin/rutile-shell \
       --set RUTILE_SHELL_QML $out/share/rutile/shell/shell.qml \
+      --set RUTILE_CLI $out/bin/rutile-shell \
       --prefix PATH : ${lib.makeBinPath ([ quickshell ] ++ runtime)} \
       --set FONTCONFIG_FILE ${fontsConf} \
       --suffix XDG_DATA_DIRS : ${papirus-icon-theme}/share

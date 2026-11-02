@@ -5,6 +5,14 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Flatpak apps in the shell's look** (Settings > Wallpaper & style > Flatpak apps > Set up…, or
+  `rutile-shell flatpak-theming`): installs adw-gtk3 and Kvantum from Flathub and lets Flatpak apps read the
+  shell's colors, Kvantum theme, kdeglobals, icons and font. Inkscape (GTK 3) and KDiskMark (Qt) were the ones
+  reported.
+- **Java apps under niri** (Ghidra and the like): `_JAVA_AWT_WM_NONREPARENTING=1` for the session, so they are not
+  blank (`programs.rutile.javaApps`), and in Flatpak apps after the setup above.
+- **Firefox in light mode was unreadable** (white text): Pywalfox's light theme reads the palette as a dark one,
+  with the text in color0. The colors the shell gives it now suit both of its modes.
 - **Light mode, and the palette's style** (Settings > Wallpaper & style > Style; plan 5.2): dark or light, the
   color style (tonal spot, vibrant, expressive, ...), contrast, and the color used without a wallpaper (swatches).
   The shell and the apps that take its colors follow, GTK's own dark or light and the folder icons too. Quick

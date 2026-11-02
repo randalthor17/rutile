@@ -85,7 +85,7 @@ TestCase {
     function test_every_setting_is_on_a_page() {
         const shown = [];
         for (const p of Pages.pages)
-            for (const s of p.sections) shown.push(...s.keys);
+            for (const s of p.sections) shown.push(...s.keys.filter(k => Pages.hints[k]?.kind !== "action"));
         const all = [];
         const walk = (node, prefix) => {
             for (const [k, v] of Object.entries(node.properties ?? {})) {
@@ -94,7 +94,7 @@ TestCase {
             }
         };
         walk(Schema.schema, "");
-        compare(shown.slice().sort().join(), all.slice().sort().join(), "each schema setting once, nothing else");
+        compare(shown.slice().sort().join(), all.slice().sort().join(), "each schema setting once, nothing else but actions");
         compare(new Set(Pages.pages.map(p => p.id)).size, Pages.pages.length, "page ids are unique");
     }
 
@@ -341,6 +341,38 @@ TestCase {
         const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.key);
         verify(keys("pywalfox").indexOf("appColors.firefox") === 0, "found by what people call it");
         verify(keys("matugen").indexOf("appColors.enabled") >= 0);
+    }
+
+    // an action (D66): a button, no setting; found by search; the app asks the window to run it
+    function test_flatpak_action() {
+        const rows = {};
+        for (const s of Model.sections(Pages.page("wallpaper"), Schema.schema, Pages.hints))
+            for (const r of s.rows) rows[r.key] = r;
+        compare(rows["action.flatpak"].kind, "action");
+        compare(rows["action.flatpak"].title, "Flatpak apps");
+        compare(rows["action.flatpak"].button, "Set up…");
+        const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.key);
+        compare(keys("flatpak")[0], "action.flatpak");
+
+        const t = make();
+        const asked = createTemporaryObject(spyComp, root, { target: t.a, signalName: "actionRequested" });
+        mouseClick(t.a.search);
+        type("flatpak");
+        waitForRendering(t.a);
+        mouseClick(findChild(t.a, "settingsResult_0"));
+        waitForRendering(t.a);
+        compare(t.a.currentPage, "wallpaper");
+        const row = findChild(t.a, "setting_action.flatpak");
+        verify(row.item.enabled);
+        compare(row.item.supportingText, Pages.hints["action.flatpak"].description);
+        const button = findChild(row, "settingAction_action.flatpak");
+        verify(button && button.visible);
+        mouseClick(button);
+        compare(asked.count, 1);
+        compare(asked.signalArguments[0][0], "action.flatpak");
+        mouseClick(row, 40, row.height / 2);
+        compare(asked.count, 2, "a click on the row asks too");
+        compare(t.s.sets.length, 0, "no setting changes");
     }
 
     function test_list_shows_its_value() {

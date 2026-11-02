@@ -2,7 +2,8 @@
 .pragma library
 .import "../services/SettingsStore.js" as Store
 
-// How a setting is shown: switch, slider, choice (a menu), path, list, color (swatches), or text.
+// How a setting is shown: switch, slider, choice (a menu), path, list, color (swatches), or text. A row can also be
+// an action (a button, no setting): its hint has `kind: "action"` and the title and description the schema would.
 function kind(leaf, hint) {
     hint = hint ?? {};
     if (hint.kind) return hint.kind;
@@ -23,9 +24,9 @@ function sections(page, schema, hints) {
     for (const s of page?.sections ?? []) {
         const rows = [];
         for (const key of s.keys) {
-            const leaf = leaves[key];
-            if (!leaf) continue;
             const hint = hints[key] ?? {};
+            const leaf = hint.kind === "action" ? hint : leaves[key];
+            if (!leaf) continue;
             const row = {
                 key: key,
                 kind: kind(leaf, hint),
@@ -38,6 +39,7 @@ function sections(page, schema, hints) {
                 choices: hint.choices ?? leaf.enum ?? [],
                 filters: hint.filters ?? [],
                 swatches: hint.swatches ?? [],
+                button: hint.button ?? "",
                 requires: hint.requires ?? ""
             };
             (row.advanced ? advanced : rows).push(row);
@@ -88,9 +90,9 @@ function search(query, pages, schema, hints) {
         if (ps > 0) hits.push({ page: p.id, key: "", title: p.title, detail: p.summary, score: ps, order: order++ });
         for (const s of p.sections ?? []) {
             for (const key of s.keys) {
-                const leaf = leaves[key];
-                if (!leaf) continue;
                 const hint = hints[key] ?? {};
+                const leaf = hint.kind === "action" ? hint : leaves[key];
+                if (!leaf) continue;
                 const ks = Math.max(score(leaf.title, query) * 10,
                                     ...(hint.aliases ?? []).map(a => score(a, query) * 6),
                                     score(s.title, query) * 4, score(leaf.description, query) * 2);

@@ -5,7 +5,8 @@
 // Nix and the store need). Hints: `kind` (path, list), `choices` (values offered in a menu) with `label(value)`,
 // `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section), `filters` for a
 // path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply),
-// `swatches` (the colors a color setting offers).
+// `swatches` (the colors a color setting offers). A key that is no setting can be an action: its hint has
+// `kind: "action"`, a `title`, a `description` and the `button`'s text; the app asks for it (actionRequested).
 .pragma library
 
 var pages = [
@@ -15,7 +16,7 @@ var pages = [
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
             { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed"] },
-            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
+            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] }
         ]
     },
     {
@@ -78,6 +79,12 @@ var hints = {
     "appColors.btop": { requires: "appColors.enabled" },
     "appColors.nvim": { requires: "appColors.enabled", aliases: ["vim", "editor"] },
     "appColors.firefox": { requires: "appColors.enabled", aliases: ["pywalfox", "browser"] },
+    // Flatpak apps see none of this until set up (D66): rutile-shell flatpak-theming, in a terminal
+    "action.flatpak": {
+        kind: "action", title: "Flatpak apps", button: "Set up…",
+        description: "Install the GTK and Kvantum themes for Flatpak apps and let them read these colors",
+        aliases: ["flatpak", "flathub", "sandbox", "inkscape"]
+    },
     "notifications.sound": { aliases: ["audio", "chime"] },
     "lock.idleMinutes": {
         choices: [0, 1, 2, 5, 10, 15, 30, 60],

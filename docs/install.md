@@ -91,6 +91,24 @@ GTK's own theme, whose colors are fixed).
 This takes over `gtk`, `qt` and `fonts.fontconfig` settings in your home-manager configuration (set them
 yourself to override; Nix reports a conflict for a plain value set twice).
 
+### Flatpak apps
+
+Flatpak apps see none of this at first: their runtime has its own themes and they cannot read your settings.
+Settings > Wallpaper & style > Flatpak apps > Set up… (or `rutile-shell flatpak-theming` in a terminal) installs
+adw-gtk3 and Kvantum from Flathub for your user (`flatpak install --user`, after adding Flathub for your user if
+needed) and gives every app read-only access to the shell's GTK colors, the Kvantum theme, kdeglobals and
+`/nix/store` (where home-manager's links point), with KDE's platform theme for Qt apps
+(`flatpak override --user`; `flatpak override --user --show` lists it, `--reset` undoes all user overrides). With
+`theming.icons.flatpak` (on by default) home-manager links the icon themes and the font into `~/.local/share`,
+where Flatpak apps look. Run it again after installing a Flatpak app on a new KDE runtime. Apps follow the colors
+when they start.
+
+### Java apps
+
+Java apps such as Ghidra can show a blank window under niri's xwayland-satellite. `programs.rutile.enable` sets
+`_JAVA_AWT_WM_NONREPARENTING=1` for the session (`programs.rutile.javaApps = false` leaves it out); Flatpak apps
+get it from `rutile-shell flatpak-theming`. Like every session variable it applies from the next login.
+
 ## Colors in other apps, with home-manager
 
 Each app has a switch in Settings > Wallpaper (all off at first, and a main one above them). The shell writes the

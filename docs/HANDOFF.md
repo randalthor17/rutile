@@ -212,7 +212,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
-| `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call |
+| `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call; `flatpak-theming` (D66) |
 | `native/` | the one C program, the Firefox colors' host (D54); `make native` builds `build/rutile-pywalfox-host` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
 | `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`, `settings.md`) |
@@ -268,6 +268,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PYWALFOX_POLL` | `native/pywalfox-host.c` | seconds between checks of the Firefox colors file (0.01 to 60, default 1; tests use less) |
 | `RUTILE_PYWALFOX_HOST` | `shell/services/AppColorsService.qml` | the compiled Firefox host when it is not `build/rutile-pywalfox-host` (a package; tests point it at a stand-in) |
 | `RUTILE_SHELL_QML` | `bin/rutile-shell` | the shell to run and call (the package sets it; a checkout uses `../shell/shell.qml`) |
+| `RUTILE_CLI` | `bin/rutile-shell`, `shell/settingsapp/SettingsWindow.qml` | the `rutile-shell` command itself, which Settings starts for Flatpak apps (D66); the package sets its wrapper, a checkout the script's path |
 | `RUTILE_QUICKSHELL` | `bin/rutile-shell` | the quickshell binary, default `quickshell` on PATH (tests point it at a stand-in) |
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
 | `RUTILE_PAPIRUS` | `shell/services/Files.js` (folder icons, D64) | Papirus-Dark's folder when it is not in `XDG_DATA_DIRS` (tests) |
