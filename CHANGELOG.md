@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Folder icons follow the wallpaper** (Settings > Wallpaper > Colors in other apps > Folder icons; on with
+  `programs.rutile.theming`): Papirus's folders in the palette's accent, through an icon theme named Rutile on top
+  of Papirus-Dark. Apps show new folder colors when they start.
 - **Colors in other apps keep going when one app's folder is read-only** (home-manager can link a whole config
   folder, Neovim's say): that app is skipped and named in the message, the others are themed. Errors now say which
   file failed.

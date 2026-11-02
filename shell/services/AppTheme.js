@@ -10,7 +10,7 @@
 
 var BEGIN = ">>> rutile colors >>>";
 var END = "<<< rutile colors <<<";
-var ORDER = ["niri", "gtk", "qt", "kde", "kitty", "ghostty", "btop", "nvim", "firefox"];
+var ORDER = ["niri", "gtk", "qt", "kde", "folders", "kitty", "ghostty", "btop", "nvim", "firefox"];
 
 // dirs: {config, cache, data, home, theme (the templates' folder), host (the compiled Firefox host)}
 // A block's `present` matches a linked config that already has the line (home-manager's module writes it).
@@ -42,6 +42,9 @@ function apps(dirs) {
                                               value: "Rutile" }]) },
         // KDE apps outside Plasma read their colors from kdeglobals' [Colors:*] groups: every key of the rendered
         // scheme goes there (each one's old value kept), and the scheme itself is installed for their menus.
+        // Papirus's folders in the palette's accent (D64): a whole icon theme, Rutile (inheriting Papirus-Dark), made
+        // by the file job from Papirus's own icons; apps use it as their icon theme (home-manager's module sets that)
+        folders: { title: "Folder icons", files: [], folders: { dir: dirs.data + "/icons/Rutile", from: "folders.colors" } },
         kde: { title: "KDE apps", files: [["kdeglobals.colors", dirs.data + "/color-schemes/Rutile.colors"]],
                ini: { file: c + "/kdeglobals", from: "kdeglobals.colors", skip: ["General|Name"] } },
         kitty: { title: "kitty", files: [["kitty.conf", c + "/kitty/rutile-colors.conf"]],
@@ -169,6 +172,26 @@ function iniEntries(text) {
     return out;
 }
 
+// The folder icons' colors from the rendered folders.colors: {front, back, glyph}, front halfway between primary
+// and inverse_primary (a mid tone, as Papirus's own folders are). null when a color is missing.
+function folderColors(text) {
+    var c = {};
+    lines(text || "").forEach(function (row) {
+        var m = /^(\w+)\s+(#[0-9a-fA-F]{6})$/.exec(row.trim());
+        if (m) c[m[1]] = m[2].toLowerCase();
+    });
+    if (!c.primary || !c.inverse_primary || !c.back || !c.glyph) return null;
+    return { front: mix(c.primary, c.inverse_primary), back: c.back, glyph: c.glyph };
+}
+function mix(a, b) {
+    var out = "#";
+    for (var i = 1; i < 7; i += 2) {
+        var v = Math.round((parseInt(a.substr(i, 2), 16) + parseInt(b.substr(i, 2), 16)) / 2);
+        out += (v < 16 ? "0" : "") + v.toString(16);
+    }
+    return out;
+}
+
 // ---- the plan ----
 
 // Every file the plan reads, for these apps (switched on, or themed before).
@@ -183,6 +206,7 @@ function paths(dirs, names) {
         (a.blocks || []).forEach(function (b) { add(b.file); add("!" + b.file); add("^" + b.file); });
         (a.keys || []).forEach(function (k) { add(k.file); add("!" + k.file); add("^" + k.file); });
         if (a.ini) { add(a.ini.file); add("!" + a.ini.file); add("^" + a.ini.file); }
+        if (a.folders) { add("?" + a.folders.dir + "/index.theme"); add("^" + a.folders.dir + "/index.theme"); }
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             add(fx.manifest);
@@ -199,6 +223,7 @@ function templates(dirs, wanted) {
     var names = [];
     wanted.forEach(function (n) {
         (all[n] ? all[n].files : []).forEach(function (f) { if (names.indexOf(f[0]) < 0) names.push(f[0]); });
+        if (all[n] && all[n].folders && names.indexOf(all[n].folders.from) < 0) names.push(all[n].folders.from);
     });
     return names.sort().map(function (n) { return { name: n, input: dirs.theme + "/" + n }; });
 }
@@ -300,6 +325,10 @@ function plan(input) {
         if (a.ini && typeof files[a.ini.file] === "string" && !linked(a.ini.file) &&
                 lines(files[a.ini.file]).every(function (r) { return r.trim() === "" || /^\[.*\]$/.test(r.trim()); }))
             changed = remove(a.ini.file) || changed;
+        if (a.folders && record.dir) {
+            ops.push({ op: "unfolders", dir: record.dir });
+            changed = true;
+        }
         if (a.firefox) {
             var fx = firefoxPaths(dirs);
             if (record.backup && files[fx.backup] !== null && files[fx.backup] !== undefined) move(fx.backup, fx.manifest);
@@ -347,6 +376,25 @@ function plan(input) {
             if (!(slot in record.previous)) record.previous[slot] = getKey(files[k.file], k.section, k.key);
             changed = write(k.file, setKey(files[k.file], k.section, k.key, k.value)) || changed;
         });
+        if (a.folders) {
+            var colors = folderColors(input.rendered[a.folders.from]);
+            var index = a.folders.dir + "/index.theme";
+            if (readOnly(index)) {
+                readOnlyError(a, index);
+            } else if (!colors) {
+                errors.push(a.title + ": no colors from " + a.folders.from);
+            } else {
+                var key = [colors.front, colors.back, colors.glyph].join();
+                var missing = files["?" + index] === null;
+                if (record.folders !== key || missing) {
+                    ops.push({ op: "folders", dir: a.folders.dir, front: colors.front, back: colors.back,
+                               glyph: colors.glyph });
+                    changed = true;
+                }
+                record.folders = key;
+                record.dir = a.folders.dir;
+            }
+        }
         if (a.ini && readOnly(a.ini.file) && !linked(a.ini.file)) {
             readOnlyError(a, a.ini.file);
         } else if (a.ini && linked(a.ini.file)) {

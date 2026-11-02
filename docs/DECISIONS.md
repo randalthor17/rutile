@@ -582,3 +582,15 @@ such a file with a message, as it does a linked config, so the other apps are th
 failed step on stderr, and the service handles a step's result only once both of its outputs are read (Quickshell's
 collectors have their text at `streamFinished`, which can come after `exited`). Not known: what failed on that
 user; the next run's message will say.
+
+**D64. Folder icons follow the wallpaper: a Rutile icon theme over Papirus-Dark (the maintainer's choice).** Papirus
+draws each folder in three colors (front `#5294e2`, back `#4877b1`, glyph `#1d344f` in its blue), and its generic
+names (`folder`, `user-home`, `folder-documents`, about 85 per size) link to the blue variants. A new switch,
+`appColors.folders`, makes `~/.local/share/icons/Rutile`: those generic names at every size, recolored with `sed`
+from Papirus's own blue ones (front halfway between `primary` and `inverse_primary`, a mid tone as Papirus's; back
+`primary_container`; glyph `on_primary_container`, from `theme/apps/folders.colors`), and an index that inherits
+Papirus-Dark. About 1200 small files, so one `sh` function makes them (passed as text they would exceed the
+argument cap), built beside the folder and swapped in. Again only when the colors change or the theme is gone;
+off removes it. Papirus-Dark is found in XDG_DATA_DIRS (the package and the dev shell put it there). The
+home-manager module's `theming.icons.followWallpaper` (on) turns the switch on and gives apps `Rutile` in place of
+Papirus-Dark. Apps show new folder colors when they start, as with the colors (D63).

@@ -115,6 +115,12 @@
           "title": "KDE apps",
           "description": "Dolphin, Kate and other KDE apps outside Plasma: the colors go into kdeglobals (yours come back when off), and a Rutile color scheme is installed."
         },
+        "folders": {
+          "type": "boolean",
+          "default": false,
+          "title": "Folder icons",
+          "description": "Papirus's folder icons in the wallpaper's accent: an icon theme named Rutile (on top of Papirus-Dark) for apps to use."
+        },
         "kitty": {
           "type": "boolean",
           "default": false,

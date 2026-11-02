@@ -161,12 +161,12 @@ class ShellModule(unittest.TestCase):
                          "Qt 5's format")
         kg = qt["kde"]["settings"]["kdeglobals"]
         self.assertEqual(kg["General"]["font"], "Google Sans Flex,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1", "KConfig: not quoted")
-        self.assertEqual(kg["Icons"]["Theme"], "Papirus-Dark", "the shell's icons (D62), made for dark themes")
-        self.assertEqual(q6["Appearance"]["icon_theme"], "Papirus-Dark")
-        self.assertEqual(gtk["iconTheme"]["name"], "Papirus-Dark")
+        self.assertEqual(kg["Icons"]["Theme"], "Rutile", "Papirus-Dark with its folders in the accent (D62, D64)")
+        self.assertEqual(q6["Appearance"]["icon_theme"], "Rutile")
+        self.assertEqual(gtk["iconTheme"]["name"], "Rutile")
         self.assertEqual(got["fonts"]["fontconfig"]["defaultFonts"]["sansSerif"], ["Google Sans Flex"])
         self.assertEqual({k: v for k, v in got["managed"].items() if v is not None},
-                         {"enabled": True, "gtk": True, "qt": True, "kde": True}, "the shell's switches on")
+                         {"enabled": True, "gtk": True, "qt": True, "kde": True, "folders": True}, "the shell's switches on")
         self.assertIn("rutile/managed.json", got["files"])
 
     def test_theming_parts_and_off(self):
@@ -178,11 +178,16 @@ class ShellModule(unittest.TestCase):
         self.assertEqual(got["qt"], {})
         self.assertNotIn("font", got["gtk"])
         self.assertEqual(got["fonts"], {})
-        self.assertEqual({k: v for k, v in got["managed"].items() if v is not None}, {"enabled": True, "gtk": True})
+        self.assertEqual({k: v for k, v in got["managed"].items() if v is not None}, {"enabled": True, "gtk": True, "folders": True})
         got, _ = module("{ enable = true; theming = { enable = true; gtk.plainGtk4 = false; }; }")
         self.assertNotIn("GTK_THEME", got["sessionVariables"])
         got, _ = module('{ enable = true; theming = { enable = true; qt.style = "Fusion"; }; }')
         self.assertEqual(got["qt"]["kde"]["settings"]["qt6ct/qt6ct.conf"]["Appearance"]["style"], "Fusion")
+        got, _ = module("{ enable = true; theming = { enable = true; icons.followWallpaper = false; }; }")
+        self.assertEqual(got["gtk"]["iconTheme"]["name"], "Papirus-Dark", "folders not following: Papirus-Dark itself")
+        self.assertNotIn("folders", {k for k, v in got["managed"].items() if v is not None})
+        got, _ = module('{ enable = true; theming = { enable = true; icons.name = "Adwaita"; }; }')
+        self.assertEqual(got["gtk"]["iconTheme"]["name"], "Adwaita", "another theme chosen: it is used as is")
         got, _ = module("{ enable = true; theming.enable = true; settings.appColors.kde = false; }")
         self.assertFalse(got["managed"]["kde"], "a switch set by hand wins")
 

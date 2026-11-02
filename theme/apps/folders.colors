@@ -1,0 +1,7 @@
+# Rutile Shell's folder icon colors, from matugen (D64): the shell recolors Papirus's blue folders with these into
+# ~/.local/share/icons/Rutile. Not written anywhere itself. front is mixed halfway between primary and
+# inverse_primary by the shell (a mid tone, as Papirus's folders are).
+primary {{colors.primary.default.hex}}
+inverse_primary {{colors.inverse_primary.default.hex}}
+back {{colors.primary_container.default.hex}}
+glyph {{colors.on_primary_container.default.hex}}

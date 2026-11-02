@@ -5,7 +5,39 @@
 .pragma library
 
 var MARK = "@@rutile-file:";
-var MAX_ARG = 120000;        // characters; under Linux's 131072-byte cap per argument, with room for UTF-8
+var MAX_ARG = 120000;
+
+// folders DIR FRONT BACK GLYPH (D64): an icon theme in DIR, inheriting Papirus-Dark, with Papirus's folder icons
+// (the names its folders link to its blue ones: folder, user-home, folder-documents, ...) recolored from its blue.
+// Papirus-Dark is found in XDG_DATA_HOME and XDG_DATA_DIRS (RUTILE_PAPIRUS: its folder, for tests). Built beside DIR
+// and swapped in, so an app never sees half a theme.
+var FOLDERS_FUNCTION = 'folders() {\n' +
+    '  src=${RUTILE_PAPIRUS:-}\n' +
+    '  if [ -z "$src" ]; then\n' +
+    '    IFS=:; for base in ${XDG_DATA_HOME:-$HOME/.local/share}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do\n' +
+    '      [ -f "$base/icons/Papirus-Dark/index.theme" ] && { src=$base/icons/Papirus-Dark; break; }\n' +
+    '    done; unset IFS\n' +
+    '  fi\n' +
+    '  [ -n "$src" ] || { echo "Papirus-Dark not found in XDG_DATA_DIRS" >&2; return 1; }\n' +
+    '  new="$1.rutile-new"; rm -rf -- "$new" && mkdir -p -- "$new" || return 1\n' +
+    '  list=""; sections=""\n' +
+    '  for p in "$src"/*/places; do\n' +
+    '    [ -d "$p" ] || continue\n' +
+    '    d=${p%/places}; d=${d##*/}; size=${d%%x*}; scale=1; case "$d" in *@2x) scale=2;; esac\n' +
+    '    mkdir -p -- "$new/$d/places" || return 1\n' +
+    '    for f in "$p"/*.svg; do\n' +
+    '      [ -L "$f" ] || continue\n' +
+    '      t=$(readlink -- "$f"); case "$t" in *bluegrey*) continue;; *-blue-*|*-blue.svg) ;; *) continue;; esac\n' +
+    '      sed -e "s/#5294e2/$2/g" -e "s/#4877b1/$3/g" -e "s/#1d344f/$4/g" -- "$f" > "$new/$d/places/${f##*/}" || return 1\n' +
+    '    done\n' +
+    '    list="$list${list:+,}$d/places"\n' +
+    '    sections="$sections\n[$d/places]\nContext=Places\nSize=$size\nScale=$scale\nType=Fixed\n"\n' +
+    '  done\n' +
+    '  printf "[Icon Theme]\\nName=Rutile\\nComment=Papirus-Dark with its folders in Rutile Shell\x27s colors\\n' +
+    'Inherits=Papirus-Dark,breeze-dark,hicolor\\nDirectories=%s\\n%b" "$list" "$sections" > "$new/index.theme" || return 1\n' +
+    '  rm -rf -- "$1.rutile-old"; if [ -e "$1" ]; then mv -- "$1" "$1.rutile-old" || return 1; fi\n' +
+    '  mv -- "$new" "$1" && rm -rf -- "$1.rutile-old"\n' +
+    '}\n';        // characters; under Linux's 131072-byte cap per argument, with room for UTF-8
 
 // Prints each file as "\n@@rutile-file:<1 or 0>:<path>\n" and its text (1: it exists, 0: it does not). A path given
 // as "?<path>" is only checked for existence: its text is "" (it exists) or null, under the key "?<path>"; one
@@ -29,6 +61,7 @@ var READ_SCRIPT = 'for f do\n' +
 // and exits 1 at the end; a signal no program took is not a failure.
 var APPLY_SCRIPT = 'rc=0\n' +
     'fail() { echo "$1 failed" >&2; rc=1; }\n' +
+    FOLDERS_FUNCTION +
     'while [ $# -gt 0 ]; do\n' +
     '  case "$1" in\n' +
     '  write) mkdir -p -- "$(dirname -- "$2")" && printf "%s" "$3" > "$2.rutile-new" && chmod "$4" "$2.rutile-new" ' +
@@ -36,6 +69,8 @@ var APPLY_SCRIPT = 'rc=0\n' +
     '  copy) mkdir -p -- "$(dirname -- "$3")" && cp -- "$2" "$3.rutile-new" && chmod "$4" "$3.rutile-new" ' +
     '&& mv -f -- "$3.rutile-new" "$3" || fail "writing $3"; shift 4;;\n' +
     '  remove) rm -f -- "$2" || fail "removing $2"; shift 2;;\n' +
+    '  folders) folders "$2" "$3" "$4" "$5" || fail "folder icons in $2"; shift 5;;\n' +
+    '  unfolders) rm -rf -- "$2" || fail "removing $2"; shift 2;;\n' +
     '  move) mkdir -p -- "$(dirname -- "$3")" && mv -f -- "$2" "$3" || fail "moving $2"; shift 3;;\n' +
     '  signal) pkill "-$2" -f "$3"; shift 3;;\n' +
     '  *) echo "unknown op $1" >&2; exit 2;;\n' +
@@ -77,6 +112,8 @@ function applyCommand(ops) {
         if (o.op === "write") args.push("write", o.path, o.text, o.mode || "644");
         else if (o.op === "copy") args.push("copy", o.from, o.path, o.mode || "644");
         else if (o.op === "remove") args.push("remove", o.path);
+        else if (o.op === "folders") args.push("folders", o.dir, o.front, o.back, o.glyph);
+        else if (o.op === "unfolders") args.push("unfolders", o.dir);
         else if (o.op === "move") args.push("move", o.from, o.to);
         else if (o.op === "signal") args.push("signal", o.sig, o.pattern);
         else throw new Error("unknown op " + o.op);

@@ -112,6 +112,11 @@ let
   niriOn = cfg.enable && cfg.niri.enable;
 
   th = cfg.theming;
+  # the icon theme apps are given: Rutile (Papirus-Dark with its folders in the accent, made by the shell, D64)
+  # while the folders follow the wallpaper
+  followFolders = th.icons.followWallpaper && (th.gtk.enable || th.qt.enable || th.kde.enable);
+  gtkIcons = if followFolders && th.icons.name == "Papirus-Dark" then "Rutile" else th.icons.name;
+  qtIcons = if followFolders && th.icons.qt.name == "Papirus-Dark" then "Rutile" else th.icons.qt.name;
   font = th.fonts;
   # QFont::toString: family, size, pixel size, style hint, weight, style, underline, strike out, fixed pitch, ...
   qt6Font = size: "${font.name},${toString size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1";
@@ -122,7 +127,7 @@ let
     Appearance = {
       style = th.qt.style;
       custom_palette = true;
-    } // lib.optionalAttrs (th.icons.qt.name != null) { icon_theme = th.icons.qt.name; };
+    } // lib.optionalAttrs (qtIcons != null) { icon_theme = qtIcons; };
   } // lib.optionalAttrs font.enable {
     Fonts.general = quoted (fontOf font.size);
   };
@@ -253,6 +258,14 @@ in
           defaultText = lib.literalExpression "pkgs.papirus-icon-theme";
           description = "The GTK icon theme's package.";
         };
+        followWallpaper = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Folder icons in the wallpaper's accent (D64): the shell recolors Papirus-Dark's folders into an icon theme
+            named Rutile, on top of Papirus-Dark, and apps get Rutile in its place (when the icons above are
+            Papirus-Dark). Apps show new folder colors when they start.'';
+        };
         # Papirus-Dark too (light symbolic icons, made for dark themes, and KDE's names); breeze-dark is the other
         # good choice for KDE apps (Adwaita's have fixed dark colors and lack many KDE names)
         qt = {
@@ -319,6 +332,7 @@ in
         gtk = lib.mkIf th.gtk.enable (lib.mkDefault true);
         qt = lib.mkIf th.qt.enable (lib.mkDefault true);
         kde = lib.mkIf th.kde.enable (lib.mkDefault true);
+        folders = lib.mkIf followFolders (lib.mkDefault true);
       };
     })
     (lib.mkIf th.gtk.enable {
@@ -337,8 +351,9 @@ in
         font = lib.mkIf font.enable {
           inherit (font) name size package;
         };
-        iconTheme = lib.mkIf (th.icons.name != null) {
-          inherit (th.icons) name package;
+        iconTheme = lib.mkIf (gtkIcons != null) {
+          name = gtkIcons;
+          inherit (th.icons) package;
         };
       };
     })
@@ -376,7 +391,7 @@ in
           };
           WM.activeFont = qt6Font font.size;
         }
-        // lib.optionalAttrs (th.icons.qt.name != null) { Icons.Theme = th.icons.qt.name; }
+        // lib.optionalAttrs (qtIcons != null) { Icons.Theme = qtIcons; }
         # KDE apps pick their style from here, not from qt5ct/qt6ct
         // lib.optionalAttrs th.qt.enable { KDE.widgetStyle = th.qt.style; };
     })

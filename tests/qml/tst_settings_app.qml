@@ -293,7 +293,7 @@ TestCase {
     function test_app_colors_wait_for_the_main_switch() {
         const t = make();
         const main = findChild(t.a, "setting_appColors.enabled");
-        const kitty = findChild(t.a, "setting_appColors.kitty");
+        const kitty = findChild(t.a, "setting_appColors.niri");      // the first app's row: in view
         verify(main.item.enabled, "the main switch works");
         verify(!kitty.applies && !kitty.item.enabled, "an app's switch is greyed out while it is off");
         mouseClick(kitty, 40, kitty.height / 2);
@@ -301,8 +301,13 @@ TestCase {
         mouseClick(findChild(main, "settingSwitch_appColors.enabled"));
         compare(t.s.sets, [["appColors.enabled", true]]);
         verify(kitty.applies && kitty.item.enabled, "then it works");
-        mouseClick(findChild(kitty, "settingSwitch_appColors.kitty"));
-        compare(t.s.sets[1], ["appColors.kitty", true]);
+        mouseClick(findChild(kitty, "settingSwitch_appColors.niri"));
+        compare(t.s.sets[1], ["appColors.niri", true]);
+        // every app's switch waits for the main one (niri's, KDE's and the folders' had been left out)
+        const apps = Object.keys(Schema.schema.properties.appColors.properties).filter(k => k !== "enabled");
+        verify(apps.length >= 10);
+        for (const a of apps)
+            compare(Pages.hints["appColors." + a]?.requires, "appColors.enabled", "appColors." + a + " requires the main switch");
         const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.key);
         verify(keys("pywalfox").indexOf("appColors.firefox") === 0, "found by what people call it");
         verify(keys("matugen").indexOf("appColors.enabled") >= 0);

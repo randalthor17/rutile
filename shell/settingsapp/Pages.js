@@ -13,7 +13,7 @@ var pages = [
         summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette", "matugen"],
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
-            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
+            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
         ]
     },
     {
@@ -53,8 +53,11 @@ var hints = {
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
     "appColors.enabled": { aliases: ["matugen", "theme apps", "gtk", "qt", "terminal", "niri", "borders"] },
+    "appColors.niri": { requires: "appColors.enabled", aliases: ["borders", "focus ring"] },
     "appColors.gtk": { requires: "appColors.enabled", aliases: ["gnome", "libadwaita", "nautilus"] },
     "appColors.qt": { requires: "appColors.enabled", aliases: ["kde", "qt5ct", "qt6ct"] },
+    "appColors.kde": { requires: "appColors.enabled", aliases: ["dolphin", "kate", "kdeglobals"] },
+    "appColors.folders": { requires: "appColors.enabled", aliases: ["icons", "papirus"] },
     "appColors.kitty": { requires: "appColors.enabled", aliases: ["terminal"] },
     "appColors.ghostty": { requires: "appColors.enabled", aliases: ["terminal"] },
     "appColors.btop": { requires: "appColors.enabled" },

@@ -18,6 +18,7 @@ TestCase {
                                        "btop.theme": "theme[main_bg]=\"#000000\"\n", "qtct.conf": "[ColorScheme]\n",
                                        "ghostty": "background = #111111\n", "nvim.lua": "-- rutile\n",
                                        "pywalfox.conf": "mode dark\n", "niri.kdl": "layout {}\n",
+                                       "folders.colors": "primary #b2c5ff\ninverse_primary #445e91\nback #2b4678\nglyph #dae2ff\n",
                                        "kdeglobals.colors": "# scheme\n[Colors:View]\nBackgroundNormal=1,2,3\nForegroundNormal=4,5,6\n" +
                                                             "[Colors:Window]\nBackgroundNormal=7,8,9\n[General]\nColorScheme=Rutile\nName=Rutile\n" })
 
@@ -184,6 +185,36 @@ TestCase {
         verify(AppTheme.paths(dirs, ["kitty"]).indexOf("^" + conf) >= 0);
     }
 
+    // Folder icons (D64): one job builds the Rutile icon theme from Papirus with the palette's colors; again only
+    // when they change (or the theme is gone); removed when off.
+    function test_folder_icons() {
+        const index = "/h/.local/share/icons/Rutile/index.theme";
+        let r = sync({ ["?" + index]: null }, ["folders"]);
+        const job = r.ops.filter(o => o.op === "folders");
+        compare(job.length, 1);
+        compare(job[0].dir, "/h/.local/share/icons/Rutile");
+        compare([job[0].front, job[0].back, job[0].glyph].join(), "#7b92c8,#2b4678,#dae2ff",
+                "front halfway between primary and inverse_primary");
+        compare(AppTheme.templates(dirs, ["folders"]).map(t => t.name).join(), "folders.colors");
+        verify(AppTheme.paths(dirs, ["folders"]).indexOf("?" + index) >= 0);
+        compare(sync({ ["?" + index]: "" }, ["folders"], r.done).ops.length, 0, "same colors, theme there: nothing");
+        compare(sync({ ["?" + index]: null }, ["folders"], r.done).ops.filter(o => o.op === "folders").length, 1,
+                "the theme gone: made again");
+        const repaint = Object.assign({}, rendered, { "folders.colors": rendered["folders.colors"].replace("#2b4678", "#5a1b1b") });
+        const again = AppTheme.plan({ dirs: dirs, wanted: ["folders"], done: r.done, rendered: repaint,
+                                      files: { [built]: "", ["?" + index]: "" } });
+        compare(again.ops.filter(o => o.op === "folders").map(o => o.back).join(), "#5a1b1b", "new colors: made again");
+        const off = AppTheme.plan({ dirs: dirs, wanted: [], done: r.done, rendered: rendered, files: { [built]: "" } });
+        compare(off.ops.map(o => o.op + " " + o.dir).join(), "unfolders /h/.local/share/icons/Rutile");
+        const bad = AppTheme.plan({ dirs: dirs, wanted: ["folders"], done: {}, files: { [built]: "" },
+                                    rendered: Object.assign({}, rendered, { "folders.colors": "primary #b2c5ff\n" }) });
+        compare(bad.ops.length, 0);
+        verify(bad.errors.join().indexOf("Folder icons: no colors") === 0, bad.errors.join());
+        compare(AppTheme.folderColors("primary #000000\ninverse_primary #ffffff\nback #010203\nglyph #0A0B0C").front,
+                "#808080", "rounded mix");
+        compare(Files.applyCommand(job).slice(4).join("|"), "folders|/h/.local/share/icons/Rutile|#7b92c8|#2b4678|#dae2ff");
+    }
+
     function test_niri_gets_its_own_file_only() {
         const r = sync({ "/h/.config/niri/config.kdl": "layout {}\n" }, ["niri"]);
         compare(r.files["/h/.config/niri/rutile-colors.kdl"], rendered["niri.kdl"]);
@@ -291,7 +322,7 @@ TestCase {
         verify(AppTheme.paths(dirs, ["kitty"]).indexOf("!/h/.config/kitty/kitty.conf") >= 0, "one it adds a block to too");
         verify(AppTheme.paths(dirs, ["kde"]).indexOf("!/h/.config/kdeglobals") >= 0, "and kdeglobals");
         compare(new Set(p).size, p.length, "no path twice");
-        compare(AppTheme.ORDER.join(), "niri,gtk,qt,kde,kitty,ghostty,btop,nvim,firefox");
+        compare(AppTheme.ORDER.join(), "niri,gtk,qt,kde,folders,kitty,ghostty,btop,nvim,firefox");
     }
 
     function test_text_edits() {
