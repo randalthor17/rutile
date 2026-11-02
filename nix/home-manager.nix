@@ -38,6 +38,8 @@ let
       bounded lib.types.int s
     else if s.type == "number" then
       bounded lib.types.number s
+    else if s.type == "string" && s ? pattern then
+      lib.types.strMatching s.pattern
     else if s.type == "string" then
       lib.types.str
     else if s.type == "array" then
@@ -338,11 +340,9 @@ in
     (lib.mkIf th.gtk.enable {
       gtk = {
         enable = true;
-        colorScheme = "dark";
-        theme = lib.mkDefault {
-          name = "adw-gtk3-dark";
-          package = pkgs.adw-gtk3;
-        };
+        # GTK's dark or light (color-scheme, and GTK 3's adw-gtk3 or adw-gtk3-dark) is the shell's to set with its
+        # mode (D65): set here, home-manager's dconf would put it back on every switch
+        theme = lib.mkDefault null;
         # libadwaita's own, with the shell's colors over it (plain GTK 4 apps: GTK_THEME below)
         gtk4.theme = lib.mkDefault null;
         # absolute: home-manager's gtk.css is a link into the store
@@ -357,6 +357,7 @@ in
         };
       };
     })
+    (lib.mkIf th.gtk.enable { home.packages = [ pkgs.adw-gtk3 ]; })
     (lib.mkIf (th.gtk.enable && th.gtk.plainGtk4) {
       home.sessionVariables.GTK_THEME = "adw-gtk3-dark";
     })

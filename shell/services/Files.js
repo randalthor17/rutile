@@ -7,7 +7,8 @@
 var MARK = "@@rutile-file:";
 var MAX_ARG = 120000;
 
-// folders DIR FRONT BACK GLYPH (D64): an icon theme in DIR, inheriting Papirus-Dark, with Papirus's folder icons
+// folders DIR FRONT BACK GLYPH INHERITS (D64, D65): an icon theme in DIR, inheriting INHERITS (Papirus-Dark, or
+// Papirus in light mode), with Papirus's folder icons
 // (the names its folders link to its blue ones: folder, user-home, folder-documents, ...) recolored from its blue.
 // Papirus-Dark is found in XDG_DATA_HOME and XDG_DATA_DIRS (RUTILE_PAPIRUS: its folder, for tests). Built beside DIR
 // and swapped in, so an app never sees half a theme.
@@ -34,7 +35,7 @@ var FOLDERS_FUNCTION = 'folders() {\n' +
     '    sections="$sections\n[$d/places]\nContext=Places\nSize=$size\nScale=$scale\nType=Fixed\n"\n' +
     '  done\n' +
     '  printf "[Icon Theme]\\nName=Rutile\\nComment=Papirus-Dark with its folders in Rutile Shell\x27s colors\\n' +
-    'Inherits=Papirus-Dark,breeze-dark,hicolor\\nDirectories=%s\\n%b" "$list" "$sections" > "$new/index.theme" || return 1\n' +
+    'Inherits=%s,breeze-dark,hicolor\\nDirectories=%s\\n%b" "${5:-Papirus-Dark}" "$list" "$sections" > "$new/index.theme" || return 1\n' +
     '  rm -rf -- "$1.rutile-old"; if [ -e "$1" ]; then mv -- "$1" "$1.rutile-old" || return 1; fi\n' +
     '  mv -- "$new" "$1" && rm -rf -- "$1.rutile-old"\n' +
     '}\n';        // characters; under Linux's 131072-byte cap per argument, with room for UTF-8
@@ -59,9 +60,21 @@ var READ_SCRIPT = 'for f do\n' +
 // Ops in a row: write PATH TEXT MODE | copy FROM PATH MODE | remove PATH | move FROM TO | signal SIG PATTERN. A write
 // (or copy) goes to a temporary file beside the target and is renamed over it, so a reader never sees half a file. It goes on after a failed op
 // and exits 1 at the end; a signal no program took is not a failure.
+// gtkmode dark|light (D65): GTK's own mode, as GNOME's settings hold it: libadwaita's color-scheme, and GTK 3's theme
+// (adw-gtk3 or its dark variant). Through dconf (no schemas needed); with GSETTINGS_BACKEND=keyfile (the sandboxed
+// checks) through gsettings. Without either it says so on stderr and the run goes on: the colors are not at stake.
+var GTKMODE_FUNCTION = 'gtkmode() {\n' +
+    '  if [ "$1" = light ]; then cs=prefer-light; th=adw-gtk3; else cs=prefer-dark; th=adw-gtk3-dark; fi\n' +
+    '  if [ "${GSETTINGS_BACKEND:-}" = keyfile ]; then\n' +
+    '    gsettings set org.gnome.desktop.interface color-scheme "$cs" && gsettings set org.gnome.desktop.interface gtk-theme "$th"\n' +
+    '  else\n' +
+    '    dconf write /org/gnome/desktop/interface/color-scheme "\x27$cs\x27" && dconf write /org/gnome/desktop/interface/gtk-theme "\x27$th\x27"\n' +
+    '  fi || echo "GTK\x27s dark mode not set (no dconf?)" >&2\n' +
+    '}\n';
+
 var APPLY_SCRIPT = 'rc=0\n' +
     'fail() { echo "$1 failed" >&2; rc=1; }\n' +
-    FOLDERS_FUNCTION +
+    FOLDERS_FUNCTION + GTKMODE_FUNCTION +
     'while [ $# -gt 0 ]; do\n' +
     '  case "$1" in\n' +
     '  write) mkdir -p -- "$(dirname -- "$2")" && printf "%s" "$3" > "$2.rutile-new" && chmod "$4" "$2.rutile-new" ' +
@@ -69,7 +82,8 @@ var APPLY_SCRIPT = 'rc=0\n' +
     '  copy) mkdir -p -- "$(dirname -- "$3")" && cp -- "$2" "$3.rutile-new" && chmod "$4" "$3.rutile-new" ' +
     '&& mv -f -- "$3.rutile-new" "$3" || fail "writing $3"; shift 4;;\n' +
     '  remove) rm -f -- "$2" || fail "removing $2"; shift 2;;\n' +
-    '  folders) folders "$2" "$3" "$4" "$5" || fail "folder icons in $2"; shift 5;;\n' +
+    '  folders) folders "$2" "$3" "$4" "$5" "$6" || fail "folder icons in $2"; shift 6;;\n' +
+    '  gtkmode) gtkmode "$2"; shift 2;;\n' +
     '  unfolders) rm -rf -- "$2" || fail "removing $2"; shift 2;;\n' +
     '  move) mkdir -p -- "$(dirname -- "$3")" && mv -f -- "$2" "$3" || fail "moving $2"; shift 3;;\n' +
     '  signal) pkill "-$2" -f "$3"; shift 3;;\n' +
@@ -112,7 +126,8 @@ function applyCommand(ops) {
         if (o.op === "write") args.push("write", o.path, o.text, o.mode || "644");
         else if (o.op === "copy") args.push("copy", o.from, o.path, o.mode || "644");
         else if (o.op === "remove") args.push("remove", o.path);
-        else if (o.op === "folders") args.push("folders", o.dir, o.front, o.back, o.glyph);
+        else if (o.op === "folders") args.push("folders", o.dir, o.front, o.back, o.glyph, o.inherits || "Papirus-Dark");
+        else if (o.op === "gtkmode") args.push("gtkmode", o.mode);
         else if (o.op === "unfolders") args.push("unfolders", o.dir);
         else if (o.op === "move") args.push("move", o.from, o.to);
         else if (o.op === "signal") args.push("signal", o.sig, o.pattern);

@@ -25,7 +25,9 @@ TestCase {
                                     "polkit.agent": true, "shelf.pins": ["firefox", "foot"],
                                     "appColors.enabled": false, "appColors.gtk": false, "appColors.qt": false,
                                     "appColors.kitty": false, "appColors.ghostty": false, "appColors.btop": false,
-                                    "appColors.nvim": false, "appColors.firefox": false })
+                                    "appColors.nvim": false, "appColors.firefox": false,
+                                    "style.mode": "dark", "style.scheme": "scheme-tonal-spot", "style.contrast": 0,
+                                    "style.seed": "#134aae" })
             property var managed: ({})
             property var sets: []
             readonly property string configDir: "/home/u/.config/rutile"
@@ -288,6 +290,34 @@ TestCase {
         verify(!findChild(mRow, "settingChoose_wallpaper.path"), "set in Nix: no Choose button");
         mouseClick(mRow, 40, mRow.height / 2);
         compare(mAsked.count, 0);
+    }
+
+    // the style (D65): mode and color style as menus, contrast a slider, the color as swatches
+    function test_style_rows() {
+        const rows = {};
+        for (const s of Model.sections(Pages.page("wallpaper"), Schema.schema, Pages.hints))
+            for (const r of s.rows) rows[r.key] = r;
+        compare(rows["style.mode"].kind, "choice");
+        compare(Model.valueText("style.mode", "light", Pages.hints), "Light");
+        compare(Model.valueText("style.scheme", "scheme-fruit-salad", Pages.hints), "Fruit salad");
+        compare(rows["style.scheme"].choices.length, 9);
+        compare(rows["style.contrast"].kind, "slider");
+        compare(Model.valueText("style.contrast", 0, Pages.hints), "Standard");
+        compare(Model.valueText("style.contrast", 0.5, Pages.hints), "+0.5");
+        compare(rows["style.seed"].kind, "color");
+        compare(rows["style.seed"].swatches.length, 8);
+        const t = make();
+        open(t, "wallpaper");
+        const seed = findChild(t.a, "setting_style.seed");
+        verify(seed, "the color's row");
+        const chosen = findChild(seed, "settingSwatch_#134aae");
+        const green = findChild(seed, "settingSwatch_#386a20");
+        verify(chosen.chosen && !green.chosen, "the current color ringed");
+        mouseClick(green);
+        compare(t.s.sets[t.s.sets.length - 1], ["style.seed", "#386a20"]);
+        verify(green.chosen && !chosen.chosen, "and the ring moves");
+        t.s.managed = { "style.seed": true };
+        verify(!findChild(seed, "settingSwatch_#386a20"), "set in Nix: no swatches");
     }
 
     function test_app_colors_wait_for_the_main_switch() {

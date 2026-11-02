@@ -29,6 +29,11 @@ TestCase {
         verify(Store.valid(l["motion.speed"], 0), "the minimum is allowed");
         verify(Store.valid(l["motion.speed"], 4), "the maximum is allowed");
         verify(!Store.valid(l["motion.speed"], -0.1));
+        const seed = Store.leaves(Schema.schema)["style.seed"];      // the shipped schema's color (D65)
+        verify(Store.valid(seed, "#386a20"), "a color as the pattern says");
+        verify(!Store.valid(seed, "#386A20"), "the whole value must match, lowercase");
+        verify(!Store.valid(seed, "x#386a20"), "anchored at the start");
+        verify(!Store.valid(seed, "#386a20f"), "and at the end");
         verify(!Store.valid(l["motion.speed"], 4.1));
         verify(!Store.valid(l["motion.speed"], "1"));
         verify(!Store.valid(l["motion.speed"], NaN));

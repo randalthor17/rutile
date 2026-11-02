@@ -248,7 +248,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   done: lazy-loaded page files (one generic page so far), custom pages (the 5.2 list), a choice dialog as Googlebook's (a menu now), raising a
   window that is already open (Quickshell cannot).
 - [ ] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
-  Widgets, Shelf, Apps, Power, Input, About.
+  Widgets, Shelf, Apps, Power, Input, About. Wallpaper & style done (D65): mode (dark or light), color style,
+  contrast, the seed color (a swatch row, the first custom row); the palette renders again on any of them, and
+  everything that takes the shell's colors follows (checked by screenshots in light mode). Next: the custom-page
+  support the others need (5.1's lazy page files).
 
 ## Phase 6: NixOS distro (the v1 goal)
 

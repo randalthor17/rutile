@@ -65,6 +65,54 @@ var schema = {
                 }
             }
         },
+        "style": {
+            "type": "object",
+            "title": "Style",
+            "properties": {
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "dark",
+                        "light"
+                    ],
+                    "default": "dark",
+                    "title": "Mode",
+                    "description": "Dark or light: the shell, and the apps that take its colors."
+                },
+                "scheme": {
+                    "type": "string",
+                    "enum": [
+                        "scheme-tonal-spot",
+                        "scheme-content",
+                        "scheme-expressive",
+                        "scheme-fidelity",
+                        "scheme-fruit-salad",
+                        "scheme-monochrome",
+                        "scheme-neutral",
+                        "scheme-rainbow",
+                        "scheme-vibrant"
+                    ],
+                    "default": "scheme-tonal-spot",
+                    "title": "Color style",
+                    "description": "How the palette is made from the wallpaper's color: Material's color scheme types."
+                },
+                "contrast": {
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1,
+                    "default": 0,
+                    "title": "Contrast",
+                    "description": "-1 the least, 0 Material's own, 1 the most."
+                },
+                "seed": {
+                    "type": "string",
+                    "pattern": "#[0-9a-f]{6}",
+                    "default": "#134aae",
+                    "title": "Color",
+                    "description": "The palette's color when there is no wallpaper or colors do not follow it (#rrggbb)."
+                }
+            }
+        },
         "lock": {
             "type": "object",
             "title": "Lock screen",

@@ -76,6 +76,12 @@ class HomeManagerModule(unittest.TestCase):
             self.assertIsNone(got, bad)
             self.assertIn("error:", err, bad)
 
+    def test_a_color_must_match_its_pattern(self):
+        self.assertEqual(evaluate('{ style.seed = "#386a20"; }')[0], {"style": {"seed": "#386a20"}})
+        got, err = evaluate('{ style.seed = "green"; }')
+        self.assertIsNone(got)
+        self.assertIn("string matching the pattern", err)
+
     def test_limits_are_inclusive(self):
         self.assertEqual(evaluate("{ motion.speed = 0; }")[0], {"motion": {"speed": 0}})
         self.assertEqual(evaluate("{ motion.speed = 4; }")[0], {"motion": {"speed": 4}})
@@ -145,8 +151,8 @@ class ShellModule(unittest.TestCase):
         got, err = module("{ enable = true; theming.enable = true; }")
         self.assertIsNotNone(got, err)
         gtk, qt = got["gtk"], got["qt"]
-        self.assertEqual(gtk["colorScheme"], "dark")
-        self.assertEqual(gtk["theme"]["name"], "adw-gtk3-dark", "GTK 3 through the named colors the shell overrides")
+        self.assertNotIn("colorScheme", gtk, "dark or light is the shell's (D65): home-manager's dconf would reset it")
+        self.assertIsNone(gtk["theme"], "GTK 3's adw-gtk3 variant too; the shell sets it with the mode")
         self.assertIsNone(gtk["gtk4"]["theme"], "libadwaita keeps its own (adw-gtk3's imported over it broke the accent)")
         self.assertEqual(got["sessionVariables"]["GTK_THEME"], "adw-gtk3-dark", "plain GTK 4 apps, on by default")
         self.assertEqual(gtk["gtk4"]["extraCss"], '@import url("file:///home/test/.config/gtk-4.0/rutile.css");')

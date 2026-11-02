@@ -4,7 +4,8 @@
 // the schema; `hints` here only say how to show it when the schema alone does not (D45 keeps the schema to what
 // Nix and the store need). Hints: `kind` (path, list), `choices` (values offered in a menu) with `label(value)`,
 // `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section), `filters` for a
-// path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply).
+// path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply),
+// `swatches` (the colors a color setting offers).
 .pragma library
 
 var pages = [
@@ -13,6 +14,7 @@ var pages = [
         summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette", "matugen"],
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
+            { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed"] },
             { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox"] }
         ]
     },
@@ -52,6 +54,19 @@ var hints = {
         filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
+    "style.mode": { label: v => v === "light" ? "Light" : "Dark", aliases: ["dark mode", "light mode", "night", "theme"] },
+    "style.scheme": {
+        label: v => ({ "scheme-tonal-spot": "Tonal spot", "scheme-content": "Content", "scheme-expressive": "Expressive",
+                       "scheme-fidelity": "Fidelity", "scheme-fruit-salad": "Fruit salad", "scheme-monochrome": "Monochrome",
+                       "scheme-neutral": "Neutral", "scheme-rainbow": "Rainbow", "scheme-vibrant": "Vibrant" })[v] ?? v,
+        aliases: ["scheme", "vibrant", "monochrome", "palette style"]
+    },
+    "style.contrast": { step: 0.25, label: v => v === 0 ? "Standard" : (v > 0 ? "+" : "") + v, aliases: ["contrast"] },
+    // Material's baseline and a few seeds around the color wheel
+    "style.seed": {
+        kind: "color", aliases: ["accent", "seed", "colour"],
+        swatches: ["#134aae", "#6750a4", "#8e4585", "#b3261e", "#9a4600", "#7d5800", "#386a20", "#006a6a"]
+    },
     "appColors.enabled": { aliases: ["matugen", "theme apps", "gtk", "qt", "terminal", "niri", "borders"] },
     "appColors.niri": { requires: "appColors.enabled", aliases: ["borders", "focus ring"] },
     "appColors.gtk": { requires: "appColors.enabled", aliases: ["gnome", "libadwaita", "nautilus"] },

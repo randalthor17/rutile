@@ -1,7 +1,7 @@
 // One setting in the settings app (plan 5.1), as a list item built from its row (Model.sections): a switch for a
 // boolean, a slider for a number with limits, a menu of choices, a file for a path (`pickPath`: the app opens the
-// file chooser), or the value as text for a list (its editor comes with its page, 5.2). A setting set in Nix shows its value with a lock and takes no
-// changes (D45). Changes go through `store.set(key, value)`; a slider saves once it has been still for a moment, so
+// file chooser), swatches for a color (D65), or the value as text for a list (its editor comes with its page,
+// 5.2). A setting set in Nix shows its value with a lock and takes no changes (D45). Changes go through `store.set(key, value)`; a slider saves once it has been still for a moment, so
 // a drag does not write the file at every step. A choice asks the app for its menu (`toggleMenu`): the app shows one
 // menu above everything, which a row of its own could not be (later sections are drawn over it).
 pragma ComponentBehavior: Bound
@@ -114,6 +114,47 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     name: root.menuOpen ? "arrow_drop_up" : "arrow_drop_down"
                     color: Colors.surfaceVariantOn
+                }
+            }
+        }
+        Loader {
+            active: root.row.kind === "color" && !root.managed
+            visible: active
+            sourceComponent: Row {
+                spacing: Spacing.xs
+                Repeater {
+                    model: root.row.swatches
+                    delegate: Item {
+                        id: swatch
+                        required property string modelData
+                        readonly property bool chosen: root.current === modelData
+                        objectName: "settingSwatch_" + modelData
+                        width: Spacing.xl
+                        height: Spacing.xl
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: width / 2
+                            color: "transparent"
+                            border.width: 2
+                            border.color: Colors.primary
+                            visible: swatch.chosen
+                        }
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: parent.width - 2 * Spacing.xs
+                            height: width
+                            radius: width / 2
+                            color: swatch.modelData
+                        }
+                        StateLayer {
+                            anchors.fill: parent
+                            radius: width / 2
+                            onClicked: root.store.set(root.row.key, swatch.modelData)
+                        }
+                        Accessible.role: Accessible.RadioButton
+                        Accessible.name: swatch.modelData
+                        Accessible.checked: swatch.chosen
+                    }
                 }
             }
         }

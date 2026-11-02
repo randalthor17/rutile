@@ -44,7 +44,7 @@ ShellRoot {
                 t.compare(S.lastError, "", "no error without a palette file");
                 t.verify(root.kittyText.indexOf("cursor #b2c5ff") >= 0, "the shell's own colors (#134aae): " + root.kittyText.slice(0, 200));
                 root.runsBefore = S.runs;
-                Colors.sourceColor = "#9c2b2b";           // a palette loaded (PaletteWatcher sets it)
+                Settings.set("style.seed", "#9c2b2b");    // a new palette: the shell renders one from the style's color (D65)
                 break;
             case 3:
                 if (S.runs <= root.runsBefore) return;

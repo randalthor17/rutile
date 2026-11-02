@@ -60,7 +60,8 @@ Singleton {
         job.stage = "render";
         job.command = Files.matugenCommand(WallpaperService.matugen, workDir, AppTheme.templates(dirs, job.target),
                                            ["color", "hex", doc.source_color], doc.scheme ?? "scheme-tonal-spot",
-                                           doc.mode ?? "dark", doc.contrast ?? 0);
+                                           doc.mode ?? WallpaperService.mode, doc.contrast ?? 0);
+        job.mode = doc.mode ?? WallpaperService.mode;
         job.running = true;
     }
     function read() {
@@ -73,7 +74,7 @@ Singleton {
         const sources = {};
         for (const name in job.rendered) sources[name] = workDir + "/out/" + name;
         const p = AppTheme.plan({ dirs: dirs, wanted: job.target, done: done, files: files, rendered: job.rendered,
-                                  sources: sources });
+                                  sources: sources, mode: job.mode });
         job.done = p.done;
         job.warning = p.errors.join("; ");
         if (p.ops.length === 0) return finish(true, "");
@@ -116,6 +117,12 @@ Singleton {
             root.schedule();
         }
     }
+    // and each palette the shell renders (a mode, scheme or contrast change keeps the source color, D65)
+    readonly property string paletteKey: Settings.stateValue("wallpaper.paletteKey", "")
+    onPaletteKeyChanged: {
+        palette.reload();
+        schedule();
+    }
     FileView {
         id: palette
         path: root.palettePath
@@ -132,6 +139,7 @@ Singleton {
         property var rendered: ({})
         property var done: ({})
         property string warning: ""
+        property string mode: "dark"
         // The result once the process has exited and both its outputs are read: at `exited` the text may not have
         // arrived yet (an error's message was lost that way: "could not change the apps' files").
         property int exitCode: -1
@@ -170,6 +178,8 @@ Singleton {
                 if (code !== 0) return root.finish(false, errors.text.trim() || "could not read the apps' files");
                 return root.apply(Files.parseRead(out.text));
             }
+            // a step that may fail without failing the run (GTK's mode without dconf) says so here
+            if (code === 0 && errors.text.trim()) console.warn("rutile: other apps' colors: " + errors.text.trim());
             root.finish(code === 0, code === 0 ? "" : (errors.text.trim() || "could not change the apps' files"));
         }
     }

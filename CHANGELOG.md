@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Light mode, and the palette's style** (Settings > Wallpaper & style > Style; plan 5.2): dark or light, the
+  color style (tonal spot, vibrant, expressive, ...), contrast, and the color used without a wallpaper (swatches).
+  The shell and the apps that take its colors follow, GTK's own dark or light and the folder icons too. Quick
+  Settings' Dark theme tile changes the same setting and is now saved.
 - **Folder icons follow the wallpaper** (Settings > Wallpaper > Colors in other apps > Folder icons; on with
   `programs.rutile.theming`): Papirus's folders in the palette's accent, through an icon theme named Rutile on top
   of Papirus-Dark. Apps show new folder colors when they start.

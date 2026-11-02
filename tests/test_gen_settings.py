@@ -42,12 +42,13 @@ class Problems(unittest.TestCase):
     def test_supported_leaves(self):
         for leaf in ({"type": "boolean", "default": True}, {"type": "integer", "minimum": 0, "default": 0},
                      {"type": "string", "enum": ["a", "b"], "default": "a"},
+                     {"type": "string", "pattern": "#[0-9a-f]{6}", "default": "#134aae"},
                      {"type": "array", "items": {"type": "string"}}):
             self.assertEqual(g.problems(with_leaf(leaf)), [], leaf)
 
     def test_rejects_what_the_shell_or_nix_would_not_understand(self):
         for leaf, why in (({"type": "null"}, "type"), ({"type": ["string", "null"]}, "type"),
-                          ({"type": "string", "pattern": "x"}, "unsupported keys"),
+                          ({"type": "string", "format": "x"}, "unsupported keys"),
                           ({"type": "array", "items": {"type": "array", "items": {"type": "string"}}}, "items"),
                           ({"type": "array"}, "items"),
                           ({"type": "array", "items": {"type": "string", "oneOf": []}}, "unsupported keys")):
@@ -63,7 +64,9 @@ class Problems(unittest.TestCase):
         self.assertTrue(any("must be an object with properties" in p for p in got), got)
 
     def test_defaults_must_fit(self):
-        for leaf in ({"type": "number", "minimum": 0, "default": -1}, {"type": "number", "maximum": 1, "default": 2},
+        for leaf in ({"type": "string", "pattern": "#[0-9a-f]{6}", "default": "#134AAE"},
+                     {"type": "string", "pattern": "#[0-9a-f]{6}", "default": "#134aae0"},
+                     {"type": "number", "minimum": 0, "default": -1}, {"type": "number", "maximum": 1, "default": 2},
                      {"type": "integer", "default": 1.5}, {"type": "integer", "default": True},
                      {"type": "boolean", "default": 0}, {"type": "string", "enum": ["a"], "default": "b"},
                      {"type": "array", "items": {"type": "string"}, "default": [1]},

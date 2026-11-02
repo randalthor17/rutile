@@ -48,6 +48,9 @@ APPS = [
 ]
 
 
+MODE = ["dark"]                  # --mode: the shell's style.mode in the generation (D65)
+
+
 def nix_out(attr):
     r = subprocess.run(["nix", "build", "--inputs-from", str(ROOT), f"nixpkgs#{attr}", "--no-link", "--print-out-paths"],
                        capture_output=True, text=True, timeout=1800)
@@ -60,6 +63,7 @@ def generation(home_manager, home, theming):
     r = subprocess.run(["nix-build", str(ROOT / "tools/dev/theming-home.nix"), "--arg", "homeManager", home_manager,
                         "--argstr", "home", str(home), "--arg", "theming", "true" if theming else "false",
                         "--arg", "plainGtk4", "false" if os.environ.get("RUTILE_PLAIN_GTK4") == "0" else "true",
+                        "--argstr", "mode", MODE[0],
                         "--no-out-link"], capture_output=True, text=True, timeout=1800, cwd=ROOT)
     if r.returncode != 0:
         raise RuntimeError("home-manager generation: " + r.stderr[-1500:])
@@ -261,7 +265,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--home-manager", help="home-manager's source (a store path or checkout); default: GitHub's")
     ap.add_argument("--out", default=None, help="folder for the screenshots (default: a temporary one)")
+    ap.add_argument("--mode", default="dark", choices=["dark", "light"], help="the shell's style.mode (D65)")
     a = ap.parse_args()
+    MODE[0] = a.mode
     for tool in ("sway", "swaymsg", "grim", "nix", "nix-build", "fc-match", "dbus-daemon"):
         if not shutil.which(tool):
             print(f"theming check: SKIPPED (needs {tool})")

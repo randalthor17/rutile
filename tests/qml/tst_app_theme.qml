@@ -212,7 +212,24 @@ TestCase {
         verify(bad.errors.join().indexOf("Folder icons: no colors") === 0, bad.errors.join());
         compare(AppTheme.folderColors("primary #000000\ninverse_primary #ffffff\nback #010203\nglyph #0A0B0C").front,
                 "#808080", "rounded mix");
-        compare(Files.applyCommand(job).slice(4).join("|"), "folders|/h/.local/share/icons/Rutile|#7b92c8|#2b4678|#dae2ff");
+        compare(Files.applyCommand(job).slice(4).join("|"), "folders|/h/.local/share/icons/Rutile|#7b92c8|#2b4678|#dae2ff|Papirus-Dark");
+        const light = AppTheme.plan({ dirs: dirs, wanted: ["folders"], done: r.done, files: { [built]: "", ["?" + index]: "" },
+                                      rendered: Object.assign({}, rendered, { "folders.colors": rendered["folders.colors"] + "mode light\n" }) });
+        compare(light.ops.filter(o => o.op === "folders").map(o => o.inherits).join(), "Papirus",
+                "light mode (D65): made again, on Papirus's light icons");
+    }
+
+    // GTK's own dark or light follows the palette's mode (D65): once per change, not on every run
+    function test_gtk_mode() {
+        const plan = (done, mode) => AppTheme.plan({ dirs: dirs, wanted: ["gtk"], done: done, files: { [built]: "" },
+                                                     rendered: rendered, mode: mode });
+        let p = plan({}, "dark");
+        compare(p.ops.filter(o => o.op === "gtkmode").map(o => o.mode).join(), "dark");
+        compare(plan(p.done, "dark").ops.filter(o => o.op === "gtkmode").length, 0, "the same mode: not again");
+        compare(plan(p.done, "light").ops.filter(o => o.op === "gtkmode").map(o => o.mode).join(), "light");
+        compare(Files.applyCommand([{ op: "gtkmode", mode: "light" }]).slice(4).join("|"), "gtkmode|light");
+        compare(AppTheme.plan({ dirs: dirs, wanted: ["kitty"], done: {}, files: { [built]: "" }, rendered: rendered,
+                                mode: "light" }).ops.filter(o => o.op === "gtkmode").length, 0, "GTK's only");
     }
 
     function test_niri_gets_its_own_file_only() {

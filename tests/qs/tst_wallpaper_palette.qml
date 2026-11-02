@@ -1,5 +1,5 @@
-// WallpaperService (plan 2.9): the palette follows the wallpaper only with wallpaper.palette on; a path already
-// rendered (remembered in state.json) is not rendered again; a render that is not a valid palette leaves the palette
+// WallpaperService (plan 2.9, D65): the palette follows the wallpaper with wallpaper.palette on, else the style's
+// color; a style change renders again; what was rendered (remembered in state.json) is not rendered again; a render that is not a valid palette leaves the palette
 // as it was. matugen is a stand-in that logs and writes a fixture.
 // env XDG_CONFIG_HOME=@WS@/config/wallpaper-nopalette
 // env XDG_STATE_HOME=@WS@/state
@@ -41,14 +41,17 @@ ShellRoot {
                 reader.running = true;
                 break;
             case 1:
-                t.compare(root.log, "", "off: no palette rendered");
+                t.compare(root.log.split("\n").filter(l => l).length, 1, "off: rendered once, from the style's color (D65)");
+                t.verify(root.log.indexOf(" color hex #134aae -t scheme-tonal-spot -m dark --contrast 0") > 0, root.log);
+                t.verify(root.log.indexOf("--source-color-index") < 0, "only an image has source colors");
+                t.compare(Settings.stateValue("wallpaper.paletteFrom", ""), "#134aae", "remembered: the color");
                 Settings.set("wallpaper.palette", true);
                 break;
             case 2:
                 reader.running = true;
                 break;
             case 3:
-                t.compare(root.log.split("\n").filter(l => l).length, 1, "on: rendered once");
+                t.compare(root.log.split("\n").filter(l => l).length, 2, "on: rendered once more, from the image");
                 t.verify(root.log.indexOf(" image /tmp/rutile-test-wall.png -t scheme-tonal-spot -m dark --contrast 0 --source-color-index 0") > 0, root.log);
                 t.verify(root.log.indexOf("-q -c ") === 0, "matugen with the shell's own config: " + root.log);
                 t.compare(Settings.stateValue("wallpaper.paletteFrom", ""), "/tmp/rutile-test-wall.png", "remembered");
@@ -62,17 +65,27 @@ ShellRoot {
                 reader.running = true;
                 break;
             case 5:
-                t.compare(root.log.split("\n").filter(l => l).length, 1, "the same path is not rendered again");
-                breaker.running = true;                 // the next render is not a valid palette
+                t.compare(root.log.split("\n").filter(l => l).length, 2, "the same path is not rendered again");
+                Settings.set("style.mode", "light");
                 break;
             case 6:
-                S.set("/tmp/rutile-test-wall-2.png");
-                break;
-            case 7:
                 reader.running = true;
                 break;
+            case 7: {
+                const lines = root.log.split("\n").filter(l => l);
+                t.compare(lines.length, 3, "a style change renders again");
+                t.verify(lines[2].indexOf(" image /tmp/rutile-test-wall.png -t scheme-tonal-spot -m light ") > 0, lines[2]);
+                breaker.running = true;                 // the next render is not a valid palette
+                break;
+            }
             case 8:
-                t.compare(root.log.split("\n").filter(l => l).length, 2, "the new path rendered");
+                S.set("/tmp/rutile-test-wall-2.png");
+                break;
+            case 9:
+                reader.running = true;
+                break;
+            case 10:
+                t.compare(root.log.split("\n").filter(l => l).length, 4, "the new path rendered");
                 t.verify(S.lastError.indexOf("invalid palette: colors must have exactly the keys dark and light") === 0, S.lastError);
                 written.reload();
                 t.compare(JSON.parse(written.text()).colors.dark.primary, "#b2c5ff", "the palette as it was");

@@ -5,3 +5,4 @@ primary {{colors.primary.default.hex}}
 inverse_primary {{colors.inverse_primary.default.hex}}
 back {{colors.primary_container.default.hex}}
 glyph {{colors.on_primary_container.default.hex}}
+mode {{mode}}

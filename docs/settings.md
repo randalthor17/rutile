@@ -32,6 +32,10 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
+| `style.mode` | dark or light | dark | the shell, and the apps that take its colors (GTK's own dark or light too); also Quick Settings' Dark theme tile |
+| `style.scheme` | scheme-tonal-spot, -content, -expressive, -fidelity, -fruit-salad, -monochrome, -neutral, -rainbow, -vibrant | scheme-tonal-spot | how the palette is made from its color (Material's scheme types) |
+| `style.contrast` | -1 to 1 | 0 | -1 the least, 0 Material's own, 1 the most |
+| `style.seed` | #rrggbb | #134aae | the palette's color when there is no wallpaper or colors do not follow it |
 | `appColors.enabled` | true or false | false | give other apps the shell's colors (D52); each app below also needs its own switch on |
 | `appColors.niri` | true or false | false | niri's focus ring, borders, tab indicators and overview backdrop (a rutile-colors.kdl that niri includes) |
 | `appColors.gtk` | true or false | false | GTK 3 and 4 (a rutile.css that gtk.css imports) |

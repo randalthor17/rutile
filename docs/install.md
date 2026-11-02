@@ -74,8 +74,8 @@ fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that 
 programs.rutile.theming.enable = true;
 ```
 
-sets up GTK (adw-gtk3 dark for GTK 3 apps and for GTK 4 apps without libadwaita, libadwaita's own theme for the
-rest, a dark color scheme, gtk.css importing the shell's colors), Qt (qt5ct and qt6ct with Kvantum and Rutile's
+sets up GTK (adw-gtk3 for GTK 3 apps and for GTK 4 apps without libadwaita, libadwaita's own theme for the
+rest, gtk.css importing the shell's colors; dark or light follows the shell's mode, which it sets itself), Qt (qt5ct and qt6ct with Kvantum and Rutile's
 own Kvantum theme, drawn like the GTK apps; `theming.qt.style = "Breeze"` or `"Fusion"` instead) and KDE apps (kdeglobals' fonts and
 icons), the font (Google Sans Flex, also fontconfig's default sans-serif) and icons (Papirus-Dark, its folders in
 the wallpaper's accent through an icon theme named Rutile; `theming.icons.followWallpaper = false` for plain

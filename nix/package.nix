@@ -15,6 +15,8 @@
   procps,
   coreutils,
   gnused,
+  dconf,
+  glib,
   bash,
   material-symbols,
   google-sans-flex,
@@ -33,8 +35,9 @@ let
   '';
   # What the shell runs (Process, execDetached): matugen (palette, other apps' colors), brightnessctl (backlight),
   # pw-play (notification sounds), dbus-monitor (logind's Lock), systemctl/systemd-inhibit/busctl (power, lock
-  # before sleep, LockedHint), pkill (apps' reload), sh, coreutils and sed (file jobs; the folder icons, D64). niri itself comes from the system.
-  runtime = [ matugen brightnessctl pipewire dbus systemd procps coreutils gnused bash ];
+  # before sleep, LockedHint), pkill (apps' reload), sh, coreutils and sed (file jobs; the folder icons, D64), dconf
+# and gsettings (GTK's dark or light, D65). niri itself comes from the system.
+  runtime = [ matugen brightnessctl pipewire dbus systemd procps coreutils gnused dconf glib bash ];
 in
 stdenv.mkDerivation {
   pname = "rutile-shell";

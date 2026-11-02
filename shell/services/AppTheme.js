@@ -29,7 +29,8 @@ function apps(dirs) {
         // niri's config is never edited: it includes our file (home-manager's module does; by hand:
         // include optional=true "rutile-colors.kdl"). niri watches included files, a missing optional one too.
         niri: { title: "niri", files: [["niri.kdl", c + "/niri/rutile-colors.kdl"]] },
-        gtk: { title: "GTK 3 and 4",
+        // mode: GTK's own dark or light (libadwaita's color-scheme, adw-gtk3 or adw-gtk3-dark), set with the palette's
+        gtk: { title: "GTK 3 and 4", mode: true,
                files: [["gtk.css", c + "/gtk-3.0/rutile.css"], ["gtk4.css", c + "/gtk-4.0/rutile.css"]],
                blocks: [gtk(3), gtk(4)] },
         // the palette for qt5ct/qt6ct, and Rutile's Kvantum theme (D60) for the Kvantum style
@@ -177,11 +178,12 @@ function iniEntries(text) {
 function folderColors(text) {
     var c = {};
     lines(text || "").forEach(function (row) {
-        var m = /^(\w+)\s+(#[0-9a-fA-F]{6})$/.exec(row.trim());
+        var m = /^(\w+)\s+(#[0-9a-fA-F]{6}|dark|light)$/.exec(row.trim());
         if (m) c[m[1]] = m[2].toLowerCase();
     });
     if (!c.primary || !c.inverse_primary || !c.back || !c.glyph) return null;
-    return { front: mix(c.primary, c.inverse_primary), back: c.back, glyph: c.glyph };
+    return { front: mix(c.primary, c.inverse_primary), back: c.back, glyph: c.glyph,
+             inherits: c.mode === "light" ? "Papirus" : "Papirus-Dark" };
 }
 function mix(a, b) {
     var out = "#";
@@ -234,7 +236,7 @@ function firefoxManifest(dirs) {
                             allowed_extensions: ["pywalfox@frewacom.org"] }, null, 2) + "\n";
 }
 
-// input: {dirs, wanted: [app], done: {app: record}, files: {path: text|null}, rendered: {template: text},
+// input: {dirs, wanted: [app], done: {app: record}, files: {path: text|null}, rendered: {template: text}, mode,
 //         sources: {template: path of its rendered file} (optional: then those files are copied, not passed as text;
 //         one argument is capped at 128 KiB, and the Kvantum theme's SVG is larger)}
 // Returns {ops: [Files.js ops], done: the new records, themed: [app], unknown: [app], errors: [text]}. Firefox is left
@@ -376,6 +378,10 @@ function plan(input) {
             if (!(slot in record.previous)) record.previous[slot] = getKey(files[k.file], k.section, k.key);
             changed = write(k.file, setKey(files[k.file], k.section, k.key, k.value)) || changed;
         });
+        if (a.mode && input.mode && record.mode !== input.mode) {
+            ops.push({ op: "gtkmode", mode: input.mode });
+            record.mode = input.mode;
+        }
         if (a.folders) {
             var colors = folderColors(input.rendered[a.folders.from]);
             var index = a.folders.dir + "/index.theme";
@@ -384,11 +390,11 @@ function plan(input) {
             } else if (!colors) {
                 errors.push(a.title + ": no colors from " + a.folders.from);
             } else {
-                var key = [colors.front, colors.back, colors.glyph].join();
+                var key = [colors.front, colors.back, colors.glyph, colors.inherits].join();
                 var missing = files["?" + index] === null;
                 if (record.folders !== key || missing) {
                     ops.push({ op: "folders", dir: a.folders.dir, front: colors.front, back: colors.back,
-                               glyph: colors.glyph });
+                               glyph: colors.glyph, inherits: colors.inherits });
                     changed = true;
                 }
                 record.folders = key;

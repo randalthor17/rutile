@@ -7,9 +7,11 @@
 The schema is the one source for every setting: the shell gets it through this file, and the home-manager
 module (nix/home-manager.nix) reads the JSON itself. Both understand only a small part of JSON Schema, so this
 checks that the schema keeps to it: objects of properties, and leaves of type boolean, integer, number, string,
-or array of those, with optional enum, minimum, maximum, default, title and description.
+or array of those, with optional enum, minimum, maximum, pattern (a string's full match: a regular expression that
+JavaScript, Python and Nix read alike), default, title and description.
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -22,7 +24,7 @@ SCALARS = {"boolean", "integer", "number", "string"}
 DOC_KEYS = {"title", "description"}
 ROOT_KEYS = {"$schema"} | DOC_KEYS | {"type", "properties"}
 OBJECT_KEYS = DOC_KEYS | {"type", "properties"}
-LEAF_KEYS = DOC_KEYS | {"type", "items", "enum", "minimum", "maximum", "default"}
+LEAF_KEYS = DOC_KEYS | {"type", "items", "enum", "minimum", "maximum", "pattern", "default"}
 
 
 def scalar_ok(kind, value):
@@ -42,6 +44,8 @@ def value_ok(leaf, value):
     if not scalar_ok(leaf["type"], value):
         return False
     if "enum" in leaf and value not in leaf["enum"]:
+        return False
+    if "pattern" in leaf and not re.fullmatch(leaf["pattern"], value):
         return False
     if "minimum" in leaf and value < leaf["minimum"]:
         return False

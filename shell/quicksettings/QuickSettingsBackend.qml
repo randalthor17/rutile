@@ -26,14 +26,15 @@ QtObject {
     readonly property bool bluetoothEnabled: BluetoothService.enabled
     readonly property string bluetoothDevice: BluetoothService.connectedName
     // In-session only until settings persistence (plan 2.5); palette.json carries both modes.
-    readonly property bool darkTheme: Colors.mode === "dark"
+    // the style's mode (D65): the shell's palette and the apps that take its colors; saved
+    readonly property bool darkTheme: Settings.value("style.mode") === "dark"
 
     function setBrightness(v) { BrightnessService.set(v); }
     function setVolume(v) { AudioService.setVolume(v); }
     function setMicMuted(m) { AudioService.setMicMuted(m); }
     function setWifiEnabled(on) { NetworkService.setWifiEnabled(on); }
     function setBluetoothEnabled(on) { BluetoothService.setEnabled(on); }
-    function setDarkTheme(on) { Colors.mode = on ? "dark" : "light"; }
+    function setDarkTheme(on) { Settings.set("style.mode", on ? "dark" : "light"); }
     // Airplane mode turns every radio off; turning it off turns them back on.
     function setAirplaneMode(on) {
         NetworkService.setWifiEnabled(!on);

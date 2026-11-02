@@ -2,7 +2,7 @@
 .pragma library
 .import "../services/SettingsStore.js" as Store
 
-// How a setting is shown: switch, slider, choice (a menu), path, list, or text.
+// How a setting is shown: switch, slider, choice (a menu), path, list, color (swatches), or text.
 function kind(leaf, hint) {
     hint = hint ?? {};
     if (hint.kind) return hint.kind;
@@ -37,6 +37,7 @@ function sections(page, schema, hints) {
                 step: hint.step ?? (leaf.type === "integer" ? 1 : 0),
                 choices: hint.choices ?? leaf.enum ?? [],
                 filters: hint.filters ?? [],
+                swatches: hint.swatches ?? [],
                 requires: hint.requires ?? ""
             };
             (row.advanced ? advanced : rows).push(row);

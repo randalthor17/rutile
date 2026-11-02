@@ -66,7 +66,7 @@ ShellRoot {
                 t.verify(home.indexOf("<svg") >= 0 && home.indexOf("#5294e2") < 0 && home.indexOf("#1d344f") < 0, "user-home.svg too");
                 root.colors = folder;
                 root.runsBefore = S.runs;
-                Colors.sourceColor = "#9c2b2b";           // a new palette
+                Settings.set("style.seed", "#9c2b2b");    // a new palette (no wallpaper: from the style's color, D65)
                 break;
             }
             case 4:

@@ -594,3 +594,16 @@ argument cap), built beside the folder and swapped in. Again only when the color
 off removes it. Papirus-Dark is found in XDG_DATA_DIRS (the package and the dev shell put it there). The
 home-manager module's `theming.icons.followWallpaper` (on) turns the switch on and gives apps `Rutile` in place of
 Papirus-Dark. Apps show new folder colors when they start, as with the colors (D63).
+
+**D65. The palette's style is settings, and light mode reaches every app (plan 5.2).** `style.mode` (dark,
+light), `style.scheme` (matugen's scheme types), `style.contrast` (-1 to 1) and `style.seed` (#rrggbb, a new
+`pattern` constraint the schema tools, the shell and the Nix module all check). WallpaperService renders from the
+wallpaper while colors follow it, else from the seed, and again whenever the source or one of those changes (the
+key is remembered in state.json as `wallpaper.paletteKey`; app colors follow that key too, since a mode change
+keeps the source color). The templates already took the palette's mode; what had been dark by fixed choice now
+follows it: GTK's own dark or light is the shell's to set (libadwaita's `color-scheme`, GTK 3's adw-gtk3 or
+adw-gtk3-dark, through dconf), so the home-manager module no longer pins them (its dconf would reset the user's
+choice on every switch); the Rutile folder theme inherits Papirus or Papirus-Dark. Quick Settings' Dark theme tile
+sets `style.mode` (it had only flipped the shell's own colors, unsaved). Checked by screenshots in light mode
+(`make theming-check` takes `--mode light`): GTK 3 and 4, libadwaita, Qt 5 and 6 with Kvantum, KDE apps, and the
+shell. Not checked: the real dconf path on a session (the checks use GSettings' keyfile backend).

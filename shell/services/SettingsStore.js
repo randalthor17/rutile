@@ -35,6 +35,7 @@ function valid(leaf, value) {
         return Array.isArray(value) && value.every(function (v) { return valid(leaf.items, v); });
     if (!scalarValid(leaf, value)) return false;
     if (leaf.enum !== undefined && leaf.enum.indexOf(value) < 0) return false;
+    if (leaf.pattern !== undefined && !new RegExp("^(?:" + leaf.pattern + ")$").test(value)) return false;
     if (leaf.minimum !== undefined && value < leaf.minimum) return false;
     return !(leaf.maximum !== undefined && value > leaf.maximum);
 }
