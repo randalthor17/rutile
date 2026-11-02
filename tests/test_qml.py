@@ -105,6 +105,12 @@ class WaylandShell(unittest.TestCase):
         code, out = qtws.run_wayland_smoke()
         self.assertEqual(code, 0, out)
 
+    def test_app_indicators_with_a_real_tray_app(self):
+        code, out = qtws.run_tray_smoke()
+        if code == qtws.SKIPPED:
+            self.skipTest(out)
+        self.assertEqual(code, 0, out)
+
     def test_popup_windows_are_not_resized_with_their_motion_and_their_masks_cover_them(self):
         code, out = qtws.run_wayland_surfaces()
         if code == qtws.SKIPPED:

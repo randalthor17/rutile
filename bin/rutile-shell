@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings tray"
 
 usage() {
     cat <<'EOF'
@@ -71,6 +71,12 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  state
   quicksettings  toggle | open | close
                  isOpen
+                 state
+  tray           activate ID       as a click on an app indicator (state lists their ids)
+                 openMenu ID      its menu, under its icon
+                 closeMenu
+                 choose TEXT      the open menu's entry with that text (a submenu opens in place)
+                 back             out of a submenu
                  state
 
 Examples:

@@ -149,7 +149,7 @@ Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the
 | Battery, power profiles | `UPower`, `UPowerDevice`, `PowerProfiles` | 2.1, 2.6, 4.2 |
 | Media | `Mpris`, `MprisPlayer` | 2.1, 2.3 (media pill), 4.2 |
 | Notifications | `NotificationServer`, `Notification` | 2.8 |
-| Tray and its menus | `SystemTray`, `SystemTrayItem`, `QsMenuOpener`, `QsMenuAnchor` | 2.6 |
+| Tray and its menus | `SystemTray`, `SystemTrayItem`, `QsMenuOpener` (in use: app indicators, D61); `QsMenuAnchor` (not: the platform menu is not our style) | 2.10 |
 | Lock screen, idle | `WlSessionLock`, `WlSessionLockSurface`, `PamContext`, `IdleMonitor`, `IdleInhibitor` | 2.8 |
 | Greeter, polkit | `Greetd`, `PolkitAgent` | 6.2, 2.8 |
 | Rounded clipping of children (cards, pictures) | `ClippingRectangle` (rectangles only; a cookie needs ShapeMorph) | 2.3, 4.3 |

@@ -7,6 +7,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Polkit
+import Quickshell.Services.SystemTray
 import Quickshell.Wayland
 import qs.common
 import qs.bar
@@ -25,6 +26,7 @@ import qs.shelf
 import "quicksettings/Controls.js" as Controls
 import "lock/LockWallpaper.js" as LockWallpaper
 import "power/PowerActions.js" as PowerActions
+import "bar/TrayModel.js" as TrayModel
 
 ShellRoot {
     id: shell
@@ -356,7 +358,78 @@ ShellRoot {
             notificationsOpen: shell.notificationListOpen && notificationList.item?.screen === modelData
             onClicked: shell.toggleQuickSettings(modelData)
             onBellClicked: shell.toggleNotificationList(modelData)
+            trayItems: shell.trayItems
+            trayMenuId: shell.trayMenuOpen && trayMenu.item?.screen === modelData ? shell.trayMenuId : ""
+            onTrayMenuRequested: (entry, right) => shell.toggleTrayMenu(modelData, entry, right)
         }
+    }
+
+    // App indicators (plan 2.10, D61): the tray's items, shown in every status bar; one app's menu at a time,
+    // loaded only while open (D31). It closes when its app leaves the tray.
+    readonly property var trayItems: TrayModel.shown(SystemTray.items.values, Status.Passive, Status.NeedsAttention)
+    property string trayMenuId: ""
+    property var trayMenuEntry: null
+    property var trayMenuScreen: null
+    property real trayMenuRight: 0
+    readonly property bool trayMenuOpen: trayMenu.active && !(trayMenu.item?.closing ?? false)
+    function toggleTrayMenu(screen, entry, right) {
+        const same = trayMenuOpen && trayMenuId === entry.id && trayMenuScreen === screen;
+        closeTrayMenu();
+        if (same) return;
+        trayMenu.active = false;
+        trayMenuId = entry.id;
+        trayMenuEntry = entry;
+        trayMenuScreen = screen;
+        trayMenuRight = right;
+        trayMenu.active = true;
+    }
+    function closeTrayMenu() {
+        if (trayMenu.item) trayMenu.item.close();
+    }
+    onTrayItemsChanged: if (trayMenu.active && !trayItems.some(e => e.id === trayMenuId)) trayMenu.active = false
+    LazyLoader {
+        id: trayMenu
+        TrayMenuWindow {
+            screen: shell.trayMenuScreen
+            trayItem: shell.trayMenuEntry.item
+            right: shell.trayMenuRight
+            onCloseRequested: trayMenu.active = false
+        }
+    }
+    // Scripts and the smoke test: what the tray shows, and its items' clicks and menus.
+    IpcHandler {
+        target: "tray"
+        function state(): string {
+            const w = trayMenu.item;
+            return JSON.stringify({ items: shell.trayItems.map(e => ({ id: e.id, title: e.title, attention: e.attention })),
+                                    menuOpen: shell.trayMenuOpen, loaded: trayMenu.active, menuFor: shell.trayMenuId,
+                                    entries: w ? w.panel.entries.map(e => e.separator ? "-" : e.text) : [],
+                                    depth: w ? w.levels.length - 1 : 0 });
+        }
+        // as a left click on its icon
+        function activate(id: string): bool {
+            const e = shell.trayItems.find(t => t.id === id);
+            if (!e) return false;
+            e.item.activate();
+            return true;
+        }
+        // as a right click on its icon, in the first status bar
+        function openMenu(id: string): bool {
+            const e = shell.trayItems.find(t => t.id === id);
+            const w = statusWindows.instances[0]?.pill;
+            if (!e || !e.item.hasMenu || !w) return false;
+            shell.toggleTrayMenu(w.screen, e, w.margins.right + w.width - (w.tray.x + w.tray.rightOf(id)));
+            return true;
+        }
+        function closeMenu(): void { shell.closeTrayMenu(); }
+        // the open menu's entry with this text, as a click (a submenu opens in place)
+        function choose(text: string): bool {
+            const w = trayMenu.item;
+            if (!w) return false;
+            const i = w.children.findIndex(c => TrayModel.label(c.text) === text);
+            return i >= 0 && w.choose(i);
+        }
+        function back(): void { trayMenu.item?.pop(); }
     }
 
     ShelfBackend { id: shelfBackend }

@@ -1174,3 +1174,115 @@ def main(argv):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
+
+def run_tray_smoke():
+    """App indicators end to end (plan 2.10, D61): start the shell under headless sway on a private bus, then a
+    real tray app (tests/qs/apps/tray-app.qml under Qt's `qml` runtime, which Qt publishes as a StatusNotifierItem
+    with a DBusMenu): it shows in the tray; its menu opens with its entries (the mnemonic "&Open" as "Open", the
+    separator kept);
+    a submenu opens in place; choosing an entry reaches the app and closes the menu; a click activates it; and when
+    the app quits, it leaves the tray. Returns (code, report)."""
+    qs, sway, qml = shutil.which("quickshell"), shutil.which("sway"), shutil.which("qml")
+    if not qs or not sway or not qml:
+        return SKIPPED, "needs quickshell, sway and qml (qtdeclarative's runtime)"
+    shell = ROOT / "shell" / "shell.qml"
+    problems = []
+    with HeadlessSway() as comp, PrivateBus() as bus:
+        rt = comp.runtime
+        env = comp.env({"DBUS_SESSION_BUS_ADDRESS": bus.address, "XDG_SESSION_ID": "",
+                        "XDG_CONFIG_HOME": str(rt / "config"), "XDG_STATE_HOME": str(rt / "state"),
+                        "RUTILE_PALETTE": str(rt / "palette.json")})
+        shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", rt / "palette.json")
+        no_polkit_agent(rt / "config")
+
+        def ipc(*args):
+            r = subprocess.run([qs, "-p", str(shell), "ipc", "call", *args], env=env, capture_output=True, text=True,
+                               timeout=10)
+            return r.stdout.strip()
+
+        def state():
+            try:
+                return json.loads(ipc("tray", "state"))
+            except ValueError:
+                return {}
+
+        def wait(check, seconds=5):
+            deadline = time.time() + seconds
+            while time.time() < deadline:
+                s = state()
+                if check(s):
+                    return s
+                time.sleep(0.1)
+            return state()
+
+        with open(rt / "shell.log", "w") as log, open(rt / "app.log", "w") as app_log:
+            shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
+            app = None
+            try:
+                deadline = time.time() + 15
+                while "Configuration Loaded" not in (rt / "shell.log").read_text() and time.time() < deadline:
+                    time.sleep(0.1)
+                if state().get("items"):
+                    problems.append("the tray shows items before any app")
+                app = subprocess.Popen([qml, "-a", "gui", str(ROOT / "tests" / "qs" / "apps" / "tray-app.qml")],
+                                       env=dict(env, QT_QPA_PLATFORM="wayland", QT_FORCE_STDERR_LOGGING="1"),
+                                       stdout=app_log, stderr=subprocess.STDOUT)
+                s = wait(lambda s: s.get("items"), 10)
+                items = s.get("items", [])
+                if len(items) != 1 or items[0].get("title") != "Rutile tray test":
+                    problems.append(f"the app's indicator: {items}")
+                else:
+                    item = items[0]["id"]
+                    if ipc("tray", "openMenu", item) != "true":
+                        problems.append("ipc tray openMenu refused")
+                    s = wait(lambda s: s.get("entries"))
+                    if s.get("entries") != ["Open", "Muted", "-", "More", "Quit"]:
+                        problems.append(f"the menu's entries: {s.get('entries')} (state {s})")
+                    if not s.get("menuOpen"):
+                        problems.append("the menu is not open")
+                    ipc("tray", "choose", "More")
+                    s = wait(lambda s: s.get("depth") == 1)
+                    if s.get("entries") != ["Inner"]:
+                        problems.append(f"the submenu, in place: {s.get('entries')} at depth {s.get('depth')}")
+                    ipc("tray", "back")
+                    s = wait(lambda s: s.get("depth") == 0)
+                    if s.get("entries") != ["Open", "Muted", "-", "More", "Quit"]:
+                        problems.append(f"back from the submenu: {s.get('entries')}")
+                    ipc("tray", "choose", "More")
+                    wait(lambda s: s.get("depth") == 1)
+                    ipc("tray", "choose", "Inner")
+                    s = wait(lambda s: not s.get("loaded"))
+                    if s.get("loaded"):
+                        problems.append("a choice did not close the menu")
+                    ipc("tray", "activate", item)
+                    deadline = time.time() + 5
+                    while time.time() < deadline:
+                        text = (rt / "app.log").read_text()
+                        if "chose Inner" in text and "activated" in text:
+                            break
+                        time.sleep(0.1)
+                    text = (rt / "app.log").read_text()
+                    if "chose Inner" not in text:
+                        problems.append("the choice did not reach the app: " + text[-300:])
+                    if "activated" not in text:
+                        problems.append("activate did not reach the app: " + text[-300:])
+                    ipc("tray", "openMenu", item)
+                    wait(lambda s: s.get("entries"))
+                    app.terminate()
+                    app.wait(10)
+                    s = wait(lambda s: not s.get("items") and not s.get("loaded"))
+                    if s.get("items") or s.get("loaded"):
+                        problems.append(f"the app quit, its indicator and menu stayed: {s}")
+            finally:
+                if app and app.poll() is None:
+                    app.kill()
+                shell_proc.terminate()
+                try:
+                    shell_proc.wait(10)
+                except subprocess.TimeoutExpired:
+                    shell_proc.kill()
+        errors = [line for line in (rt / "shell.log").read_text().splitlines()
+                  if re.search(r"TypeError|ReferenceError|qrc:|\.qml:\d+", line) and "pipewire" not in line]
+        problems += [f"log: {line}" for line in errors[:5]]
+    return (1 if problems else 0), "\n".join(problems) or "tray smoke: passed"

@@ -65,6 +65,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | Menu, 3 items (an app's menu) | | 347 | only while open (PopupLoader); the power menu has 4 |
 | NotificationCard, one action button | 315.6 | 406.2 | header, summary and body, a tonal button, close button, state layer; the image, the button row and the reply field load only when needed. The swipe (a DragHandler, a Spring and a Translate) and the reply added the 90. Popups: at most 3 cards, in a window that exists only while there are popups (LazyLoader); the stack itself is 14.4 |
 | NotificationBell | | 66.2 | always on screen (one per screen, left of the status pill): one icon on a tonal circle |
+| TrayPill, 2 items | | 106.2 | one per screen, between the bell and the status pill, only while an app has an indicator: per icon an Image, a state layer and a MouseArea; the app's menu is a window loaded only while open |
 | NotificationPanel, 3 notifications | 1006 | 1084 | header with a Switch, a ListView of cards (rows in a ListModel synced by key, so changes animate; grouped by app) (only those in view are created; the list scrolls past 480 px), Clear all (its sweep: about 11 KiB a row, 1050 without it); only while open (LazyLoader) |
 | OsdPanel | | 136.1 | a tonal pill with a size m Slider and its PopupMotion; only from a level change until it has closed (LazyLoader) |
 | Toast, with an action | | 120.0 | an inverse-surface pill: icon, one line of text, a text Button, PopupMotion; only while there is a toast (LazyLoader) |

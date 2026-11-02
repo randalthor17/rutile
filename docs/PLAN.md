@@ -183,10 +183,15 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   back out exactly; tested in a sandbox HOME only, not yet on real apps. Not yet: per-screen
   wallpapers, fill modes other than crop, a slideshow, KDE's kdeglobals, community templates.
 
-- [ ] **2.10** App indicators (the maintainer's request, October 2026): a pill at the top right between the
-  notification bell and the status pill, showing the icons apps put in the tray (StatusNotifierItem: Discord,
-  Steam, Nextcloud and the like), with their menus on a click. It appears only while there is at least one
-  indicator, and takes no room otherwise. Types: `SystemTray`, `SystemTrayItem`, `QsMenuOpener`.
+- [x] **2.10** App indicators (the maintainer's request, October 2026; D61, `shell/bar/Tray*`): a pill at the top
+  right between the notification bell and the status pill with the icons apps put in the tray (StatusNotifierItem:
+  Discord, Steam, Nextcloud and the like; Passive ones hidden, a dot on one asking for attention). There only while
+  an item shows. Click: the app (or its menu, for a menu-only item); right click: its menu, the shared M3E Menu
+  (now with separators as segment gaps, disabled entries, check and radio marks, app icons, submenu arrows),
+  under its icon, submenus in place with a Back row; middle click and the wheel as the app asks. IPC `tray`.
+  Checked with a real tray app (Qt's, under headless sway): entries, a submenu, a choice reaching the app,
+  activation, and the app quitting with its menu open. Types: `SystemTray`, `SystemTrayItem`, `QsMenuOpener`.
+  Not checked: real apps (Discord, Steam, Nextcloud) and their icons on the maintainer's session.
 
 - [x] **2.11** No Python in the running shell (D53, the maintainer's request, October 2026): the palette from the
   wallpaper and other apps' colors run matugen and change files from QML and JS (`Files.js`, `Palette.js`,

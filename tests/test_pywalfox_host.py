@@ -258,18 +258,25 @@ class Host(unittest.TestCase):
         self.read(p)
         self.ends(p, 0)
 
+    def write_colors(self, text):
+        """As the shell writes it (Files.js): a temporary file renamed over it, so the host never polls half a file
+        (a plain write truncates first; the host could catch it empty, which made this test flaky under load)."""
+        tmp = self.colors.with_name(self.colors.name + ".rutile-new")
+        tmp.write_text(text)
+        tmp.replace(self.colors)
+
     def test_pushes_when_the_file_changes(self):
         self.colors.write_text(conf())
         p = self.start()
         self.nothing(p)
         time.sleep(0.05)
-        self.colors.write_text(conf(["#ff0000"] + COLORS[1:]))
+        self.write_colors(conf(["#ff0000"] + COLORS[1:]))
         r = self.read(p)
         self.assertEqual((r["action"], r["data"]["colors"][0]), ("action:colors", "#ff0000"), "unasked")
         self.assertEqual(self.read(p)["action"], "theme:mode")
         self.colors.unlink()
         self.nothing(p, 0.4)                      # gone: nothing to send
-        self.colors.write_text(conf(["#00ff00"] + COLORS[1:]))
+        self.write_colors(conf(["#00ff00"] + COLORS[1:]))
         self.assertEqual(self.read(p)["data"]["colors"][0], "#00ff00", "back: sent")
         self.read(p)
         self.ends(p, 0)

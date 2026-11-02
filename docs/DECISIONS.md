@@ -551,3 +551,14 @@ Found on the way: the rendered SVG (150 KB) was passed to `sh` as an argument, o
 argument, so the apply step never started and nothing was themed, silently. Rendered files are now copied from
 matugen's output folder, and an argument over the cap is an error. Checked by screenshot: a Qt 6 and a Qt 5 app,
 kcalc, Dolphin and Kate. Not checked: menus, tooltips, dialogs and other widgets that the check does not open.
+
+**D61. App indicators: our own menu over QsMenuOpener (plan 2.10).** The pill shows SystemTray's items except
+Passive ones (the StatusNotifierItem spec's "nothing to show"), in the status window's Row between the bell and
+the status pill, so it takes no room when empty. A tray item's own `display()` would show Qt's platform menu,
+which is not our style, so the menu is the shared Menu component, extended for what DBusMenu has (separators as
+gaps between segmented groups, disabled entries, check and radio marks, the app's icons, a submenu arrow),
+filled from QsMenuOpener and shown in a layer-shell window under the item's icon, loaded only while open. A
+submenu replaces the list in place with a Back row (as GNOME's), not a cascade of windows. Quickshell already
+removes DBusMenu's mnemonic marks (seen with a real app), so the text is shown as given: stripping "_" again
+would eat real underscores. Tested offscreen with stand-in items, and end to end with a real tray app (Qt's
+SystemTrayIcon under the `qml` runtime, `tests/qs/apps/tray-app.qml`) under headless sway on a private bus.

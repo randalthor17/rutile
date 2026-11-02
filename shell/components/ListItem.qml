@@ -14,6 +14,7 @@ Item {
     property string text: ""                // headline
     property string supportingText: ""
     property string iconName: ""            // leading icon
+    property string iconSource: ""          // or a leading image (an app's icon: a tray menu's entries)
     property string avatarTone: ""          // e.g. "primaryContainer": the icon in a circle of that role (its "On" color)
     property string trailingText: ""
     property bool selected: false
@@ -28,7 +29,7 @@ Item {
     readonly property bool hovered: stateLayer.hovered
     readonly property bool twoLine: supportingText !== ""
     readonly property bool hasAvatar: avatarTone !== "" && iconName !== ""
-    readonly property real leadingWidth: iconName === "" ? 0
+    readonly property real leadingWidth: iconName === "" && iconSource === "" ? 0
         : (hasAvatar ? spec.itemLeadingAvatarSize : spec.itemLeadingIconSize) + spec.itemBetweenSpace
 
     // The shape the state asks for, and the fixed outer corners of a segmented group.
@@ -113,10 +114,23 @@ Item {
 
     Loader {
         id: leading
-        active: root.iconName !== ""
+        active: root.iconName !== "" || root.iconSource !== ""
         x: root.spec.itemLeadingSpace
         anchors.verticalCenter: parent.verticalCenter
-        sourceComponent: root.hasAvatar ? avatar : plainIcon
+        sourceComponent: root.iconSource !== "" ? image : root.hasAvatar ? avatar : plainIcon
+    }
+    Component {
+        id: image
+        Image {
+            width: root.spec.itemLeadingIconSize
+            height: width
+            sourceSize.width: width
+            sourceSize.height: height
+            source: root.iconSource
+            fillMode: Image.PreserveAspectFit
+            opacity: root.enabled ? 1 : root.spec.itemDisabledLeadingIconOpacity
+            asynchronous: true
+        }
     }
     Component {
         id: plainIcon
