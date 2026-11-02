@@ -38,7 +38,7 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  choose ID         lock, suspend, logout, reboot or poweroff, as a click in the open menu
                  state
   settings       open PAGE         open the Settings app on a page ("" keeps the current one): wallpaper,
-                                   network, bluetooth, display, sound, power, input, notifications,
+                                   network, bluetooth, display, sound, power, input, apps, notifications,
                                    security, shelf, accessibility, about
                  close | toggle
                  isOpen

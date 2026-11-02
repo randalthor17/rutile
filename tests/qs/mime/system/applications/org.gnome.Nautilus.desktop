@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+Icon=org.gnome.Nautilus
+Exec=nautilus %U
+MimeType=inode/directory;application/x-gnome-saved-search;

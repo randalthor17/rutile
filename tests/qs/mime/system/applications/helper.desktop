@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Some helper
+Exec=helper %u
+NoDisplay=true
+MimeType=x-scheme-handler/https;

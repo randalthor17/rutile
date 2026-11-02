@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings > Apps**: the default app for web links, folders, email, pictures, videos, music, text and PDFs
+  (your mimeapps.list; when home-manager writes it, the page says to set them there).
 - **Settings > Power**: the battery's charge, time left or to full, and health (laptops), and the power mode
   (power saver, balanced, performance; an app holding a mode is named).
 - **Settings > Keyboard, mouse & touchpad**: key repeat delay and rate, tap to click, natural scrolling, pointer

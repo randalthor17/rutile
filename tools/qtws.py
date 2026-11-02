@@ -240,6 +240,7 @@ def qs_workspace(test):
     shutil.copytree(ROOT / "tests" / "qs" / "apps", ws / "apps")
     shutil.copytree(ROOT / "tests" / "qs" / "config", ws / "config")
     shutil.copytree(ROOT / "tests" / "qs" / "pam", ws / "pam")
+    shutil.copytree(ROOT / "tests" / "qs" / "mime", ws / "mime")
     shutil.copy(test, ws / "shell.qml")
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
     return ws

@@ -8,6 +8,7 @@ import "../qs/settingsapp/Model.js" as Model
 import "../qs/settingsapp/Pages.js" as Pages
 import "../qs/services/SettingsSchema.js" as Schema
 import "../qs/settingsapp/pages/Display.js" as Display
+import "../qs/settingsapp/pages/Apps.js" as Apps
 
 TestCase {
     id: root
@@ -257,6 +258,75 @@ TestCase {
         verify(findChild(a, "powerNothing").visible);
     }
 
+    function test_apps_model() {
+        const text = "@@entry a.desktop\nName=Alpha\nMimeType=text/plain;image/png;\n" +
+                     "@@entry b.desktop\nName=Beta\nNoDisplay=true\nMimeType=text/plain;\n" +
+                     "@@entry c.desktop\nName=Gamma\nType=Link\nMimeType=text/plain;\n" +
+                     "@@entry a.desktop\nName=Alpha again\n" +
+                     "@@list user /h/.config/mimeapps.list\n[Default Applications]\nimage/png=missing.desktop;a.desktop;\n" +
+                     "@@list other /etc/xdg/mimeapps.list\n[Default Applications]\ntext/plain=b.desktop\n@@end\n";
+        const p = Apps.parse(text);
+        compare(Object.keys(p.entries).sort().join(), "a.desktop,b.desktop", "not a Link");
+        compare(p.entries["a.desktop"].name, "Alpha", "the first file with an id wins");
+        compare(Apps.defaultFor(p, "image/png"), "a.desktop", "the first installed one named");
+        compare(Apps.defaultFor(p, "text/plain"), "b.desktop", "from a later list");
+        compare(Apps.defaultFor(p, "video/mp4"), "");
+        const text_ = Apps.KINDS.find(k => k.id === "text");
+        compare(Apps.candidates(p, text_).map(e => e.id).join(), "a.desktop,b.desktop", "a NoDisplay app only as the default");
+        const p2 = Apps.parse(text.replace("text/plain=b.desktop", "text/plain=a.desktop"));
+        compare(Apps.candidates(p2, text_).map(e => e.id).join(), "a.desktop");
+        compare(Apps.userList(p).path, "/h/.config/mimeapps.list");
+        verify(!Apps.userList(p).link);
+
+        compare(Apps.withDefault("", ["a/b", "c/d"], "x.desktop"), "[Default Applications]\na/b=x.desktop;\nc/d=x.desktop;\n");
+        compare(Apps.withDefault("[Added Associations]\nt/p=y;\n", ["a/b"], "x.desktop"),
+                "[Added Associations]\nt/p=y;\n\n[Default Applications]\na/b=x.desktop;\n");
+        compare(Apps.withDefault("[Default Applications]\na/b=old.desktop;\ne/f=keep.desktop;\n\n[Removed Associations]\nq/r=z;\n",
+                                 ["a/b"], "x.desktop"),
+                "[Default Applications]\ne/f=keep.desktop;\na/b=x.desktop;\n\n[Removed Associations]\nq/r=z;\n",
+                "replaced in place, the rest kept");
+    }
+
+    Component {
+        id: appsComp
+        QtObject {
+            property bool available: true
+            property bool managed: false
+            property string error: ""
+            property var kinds: [
+                { id: "browser", title: "Web browser", icon: "language", current: "chromium.desktop",
+                  apps: [{ id: "chromium.desktop", name: "Chromium" }, { id: "firefox.desktop", name: "Firefox" }] },
+                { id: "pdf", title: "PDF documents", icon: "picture_as_pdf", current: "", apps: [] },
+                { id: "text", title: "Text", icon: "description", current: "", apps: [{ id: "kate.desktop", name: "Kate" }] }
+            ]
+            property var calls: []
+            function setDefault(kind, app) { calls = calls.concat([kind + ":" + app]); }
+        }
+    }
+
+    function test_apps_page() {
+        const t = make("apps", appsComp);
+        const a = t.a, b = t.b;
+        const browser = findChild(a, "choice_apps.browser");
+        compare(browser.current, "Chromium");
+        verify(browser.enabled);
+        compare(findChild(a, "choice_apps.pdf").supportingText, "No app for this is installed");
+        verify(!findChild(a, "choice_apps.pdf").enabled);
+        compare(findChild(a, "choice_apps.text").current, "Not set", "apps, but no default: the system picks");
+        mouseClick(browser);
+        waitForRendering(a);
+        mouseClick(findChild(a, "settingChoice_1"));
+        compare(b.calls, ["browser:firefox.desktop"]);
+        verify(!findChild(a, "appsManaged").visible);
+        b.managed = true;
+        waitForRendering(a);
+        verify(findChild(a, "appsManaged").visible);
+        verify(!browser.enabled, "home-manager's: nothing to change here");
+        b.error = "Could not write mimeapps.list";
+        waitForRendering(a);
+        verify(findChild(a, "appsError").visible);
+    }
+
     function make(page, backendComp) {
         const s = createTemporaryObject(storeComp, root);
         const a = createTemporaryObject(appComp, root, { store: s });
@@ -400,6 +470,7 @@ TestCase {
         compare(keys("monitor")[0], "display/");
         compare(keys("power saver")[0], "power/power.mode");
         compare(keys("battery")[0], "power/power.battery");
+        compare(keys("default browser")[0], "apps/apps.defaults");
         compare(keys("bluetooth")[0], "bluetooth/");
         compare(keys("add device")[0], "bluetooth/bluetooth.available");
         verify(keys("pair").slice(0, 2).indexOf("bluetooth/bluetooth.available") >= 0);

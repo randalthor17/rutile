@@ -669,3 +669,15 @@ scrolling are written only when on, and their descriptions say that off leaves n
 writing niri's config itself keeps the maintainer's rule. Keyboard layouts are left to niri's config for now (a
 text setting needs an editor the app does not have yet).
 
+**D71. Default apps from the desktop files and mimeapps.list, read by the shell (plan 5.2).** Quickshell's
+DesktopEntry has no MIME types, and xdg-mime (xdg-utils) would be a new dependency, so the Apps page's backend
+reads them itself: one sh/sed script prints the [Desktop Entry] keys that matter of every desktop file in
+XDG_DATA_HOME and XDG_DATA_DIRS, and each mimeapps.list in the spec's order (the user's first); `Apps.js` parses
+that (the first file with an id wins; Hidden and non-Application entries are dropped; a NoDisplay app is offered
+only when it is already the default). A kind (web browser, files, email, pictures, videos, music, text, PDF) has
+MIME types; its apps are those that take the first, and its default is the first installed app a list names for
+it. Choosing one writes `[Default Applications]` for all its types into the user's mimeapps.list, keeping every
+other group and key. When that file is a link (home-manager's xdg.mimeApps), nothing is written and the page
+says to set defaults there. No default set shows "Not set": the system then picks one itself (mimeinfo.cache,
+which the page does not read).
+

@@ -174,7 +174,13 @@ TestCase {
         compare(findChild(t.a, "settingsTitle").text, "Wallpaper & style");
         for (const p of Pages.pages) verify(findChild(t.a, "settingsPage_" + p.id), p.id);
         verify(findChild(t.a, "settingsPage_wallpaper").selected);
-        mouseClick(findChild(t.a, "settingsPage_security"));
+        // the list is longer than the window now: scroll it down to Security first
+        const sec = findChild(t.a, "settingsPage_security");
+        let flick = sec.parent;
+        while (flick && flick.contentY === undefined) flick = flick.parent;
+        flick.contentY = flick.contentHeight - flick.height;
+        waitForRendering(t.a);
+        mouseClick(sec);
         waitForRendering(t.a);
         compare(t.a.currentPage, "security");
         compare(findChild(t.a, "settingsTitle").text, "Security & privacy");

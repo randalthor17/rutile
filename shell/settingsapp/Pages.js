@@ -92,6 +92,16 @@ var pages = [
         ]
     },
     {
+        id: "apps", title: "Apps", icon: "apps", tone: "tertiaryContainer",
+        summary: "Default apps", aliases: ["mimeapps", "open with", "xdg-mime"],
+        sections: [],
+        view: "pages/AppsPage.qml", backend: "pages/AppsBackend.qml",
+        entries: [
+            { key: "apps.defaults", title: "Default apps", description: "Which app opens links, folders, pictures and more",
+              aliases: ["default browser", "web browser", "file manager", "email", "pdf viewer", "image viewer", "video player"] }
+        ]
+    },
+    {
         id: "notifications", title: "Notifications", icon: "notifications", tone: "errorContainer",
         summary: "Sounds", aliases: ["alerts", "popups"],
         sections: [{ title: "", keys: ["notifications.sound"] }]

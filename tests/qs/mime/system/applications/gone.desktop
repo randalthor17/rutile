@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Gone
+Exec=gone
+Hidden=true
+MimeType=x-scheme-handler/https;
