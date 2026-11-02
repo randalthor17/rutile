@@ -256,8 +256,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   output and input, each with volume, mute and the devices to choose from (PipeWire through Quickshell). Network
   and Bluetooth done (D68): Wi-Fi's switch, the networks around (scanning while the page is open) with a
   password asked under the network, saved ones forgotten, Ethernet's state; Bluetooth's switch, paired devices
-  (connect, disconnect, forget, battery) and the devices around to pair (discovering while open). Next: Display,
-  Power, Input, Apps, Widgets.
+  (connect, disconnect, forget, battery) and the devices around to pair (discovering while open). Display done
+  (D69): each niri output's resolution, refresh rate, size, orientation, variable refresh rate and on or off,
+  through `niri msg output` (until niri restarts; a Copy button gives the KDL for niri's config). Next: Power,
+  Input, Apps, Widgets.
 
 ## Phase 6: NixOS distro (the v1 goal)
 

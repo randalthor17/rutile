@@ -646,3 +646,14 @@ BlueZ's default agent: devices that ask to confirm a code need a pairing agent, 
 are tested read only (`scan: false`); the maintainer's machine has no Wi-Fi card and no Bluetooth adapter, so
 there only the wired part and the empty states were seen for real.
 
+**D69. Display: niri's outputs through `niri msg`, changes kept by the user (plan 5.2).** The page reads
+`niri msg -j outputs` when it opens and after each change, and changes an output with `niri msg output NAME ...`
+(mode, scale, transform, vrr, on, off), one at a time. niri keeps these only until it restarts or its config
+changes that output. The shell does not write niri's config (the maintainer's rule), and an included file of
+ours would not reliably win: `output` sections are not merged between includes (niri's docs), and which of two
+for the same output applies was not established. So each output has "Keep these settings", which copies its
+KDL (`output "DP-1" { mode ...; scale ...; }`) to paste into niri's config. The last output on cannot be turned
+off from here. Flipped orientations are left to niri's config. Menus on such pages are the app's own one menu
+(ChoiceRow, which SettingsApp.choose tells instead of saving a setting). Tested with niri's real JSON and a
+stand-in `niri` (tests/qs/bin/niri); the session's niri was not touched.
+

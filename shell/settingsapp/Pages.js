@@ -48,6 +48,16 @@ var pages = [
         ]
     },
     {
+        id: "display", title: "Display", icon: "desktop_windows", tone: "tertiaryContainer",
+        summary: "Resolution, size, orientation", aliases: ["monitor", "screen", "niri outputs"],
+        sections: [],
+        view: "pages/DisplayPage.qml", backend: "pages/DisplayBackend.qml",
+        entries: [
+            { key: "display.outputs", title: "Displays", description: "Resolution, refresh rate, size and orientation",
+              aliases: ["resolution", "refresh rate", "hz", "scale", "rotate", "vrr", "freesync"] }
+        ]
+    },
+    {
         id: "sound", title: "Sound", icon: "volume_up", tone: "primaryContainer",
         summary: "Speakers, microphone", aliases: ["audio", "pipewire"],
         sections: [],

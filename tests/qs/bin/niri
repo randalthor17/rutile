@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""A stand-in for the `niri msg` command (tests/qs/tst_display_backend.qml). `niri msg -j outputs` prints the
+outputs in $FAKE_NIRI_OUTPUTS (a JSON file, niri's format); `niri msg output NAME ACTION ARGS` appends the line
+to $FAKE_NIRI_LOG and applies a scale or on/off to that file, or fails like niri for an unknown output."""
+import json
+import os
+import sys
+
+state_path, log = os.environ["FAKE_NIRI_OUTPUTS"], os.environ["FAKE_NIRI_LOG"]
+args = sys.argv[1:]
+with open(state_path) as f:
+    outputs = json.load(f)
+if args == ["msg", "-j", "outputs"]:
+    print(json.dumps(outputs))
+    sys.exit(0)
+if args[:2] == ["msg", "output"] and len(args) >= 4:
+    name, action, rest = args[2], args[3], args[4:]
+    with open(log, "a") as f:
+        f.write(" ".join(args[2:]) + "\n")
+    if name not in outputs:
+        print(f"Error: output \"{name}\" not found", file=sys.stderr)
+        sys.exit(1)
+    o = outputs[name]
+    if action == "scale":
+        o["logical"]["scale"] = float(rest[0])
+    elif action == "off":
+        o["current_mode"], o["logical"] = None, None
+    with open(state_path, "w") as f:
+        json.dump(outputs, f)
+    sys.exit(0)
+print("fake niri: not understood: " + " ".join(args), file=sys.stderr)
+sys.exit(2)

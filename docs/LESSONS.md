@@ -362,3 +362,11 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   name in the app's own icon theme and sends the result; a name it cannot find goes out as an empty pixmap
   (Quickshell: "Unable to create pixmap"). To test a host's name lookup, use an app that sends the bare name
   (libappindicator, Electron) or check the lookup itself (`rutile-shell tray iconPath NAME`).
+- **Under Quickshell, a QML file's sibling is a type only if something imports its folder.** A view loaded by URL
+  (`shell/settingsapp/pages/DisplayPage.qml`) that used `ChoiceRow` from its own folder failed with "ChoiceRow is
+  not a type", while qmltestrunner (plain Qt reads the folder) passed. Quickshell builds its `qs.*` modules from
+  what is imported. Shared types go in a module the file imports (`import qs.settingsapp`); and look at a page
+  in the real shell (a screenshot under headless sway), not only in offscreen tests.
+- **A Quickshell test only gets the `qs` modules something imports.** A test that loads a file by URL which
+  imports `qs.services` must import `qs.services` itself, as the shell does, or the file fails to load.
+

@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings > Display**: each display's resolution, refresh rate, size (scale), orientation, variable refresh
+  rate, and on or off. Changes last until niri restarts; "Keep these settings" copies them as niri config.
 - **Settings > Network and Bluetooth**: Wi-Fi on or off, the networks around (a password is asked for under the
   network; saved ones can be forgotten), Ethernet's state; Bluetooth on or off, paired devices (connect,
   disconnect, forget, battery) and the devices around to pair.

@@ -7,6 +7,7 @@ import qs.settingsapp
 import "../qs/settingsapp/Model.js" as Model
 import "../qs/settingsapp/Pages.js" as Pages
 import "../qs/services/SettingsSchema.js" as Schema
+import "../qs/settingsapp/pages/Display.js" as Display
 
 TestCase {
     id: root
@@ -72,6 +73,126 @@ TestCase {
             function toggle(id) { call("toggle:" + id); }
             function forget(id) { call("forget:" + id); }
         }
+    }
+
+    // niri's outputs as `niri msg -j outputs` gave them on the maintainer's machine (modes trimmed), and a
+    // second, rotated and scaled, and a third that is off
+    function niriOutputs() {
+        return [
+            { name: "DP-1", make: "Microstep", model: "MSI MP243X", current_mode: 1, vrr_supported: true, vrr_enabled: false,
+              modes: [{ width: 1920, height: 1080, refresh_rate: 60000, is_preferred: true },
+                      { width: 1920, height: 1080, refresh_rate: 99999, is_preferred: false },
+                      { width: 1920, height: 1080, refresh_rate: 74973, is_preferred: false },
+                      { width: 1920, height: 1080, refresh_rate: 60000, is_preferred: false },
+                      { width: 1280, height: 1024, refresh_rate: 75025, is_preferred: false },
+                      { width: 1680, height: 1050, refresh_rate: 59954, is_preferred: false }],
+              logical: { x: 0, y: 0, width: 1920, height: 1080, scale: 1.0, transform: "Normal" } },
+            { name: "HDMI-A-1", make: "Dell", model: "", current_mode: 0, vrr_supported: false, vrr_enabled: false,
+              modes: [{ width: 3840, height: 2160, refresh_rate: 60000, is_preferred: true }],
+              logical: { x: 1920, y: 0, width: 1080, height: 1920, scale: 1.3, transform: "Flipped90" } },
+            { name: "eDP-1", make: "", model: "", current_mode: null, vrr_supported: false, vrr_enabled: false,
+              modes: [{ width: 2560, height: 1600, refresh_rate: 165000, is_preferred: true }], logical: null }
+        ];
+    }
+    Component {
+        id: displayComp
+        QtObject {
+            property bool available: true
+            property var outputs: []
+            property string error: ""
+            property var calls: []
+            property string copied: ""
+            function command(name, args) { calls = calls.concat([name + " " + args.join(" ")]); }
+            function copy(text) { copied = text; }
+        }
+    }
+
+    function test_display_model() {
+        const [dp, hdmi, edp] = niriOutputs();
+        compare(Display.title(dp), "MSI MP243X");
+        compare(Display.title(hdmi), "Dell", "no model: the make");
+        compare(Display.title(edp), "eDP-1", "neither: the connector");
+        verify(Display.enabled(dp) && !Display.enabled(edp));
+        compare(Display.current(dp).refresh_rate, 99999);
+        compare(Display.resolutions(dp).map(r => r.label), ["1920 × 1080", "1680 × 1050", "1280 × 1024"], "largest first, once each");
+        compare(Display.rateLabel(59940), "59.94 Hz", "not rounded into 60");
+        compare(Display.rates(dp, 1920, 1080).map(m => Display.rateLabel(m.refresh_rate)), ["100 Hz", "74.97 Hz", "60 Hz"],
+                "fastest first, a rate once");
+        compare(Display.modeArg(Display.current(dp)), "1920x1080@99.999");
+        compare(Display.modeFor(dp, 1920, 1080).refresh_rate, 60000, "a resolution chosen: its preferred mode");
+        compare(Display.modeFor(dp, 1280, 1024).refresh_rate, 75025, "else the fastest");
+        compare(Display.scales(dp).map(Display.scaleLabel), ["100%", "125%", "150%", "175%", "200%", "250%", "300%"]);
+        verify(Display.scales(hdmi).indexOf(1.3) >= 0, "a scale set elsewhere stays a choice");
+        compare(Display.transformLabel("90"), "90°");
+        compare(Display.transformArg("270°"), "270");
+        compare(Display.enabledCount(niriOutputs()), 2);
+        compare(Display.kdl(dp), 'output "DP-1" {\n    mode "1920x1080@99.999"\n    scale 1\n}\n');
+        compare(Display.kdl(hdmi), 'output "HDMI-A-1" {\n    mode "3840x2160@60.000"\n    scale 1.3\n    transform "flipped-90"\n}\n',
+                "niri's config spelling");
+        compare(Display.kdl(edp), 'output "eDP-1" {\n    off\n}\n');
+        const vrr = Object.assign({}, dp, { vrr_enabled: true });
+        verify(Display.kdl(vrr).indexOf("    variable-refresh-rate\n") > 0);
+    }
+
+    function test_display_page() {
+        const t = make("display", displayComp);
+        const a = t.a, b = t.b;
+        b.outputs = niriOutputs();
+        waitForRendering(a);
+        verify(!findChild(a, "displayUnavailable").visible);
+        compare(findChild(a, "displayOn_0").supportingText, "1920 × 1080, 100 Hz");
+        verify(findChild(a, "displayVrr_0").visible, "VRR where supported");
+        verify(!findChild(a, "displayVrr_1").visible);
+        compare(findChild(a, "choice_display.DP-1.scale").current, "100%");
+        compare(findChild(a, "choice_display.HDMI-A-1.scale").current, "130%");
+        compare(findChild(a, "displayOn_2").supportingText, "Off");
+        verify(!findChild(a, "choice_display.eDP-1.resolution").visible, "off: only its switch");
+
+        // a choice through the app's menu
+        mouseClick(findChild(a, "choice_display.DP-1.scale"));
+        waitForRendering(a);
+        compare(a.menuKey, "display.DP-1.scale");
+        mouseClick(findChild(a, "settingChoice_2"));
+        compare(b.calls, ["DP-1 scale 1.5"]);
+        compare(a.menuKey, "", "closed");
+        mouseClick(findChild(a, "choice_display.DP-1.resolution"));
+        waitForRendering(a);
+        mouseClick(findChild(a, "settingChoice_2"));
+        compare(b.calls[1], "DP-1 mode 1280x1024@75.025");
+        mouseClick(findChild(a, "choice_display.DP-1.rate"));
+        waitForRendering(a);
+        mouseClick(findChild(a, "settingChoice_2"));
+        compare(b.calls[2], "DP-1 mode 1920x1080@60.000");
+        mouseClick(findChild(a, "choice_display.DP-1.transform"));
+        waitForRendering(a);
+        mouseClick(findChild(a, "settingChoice_1"));
+        compare(b.calls[3], "DP-1 transform 90");
+        mouseClick(findChild(a, "displayVrrSwitch_0"));
+        compare(b.calls[4], "DP-1 vrr on");
+        mouseClick(findChild(a, "displayCopy_0"));
+        compare(b.copied, Display.kdl(niriOutputs()[0]));
+
+        // the last output on cannot be turned off
+        verify(findChild(a, "displaySwitch_0").enabled, "two on: either can go off");
+        const flick = findChild(a, "settingsPageFlick");
+        flick.contentY = flick.contentHeight - flick.height;           // the third output, below
+        waitForRendering(a);
+        mouseClick(findChild(a, "displaySwitch_2"));
+        compare(b.calls[b.calls.length - 1], "eDP-1 on");
+        b.outputs = [niriOutputs()[0]];
+        waitForRendering(a);
+        verify(!findChild(a, "displaySwitch_0").enabled, "the only one on stays on");
+        const n = b.calls.length;
+        mouseClick(findChild(a, "displayOn_0"));
+        compare(b.calls.length, n, "a click on its row does nothing either");
+
+        b.error = "Error: output not found";
+        waitForRendering(a);
+        verify(findChild(a, "displayError").visible, "niri's complaint shows");
+        b.available = false;
+        waitForRendering(a);
+        verify(findChild(a, "displayUnavailable").visible);
+        verify(!findChild(a, "displayOn_0"));
     }
 
     function make(page, backendComp) {
@@ -213,6 +334,8 @@ TestCase {
         compare(keys("wi-fi")[0], "network/network.wifi");
         verify(keys("password").indexOf("network/network.wifi") >= 0, "beside the polkit agent's passwords");
         compare(keys("ethernet")[0], "network/network.ethernet");
+        compare(keys("resolution")[0], "display/display.outputs");
+        compare(keys("monitor")[0], "display/");
         compare(keys("bluetooth")[0], "bluetooth/");
         compare(keys("add device")[0], "bluetooth/bluetooth.available");
         verify(keys("pair").slice(0, 2).indexOf("bluetooth/bluetooth.available") >= 0);

@@ -84,10 +84,13 @@ Rectangle {
         menu.at = at;
         menuKey = row.row.key;
     }
+    // a setting's row saves the choice; a page's own row (ChoiceRow) is told and does the rest
     function choose(index) {
         const r = menuRow;
         menuKey = "";
-        if (r) store.set(r.row.key, r.row.choices[index]);
+        if (!r) return;
+        if (typeof r.choose === "function") r.choose(index);
+        else store.set(r.row.key, r.row.choices[index]);
     }
     function segment(i, n) {
         return n === 1 ? "single" : i === 0 ? "first" : i === n - 1 ? "last" : "middle";
