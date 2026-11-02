@@ -635,3 +635,14 @@ devices (`Pipewire.nodes` that have audio and are not streams), choosing one set
 `preferredDefaultAudioSink` (or Source), a hint PipeWire follows when it can; the page shows the default in use.
 No per-app volumes (Googlebook's page has none).
 
+**D68. Network and Bluetooth pages (plan 5.2).** Two pages as D67 has them, over Quickshell's Networking
+(NetworkManager) and Bluetooth (BlueZ). While a page is open its backend scans (the Wi-Fi device's
+`scannerEnabled`, the adapter's `discovering`, through Bindings that restore the old value when it unloads), as
+Googlebook's pages do. Wi-Fi networks are one entry per name (the strongest), the connected one first; a secured
+network that is not saved asks for its password in a field under it before connecting (`connectWithPsk`), and a
+refused password (`connectionFailed` NoSecrets) asks again with "Wrong password". A Bluetooth device that is not
+paired is trusted and paired on a click, and connected once paired (only when paired from the page). Pairing uses
+BlueZ's default agent: devices that ask to confirm a code need a pairing agent, not built yet. The real backends
+are tested read only (`scan: false`); the maintainer's machine has no Wi-Fi card and no Bluetooth adapter, so
+there only the wired part and the empty states were seen for real.
+

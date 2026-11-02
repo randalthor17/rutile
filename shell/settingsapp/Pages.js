@@ -24,6 +24,30 @@ var pages = [
         ]
     },
     {
+        id: "network", title: "Network", icon: "wifi", tone: "primaryContainer",
+        summary: "Wi-Fi, Ethernet", aliases: ["internet", "networkmanager"],
+        sections: [],
+        view: "pages/NetworkPage.qml", backend: "pages/NetworkBackend.qml",
+        entries: [
+            { key: "network.wifi", title: "Wi-Fi", description: "Wireless networks, and their passwords",
+              aliases: ["wireless", "wlan", "password", "hotspot"] },
+            { key: "network.ethernet", title: "Ethernet", description: "Wired connections",
+              aliases: ["wired", "cable", "lan"] }
+        ]
+    },
+    {
+        id: "bluetooth", title: "Bluetooth", icon: "bluetooth", tone: "secondaryContainer",
+        summary: "Devices", aliases: ["bluez"],
+        sections: [],
+        view: "pages/BluetoothPage.qml", backend: "pages/BluetoothBackend.qml",
+        entries: [
+            { key: "bluetooth.paired", title: "Paired devices", description: "Connect, disconnect or forget a device",
+              aliases: ["earbuds", "mouse", "keyboard", "controller", "connect"] },
+            { key: "bluetooth.available", title: "Available devices", description: "Pair a new device",
+              aliases: ["pair", "add device", "new device"] }
+        ]
+    },
+    {
         id: "sound", title: "Sound", icon: "volume_up", tone: "primaryContainer",
         summary: "Speakers, microphone", aliases: ["audio", "pipewire"],
         sections: [],

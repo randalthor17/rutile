@@ -253,8 +253,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Widgets, Shelf, Apps, Power, Input, About. Wallpaper & style done (D65): mode (dark or light), color style,
   contrast, the seed color (a swatch row, the first custom row); the palette renders again on any of them, and
   everything that takes the shell's colors follows (checked by screenshots in light mode). Sound done (D67): the
-  output and input, each with volume, mute and the devices to choose from (PipeWire through Quickshell). Next:
-  Network & Bluetooth, Display, Power, Input, Apps, Widgets.
+  output and input, each with volume, mute and the devices to choose from (PipeWire through Quickshell). Network
+  and Bluetooth done (D68): Wi-Fi's switch, the networks around (scanning while the page is open) with a
+  password asked under the network, saved ones forgotten, Ethernet's state; Bluetooth's switch, paired devices
+  (connect, disconnect, forget, battery) and the devices around to pair (discovering while open). Next: Display,
+  Power, Input, Apps, Widgets.
 
 ## Phase 6: NixOS distro (the v1 goal)
 

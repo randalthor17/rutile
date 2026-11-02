@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings > Network and Bluetooth**: Wi-Fi on or off, the networks around (a password is asked for under the
+  network; saved ones can be forgotten), Ethernet's state; Bluetooth on or off, paired devices (connect,
+  disconnect, forget, battery) and the devices around to pair.
 - **Settings > Sound**: the output and the microphone, each with its volume, mute and the devices to choose
   from. Search finds them ("microphone", "headphones").
 - **Flatpak apps in the shell's look** (Settings > Wallpaper & style > Flatpak apps > Set up…, or
