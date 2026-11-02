@@ -207,10 +207,10 @@ in
       };
       qt.style = lib.mkOption {
         type = lib.types.str;
-        default = "Breeze";
+        default = "kvantum";
         description = ''
-          The Qt style (both follow the palette): Breeze (KDE's, installed for Qt 5 and 6, as KDE apps use) or
-          Fusion (Qt's own, plainer).'';
+          The Qt style: kvantum (Kvantum with the shell's own theme, D60, drawn like the GTK apps and recolored
+          with the palette), Breeze (KDE's, following the palette) or Fusion (Qt's own, plainer).'';
       };
       kde.enable = lib.mkOption {
         type = lib.types.bool;
@@ -350,10 +350,15 @@ in
         enable = true;
         platformTheme.name = "qtct"; # QT_QPA_PLATFORMTHEME=qt5ct, which qt6ct answers too
       };
-      home.packages = lib.optionals (th.qt.style == "Breeze") [
-        pkgs.kdePackages.breeze
-        pkgs.kdePackages.breeze.qt5
-      ];
+      home.packages =
+        lib.optionals (th.qt.style == "kvantum") [
+          pkgs.qt6Packages.qtstyleplugin-kvantum
+          pkgs.libsForQt5.qtstyleplugin-kvantum
+        ]
+        ++ lib.optionals (th.qt.style == "Breeze") [
+          pkgs.kdePackages.breeze
+          pkgs.kdePackages.breeze.qt5
+        ];
       # written into their (mutable) files at activation: the shell sets the color keys in the same files
       qt.kde.settings = {
         "qt5ct/qt5ct.conf" = qtctSettings qt5Font;
@@ -371,7 +376,9 @@ in
           };
           WM.activeFont = qt6Font font.size;
         }
-        // lib.optionalAttrs (th.icons.qt.name != null) { Icons.Theme = th.icons.qt.name; };
+        // lib.optionalAttrs (th.icons.qt.name != null) { Icons.Theme = th.icons.qt.name; }
+        # KDE apps pick their style from here, not from qt5ct/qt6ct
+        // lib.optionalAttrs th.qt.enable { KDE.widgetStyle = th.qt.style; };
     })
     (lib.mkIf (th.fonts.enable && (th.gtk.enable || th.qt.enable || th.kde.enable)) {
       fonts.fontconfig = {

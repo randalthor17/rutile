@@ -300,6 +300,7 @@ def main():
             problems.append(f"{name}: the same main color with theming off ({got['common'][0][0]})")
         print(f"{name:11} on: {got.get('common', got)}  off: {before.get('common', before)}")
     print("fonts:", on["fc-match sans-serif"], on["gtk4 settings"])
+    print("the shell's app colors:", on["appcolors"])
     print("screenshots:", out_dir)
     for p in problems:
         print("PROBLEM:", p)

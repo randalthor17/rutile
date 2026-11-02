@@ -536,3 +536,18 @@ shell's gtk, qt and kde switches on (locked in Settings, as anything set in Nix)
   KDE names (Dolphin's toolbar was empty), while KDE recolors Breeze's to the scheme. Checked in kcalc, Dolphin,
   Kate, a Qt 6 and a Qt 5 app (qt5ct's own windows; qt5ct.conf gets Qt 5's font format). A config that
   home-manager links and that already has our line (gtk.css importing rutile.css) is not reported.
+
+**D60. Qt and KDE apps draw like the GTK apps: Rutile's own Kvantum theme (amends D59).** The maintainer
+(November 2026) wanted Qt apps to look like the GTK 3/4 ones, and approved Kvantum but not KvLibadwaita (not
+maintained). `tools/gen_kvantum.py` generates our own theme, `theme/apps/kvantum.svg` and `kvantum.kvconfig`,
+as matugen templates: libadwaita's look as adw-gtk3 draws it beside them (buttons and entries filled with the text
+color at 10/15/30%, 6 px corners, an accent ring on focused entries, accent checks, radios, slider and progress,
+pill scrollbars without a groove, menus as rounded popovers with rounded items, gtk.css's color roles). Element
+names and keys follow Kvantum's documentation; nothing is copied from its (GPL) themes. The shell's Qt switch
+writes it to `~/.config/Kvantum/Rutile/` and selects it in `~/.config/Kvantum/kvantum.kvconfig` (that key kept
+and put back like the others); the home-manager module's Qt style is `kvantum` by default (Breeze and Fusion
+remain), with Kvantum's Qt 5 and 6 plugins, and KDE apps get it through kdeglobals' `[KDE] widgetStyle`.
+Found on the way: the rendered SVG (150 KB) was passed to `sh` as an argument, over Linux's 128 KiB cap per
+argument, so the apply step never started and nothing was themed, silently. Rendered files are now copied from
+matugen's output folder, and an argument over the cap is an error. Checked by screenshot: a Qt 6 and a Qt 5 app,
+kcalc, Dolphin and Kate. Not checked: menus, tooltips, dialogs and other widgets that the check does not open.

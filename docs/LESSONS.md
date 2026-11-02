@@ -354,3 +354,7 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **The test apps see the real system bus.** In the theming check, Dolphin listed the machine's real drives
   (UDisks2 on the system bus, read-only). Harmless for a screenshot, but a sandbox HOME and session bus do not
   isolate an app from the system bus; nothing that writes there may run in a test.
+- **One command-line argument is capped at 128 KiB on Linux (MAX_ARG_STRLEN), whatever ARG_MAX says.** Passing a
+  150 KB file's text to `sh -c` as an argument made the Process never start, and the service waited forever with
+  no error (November 2026, the Kvantum SVG). Pass files by path or on stdin; `Files.applyCommand` now refuses an
+  argument over 120 000 characters.

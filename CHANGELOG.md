@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Qt and KDE apps look like the GTK apps**: Rutile's own Kvantum theme (rounded, filled buttons and fields,
+  accent checks and sliders, thin scrollbars, rounded menus) in the shell's colors, the default Qt style with
+  `programs.rutile.theming`. GTK 4 apps without libadwaita (the print editor and the like) are themed too.
 - **GTK, Qt and KDE apps in the shell's look** (`programs.rutile.theming.enable = true`, home-manager): GTK 3 and
   libadwaita apps, GTK 4 apps without libadwaita, Qt 5 and 6 apps (Breeze style) and KDE apps (Dolphin, Kate) take
   the shell's colors and Google Sans Flex, with

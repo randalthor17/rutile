@@ -219,7 +219,8 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 
 Tool inventory (every script has a docstring with usage): `tools/gen_tokens.py` and `tools/gen_components.py`
 generate token JSON from the vendored Kotlin sources; `tools/gen_qml.py` generates the QML singletons; `tools/gen_settings.py` checks `settings/schema.json` and
-generates `shell/services/SettingsSchema.js` from it;
+generates `shell/services/SettingsSchema.js` from it; `tools/gen_kvantum.py` generates the Kvantum theme templates
+(`theme/apps/kvantum.svg`, `.kvconfig`, D60);
 `tools/palette.py` renders and validates `palette.json` for development (the shell does its own, D53); `tools/qtws.py` builds the Qt workspace and runs
 tests, lint, GPU tests and gallery renders, the Quickshell tests (`test-qs`) and the real shell under a headless
 sway (`test-wayland`); `tools/fontconf.py` writes the dev shell's fontconfig;

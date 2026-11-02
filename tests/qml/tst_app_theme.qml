@@ -25,7 +25,7 @@ TestCase {
     function run(files, ops) {
         const out = Object.assign({}, files);
         for (const o of ops) {
-            if (o.op === "write") out[o.path] = o.text;
+            if (o.op === "write" || o.op === "copy") out[o.path] = o.text;
             else if (o.op === "remove") out[o.path] = null;
             else if (o.op === "move") { out[o.to] = out[o.from]; out[o.from] = null; }
         }
@@ -294,6 +294,30 @@ TestCase {
         compare(AppTheme.setKey("x = 1\n", null, "k", "v"), "k = v\nx = 1\n");
         compare(AppTheme.setKey("[A]\nx=1\n", "A", "k", "v"), "[A]\nx=1\nk=v\n", "into the last section, not a second one");
         compare(AppTheme.setKey("[A]\nk=1\n[B]\nz=0\n", "A", "k", "2"), "[A]\nk=2\n[B]\nz=0\n", "in place");
+    }
+
+    // Rendered files can be copied from matugen's output folder: Linux caps one argument at 128 KiB, and the Kvantum
+    // theme's SVG is larger (the apply step never started, and nothing was themed).
+    function test_rendered_files_copied_when_given_their_source() {
+        const p = AppTheme.plan({ dirs: dirs, wanted: ["kitty"], done: {}, rendered: rendered,
+                                  files: { [built]: "", "/h/.config/kitty/kitty.conf": "x\n" },
+                                  sources: { "kitty.conf": "/run/w/out/kitty.conf" } });
+        const copy = p.ops.filter(o => o.op === "copy");
+        compare(copy.length, 1);
+        compare(copy[0].from, "/run/w/out/kitty.conf");
+        compare(copy[0].path, "/h/.config/kitty/rutile-colors.conf");
+        compare(p.ops.filter(o => o.op === "write" && o.path === "/h/.config/kitty/rutile-colors.conf").length, 0,
+                "not passed as text");
+        verify(p.ops.some(o => o.op === "write" && o.path === "/h/.config/kitty/kitty.conf"), "edits still are");
+        const files = run({ "/h/.config/kitty/kitty.conf": "x\n" }, p.ops);
+        const again = AppTheme.plan({ dirs: dirs, wanted: ["kitty"], done: p.done, rendered: rendered,
+                                      files: Object.assign({ [built]: "" }, files), sources: { "kitty.conf": "/run/w/out/kitty.conf" } });
+        compare(again.ops.length, 0, "unchanged: no copy");
+        const args = Files.applyCommand(copy);
+        compare(args.slice(4).join("|"), "copy|/run/w/out/kitty.conf|/h/.config/kitty/rutile-colors.conf|644");
+        let threw = "";
+        try { Files.applyCommand([{ op: "write", path: "/p", text: "x".repeat(200000) }]); } catch (e) { threw = e.message; }
+        verify(threw.indexOf("too large") >= 0, "an argument over the cap is refused, not a process that never starts");
     }
 
     // ---- Files.js ----

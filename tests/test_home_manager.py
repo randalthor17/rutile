@@ -153,7 +153,8 @@ class ShellModule(unittest.TestCase):
         self.assertEqual(gtk["font"]["name"], "Google Sans Flex")
         self.assertEqual(qt["platformTheme"]["name"], "qtct")
         q6 = qt["kde"]["settings"]["qt6ct/qt6ct.conf"]
-        self.assertEqual(q6["Appearance"]["style"], "Breeze", "Fusion looked plain; KDE apps use Breeze anyway")
+        self.assertEqual(q6["Appearance"]["style"], "kvantum", "the shell's own Kvantum theme (D60)")
+        self.assertEqual(qt["kde"]["settings"]["kdeglobals"]["KDE"]["widgetStyle"], "kvantum", "KDE apps too")
         self.assertEqual(q6["Fonts"]["general"], '"Google Sans Flex,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"',
                          "quoted: QSettings reads an unquoted comma as a list")
         self.assertEqual(qt["kde"]["settings"]["qt5ct/qt5ct.conf"]["Fonts"]["general"], '"Google Sans Flex,11,-1,5,50,0,0,0,0,0"',

@@ -69,12 +69,20 @@ Singleton {
         job.running = true;
     }
     function apply(files) {
-        const p = AppTheme.plan({ dirs: dirs, wanted: job.target, done: done, files: files, rendered: job.rendered });
+        // the rendered files are copied from matugen's output folder (an argument is capped at 128 KiB)
+        const sources = {};
+        for (const name in job.rendered) sources[name] = workDir + "/out/" + name;
+        const p = AppTheme.plan({ dirs: dirs, wanted: job.target, done: done, files: files, rendered: job.rendered,
+                                  sources: sources });
         job.done = p.done;
         job.warning = p.errors.join("; ");
         if (p.ops.length === 0) return finish(true, "");
         job.stage = "apply";
-        job.command = Files.applyCommand(p.ops);
+        try {
+            job.command = Files.applyCommand(p.ops);
+        } catch (e) {
+            return finish(false, String(e.message || e));
+        }
         job.running = true;
     }
     function finish(ok, error) {

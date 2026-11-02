@@ -32,9 +32,14 @@ function apps(dirs) {
         gtk: { title: "GTK 3 and 4",
                files: [["gtk.css", c + "/gtk-3.0/rutile.css"], ["gtk4.css", c + "/gtk-4.0/rutile.css"]],
                blocks: [gtk(3), gtk(4)] },
-        qt: { title: "Qt (qt5ct, qt6ct)",
-              files: [["qtct.conf", c + "/qt5ct/colors/rutile.conf"], ["qtct.conf", c + "/qt6ct/colors/rutile.conf"]],
-              keys: qtKeys("qt5ct").concat(qtKeys("qt6ct")) },
+        // the palette for qt5ct/qt6ct, and Rutile's Kvantum theme (D60) for the Kvantum style
+        qt: { title: "Qt (qt5ct, qt6ct, Kvantum)",
+              files: [["qtct.conf", c + "/qt5ct/colors/rutile.conf"], ["qtct.conf", c + "/qt6ct/colors/rutile.conf"],
+                      ["kvantum.svg", c + "/Kvantum/Rutile/Rutile.svg"],
+                      ["kvantum.kvconfig", c + "/Kvantum/Rutile/Rutile.kvconfig"]],
+              keys: qtKeys("qt5ct").concat(qtKeys("qt6ct"),
+                                           [{ file: c + "/Kvantum/kvantum.kvconfig", section: "General", key: "theme",
+                                              value: "Rutile" }]) },
         // KDE apps outside Plasma read their colors from kdeglobals' [Colors:*] groups: every key of the rendered
         // scheme goes there (each one's old value kept), and the scheme itself is installed for their menus.
         kde: { title: "KDE apps", files: [["kdeglobals.colors", dirs.data + "/color-schemes/Rutile.colors"]],
@@ -204,7 +209,9 @@ function firefoxManifest(dirs) {
                             allowed_extensions: ["pywalfox@frewacom.org"] }, null, 2) + "\n";
 }
 
-// input: {dirs, wanted: [app], done: {app: record}, files: {path: text|null}, rendered: {template: text}}
+// input: {dirs, wanted: [app], done: {app: record}, files: {path: text|null}, rendered: {template: text},
+//         sources: {template: path of its rendered file} (optional: then those files are copied, not passed as text;
+//         one argument is capped at 128 KiB, and the Kvantum theme's SVG is larger)}
 // Returns {ops: [Files.js ops], done: the new records, themed: [app], unknown: [app], errors: [text]}. Firefox is left
 // out (an error says why) while its host is not built.
 function plan(input) {
@@ -301,7 +308,14 @@ function plan(input) {
         record.previous = record.previous || {};
         var changed = false;
         a.files.forEach(function (f) {
-            changed = write(f[1], input.rendered[f[0]]) || changed;
+            var source = (input.sources || {})[f[0]];
+            if (source && files[f[1]] !== input.rendered[f[0]]) {
+                files[f[1]] = input.rendered[f[0]];
+                ops.push({ op: "copy", from: source, path: f[1], text: input.rendered[f[0]], mode: "644" });
+                changed = true;
+            } else if (!source) {
+                changed = write(f[1], input.rendered[f[0]]) || changed;
+            }
             if (record.files.indexOf(f[1]) < 0) record.files.push(f[1]);
         });
         (a.blocks || []).forEach(function (b) {

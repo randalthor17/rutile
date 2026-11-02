@@ -5,6 +5,7 @@
 .pragma library
 
 var MARK = "@@rutile-file:";
+var MAX_ARG = 120000;        // characters; under Linux's 131072-byte cap per argument, with room for UTF-8
 
 // Prints each file as "\n@@rutile-file:<1 or 0>:<path>\n" and its text (1: it exists, 0: it does not). A path given
 // as "?<path>" is only checked for existence: its text is "" (it exists) or null, under the key "?<path>"; one
@@ -18,14 +19,16 @@ var READ_SCRIPT = 'for f do\n' +
     'else printf "\\n' + MARK + '0:%s\\n" "$f"; fi\n' +
     'done\n';
 
-// Ops in a row: write PATH TEXT MODE | remove PATH | move FROM TO | signal SIG PATTERN. A write goes to a temporary
-// file beside the target and is renamed over it, so a reader never sees half a file. It goes on after a failed op
+// Ops in a row: write PATH TEXT MODE | copy FROM PATH MODE | remove PATH | move FROM TO | signal SIG PATTERN. A write
+// (or copy) goes to a temporary file beside the target and is renamed over it, so a reader never sees half a file. It goes on after a failed op
 // and exits 1 at the end; a signal no program took is not a failure.
 var APPLY_SCRIPT = 'rc=0\n' +
     'while [ $# -gt 0 ]; do\n' +
     '  case "$1" in\n' +
     '  write) mkdir -p -- "$(dirname -- "$2")" && printf "%s" "$3" > "$2.rutile-new" && chmod "$4" "$2.rutile-new" ' +
     '&& mv -f -- "$2.rutile-new" "$2" || rc=1; shift 4;;\n' +
+    '  copy) mkdir -p -- "$(dirname -- "$3")" && cp -- "$2" "$3.rutile-new" && chmod "$4" "$3.rutile-new" ' +
+    '&& mv -f -- "$3.rutile-new" "$3" || rc=1; shift 4;;\n' +
     '  remove) rm -f -- "$2" || rc=1; shift 2;;\n' +
     '  move) mkdir -p -- "$(dirname -- "$3")" && mv -f -- "$2" "$3" || rc=1; shift 3;;\n' +
     '  signal) pkill "-$2" -f "$3"; shift 3;;\n' +
@@ -66,11 +69,15 @@ function applyCommand(ops) {
     for (var i = 0; i < ops.length; i++) {
         var o = ops[i];
         if (o.op === "write") args.push("write", o.path, o.text, o.mode || "644");
+        else if (o.op === "copy") args.push("copy", o.from, o.path, o.mode || "644");
         else if (o.op === "remove") args.push("remove", o.path);
         else if (o.op === "move") args.push("move", o.from, o.to);
         else if (o.op === "signal") args.push("signal", o.sig, o.pattern);
         else throw new Error("unknown op " + o.op);
     }
+    // Linux refuses a single argument over 128 KiB (MAX_ARG_STRLEN): the process would never start
+    for (var j = 0; j < args.length; j++)
+        if (args[j].length > MAX_ARG) throw new Error("a file too large to pass as text (" + args[j].length + " bytes)");
     return args;
 }
 
