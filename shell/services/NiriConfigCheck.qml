@@ -27,7 +27,7 @@ Singleton {
         pending = false;
         if (included || reminded) return;
         reminded = true;
-        ToastService.show('niri needs include "rutile.kdl" at the end of ' + dir + "/config.kdl", { icon: "info" });
+        ToastService.show('niri needs include optional=true "rutile.kdl" at the end of ' + dir + "/config.kdl", { icon: "info" });
     }
 
     FileView {

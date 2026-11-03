@@ -42,7 +42,7 @@ ShellRoot {
                     t.done();
                     return;
                 }
-                t.verify(ToastService.current.text.indexOf('include "rutile.kdl"') >= 0, ToastService.current.text);
+                t.verify(ToastService.current.text.indexOf('include optional=true "rutile.kdl"') >= 0, ToastService.current.text);
                 t.verify(ToastService.current.text.indexOf(root.conf) >= 0, "and where");
                 ToastService.done(ToastService.current.id);
                 Settings.set("input.enabled", false);

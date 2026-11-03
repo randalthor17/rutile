@@ -55,8 +55,12 @@ What `enable` gives:
   the end of `~/.config/niri/config.kdl` yourself**, so Rutile's settings come after yours and win:
 
   ```kdl
-  include "rutile.kdl"
+  include optional=true "rutile.kdl"
   ```
+
+  `optional=true` (niri 26.04 and later) keeps niri's config valid while the file is not there (Rutile not
+  installed yet, or `programs.rutile.niri.enable = false`): niri only logs a warning, and picks the file up as
+  soon as it appears. A plain `include "rutile.kdl"` makes a missing file an error.
 
   With home-manager's niri module, put it in `wayland.windowManager.niri.extraConfig` (or the module's own
   include option). Until it is there, every home-manager switch prints a reminder, and the shell says so in a

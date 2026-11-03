@@ -4,8 +4,9 @@
 #                                      `rutile-shell` command (rutile-shell ipc call lock lock), and niri's side:
 #                                      a layer rule so the power menu and the password dialog blur windows, not
 #                                      only the wallpaper, and (opt-in) keybinds for the shell, in
-#                                      ~/.config/niri/rutile.kdl. Add `include "rutile.kdl"` at the end of your
-#                                      niri config.kdl yourself; it is never changed for you (D72).
+#                                      ~/.config/niri/rutile.kdl. Add `include optional=true "rutile.kdl"` at
+#                                      the end of your niri config.kdl yourself; it is never changed for you
+#                                      (D72). optional=true: no error while the file is not there.
 #   programs.rutile.theming.enable     GTK, Qt and KDE apps set up to wear the shell's colors, its font and an icon
 #                                      theme (D59): adw-gtk3 for GTK 3, a dark color scheme, gtk.css importing the
 #                                      shell's colors, qt5ct/qt6ct with Fusion, kdeglobals' fonts, and the shell's
@@ -170,7 +171,8 @@ in
         description = ''
           Write Rutile's part of niri's configuration to ~/.config/niri/rutile.kdl (the blur layer rule, the binds
           if enabled, and the includes of the files the shell writes: niri's colors, Settings > Input). Add
-          `include "rutile.kdl"` at the end of your niri config.kdl yourself: it is never changed for you.'';
+          `include optional=true "rutile.kdl"` at the end of your niri config.kdl yourself (optional: no error
+          while the file is not there, niri 26.04 and later); it is never changed for you.'';
       };
       binds = {
         enable = lib.mkEnableOption ''
@@ -457,7 +459,7 @@ in
           niriConf="${config.xdg.configHome}/niri/config.kdl"
           if ! ${pkgs.gnugrep}/bin/grep -Eqs '^[[:space:]]*include.*rutile\.kdl' "$niriConf"; then
             echo "Rutile: niri does not include Rutile's part yet. Add this line at the end of $niriConf:"
-            echo '    include "rutile.kdl"'
+            echo '    include optional=true "rutile.kdl"'
           fi
         '';
       };

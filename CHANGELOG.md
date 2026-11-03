@@ -10,8 +10,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 - **Settings > Shelf works**: the pinned apps in order, each moved up or down or unpinned, and back to the
   default. Pins written as `firefox.desktop` in Nix work too.
 - **niri: Rutile's part is a file you include.** `~/.config/niri/rutile.kdl` is no longer added to your niri
-  config for you, even with home-manager's niri module. Add `include "rutile.kdl"` at the end of your
-  config.kdl; a home-manager switch reminds you until it is there.
+  config for you, even with home-manager's niri module. Add `include optional=true "rutile.kdl"` at the end of
+  your config.kdl (optional: no error while the file is not there); a home-manager switch reminds you until it
+  is there.
 - **Settings > Apps**: the default app for web links, folders, email, pictures, videos, music, text and PDFs
   (your mimeapps.list; when home-manager writes it, the page says to set them there).
 - **Settings > Power**: the battery's charge, time left or to full, and health (laptops), and the power mode

@@ -139,7 +139,7 @@ class ShellModule(unittest.TestCase):
             conf = Path(d) / "niri" / "config.kdl"
             conf.parent.mkdir()
             run = lambda: subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=30).stdout
-            self.assertIn('include "rutile.kdl"', run(), "no config yet: says what to add")
+            self.assertIn('include optional=true "rutile.kdl"', run(), "no config yet: says what to add")
             conf.write_text('// include "rutile.kdl"\ninput {}\n')
             self.assertIn("at the end of " + str(conf), run(), "a comment does not count")
             conf.write_text('input {}\ninclude "rutile.kdl"\n')
