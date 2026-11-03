@@ -49,7 +49,11 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
   widgets        preview PATH      show a widget file in a window with its live data; saving the file shows it
                                    again (the package's examples: share/rutile/widgets/examples)
                  close
-                 state
+                 state             the preview's
+                 edit | done       move, resize, add and remove the desktop's widgets (or right-click the desktop)
+                 add PATH          put a widget file on the focused screen's desktop
+                 remove ID         take one off
+                 layout            what each screen has, with the ids
   appcolors      state             colors for other apps (Settings, Wallpaper: off unless switched on)
   polkit         cancel            cancel the open password dialog
                  state
@@ -218,7 +222,7 @@ case "$1" in
                 exec "$qs" ipc -p "$qml" call settings open ""
             fi
             # a widget file to preview: the shell needs its full path
-            if [ "$1" = widgets ] && [ "${2-}" = preview ] && [ $# -eq 3 ]; then
+            if [ "$1" = widgets ] && { [ "${2-}" = preview ] || [ "${2-}" = add ]; } && [ $# -eq 3 ]; then
                 case "$3" in
                     /*) ;;
                     *) set -- "$1" "$2" "$PWD/$3" ;;

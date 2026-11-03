@@ -231,7 +231,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   unknown type, deeper than 12 levels; another version draws nothing) and `bindings` what the widget reads.
   Tested offscreen on the spec's examples in both modes. Not yet: lists that repeat over a source's array (with
   4.2), a preview command (4.6).
-- [ ] **4.4** Desktop widget grid reusing the EditableGrid (1.6): snap, edit mode, persistence.
+- [x] **4.4** Desktop widget grid reusing the EditableGrid (1.6), D81: each screen's widgets on square cells
+  (`widgets.columns`), gravity off, saved in state.json; edit mode from the desktop's right-click menu or
+  `rutile-shell widgets edit`, with Add (the user's widgets and the examples), Remove, Done. Not done: keyboard
+  moves, moving a widget between screens, a widget's preferred size.
 - [ ] **4.5** Custom widgets app: category list and template cards (weather, daily update, world clock, finance,
   countdown, sports) plus a "Create a widget" prompt box. Templates are local-model task `widget-templates`.
 - [ ] **4.6** CLI: widget check / preview / install with machine-readable errors. Preview done (D80):

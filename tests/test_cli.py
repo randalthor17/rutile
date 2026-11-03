@@ -100,6 +100,10 @@ class Forwarding(unittest.TestCase):
         r = run("widgets", "preview", "w.json")
         self.assertIn(f"[preview][{os.getcwd()}/w.json]", r.stdout)
         self.check(["widgets", "preview", "/a/w.json"], ["ipc", "-p", "/s/shell.qml", "call", "widgets", "preview", "/a/w.json"])
+        # and so does a widget put on the desktop (D81)
+        r = run("widgets", "add", "w.json")
+        self.assertIn(f"[add][{os.getcwd()}/w.json]", r.stdout)
+        self.check(["widgets", "edit"], ["ipc", "-p", "/s/shell.qml", "call", "widgets", "edit"])
         # the Settings app's desktop file runs `rutile-shell settings`
         self.check(["settings"], ["ipc", "-p", "/s/shell.qml", "call", "settings", "open", ""])
         self.check(["settings", "openSetting", "security", "lock.idleMinutes"],

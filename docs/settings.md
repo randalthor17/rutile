@@ -9,7 +9,7 @@ How the shell keeps its settings and what it remembers (D45, plan 2.5).
 | `settings/schema.json` (repo) | every setting: type, limits, default, title, description | us |
 | `$XDG_CONFIG_HOME/rutile/settings.json` | your settings | the shell (the settings app, IPC), or you |
 | `$XDG_CONFIG_HOME/rutile/managed.json` | settings set in Nix | home-manager, read-only |
-| `$XDG_STATE_HOME/rutile/state.json` | what the shell remembers: the launcher's view | the shell |
+| `$XDG_STATE_HOME/rutile/state.json` | what the shell remembers: the launcher's view, the desktop's widgets | the shell |
 | `$XDG_CACHE_HOME/rutile/palette.json` | the generated palette | matugen |
 
 Without the XDG variables these are `~/.config`, `~/.local/state` and `~/.cache`.
@@ -33,6 +33,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
+| `widgets.columns` | 6 to 24 | 12 | square cells across each screen in the desktop widget grid (D81) |
 | `widgets.latitude`, `widgets.longitude` | degrees | unset | where weather widgets report from (D79); a widget can name its own place; without one, no weather is fetched |
 | `widgets.units` | metric or imperial | metric | weather in °C and km/h, or °F and mph |
 | `widgets.httpAllow` | list of URL beginnings | empty | the addresses widgets may fetch JSON from (`https://host/` and a path start); nothing else is fetched |
@@ -114,6 +115,7 @@ Shell state that is not a setting (usage, the last view) goes through `Settings.
 |---|---|
 | `launcher.view` | `"grid"` or `"list"`, as last chosen |
 | `launcher.usage` | `{appId: {count, last}}`: apps opened from the launcher, `last` in ms since the epoch; at most 200 apps, the least recently used dropped (`shell/launcher/Usage.js`, D46) |
+| `desktop.widgets` | `{output: [{id, path, w, h, col, row}]}`: each screen's desktop widgets, in cells, by output name (D81) |
 | `wallpaper.paletteFrom` | the wallpaper the palette was last rendered from, so a restart does not render it again |
 
 Deleting `state.json` forgets all of it; nothing else depends on it.

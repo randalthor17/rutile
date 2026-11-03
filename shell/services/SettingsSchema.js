@@ -340,6 +340,14 @@ var schema = {
             "type": "object",
             "title": "Widgets",
             "properties": {
+                "columns": {
+                    "type": "integer",
+                    "minimum": 6,
+                    "maximum": 24,
+                    "default": 12,
+                    "title": "Desktop grid columns",
+                    "description": "How many square cells the desktop's widget grid has across each screen; more makes every widget smaller."
+                },
                 "latitude": {
                     "type": "number",
                     "minimum": -90,

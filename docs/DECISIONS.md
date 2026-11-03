@@ -827,3 +827,17 @@ the way to write a widget and watch it, and later the Custom widgets app's and t
 makes a relative path absolute, as the shell's working directory is not the caller's; the package ships the
 examples. Tried in a nested niri: clock, system, countdown, media (a real player) and weather (the real
 Open-Meteo, for Berlin) all filled in.
+
+**D81. The desktop widget grid (plan 4.4).** Each screen has its own widgets, on the shared EditableGrid (1.6,
+D17) with gravity off, so a widget stays where it was put and holes are allowed. Cells are square,
+`widgets.columns` (default 12) across the screen; a widget is drawn at the top of its cells and scaled down, never
+up, when it is taller than them, so all of it shows. Placements are state, not settings: `desktop.widgets` in
+state.json, a list of `{id, path, w, h, col, row}` per output name, since the shell writes them as the user drags.
+The widget is the file at `path`, read once for every screen and watched (`WidgetLibrary`), so editing a placed
+file shows at once. Add offers the user's widgets (`$XDG_CONFIG_HOME/rutile/widgets/*.json`) and the shell's
+examples. The layer is `rutile-widgets` on niri's bottom layer, above the wallpaper, in the space bars leave, and
+exists only on a screen with widgets or while editing (D31). Outside edit mode its input region is empty, so
+clicks reach the wallpaper, whose right-click menu opens edit mode (or `rutile-shell widgets edit`); in edit mode
+it takes the pointer and the keyboard, and a bar at the bottom adds, removes and finishes (Escape; Delete
+removes), floating over the grid so nothing moves when editing starts. Widgets added over IPC take the focused
+output. Not done: keyboard moves, dragging a widget to another screen, a widget's own preferred size.

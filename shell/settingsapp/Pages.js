@@ -127,8 +127,9 @@ var pages = [
     },
     {
         id: "widgets", title: "Widgets", icon: "widgets", tone: "tertiaryContainer",
-        summary: "Weather place, web data", aliases: ["weather", "location", "http", "data sources"],
+        summary: "Desktop grid, weather place, web data", aliases: ["weather", "location", "http", "data sources", "desktop"],
         sections: [
+            { title: "Desktop", keys: ["widgets.columns"] },
             { title: "Weather", keys: ["widgets.latitude", "widgets.longitude", "widgets.units"] },
             { title: "Web data", keys: ["widgets.httpAllow"] }
         ]
@@ -205,6 +206,9 @@ var hints = {
     "input.mouseFlat": { requires: "input.enabled", aliases: ["acceleration", "accel", "raw input", "gaming"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
     // typed, not a slider: a place is a number to a few decimals
+    "widgets.columns": {
+        choices: [8, 12, 16, 20, 24], label: v => v + " columns", aliases: ["desktop", "grid", "size"]
+    },
     "widgets.latitude": { kind: "text", placeholder: "52.52", aliases: ["location", "place", "weather"] },
     "widgets.longitude": { kind: "text", placeholder: "13.41", aliases: ["location", "place", "weather"] },
     "widgets.units": {

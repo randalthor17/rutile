@@ -381,3 +381,8 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **A Qt Quick Test function ending in `_data` never runs.** QtTest takes `test_x_data` as the data provider of
   `test_x`, so `test_widget_with_its_data` was silently skipped (the count of passes was one short). Never end a
   test's name in `_data`; count the passes when adding tests.
+
+**A property named `right`, `left`, `top` or `bottom` on an Item fails to load.** Item already has these anchor
+lines, as FINAL properties, so `property bool right` stops the whole file with "Cannot override FINAL property"
+(found when the wallpaper's menu decided which way to open). qmllint does not lint files that import Quickshell,
+so only loading the shell shows it; the smoke test caught it.

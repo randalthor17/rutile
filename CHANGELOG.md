@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Widgets on the desktop.** Right-click the desktop and choose "Edit widgets" (or run `rutile-shell widgets
+  edit`): add widgets from `~/.config/rutile/widgets` or the examples, drag them where you like, resize them from
+  their edges, remove them, then Done. Each screen keeps its own, and they come back after a restart. Settings >
+  Widgets sets how many columns the grid has. Editing a placed widget's file shows the change at once.
 - **Try a widget now:** `rutile-shell widgets preview my-widget.json` opens it in a window with its live data,
   and shows it again whenever the file is saved; what is wrong with it is listed below it. The examples are in
   `widgets/examples` (in the package too).

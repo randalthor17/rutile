@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -653,6 +653,31 @@ def run_wayland_smoke(screenshot=None):
                     if ipc("preview", "relative.json", target="widgets") != "false":
                         problems.append("ipc widgets preview of a relative path: accepted")
                     ipc("close", target="widgets")
+                    # the desktop grid (D81): a widget placed over IPC gets a layer on the screen, saved in state.json;
+                    # edit mode and back; removed, the screen's layer goes
+                    def desktop_layout():
+                        try:
+                            return json.loads(ipc("layout", target="widgets"))
+                        except ValueError:
+                            return {}
+                    stat = str(ROOT / "widgets" / "examples" / "stat.json")
+                    if ipc("add", stat, target="widgets") != "true":
+                        problems.append("ipc widgets add: refused")
+                    dl = desktop_layout()
+                    placed = [i for items in (dl.get("screens") or {}).values() for i in items]
+                    if [(i.get("id"), i.get("path")) for i in placed] != [("stat", stat)] or len(dl.get("shown") or []) != 1:
+                        problems.append(f"ipc widgets add stat.json: layout {dl}")
+                    time.sleep(0.5)
+                    if desktop_layout().get("readable") != [stat]:
+                        problems.append(f"ipc widgets add: the file was not read: {desktop_layout()}")
+                    ipc("edit", target="widgets")
+                    if desktop_layout().get("editing") is not True:
+                        problems.append("ipc widgets edit: not editing")
+                    ipc("done", target="widgets")
+                    if ipc("remove", "stat", target="widgets") != "true" or desktop_layout().get("shown") != []:
+                        problems.append(f"ipc widgets remove stat: layout {desktop_layout()}")
+                    if ipc("add", "relative.json", target="widgets") != "false":
+                        problems.append("ipc widgets add of a relative path: accepted")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),
@@ -1013,7 +1038,7 @@ def run_wayland_surfaces():
     motion stuttered); the list's never; and a popup window's input mask covers the whole panel, not the panel
     as its opening motion had scaled it (Quickshell's Region measures an item with its scale and keeps that).
     The OSD's surface is sized once, also when a second key comes while it shows; the toasts' once per toast.
-    Returns (code, report)."""
+    The desktop widgets' surface takes no input outside edit mode. Returns (code, report)."""
     qs, sway = shutil.which("quickshell"), shutil.which("sway")
     if not qs or not sway:
         return SKIPPED, "needs quickshell and sway"
@@ -1072,6 +1097,13 @@ def run_wayland_surfaces():
                 ipc("toast", "send", "Short", "")
                 ipc("toast", "send", "A much longer message than the first one", "")
                 time.sleep(10)                           # both shown and gone (4 s each, and the motion)
+                # the desktop widgets' layer (D81): input goes through it to the wallpaper, except while editing
+                ipc("widgets", "add", str(ROOT / "widgets" / "examples" / "countdown.json"))
+                time.sleep(1.5)
+                ipc("widgets", "edit")
+                time.sleep(1)
+                ipc("widgets", "done")
+                time.sleep(1)
             finally:
                 shell_proc.terminate()
                 try:
@@ -1106,6 +1138,10 @@ def run_wayland_surfaces():
     toast = surfaces.get("rutile-toast", {"sizes": []})["sizes"]
     if len(set(toast)) != 2:                     # resized from one toast to the next, never in between
         problems.append(f"rutile-toast: sizes {toast} for two toasts, expected two sizes")
+    inputs = surfaces.get("rutile-widgets", {"inputs": []})["inputs"]
+    if [r == [] for r in inputs] != [True, False, True] or inputs[1] is not None:
+        problems.append(f"rutile-widgets: input regions {inputs}, expected none, the whole surface while "
+                        "editing, then none again")
     return (1 if problems else 0), "\n".join(problems)
 
 

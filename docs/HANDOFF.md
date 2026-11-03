@@ -202,6 +202,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`), niri; `Settings` (the settings and state files, `docs/settings.md`) |
 | `shell/settingsapp/` | the Settings app (D50): the registry `Pages.js`, `Model.js`, rows, the window; `shell/settingsapp/pages/` holds pages of their own, each a view and maybe a backend (D67) |
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
+| `shell/desktop/` | the desktop widget grid (plan 4.4, D81): `DesktopWindow` per screen on the bottom layer, `DesktopWidgets` (EditableGrid and the edit bar), `WidgetLibrary` reads the placed files, `Desktop.js` the saved layouts |
 | `shell/widgethost/` | the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |

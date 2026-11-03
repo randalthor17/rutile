@@ -26,12 +26,14 @@ import qs.settingsapp
 import qs.quicksettings
 import qs.services
 import qs.shelf
+import qs.desktop
 import qs.widgethost
 import "quicksettings/Controls.js" as Controls
 import "lock/LockWallpaper.js" as LockWallpaper
 import "power/PowerActions.js" as PowerActions
 import "bar/TrayModel.js" as TrayModel
 import "settingsapp/Model.js" as SettingsModel
+import "desktop/Desktop.js" as Desktop
 import "settingsapp/Pages.js" as SettingsPages
 import "services/SettingsSchema.js" as SettingsSchema
 
@@ -123,6 +125,41 @@ ShellRoot {
         WallpaperWindow {
             required property var modelData
             screen: modelData
+            onEditWidgetsRequested: shell.widgetsEditing = true
+            onWallpaperSettingsRequested: shell.openSettings("wallpaper", "")
+        }
+    }
+
+    // Widgets on the desktop (plan 4.4, D81): each screen's own, saved in state.json by output name. A screen's
+    // layer exists only while it has widgets or they are being edited (D31); the files are read once for all.
+    property bool widgetsEditing: false
+    readonly property var desktopLayouts: Settings.stateValue("desktop.widgets", {})
+    function saveDesktop(screenName, items) {
+        Settings.setState("desktop.widgets", Desktop.withScreen(desktopLayouts, screenName, items));
+    }
+    WidgetLibrary {
+        id: widgetLibrary
+        paths: Desktop.paths(shell.desktopLayouts)
+    }
+    Variants {
+        id: desktops
+        model: Quickshell.screens
+        LazyLoader {
+            id: desktop
+            required property var modelData
+            readonly property var items: Desktop.placed(shell.desktopLayouts, modelData.name)
+            active: shell.widgetsEditing || items.length > 0
+            DesktopWindow {
+                screen: desktop.modelData
+                items: desktop.items
+                specs: widgetLibrary.specs
+                available: widgetLibrary.available
+                editMode: shell.widgetsEditing
+                columns: Settings.value("widgets.columns") ?? 12
+                commitHandler: next => shell.saveDesktop(desktop.modelData.name, next)
+                onDoneRequested: shell.widgetsEditing = false
+                onAddListRequested: widgetLibrary.scan()
+            }
         }
     }
     // From a script or keybind: quickshell -p <path>/shell/shell.qml ipc call wallpaper set /path/to/image.png
@@ -286,6 +323,38 @@ ShellRoot {
             return true;
         }
         function close(): void { widgetPreview.active = false; }
+        // The desktop grid (D81): edit mode on every screen, and back.
+        function edit(): void { shell.widgetsEditing = true; }
+        function done(): void { shell.widgetsEditing = false; }
+        // Places an absolute path on the screen niri has focused (the first one without niri); false when it is
+        // relative or there is no room.
+        function add(path: string): bool {
+            if (!path.startsWith("/")) return false;
+            const name = NiriService.focusedOutput || (Quickshell.screens[0]?.name ?? "");
+            const items = Desktop.placed(shell.desktopLayouts, name);
+            const d = desktops.instances.find(l => l.modelData.name === name);
+            const grid = d?.item?.content.grid;
+            const size = grid ? grid.fitNew(Desktop.NEW_SIZE) : Desktop.NEW_SIZE;
+            if (!size) return false;
+            shell.saveDesktop(name, Desktop.withAdded(items, path, size));
+            return true;
+        }
+        function remove(id: string): bool {
+            for (const name in shell.desktopLayouts) {
+                const items = Desktop.placed(shell.desktopLayouts, name);
+                const at = items.findIndex(i => i.id === id);
+                if (at >= 0) {
+                    shell.saveDesktop(name, Desktop.withoutIndex(items, at));
+                    return true;
+                }
+            }
+            return false;
+        }
+        function layout(): string {
+            return JSON.stringify({ editing: shell.widgetsEditing, screens: shell.desktopLayouts,
+                                    shown: desktops.instances.filter(l => l.item).map(l => l.modelData.name),
+                                    readable: Object.keys(widgetLibrary.specs).filter(p => widgetLibrary.specs[p] !== null).sort() });
+        }
         function state(): string {
             const w = widgetPreview.item;
             return JSON.stringify({ open: widgetPreview.active, path: w?.path ?? "", name: w?.spec?.name ?? "",
