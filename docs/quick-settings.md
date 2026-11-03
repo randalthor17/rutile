@@ -110,7 +110,7 @@ Tiles: Wi-Fi and Bluetooth (large, dual target: the icon toggles, the body opens
 Microphone (mute), Dark theme, Airplane mode (on when every radio that exists is off; turning it off turns
 Wi-Fi and Bluetooth on), Do not disturb (the notifications' own, D47) and Power saver (power-profiles-daemon's
 power-saver mode; off goes back to balanced; unavailable without the daemon, which `busctl` looks for the first time
-Quick Settings opens) and Night light (D91: wlsunset at `nightLight.temperature` all day; on or off is kept in
+Quick Settings opens) and Night light (D91: wlsunset at `nightLight.temperature`, all day or from sunset to sunrise; on or off is kept in
 state.json; unavailable without wlsunset; if wlsunset stops by itself, the tile goes off and a toast says why). Missing hardware makes a tile unavailable; a missing backlight or audio output hides its
 slider. "Edit tiles" (the header's first button) removes and rearranges tiles, and lists the tiles not shown as chips
 to add (D89); the layout is kept in state.json (`quicksettings.tiles`), and a saved layout naming a tile that no
@@ -158,7 +158,6 @@ window (`niri msg action focus-column-right`) closed the panel.
 - The power menu is a small dropdown for now. Planned (maintainer's request): a full-screen power menu over the
   blurred desktop, replacing it (plan 2.8). Lock runs `loginctl lock-session`, which locks nothing until a lock
   screen listens (plan 2.8) or e.g. swayidle runs one. Clicking elsewhere in the panel does not close the menu.
-- Night light on a schedule (sunset to sunrise): it is on or off by hand for now.
 - **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path
   live), several screens; the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real
   hardware; Wi-Fi, Bluetooth and a backlight have not been seen working at all (the machine it ran on has none

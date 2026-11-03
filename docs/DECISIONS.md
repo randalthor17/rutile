@@ -963,5 +963,8 @@ day (`-t T -T T+1`), so the screen is warm at any hour while the tile is on, and
 with the shell); the warmth is a setting (`nightLight.temperature`, 2500 to 6000 K, Settings > Display); a new
 warmth restarts it. A wlsunset that stops by itself turns the switch off and shows its last line in a toast: another
 gamma program (gammastep) holds the outputs, or the compositor has none (niri nested in a window, where it could
-not be tried: niri's winit backend has no gamma control). Not done: a schedule (sunset to sunrise from the
-weather place); gammastep was the alternative, larger (GTK tray, geoclue) for the same job.
+not be tried: niri's winit backend has no gamma control). niri supports wlr-gamma-control on a real
+screen; only its nested (winit) backend lacks it. Sunset to sunrise (the maintainer's request, the same day):
+`nightLight.schedule` runs wlsunset with the daylight temperature for the day, at the weather place's latitude and
+longitude (`-l -L`), or, with no place set, at `nightLight.sunset` and `nightLight.sunrise` (`-S -s`); the tile says
+"Sunset to sunrise" while on. NightLight.js builds the command. gammastep was the alternative, larger (GTK tray, geoclue) for the same job.

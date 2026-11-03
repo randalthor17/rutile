@@ -9,7 +9,7 @@ pragma ComponentBehavior: Bound
 //
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
-// darkTheme, dnd, nightLightAvailable, nightLight, powerSaverAvailable, powerSaver; and setBrightness(v), setVolume(v), setMicMuted(b),
+// darkTheme, dnd, nightLightAvailable, nightLight, nightLightScheduled, powerSaverAvailable, powerSaver; and setBrightness(v), setVolume(v), setMicMuted(b),
 // setWifiEnabled(b), setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), setDnd(b), setNightLight(b), setPowerSaver(b),
 // refresh(); for the detail pages (QuickSettingsDetails.qml): wifiNetworks, bluetoothDevices, connectWifi(name,
 // psk), disconnectWifi(name), forgetWifi(name), setWifiScanning(b), connectBluetooth(address),

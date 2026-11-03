@@ -85,7 +85,8 @@ function state(id, b) {
         return { active: b.dnd, available: true, secondary: b.dnd ? "On" : "Off" };
     case "nightLight":
         return { active: b.nightLight, available: b.nightLightAvailable,
-                 secondary: !b.nightLightAvailable ? "Unavailable" : b.nightLight ? "On" : "Off" };
+                 secondary: !b.nightLightAvailable ? "Unavailable" : !b.nightLight ? "Off"
+                          : b.nightLightScheduled ? "Sunset to sunrise" : "On" };
     case "powerSaver":
         return { active: b.powerSaver, available: b.powerSaverAvailable,
                  secondary: !b.powerSaverAvailable ? "Unavailable" : b.powerSaver ? "On" : "Off" };

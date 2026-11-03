@@ -51,7 +51,7 @@ var pages = [
     {
         id: "display", title: "Display", icon: "desktop_windows", tone: "tertiaryContainer",
         summary: "Resolution, size, orientation, night light", aliases: ["monitor", "screen", "niri outputs"],
-        sections: [{ title: "Night light", keys: ["nightLight.temperature"] }],
+        sections: [{ title: "Night light", keys: ["nightLight.temperature", "nightLight.schedule", "nightLight.sunset", "nightLight.sunrise"] }],
         view: "pages/DisplayPage.qml", backend: "pages/DisplayBackend.qml",
         entries: [
             { key: "display.outputs", title: "Displays", description: "Resolution, refresh rate, size and orientation",
@@ -219,6 +219,9 @@ var hints = {
     "windows.shadow": { requires: "windows.enabled", aliases: ["drop shadow", "elevation"] },
     "windows.focusRing": { requires: "windows.enabled", aliases: ["border", "outline", "active window"] },
     "nightLight.temperature": { step: 100, label: v => v + " K", aliases: ["night light", "blue light", "warm", "wlsunset", "color temperature"] },
+    "nightLight.schedule": { aliases: ["night light", "schedule", "sunset", "sunrise", "automatic"] },
+    "nightLight.sunset": { kind: "text", placeholder: "19:00", requires: "nightLight.schedule", aliases: ["night light", "evening"] },
+    "nightLight.sunrise": { kind: "text", placeholder: "07:00", requires: "nightLight.schedule", aliases: ["night light", "morning"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
     // typed, not a slider: a place is a number to a few decimals
     "widgets.columns": {

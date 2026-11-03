@@ -7,6 +7,7 @@ import "../qs/services/BrightnessCtl.js" as Ctl
 import "../qs/power/PowerActions.js" as PowerActions
 import "../qs/quicksettings/Controls.js" as Controls
 import "../qs/quicksettings/Details.js" as Details
+import "../qs/services/NightLight.js" as NightLight
 
 TestCase {
     id: root
@@ -38,6 +39,7 @@ TestCase {
             property bool powerSaverAvailable: true
             property bool nightLightAvailable: true
             property bool nightLight: false
+            property bool nightLightScheduled: false
             property bool powerSaver: false
             property var wifiNetworks: [
                 { name: "Cafe", signal: 0.9, secure: false, psk: false, connected: false, known: false, busy: false },
@@ -479,6 +481,22 @@ TestCase {
         t.backend.nightLight = true;
         verify(n.active);
         compare(n.iconName, "nightlight");
+        compare(n.secondaryText, "On");
+        t.backend.nightLightScheduled = true;
+        compare(n.secondaryText, "Sunset to sunrise");
+    }
+
+    function test_night_light_command() {
+        const o = { temperature: 3500, schedule: false, latitude: null, longitude: null, sunset: "19:00", sunrise: "07:00" };
+        compare(NightLight.command(o).join(" "), "wlsunset -t 3500 -T 3501", "all day");
+        o.schedule = true;
+        compare(NightLight.command(o).join(" "), "wlsunset -t 3500 -T 6500 -S 07:00 -s 19:00", "no place: the times set");
+        o.latitude = 52.52;
+        compare(NightLight.command(o).join(" "), "wlsunset -t 3500 -T 6500 -S 07:00 -s 19:00", "half a place is none");
+        o.longitude = -13.4;
+        compare(NightLight.command(o).join(" "), "wlsunset -t 3500 -T 6500 -l 52.52 -L -13.4", "the sun at the place");
+        o.latitude = 0;
+        compare(NightLight.command(o).join(" "), "wlsunset -t 3500 -T 6500 -l 0 -L -13.4", "0 is a place");
     }
 
     function test_saved_tiles_are_made_safe() {

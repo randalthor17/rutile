@@ -381,6 +381,26 @@
           "maximum": 6000,
           "title": "Night light warmth",
           "description": "The screen's color temperature in kelvin while Night light is on (Quick Settings): lower is warmer. Daylight is 6500."
+        },
+        "schedule": {
+          "type": "boolean",
+          "default": false,
+          "title": "Sunset to sunrise",
+          "description": "While Night light is on, warm the screen only from sunset to sunrise, fading over the change, instead of all day. The sun's times come from the weather place (Settings > Widgets); without one, from the times below."
+        },
+        "sunset": {
+          "type": "string",
+          "default": "19:00",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+          "title": "Sunset without a place",
+          "description": "When Night light starts, as HH:MM, while no weather place is set."
+        },
+        "sunrise": {
+          "type": "string",
+          "default": "07:00",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+          "title": "Sunrise without a place",
+          "description": "When Night light ends, as HH:MM, while no weather place is set."
         }
       }
     },

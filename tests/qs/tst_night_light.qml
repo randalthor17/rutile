@@ -47,28 +47,37 @@ ShellRoot {
                 if (root.lines().length < 2 || !n.running) return;
                 t.compare(root.lines()[1], "-t 3000 -T 3001", "a new warmth restarts it");
                 t.compare(root.lines().length, 2, "once");
-                n.setOn(false);
+                Settings.set("notifications.sound", false);           // another setting: no restart
+                Settings.set("nightLight.schedule", true);
+                // the next change comes while the first restart is still stopping wlsunset
+                Qt.callLater(() => Settings.set("nightLight.sunset", "20:30"));
                 break;
             case 3:
+                if (root.lines().length < 3 || !n.running) return;
+                t.compare(root.lines()[2], "-t 3000 -T 6500 -S 07:00 -s 20:30", "sunset to sunrise, at the times set");
+                t.compare(n.error, "", "a restart is no failure");
+                n.setOn(false);
+                break;
+            case 4:
                 if (n.running) return;
                 t.compare(n.error, "", "stopped on purpose: no error");
                 sh.command = ["touch", root.log + ".fail"];
                 sh.running = true;
                 break;
-            case 4:
+            case 5:
                 if (sh.running) return;
                 n.setOn(true);
                 break;
-            case 5:
+            case 6:
                 if (n.on) return;
                 t.verify(n.error.indexOf("in use by another client") >= 0, "the reason: " + n.error);
                 t.verify(!n.running);
                 t.verify((ToastService.current?.text ?? "").indexOf("in use by another client") >= 0, "and a toast says so");
                 n.setOn(true);
                 break;
-            case 6:
-                if (n.on || root.lines().length < 4) return;      // tried again when asked
-                t.compare(root.lines().length, 4, "once each time");
+            case 7:
+                if (n.on || root.lines().length < 5) return;      // tried again when asked
+                t.compare(root.lines().length, 5, "once each time");
                 t.done();
                 break;
             }

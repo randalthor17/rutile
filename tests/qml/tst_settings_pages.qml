@@ -181,7 +181,11 @@ TestCase {
         verify(!findChild(a, "displayReset_0").visible, "not kept: nothing to reset");
         b.kept = ["DP-1"];
         waitForRendering(a);
-        mouseClick(findChild(a, "displayReset_0"));
+        const resetButton = findChild(a, "displayReset_0");
+        const pageFlick = findChild(a, "settingsPageFlick");        // below the page's own sections: scrolled to
+        pageFlick.contentY = Math.max(0, resetButton.mapToItem(pageFlick.contentItem, 0, 0).y - pageFlick.height / 2);
+        waitForRendering(a);
+        mouseClick(resetButton);
         compare(b.calls[5], "reset DP-1", "kept: back to niri's config");
 
         // the last output on cannot be turned off

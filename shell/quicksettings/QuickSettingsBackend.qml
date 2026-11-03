@@ -32,6 +32,7 @@ QtObject {
     readonly property bool dnd: NotificationService.dnd
     readonly property bool nightLightAvailable: NightLightService.available
     readonly property bool nightLight: NightLightService.on
+    readonly property bool nightLightScheduled: NightLightService.schedule
     // Power saver needs power-profiles-daemon, which Quickshell cannot tell is there: `busctl` looks for it once,
     // when Quick Settings first opens (refresh), and PowerProfiles is not touched before it is found
     property bool powerSaverAvailable: false
