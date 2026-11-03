@@ -11,7 +11,7 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 - **Quick Settings remembers its tiles, and lists networks and devices.** The tiles you arrange stay that way after
   a restart, and "Edit tiles" now offers the tiles you removed to add back. New tiles: Do not disturb and Power saver.
   Clicking the Wi-Fi or Bluetooth tile's name opens a page listing networks or devices: click one to connect or
-  disconnect, and type a network's password right there. The button next to the volume slider opens Settings > Sound.
+  disconnect, and type a network's password right there, or forget a saved one. The button next to the volume slider opens Settings > Sound.
 - **Windows like Googlebook's.** Settings > Windows (off by default) makes niri open windows floating, with rounded
   corners, a soft shadow and no focus ring; each part has its own switch, and they win over niri's own window
   rules. Settings, Widgets and the widget preview have a new title bar: the app's icon and name, maximize and close;

@@ -78,7 +78,8 @@ ShellRoot {
                 t.compare(logFile.text(), "HDMI-A-1 scale 2\nDP-1 vrr on\nHDMI-A-1 transform 90\n", "in order, one at a time");
                 break;
             case 3:
-                if (b.kept.length < 2) return;
+                // the last change read back too: kept outputs show up after their first change, before the rest
+                if (b.kept.length < 2 || NiriDisplayService.kept["HDMI-A-1"]?.transform !== "90") return;
                 t.compare(JSON.stringify(NiriDisplayService.kept["HDMI-A-1"]),
                           JSON.stringify({ on: true, mode: "3840x2160@60.000", scale: 2, transform: "90", vrr: false }), "kept as niri has it");
                 t.verify(NiriDisplayService.kept["DP-1"].vrr, "the other too");

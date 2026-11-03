@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 // A Quick Settings tile's detail page (plan 2.6), as Googlebook opens one in place of the tiles: back, the name and
 // its switch, then the list. "wifi" lists the networks (Details.js orders them): a click connects, disconnects, or
 // first asks for the password, typed in a field under that network (Enter connects, Escape cancels).
-// "bluetooth" lists the adapter's devices: a click connects (pairing first) or disconnects. The page asks the
+// A saved network has a button to forget it. "bluetooth" lists the adapter's devices: a click connects (pairing first) or disconnects. The page asks the
 // backend to scan or discover while it is shown. Plain QtQuick, through the panel's backend.
 import QtQuick
 import qs.common
@@ -130,6 +130,15 @@ Column {
                         text: row.modelData.name
                         supportingText: root.isWifi ? Details.networkStatus(row.modelData) : Details.deviceStatus(row.modelData)
                         onClicked: root.activate(row.modelData)
+                        // a saved network can be forgotten: NetworkManager drops its connection and password
+                        IconButton {
+                            objectName: "qsForget_" + row.key
+                            visible: root.isWifi && row.modelData.known && !row.modelData.busy
+                            size: "xs"
+                            iconName: "delete"
+                            Accessible.name: "Forget " + row.modelData.name
+                            onClicked: root.backend.forgetWifi(row.modelData.name)
+                        }
                     }
                     // the password, under its network
                     Rectangle {

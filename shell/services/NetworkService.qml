@@ -42,6 +42,9 @@ Singleton {
     function disconnectWifi(name) {
         network(name)?.disconnect();
     }
+    function forgetWifi(name) {
+        network(name)?.forget();
+    }
     // Scanning while the page is open: NetworkManager looks for networks more often then
     function setWifiScanning(on) {
         if (wifiDevice) wifiDevice.scannerEnabled = on;

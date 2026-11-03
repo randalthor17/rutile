@@ -58,6 +58,7 @@ QtObject {
     readonly property var bluetoothDevices: BluetoothService.devices
     function connectWifi(name, psk) { NetworkService.connectWifi(name, psk); }
     function disconnectWifi(name) { NetworkService.disconnectWifi(name); }
+    function forgetWifi(name) { NetworkService.forgetWifi(name); }
     function setWifiScanning(on) { NetworkService.setWifiScanning(on); }
     function connectBluetooth(address) { BluetoothService.connectDevice(address); }
     function disconnectBluetooth(address) { BluetoothService.disconnectDevice(address); }

@@ -60,6 +60,7 @@ TestCase {
             function setPowerSaver(b) { log("powerSaver " + b); }
             function connectWifi(n, psk) { log("connectWifi " + n + (psk ? " " + psk : "")); }
             function disconnectWifi(n) { log("disconnectWifi " + n); }
+            function forgetWifi(n) { log("forgetWifi " + n); }
             function setWifiScanning(b) { log("wifiScanning " + b); }
             function connectBluetooth(a) { log("connectBluetooth " + a); }
             function disconnectBluetooth(a) { log("disconnectBluetooth " + a); }
@@ -200,6 +201,9 @@ TestCase {
         verify(rowY(t.panel, "Cafe") < rowY(t.panel, "Neighbour"), "then by signal");
         clickItem(row(t.panel, "Cafe"));
         compare(t.backend.calls[t.backend.calls.length - 1], "connectWifi Cafe", "an open one connects");
+        verify(!findChild(t.panel, "qsForget_Cafe").visible, "only a saved network is forgotten");
+        clickItem(findChild(t.panel, "qsForget_Home"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "forgetWifi Home", "the button, not the row");
         clickItem(row(t.panel, "Home"));
         compare(t.backend.calls[t.backend.calls.length - 1], "disconnectWifi Home");
         var n = t.backend.calls.length;
