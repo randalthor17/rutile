@@ -483,6 +483,31 @@ Rectangle {
                 }
             }
 
+            GallerySection {
+                title: "Text fields and dialog"
+                width: parent.width
+                Flow {
+                    width: parent.width
+                    spacing: Spacing.xl
+                    Column {
+                        spacing: Spacing.lg
+                        TextField { objectName: "galleryTextField"; label: "Name"; backgroundColor: Colors.surfaceContainerLow }
+                        TextField { objectName: "galleryTextField"; label: "Email"; text: "ada@example.org"; iconName: "mail"; backgroundColor: Colors.surfaceContainerLow }
+                        TextField { objectName: "galleryTextField"; label: "Password"; text: "hunter2"; password: true; trailingIconName: "visibility"; error: true; supportingText: "Wrong password"; backgroundColor: Colors.surfaceContainerLow }
+                        TextField { objectName: "galleryTextField"; type: "filled"; label: "City"; text: "Lisbon" }
+                        TextField { objectName: "galleryTextField"; type: "filled"; placeholderText: "Search"; iconName: "search" }
+                        TextField { objectName: "galleryTextField"; type: "filled"; label: "Disabled"; enabled: false }
+                    }
+                    Dialog {
+                        objectName: "galleryDialog"
+                        iconName: "wifi"
+                        headline: "Forget this network?"
+                        supportingText: "Home will be removed, with its password. You can join it again later."
+                        actions: [{ id: "cancel", text: "Cancel" }, { id: "forget", text: "Forget" }]
+                    }
+                }
+            }
+
             // ---- editable grid: Quick Settings tiles ----
             GallerySection {
                 title: "Quick Settings panel"

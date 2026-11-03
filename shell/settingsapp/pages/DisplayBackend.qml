@@ -15,11 +15,13 @@ Item {
     property string error: ""
     property var _queue: []
     property var _changed: ({})                 // outputs changed since the last read: kept once read again
+    property bool _again: false                 // a read was asked for while one ran: read once more after it
     // the outputs whose choices the shell keeps (D74)
     readonly property var kept: Object.keys(NiriDisplayService.kept)
 
     function refresh() {
-        if (!query.running) query.running = true;
+        if (query.running) _again = true;       // that read may predate the last change
+        else query.running = true;
     }
     // `niri msg output NAME ARGS...`
     function command(name, args) {
@@ -52,7 +54,8 @@ Item {
                     const all = JSON.parse(text);
                     root.outputs = Object.values(all).sort((a, b) => a.name.localeCompare(b.name));
                     root.available = true;
-                    if (!act.running && root._queue.length === 0) {
+                    // kept only from a read after the last change: an older one would keep what it replaced
+                    if (!act.running && root._queue.length === 0 && !root._again) {
                         for (const o of root.outputs) if (root._changed[o.name]) NiriDisplayService.remember(o);
                         root._changed = ({});
                     }
@@ -64,6 +67,10 @@ Item {
         }
         onExited: code => {
             if (code !== 0) root.available = false;
+            if (root._again) {
+                root._again = false;
+                query.running = true;
+            }
         }
     }
     // niri applies the config change from removing a kept output a moment after the file is written

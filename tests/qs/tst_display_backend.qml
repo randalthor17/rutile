@@ -2,10 +2,12 @@
 // (tests/qs/bin/niri; never the session's niri): the backend reads the outputs when loaded, runs changes one at
 // a time in order, reads the outputs again after each and keeps niri's complaint about a change that failed; the
 // service keeps each changed output (state.json and rutile-display.kdl), applies the kept choices again when
-// niri's config.kdl changes (so they win over its own output sections), and a reset drops one.
+// niri's config.kdl changes (so they win over its own output sections), and a reset drops one. Reads answer late, so
+// one is still running when the last change ends: the output is kept from a read after it, not that one.
 // env PATH=@WS@/bin:@PATH@
 // env FAKE_NIRI_OUTPUTS=@WS@/outputs.json
 // env FAKE_NIRI_LOG=@WS@/niri.log
+// env FAKE_NIRI_READ_DELAY=0.4
 // env NIRI_SOCKET=@WS@/no-niri.sock
 import QtQuick
 import Quickshell

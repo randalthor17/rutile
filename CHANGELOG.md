@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings > Display keeps your last change.** Several quick changes to a screen (a scale, then a rotation)
+  could be kept without the last one, so it was lost at the next restart or config change. Fixed.
+- **Text fields and dialogs.** Two new building blocks in the Material 3 look: a text field (outlined or filled,
+  with a label that floats up as you type) and a dialog. The Wi-Fi password in Quick Settings uses the new field,
+  with a button to show what you typed.
 - **Clicking the desktop closes Quick Settings.** A click on the wallpaper, a widget, the shelf (between its
   buttons) or the clock now closes Quick Settings, the launcher and the notification list, which before closed only
   when a window took focus.

@@ -17,6 +17,8 @@ directory containing the entry file, so run things from `shell/`.
 | `Tile` | Quick Settings tile (Android 16 SystemUI): `text`, `secondaryText`, `iconName`, `active`, `available`, `dualTarget`, `iconOnly`, `controlled`; `clicked()`, `toggled(bool)` |
 | `Menu` | a segmented list of choices on a raised surface: `items` [{id, text, icon}], `currentIndex` (the keyboard's choice), `chosen(id)`; as wide as its widest item, at least `minimumWidth`; open it with a `PopupLoader` |
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
+| `TextField` | M3 text field, `type` outlined (default) or filled: `text`, `label` (floats up on focus or text), `placeholderText`, `iconName` (leading), `trailingIconName` with `trailingClicked()`, `supportingText`, `error`, `password`, `backgroundColor` (behind an outlined field, for its label's notch); `accepted(text)`, `input` |
+| `Dialog` | M3 basic dialog card: `iconName`, `headline`, `supportingText`, a default slot, `actions` [{id, text, type}], `acceptId` (Enter), `dismissId` (Escape); `chosen(id)`; 280 to 560 px wide; shown by the caller over a scrim with a `PopupLoader` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 | `ShapeMorph` | a shape from the M3 Expressive shape library (`MaterialShapes.names`: `circle`, `cookie9Sided`, `softBurst`, ... 35 in all), filled with `color`; changing `shape` morphs to it; `morphing`, `progress` |
 | `PopupMotion` | the open and close motion every popup, dropdown and menu uses (D43): `target`, `shown`, `origin` (an `Item.TransformOrigin`); `hidden()` after closing |
@@ -109,10 +111,16 @@ right. The other components do not mirror yet.
 padding and a 4 px icon gap (the token file says 16 and 8). `tools/gen_components.py` applies the
 override, records it in `components.json`, and fails if the upstream TODOs disappear so it gets reviewed.
 
+Text field and dialog tokens come from `FilledTextFieldTokens.kt`, `OutlinedTextFieldTokens.kt` and
+`DialogTokens.kt` (vendored 2026-11-03, after the others). The filled field's `CornerExtraSmallTop` shape is the
+extra-small radius on the top corners only; the generator takes the radius and TextField squares the bottom.
+
 ## Not done yet
 
 - **Slider:** vertical and range sliders, the value label above the handle, centered sliders, icons in the
   other two track slots (end of the active part, start of the inactive part) that MDC also offers.
+- **TextField:** prefix and suffix, a character counter, multi-line; the label's notch is drawn over
+  `backgroundColor`, not cut out of the outline. **Dialog:** full-screen dialogs, a scrim of its own.
 - **ShapeMorph:** filling a shape with an image (the cookie-shaped picture in Googlebook's "Up next" widget),
   rotation while morphing (Compose's loading indicator), outlines.
 - **Progress:** indeterminate (flat and wavy) and circular indicators. The tokens for circular are generated.

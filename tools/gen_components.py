@@ -114,6 +114,10 @@ def shape(expr, corners, what):
     if not m:
         raise ComponentError(f"{what}: expected a corner token, got {expr!r}")
     key = snake(m.group(1))
+    # CornerExtraSmallTop and the like round the top corners only: the radius is the base corner's, and the
+    # component that uses one (the filled text field) draws its bottom corners square itself
+    if key.endswith("_top") and key[:-4] in corners and key[:-4] != "full":
+        return corners[key[:-4]]
     if key not in corners:
         raise ComponentError(f"{what}: unknown corner {key!r}")
     return "full" if key == "full" else corners[key]
@@ -647,6 +651,11 @@ def build():
             "circular": token_table("CircularProgressIndicatorTokens.kt", corners),
             "impl": progress_impl(),
         },
+        "text_field": {
+            "filled": token_table("FilledTextFieldTokens.kt", corners),
+            "outlined": token_table("OutlinedTextFieldTokens.kt", corners),
+        },
+        "dialog": token_table("DialogTokens.kt", corners),
         "material_shapes": material_shapes(),
     }
 

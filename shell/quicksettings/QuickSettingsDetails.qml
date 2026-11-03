@@ -141,38 +141,21 @@ Column {
                         }
                     }
                     // the password, under its network
-                    Rectangle {
+                    TextField {
+                        property bool shown: false
+                        objectName: "qsPassword_" + row.key
                         visible: root.isWifi && root.askingFor === row.key
                         width: parent.width
-                        height: ControlSpec.iconButtonSizes.m.height
-                        radius: height / 2
-                        color: Colors.surfaceContainerHighest
-                        border.width: 1
-                        border.color: password.activeFocus ? Colors.primary : Colors.outline
-                        TextInput {
-                            id: password
-                            objectName: "qsPassword_" + row.key
-                            anchors.fill: parent
-                            anchors.leftMargin: Spacing.lg
-                            anchors.rightMargin: Spacing.lg
-                            verticalAlignment: TextInput.AlignVCenter
-                            echoMode: TextInput.Password
-                            color: Colors.surfaceOn
-                            font: Type.font(Type.bodyLarge)
-                            clip: true
-                            onVisibleChanged: if (visible) { text = ""; forceActiveFocus(); }
-                            onAccepted: root.sendPassword(text)
-                            Keys.onEscapePressed: event => {
-                                root.askingFor = "";
-                                event.accepted = true;
-                            }
-                            Text {
-                                visible: password.text === ""
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Password"
-                                color: Colors.surfaceVariantOn
-                                font: password.font
-                            }
+                        label: "Password"
+                        password: !shown
+                        trailingIconName: shown ? "visibility_off" : "visibility"
+                        backgroundColor: Colors.surfaceContainer
+                        onTrailingClicked: shown = !shown
+                        onVisibleChanged: if (visible) { text = ""; shown = false; input.forceActiveFocus(); }
+                        onAccepted: text => root.sendPassword(text)
+                        Keys.onEscapePressed: event => {
+                            root.askingFor = "";
+                            event.accepted = true;
                         }
                     }
                 }

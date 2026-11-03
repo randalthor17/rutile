@@ -214,7 +214,7 @@ TestCase {
         clickItem(row(t.panel, "Neighbour"));
         var field = findChild(t.panel, "qsPassword_Neighbour");
         verify(field.visible);
-        tryVerify(() => field.activeFocus, 1000, "the field takes the keys");
+        tryVerify(() => field.focused, 1000, "the field takes the keys");
         keyClick(Qt.Key_Return);
         compare(t.backend.calls.length, n, "no empty password");
         for (const c of "s3cret") keyClick(c);

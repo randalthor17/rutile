@@ -395,3 +395,11 @@ spacing gap. The renderer's column node sizes its layout itself instead (D83).
 **Qt's JavaScript splits a string into UTF-16 units in `Array.from`.** A character outside the BMP (an emoji) counts
 as two, where Python counts one, so the shell's widget check refused a 31-emoji name that widget_check.py takes.
 Count surrogate pairs instead (WidgetCheck.js `chars`); the cross-test with tests/widget_check_cases.py caught it.
+
+**A read skipped because one is running may be the one that matters.** DisplayBackend read niri's outputs after
+each change, but `refresh()` did nothing while a read ran; when the last change ended during an older read, that
+read (from before the change) was kept and no newer one followed, so Settings > Display kept a screen without its
+last change. It showed as a test failing one run in four. Ask again after the running read instead
+(`_again`), and keep only from a read that started after the last change. A fake that answers late
+(`FAKE_NIRI_READ_DELAY`) makes such a race fail every run instead of now and then.
+
