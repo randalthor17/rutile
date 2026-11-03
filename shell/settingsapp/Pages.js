@@ -88,7 +88,7 @@ var pages = [
         sections: [
             { title: "", keys: ["notice.niriInclude", "input.enabled"] },
             { title: "Keyboard", keys: ["input.keyboardLayout", "input.repeatDelay", "input.repeatRate"] },
-            { title: "Touchpad", keys: ["input.touchpadTap", "input.touchpadNaturalScroll", "input.touchpadSpeed"] },
+            { title: "Touchpad", keys: ["input.touchpadTap", "input.touchpadDisableWhileTyping", "input.touchpadNaturalScroll", "input.touchpadSpeed"] },
             { title: "Mouse", keys: ["input.mouseSpeed", "input.mouseFlat", "input.mouseNaturalScroll"] }
         ]
     },
@@ -187,6 +187,7 @@ var hints = {
     "input.repeatDelay": { requires: "input.enabled", step: 50, label: v => v + " ms", aliases: ["keyboard", "typing"] },
     "input.repeatRate": { requires: "input.enabled", step: 5, label: v => v + " per second", aliases: ["keyboard", "typing"] },
     "input.touchpadTap": { requires: "input.enabled", aliases: ["click", "trackpad"] },
+    "input.touchpadDisableWhileTyping": { requires: "input.enabled", aliases: ["dwt", "palm", "trackpad"] },
     "input.touchpadNaturalScroll": { requires: "input.enabled", aliases: ["reverse scrolling", "trackpad"] },
     "input.touchpadSpeed": { requires: "input.enabled", step: 0.1, label: v => (v > 0 ? "+" : "") + v.toFixed(1),
                              aliases: ["pointer speed", "sensitivity", "trackpad"] },

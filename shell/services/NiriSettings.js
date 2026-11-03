@@ -1,9 +1,10 @@
 // The shell's settings that niri takes (D70, D74), as rutile-settings.kdl, which niri reads through rutile.kdl,
 // included at the end of niri's own config: included sections merge, so each value here wins over the user's.
 // Each part has its own switch and is written only while on: input (Settings > Keyboard, mouse & touchpad) and
-// animations (niri's following the shell's animation speed, Settings > Accessibility). niri cannot turn a flag
-// off from an included file (`tap false`, `off false` do not parse), so a flag is written only when on.
-// No QML, so it tests alone.
+// animations (niri's following the shell's animation speed, Settings > Accessibility). niri 26.04 merges an
+// included touchpad, mouse or xkb section by replacing the user's whole (merge_clone!), so a flag left out here
+// is off whatever the user's config says; animations take `on`, which undoes the user's `off`. No QML, so it
+// tests alone.
 .pragma library
 
 function num(v) {
@@ -17,10 +18,11 @@ function block(name, lines, indent) {
 }
 
 // niri's input section. `s`: {keyboardLayout ("" leaves niri's), repeatDelay, repeatRate, touchpadTap,
-// touchpadNaturalScroll, touchpadSpeed, mouseNaturalScroll, mouseSpeed, mouseFlat}
+// touchpadDisableWhileTyping, touchpadNaturalScroll, touchpadSpeed, mouseNaturalScroll, mouseSpeed, mouseFlat}
 function input(s) {
     const touchpad = [];
     if (s.touchpadTap) touchpad.push("tap");
+    if (s.touchpadDisableWhileTyping) touchpad.push("dwt");
     if (s.touchpadNaturalScroll) touchpad.push("natural-scroll");
     touchpad.push("accel-speed " + num(s.touchpadSpeed));
     const mouse = [];
@@ -37,10 +39,10 @@ function input(s) {
 }
 
 // niri's animations at the shell's speed (Motion.speed: 1 as made, 2 twice as fast, 0 none): niri's slowdown is
-// the inverse.
+// the inverse, and `on` undoes an `off` in the user's config.
 function animations(speed) {
     if (!(speed > 0)) return "animations {\n    off\n}\n";
-    return "animations {\n    slowdown " + num(1 / speed) + "\n}\n";
+    return "animations {\n    on\n    slowdown " + num(1 / speed) + "\n}\n";
 }
 
 // The whole file: `parts` {input: s or null, animations: speed or null}; "" when no part is on (the file goes).

@@ -21,6 +21,7 @@ Singleton {
             keyboardLayout: Settings.value("input.keyboardLayout") ?? "",
             repeatDelay: Settings.value("input.repeatDelay"), repeatRate: Settings.value("input.repeatRate"),
             touchpadTap: Settings.value("input.touchpadTap") === true,
+            touchpadDisableWhileTyping: Settings.value("input.touchpadDisableWhileTyping") === true,
             touchpadNaturalScroll: Settings.value("input.touchpadNaturalScroll") === true,
             touchpadSpeed: Settings.value("input.touchpadSpeed"),
             mouseNaturalScroll: Settings.value("input.mouseNaturalScroll") === true,

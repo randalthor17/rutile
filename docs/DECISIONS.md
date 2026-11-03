@@ -728,3 +728,17 @@ a flag the user's config sets (`tap`, `natural-scroll`, `animations { off }`: `f
 kind, shown while the app's `conditions[when]` holds). Not yet from Settings: niri's keybinds (home-manager only),
 the cursor, the layout (gaps, focus ring), workspaces.
 
+**D75. Flags are overridden after all: niri replaces touchpad, mouse and xkb sections whole (corrects D70,
+D74).** D70 and D74 said an include cannot turn off a flag the user's config sets, from `tap false` and
+`off false` not parsing. niri 26.04's source says otherwise for what matters here: `Input::merge_with` takes an
+included `touchpad`, `mouse` (and `trackpoint`, `trackball`, `tablet`, `touch`) section with `merge_clone!`,
+which replaces the user's whole; `Keyboard` does the same for `xkb`. So Rutile's touchpad and mouse sections are
+the only ones that apply while its input switch is on: a flag left out is off, whatever the user's config says,
+and the user's other settings in those sections (dwt, click-method, scroll-method...) do not apply then. The most
+used of those, disable-while-typing, is a setting now (`input.touchpadDisableWhileTyping`, on by default); a
+keyboard layout set here replaces the user's xkb section (variant and options too). Animations merge `off` with
+a logical or, but an `on` flag sets it back (`self.off = false`), so niri's animations following the shell's
+speed write `on`. Top-level flags take `false` (`prefer-no-csd false` parses); flags inside sections do not in
+26.04, though niri's documentation on main says most do. Checked: the source at v26.04 and `niri validate`; the
+effective touchpad settings cannot be read back over niri's IPC, so the replacing itself was not observed.
+

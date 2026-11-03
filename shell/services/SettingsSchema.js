@@ -231,7 +231,7 @@ var schema = {
                     "type": "boolean",
                     "default": false,
                     "title": "Set niri's input here",
-                    "description": "Apply these to niri, through rutile.kdl (include it at the end of niri's config.kdl). Off: niri's config alone."
+                    "description": "Apply these to niri, through rutile.kdl (include it at the end of niri's config.kdl). They replace niri's own touchpad and mouse settings. Off: niri's config alone."
                 },
                 "keyboardLayout": {
                     "type": "string",
@@ -270,7 +270,7 @@ var schema = {
                         "latam"
                     ],
                     "title": "Keyboard layout",
-                    "description": "The keyboard's layout (xkb). Not set: niri's config chooses."
+                    "description": "The keyboard's layout (xkb). Not set: niri's config chooses; set, it replaces niri's xkb settings (variant, options)."
                 },
                 "repeatDelay": {
                     "type": "integer",
@@ -292,13 +292,19 @@ var schema = {
                     "type": "boolean",
                     "default": true,
                     "title": "Tap to click",
-                    "description": "A tap on the touchpad clicks. Off leaves niri's config as it is (niri cannot turn it off from an included file)."
+                    "description": "A tap on the touchpad clicks."
+                },
+                "touchpadDisableWhileTyping": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Ignore the touchpad while typing",
+                    "description": "Touches do nothing for a moment after a key press, so a palm does not move the pointer."
                 },
                 "touchpadNaturalScroll": {
                     "type": "boolean",
                     "default": true,
                     "title": "Touchpad natural scrolling",
-                    "description": "Content moves with the fingers. Off leaves niri's config as it is."
+                    "description": "Content moves with the fingers."
                 },
                 "touchpadSpeed": {
                     "type": "number",
@@ -312,7 +318,7 @@ var schema = {
                     "type": "boolean",
                     "default": false,
                     "title": "Mouse natural scrolling",
-                    "description": "The wheel moves content the other way. Off leaves niri's config as it is."
+                    "description": "The wheel moves content the other way."
                 },
                 "mouseSpeed": {
                     "type": "number",

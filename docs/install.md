@@ -54,8 +54,9 @@ What `enable` gives:
   mouse & touchpad, and niri's animations at the shell's speed, each while its switch is on) and
   `rutile-display.kdl` (Settings > Display's choices). Rutile's settings win over your own config: the include
   comes last, so its values replace yours, and the shell applies Display's choices again over any `output`
-  section of yours whenever it starts or your config changes (D74). One thing it cannot do from an include:
-  turn off a flag your config turns on (`tap`, `natural-scroll`, `animations { off }`). Your niri config is never changed for you (D72). **Add this line at
+  section of yours whenever it starts or your config changes (D74). niri replaces your whole touchpad and mouse
+  sections (and xkb, when a layout is set) with Rutile's while its input switch is on, so your other touchpad and
+  mouse settings do not apply then (D75). Your niri config is never changed for you (D72). **Add this line at
   the end of `~/.config/niri/config.kdl` yourself**, so Rutile's settings come after yours and win:
 
   ```kdl

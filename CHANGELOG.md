@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Keyboard, mouse & touchpad: off means off.** Tap to click and natural scrolling turned off here win over
+  your niri config too (niri replaces its touchpad and mouse sections with Rutile's); new: ignore the touchpad
+  while typing. niri's animations following the shell's speed also turn them back on over your config's `off`.
 - **Settings win over your niri config, and reach more of it.** Display's choices are kept (no more "Copy"),
   applied again over your own `output` sections whenever the shell starts or your config changes. New:
   keyboard layout (Keyboard, mouse & touchpad) and "niri's animations too" (Accessibility: niri at the shell's

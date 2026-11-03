@@ -1,6 +1,7 @@
 // The shell's settings into niri (D70, D74), end to end in a sandbox XDG_CONFIG_HOME: Settings > Input on writes
 // rutile-settings.kdl, which `niri validate` accepts included after a config of its own; a change rewrites it (a
-// keyboard layout, a flag off left out); niri's animations follow the shell's speed (and none at speed 0); with
+// keyboard layout, a flag off left out: niri replaces the user's whole touchpad section with it); niri's animations
+// follow the shell's speed, turned on over the user's `off` (and none at speed 0); with
 // every part off the file goes. Without niri on PATH the validation is skipped (logged), the rest still runs.
 import QtQuick
 import Quickshell
@@ -19,7 +20,7 @@ ShellRoot {
         id: look
         // the file, and niri's verdict on a config that includes it after sections of its own
         command: ["sh", "-c", 'if [ ! -f "$1" ]; then echo "file=none"; exit 0; fi; cat "$1"; ' +
-                  'd=$(mktemp -d); printf "input {\\n    touchpad {\\n        tap\\n    }\\n}\\nanimations {\\n    slowdown 3\\n}\\ninclude \\"%s\\"\\n" "$1" > "$d/config.kdl"; ' +
+                  'd=$(mktemp -d); printf "input {\\n    touchpad {\\n        tap\\n    }\\n}\\nanimations {\\n    off\\n    slowdown 3\\n}\\ninclude \\"%s\\"\\n" "$1" > "$d/config.kdl"; ' +
                   'if command -v niri >/dev/null; then niri validate -c "$d/config.kdl" >/dev/null 2>&1 && echo "niri=valid" || echo "niri=invalid"; ' +
                   'else echo "niri=missing"; fi; rm -rf "$d"', "sh", root.file]
         stdout: StdioCollector { onStreamFinished: root.out = text }
@@ -47,7 +48,7 @@ ShellRoot {
                 break;
             case 3:
                 t.verify(root.out.indexOf("repeat-delay 600") >= 0 && root.out.indexOf("repeat-rate 25") >= 0, "the defaults: " + root.out);
-                t.verify(/touchpad \{\n\s+tap\n\s+natural-scroll\n\s+accel-speed 0\n/.test(root.out), "touchpad");
+                t.verify(/touchpad \{\n\s+tap\n\s+dwt\n\s+natural-scroll\n\s+accel-speed 0\n/.test(root.out), "touchpad: " + root.out);
                 t.verify(root.out.indexOf("xkb") < 0, "no layout set: niri's own");
                 t.verify(root.out.indexOf("animations") < 0, "animations off by default");
                 root.valid();
@@ -64,7 +65,7 @@ ShellRoot {
                 t.verify(root.out.indexOf("repeat-delay 300") >= 0, "a change rewrites it");
                 t.verify(!/^\s+tap$/m.test(root.out), "a flag off is left out");
                 t.verify(/xkb \{\n\s+layout "de"\n\s+\}/.test(root.out), "the layout: " + root.out);
-                t.verify(/animations \{\n\s+slowdown 0\.5\n\}/.test(root.out), "twice as fast: half the slowdown");
+                t.verify(/animations \{\n\s+on\n\s+slowdown 0\.5\n\}/.test(root.out), "twice as fast: half the slowdown, on over the user's off");
                 root.valid();
                 Motion.speed = 0;
                 Settings.set("input.enabled", false);

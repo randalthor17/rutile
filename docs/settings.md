@@ -49,13 +49,14 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `appColors.nvim` | true or false | false | a `rutile` colorscheme for Neovim |
 | `appColors.firefox` | true or false | false | Firefox through the Pywalfox extension, with Rutile's own host |
 | `input.enabled` | true or false | false | apply the input settings below to niri: a rutile-settings.kdl that niri reads through rutile.kdl, which you include at the end of config.kdl (D70, D72) |
-| `input.keyboardLayout` | an xkb layout (us, gb, de, fr, ...) or "" | "" | the keyboard's layout; "" leaves niri's config to choose |
+| `input.keyboardLayout` | an xkb layout (us, gb, de, fr, ...) or "" | "" | the keyboard's layout; "" leaves niri's config to choose; set, it replaces niri's whole xkb section (variant, options) |
 | `input.repeatDelay` | integer, 100 to 1000 | 600 | milliseconds a key is held before it repeats |
 | `input.repeatRate` | integer, 5 to 80 | 25 | repeats per second |
-| `input.touchpadTap` | true or false | true | tap to click; off leaves niri's config as it is (an included file cannot turn a flag off) |
-| `input.touchpadNaturalScroll` | true or false | true | content moves with the fingers; off leaves niri's config as it is |
+| `input.touchpadTap` | true or false | true | tap to click |
+| `input.touchpadDisableWhileTyping` | true or false | true | touches do nothing for a moment after a key press (niri's dwt) |
+| `input.touchpadNaturalScroll` | true or false | true | content moves with the fingers |
 | `input.touchpadSpeed` | -1 to 1 | 0 | touchpad pointer speed (niri's accel-speed) |
-| `input.mouseNaturalScroll` | true or false | false | the wheel moves content the other way; off leaves niri's config as it is |
+| `input.mouseNaturalScroll` | true or false | false | the wheel moves content the other way |
 | `input.mouseSpeed` | -1 to 1 | 0 | mouse pointer speed |
 | `input.mouseFlat` | true or false | false | no mouse acceleration (niri's flat profile) |
 | `polkit.agent` | true or false | true | be the session's polkit agent (an app asking for an administrator's password asks in the shell); turn off when another agent does it (polkit allows one per session) |
