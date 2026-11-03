@@ -741,4 +741,7 @@ a logical or, but an `on` flag sets it back (`self.off = false`), so niri's anim
 speed write `on`. Top-level flags take `false` (`prefer-no-csd false` parses); flags inside sections do not in
 26.04, though niri's documentation on main says most do. Checked: the source at v26.04 and `niri validate`; the
 effective touchpad settings cannot be read back over niri's IPC, so the replacing itself was not observed.
+A KDL parser that copied the user's touchpad, mouse and xkb sections into Rutile's file (so only Rutile's keys
+changed) was weighed and dropped by the maintainer: the input switch is off by default, its description says
+these sections are Rutile's while it is on, and whoever needs a setting Rutile does not offer keeps it off.
 
