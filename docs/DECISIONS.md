@@ -708,3 +708,23 @@ optional so the module's `niri validate` at build time passes while the file is 
 and no niri module, an assertion stops the switch and gives the line to add by hand. Off, nothing in niri's
 config changes (D72).
 
+**D74. Every niri setting from Settings, and Rutile's over the user's (amends D69, D70).** The maintainer asked
+that Settings reach niri wherever it can and that Rutile's choices win over config.kdl. The shell writes three
+files, each included (optionally) by rutile.kdl, which comes at the end of config.kdl: `rutile-colors.kdl`
+(D58), `rutile-settings.kdl` (NiriSettingsService: input while its switch is on, now with an xkb keyboard
+layout, and niri's animations at the shell's speed with `motion.niri`; it replaces D70's `rutile-input.kdl`, which
+the shell removes), and `rutile-display.kdl` (NiriDisplayService: Display's choices). Merged sections (input,
+animations, layout's colors) in a later include replace the user's values, so those win by position. `output`
+sections are not merged: tested in a nested niri, the first one for an output applies, so an output section of
+the user's beats ours. A `niri msg output` change, though, holds until that output's config changes (also tested:
+a reload or another change keeps it, a change to the output's own section drops it). So the shell keeps
+Display's choices in state.json (an entry per output, as niri has it after the change) and applies them with
+`niri msg output` when it starts and whenever config.kdl changes (NiriConfigCheck now says so); the file covers
+the time the shell is not running, for outputs the user's config leaves alone. "Copy for niri's config" (D69) is
+gone; an output Rutile keeps has "Back to niri's config" instead (it takes effect at once unless the user's own
+config also sets that output, then from niri's next change of it or restart). What an include cannot do: turn off
+a flag the user's config sets (`tap`, `natural-scroll`, `animations { off }`: `false` does not parse in niri
+26.04). Settings shows a notice on the niri pages while config.kdl does not include rutile.kdl (a notice row
+kind, shown while the app's `conditions[when]` holds). Not yet from Settings: niri's keybinds (home-manager only),
+the cursor, the layout (gaps, focus ring), workspaces.
+

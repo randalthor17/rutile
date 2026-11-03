@@ -10,7 +10,7 @@ ShellRoot {
     id: root
     property int stage: 0
     readonly property string conf: Quickshell.env("XDG_CONFIG_HOME") + "/niri/config.kdl"
-    readonly property string inputError: NiriInputService.error     // created as the shell creates it
+    readonly property string inputError: NiriSettingsService.error  // created as the shell creates it
     QsTest { id: t }
     Process {
         id: write

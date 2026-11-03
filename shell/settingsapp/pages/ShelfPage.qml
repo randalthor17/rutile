@@ -1,7 +1,7 @@
 // The shelf's pinned apps (plan 5.2): in order, each moved up or down or unpinned, and back to the default (the
 // first installed file manager, browser and terminal). Apps are pinned from a right click on the shelf or in the
 // launcher. A page view: the app sets `app`, `store` and `backend` (ShelfPinsBackend.qml, or the tests' fake),
-// which has managed (set in Nix: nothing changes here), isDefault, pins: [{id, name, icon, installed}],
+// which has managed (set in Nix: nothing changes here), isDefault, pins: [(id, name, icon, installed)],
 // setPins(ids), reset(). The group is `setting_shelf.pins` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick

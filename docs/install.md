@@ -50,8 +50,12 @@ What `enable` gives:
 - niri's part (`programs.rutile.niri.enable`, on), in a file of its own, `~/.config/niri/rutile.kdl`: a layer
   rule so the power menu and the password dialog blur your windows, not only the wallpaper, the binds if you
   turned them on, and optional includes of the files the shell writes: `rutile-colors.kdl` (niri's colors, while
-  Settings > Wallpaper & style > Colors in other apps > niri is on) and `rutile-input.kdl` (Settings > Keyboard,
-  mouse & touchpad, while its switch is on). Your niri config is never changed for you (D72). **Add this line at
+  Settings > Wallpaper & style > Colors in other apps > niri is on), `rutile-settings.kdl` (Settings > Keyboard,
+  mouse & touchpad, and niri's animations at the shell's speed, each while its switch is on) and
+  `rutile-display.kdl` (Settings > Display's choices). Rutile's settings win over your own config: the include
+  comes last, so its values replace yours, and the shell applies Display's choices again over any `output`
+  section of yours whenever it starts or your config changes (D74). One thing it cannot do from an include:
+  turn off a flag your config turns on (`tap`, `natural-scroll`, `animations { off }`). Your niri config is never changed for you (D72). **Add this line at
   the end of `~/.config/niri/config.kdl` yourself**, so Rutile's settings come after yours and win:
 
   ```kdl

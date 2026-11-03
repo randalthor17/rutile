@@ -7,7 +7,7 @@ import qs.settingsapp
 import "../qs/settingsapp/Model.js" as Model
 import "../qs/settingsapp/Pages.js" as Pages
 import "../qs/services/SettingsSchema.js" as Schema
-import "../qs/settingsapp/pages/Display.js" as Display
+import "../qs/services/NiriDisplay.js" as Display
 import "../qs/settingsapp/pages/Apps.js" as Apps
 
 TestCase {
@@ -102,9 +102,9 @@ TestCase {
             property var outputs: []
             property string error: ""
             property var calls: []
-            property string copied: ""
+            property var kept: []
             function command(name, args) { calls = calls.concat([name + " " + args.join(" ")]); }
-            function copy(text) { copied = text; }
+            function reset(name) { calls = calls.concat(["reset " + name]); }
         }
     }
 
@@ -127,12 +127,20 @@ TestCase {
         compare(Display.transformLabel("90"), "90°");
         compare(Display.transformArg("270°"), "270");
         compare(Display.enabledCount(niriOutputs()), 2);
-        compare(Display.kdl(dp), 'output "DP-1" {\n    mode "1920x1080@99.999"\n    scale 1\n}\n');
-        compare(Display.kdl(hdmi), 'output "HDMI-A-1" {\n    mode "3840x2160@60.000"\n    scale 1.3\n    transform "flipped-90"\n}\n',
-                "niri's config spelling");
-        compare(Display.kdl(edp), 'output "eDP-1" {\n    off\n}\n');
-        const vrr = Object.assign({}, dp, { vrr_enabled: true });
-        verify(Display.kdl(vrr).indexOf("    variable-refresh-rate\n") > 0);
+        // what the shell keeps of an output, how it applies it again, and rutile-display.kdl (D74)
+        compare(JSON.stringify(Display.entry(dp)), JSON.stringify({ on: true, mode: "1920x1080@99.999", scale: 1, transform: "normal", vrr: false }));
+        compare(Display.entry(hdmi).transform, "flipped-90", "niri's config spelling");
+        compare(JSON.stringify(Display.entry(edp)), JSON.stringify({ on: false }));
+        compare(Display.commands(Display.entry(hdmi)).map(c => c.join(" ")).join("|"),
+                "on|mode 3840x2160@60.000|scale 1.3|transform flipped-90|vrr off");
+        compare(Display.commands({ on: false }).map(c => c.join(" ")).join("|"), "off");
+        compare(Display.entriesKdl({}), "", "nothing kept: no file");
+        const text = Display.entriesKdl({ "HDMI-A-1": Display.entry(hdmi), "eDP-1": { on: false },
+                                          "DP-1": Object.assign(Display.entry(dp), { vrr: true }) });
+        verify(text.indexOf('output "DP-1" {\n    mode "1920x1080@99.999"\n    scale 1\n    variable-refresh-rate\n}\n') > 0, text);
+        verify(text.indexOf('output "HDMI-A-1" {\n    mode "3840x2160@60.000"\n    scale 1.3\n    transform "flipped-90"\n}\n') > 0);
+        verify(text.indexOf('output "eDP-1" {\n    off\n}\n') > 0);
+        verify(text.indexOf("DP-1") < text.indexOf("HDMI-A-1"), "by name");
     }
 
     function test_display_page() {
@@ -170,8 +178,11 @@ TestCase {
         compare(b.calls[3], "DP-1 transform 90");
         mouseClick(findChild(a, "displayVrrSwitch_0"));
         compare(b.calls[4], "DP-1 vrr on");
-        mouseClick(findChild(a, "displayCopy_0"));
-        compare(b.copied, Display.kdl(niriOutputs()[0]));
+        verify(!findChild(a, "displayReset_0").visible, "not kept: nothing to reset");
+        b.kept = ["DP-1"];
+        waitForRendering(a);
+        mouseClick(findChild(a, "displayReset_0"));
+        compare(b.calls[5], "reset DP-1", "kept: back to niri's config");
 
         // the last output on cannot be turned off
         verify(findChild(a, "displaySwitch_0").enabled, "two on: either can go off");

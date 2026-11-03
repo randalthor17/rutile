@@ -3,7 +3,8 @@
 .import "../services/SettingsStore.js" as Store
 
 // How a setting is shown: switch, slider, choice (a menu), path, list, color (swatches), or text. A row can also be
-// an action (a button, no setting): its hint has `kind: "action"` and the title and description the schema would.
+// an action (a button, no setting): its hint has `kind: "action"` and the title and description the schema would;
+// or a notice (no setting, no control), shown only while the app's `conditions[when]` is true.
 function kind(leaf, hint) {
     hint = hint ?? {};
     if (hint.kind) return hint.kind;
@@ -25,7 +26,7 @@ function sections(page, schema, hints) {
         const rows = [];
         for (const key of s.keys) {
             const hint = hints[key] ?? {};
-            const leaf = hint.kind === "action" ? hint : leaves[key];
+            const leaf = hint.kind === "action" || hint.kind === "notice" ? hint : leaves[key];
             if (!leaf) continue;
             const row = {
                 key: key,
@@ -40,6 +41,7 @@ function sections(page, schema, hints) {
                 filters: hint.filters ?? [],
                 swatches: hint.swatches ?? [],
                 button: hint.button ?? "",
+                when: hint.when ?? "",
                 requires: hint.requires ?? ""
             };
             (row.advanced ? advanced : rows).push(row);

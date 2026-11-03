@@ -2,7 +2,7 @@
 // sets `app`, `store` and `backend` (PowerBackend.qml, or the tests' fake), which has
 //   batteryAvailable, battery (0-1), state (charging, pending, full, empty, discharging), timeToFull and
 //   timeToEmpty (seconds, 0 unknown), health (0-1, -1 unknown); profilesAvailable, hasPerformance, profile
-//   (power-saver, balanced, performance), holds [{profile, app, reason}]; setProfile(name).
+//   (power-saver, balanced, performance), holds [(profile, app, reason)]; setProfile(name).
 // The groups are `setting_power.battery` and `setting_power.mode` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick

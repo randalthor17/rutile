@@ -1,7 +1,7 @@
 // Network (plan 5.2): Wi-Fi (its switch, the networks around, a password when one is needed) and wired devices.
 // A page view: the app sets `app`, `store` and `backend` (NetworkBackend.qml, or the tests' fake), which has
-//   available, wifiAvailable, wifiEnabled; networks: [{id, name, signal 0-1, secure, known, connected, busy,
-//   error}]; wired: [{id, name, connected}]; asking: the network whose password is wanted ("" for none);
+//   available, wifiAvailable, wifiEnabled; networks: [(id, name, signal 0-1, secure, known, connected, busy,
+//   error)]; wired: [(id, name, connected)]; asking: the network whose password is wanted ("" for none);
 //   setWifiEnabled(b), connect(id), connectWithPassword(id, password), cancelPassword(), disconnect(id), forget(id).
 // The groups are `setting_network.wifi` and `setting_network.ethernet` (Pages.js entries).
 pragma ComponentBehavior: Bound

@@ -14,6 +14,9 @@ Singleton {
     property var included: null
     property bool reminded: false
     property bool pending: false                // asked before the config was read
+    property bool loadedOnce: false
+
+    signal configChanged()                      // config.kdl changed after it was first read
 
     function check(text) {
         included = /^\s*include\b[^\n]*rutile\.kdl/m.test(text ?? "");
@@ -35,7 +38,11 @@ Singleton {
         watchChanges: true
         printErrors: false
         blockLoading: true
-        onLoaded: root.check(text())
+        onLoaded: {
+            root.check(text());
+            if (root.loadedOnce) root.configChanged();
+            root.loadedOnce = true;
+        }
         onLoadFailed: root.check("")
         onFileChanged: reload()
     }

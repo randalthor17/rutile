@@ -20,7 +20,8 @@ var pages = [
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
             { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed"] },
-            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] }
+            { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] },
+            { title: "", keys: ["notice.niriInclude"] }
         ]
     },
     {
@@ -85,8 +86,8 @@ var pages = [
         id: "input", title: "Keyboard, mouse & touchpad", icon: "keyboard", tone: "secondaryContainer",
         summary: "Key repeat, pointer speed, tap to click", aliases: ["input", "trackpad", "pointer", "niri input"],
         sections: [
-            { title: "", keys: ["input.enabled"] },
-            { title: "Keyboard", keys: ["input.repeatDelay", "input.repeatRate"] },
+            { title: "", keys: ["notice.niriInclude", "input.enabled"] },
+            { title: "Keyboard", keys: ["input.keyboardLayout", "input.repeatDelay", "input.repeatRate"] },
             { title: "Touchpad", keys: ["input.touchpadTap", "input.touchpadNaturalScroll", "input.touchpadSpeed"] },
             { title: "Mouse", keys: ["input.mouseSpeed", "input.mouseFlat", "input.mouseNaturalScroll"] }
         ]
@@ -127,7 +128,7 @@ var pages = [
     {
         id: "accessibility", title: "Accessibility", icon: "accessibility_new", tone: "primaryContainer",
         summary: "Animations", aliases: ["motion", "animation", "reduce motion"],
-        sections: [{ title: "", keys: ["motion.speed"] }]
+        sections: [{ title: "", keys: ["motion.speed", "motion.niri"] }, { title: "", keys: ["notice.niriInclude"] }]
     },
     {
         id: "about", title: "About Rutile", icon: "info", tone: "secondaryContainer",
@@ -173,7 +174,16 @@ var hints = {
         description: "Install the GTK and Kvantum themes for Flatpak apps and let them read these colors",
         aliases: ["flatpak", "flathub", "sandbox", "inkscape"]
     },
-    "input.enabled": { aliases: ["niri", "rutile-input.kdl"] },
+    "input.enabled": { aliases: ["niri", "rutile-settings.kdl"] },
+    "input.keyboardLayout": {
+        requires: "input.enabled", aliases: ["xkb", "language", "qwerty", "azerty", "qwertz"],
+        label: v => ({ "": "Not set", us: "English (US)", gb: "English (UK)", de: "German", fr: "French", es: "Spanish",
+                       it: "Italian", pt: "Portuguese", br: "Portuguese (Brazil)", nl: "Dutch", be: "Belgian",
+                       ch: "Swiss", at: "Austrian", se: "Swedish", no: "Norwegian", dk: "Danish", fi: "Finnish",
+                       pl: "Polish", cz: "Czech", hu: "Hungarian", ro: "Romanian", tr: "Turkish", gr: "Greek",
+                       ru: "Russian", ua: "Ukrainian", il: "Hebrew", ara: "Arabic", in: "Indian", jp: "Japanese",
+                       kr: "Korean", latam: "Spanish (Latin America)" })[v] ?? v
+    },
     "input.repeatDelay": { requires: "input.enabled", step: 50, label: v => v + " ms", aliases: ["keyboard", "typing"] },
     "input.repeatRate": { requires: "input.enabled", step: 5, label: v => v + " per second", aliases: ["keyboard", "typing"] },
     "input.touchpadTap": { requires: "input.enabled", aliases: ["click", "trackpad"] },
@@ -192,6 +202,12 @@ var hints = {
     },
     "lock.beforeSleep": { aliases: ["suspend", "hibernate"] },
     "polkit.agent": { advanced: true, aliases: ["pkexec", "sudo", "authentication"] },
+    "motion.niri": { aliases: ["niri", "window animations", "workspace animations"] },
+    // shown only while niri's config does not include rutile.kdl (the app's `conditions`, D74)
+    "notice.niriInclude": {
+        kind: "notice", when: "niriNotIncluded", title: "niri does not read these yet",
+        description: 'Add include optional=true "rutile.kdl" at the end of niri\'s config.kdl, or set programs.rutile.niri.includeInConfig'
+    },
     "motion.speed": {
         step: 0.25,
         label: v => v === 0 ? "Off" : v + "×",

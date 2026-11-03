@@ -1,6 +1,6 @@
 // Sound (plan 5.2): the output and the input, each with its volume, mute and the devices to choose from. A page
 // view: the app sets `app`, `store` and `backend` (SoundBackend.qml, or the tests' fake), which has
-//   available; outputs, inputs: [{id, name}]; output, input: the default's id (-1: none);
+//   available; outputs, inputs: [(id, name)]; output, input: the default's id (-1: none);
 //   volume, muted, inputVolume, inputMuted; setOutput(id), setInput(id), setVolume(v), setMuted(b),
 //   setInputVolume(v), setInputMuted(b).
 // The two groups are `setting_sound.output` and `setting_sound.input`, which search marks (Pages.js entries).

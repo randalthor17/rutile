@@ -1,7 +1,7 @@
 // Default apps (plan 5.2): which app opens web links, folders, mail, pictures, videos, music, text and PDFs. A page
 // view: the app sets `app`, `store` and `backend` (AppsBackend.qml, or the tests' fake), which has
 //   available; managed (mimeapps.list is home-manager's: nothing can be set here); error;
-//   kinds: [{id, title, icon, current (app id, "" none), apps: [{id, name, icon}]}]; setDefault(kind, app).
+//   kinds: [(id, title, icon, current (app id, "" none), apps: [(id, name, icon)])]; setDefault(kind, app).
 // The group is `setting_apps.defaults` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick

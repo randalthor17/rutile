@@ -1,4 +1,4 @@
-// The Display page's choices, from niri's outputs as `niri msg -j outputs` gives them (one object per output:
+// niri's outputs for the Display page and NiriDisplayService (D69, D74), from `niri msg -j outputs` (one object per output:
 // name, make, model, modes [{width, height, refresh_rate (mHz), is_preferred}], current_mode (an index, null when
 // off), vrr_supported, vrr_enabled, logical {scale, transform} or null when off). No QML, so it tests alone.
 .pragma library
@@ -75,15 +75,29 @@ function transformArg(label) {
 function enabledCount(outputs) {
     return outputs.filter(enabled).length;
 }
-// The output's settings as niri's config has them, to keep them (`niri msg output` lasts until niri restarts).
-function kdl(o) {
-    if (!enabled(o)) return 'output "' + o.name + '" {\n    off\n}\n';
-    const m = current(o);
-    const lines = ['output "' + o.name + '" {', '    mode "' + modeArg(m) + '"', '    scale ' + o.logical.scale];
-    // niri's JSON says Flipped90 where its config says flipped-90
+// What the shell keeps of an output the Display page changed (D74): {on, mode (modeArg), scale, transform
+// (niri's config spelling), vrr}, from niri's JSON.
+function entry(o) {
+    if (!enabled(o)) return { on: false };
     const t = (TRANSFORMS.find(x => x[0] === o.logical.transform) ?? [])[1]
         ?? String(o.logical.transform).replace(/^Flipped(\d+)$/, "flipped-$1").toLowerCase();
-    if (t !== "normal") lines.push('    transform "' + t + '"');
-    if (o.vrr_enabled) lines.push("    variable-refresh-rate");
-    return lines.join("\n") + "\n}\n";
+    return { on: true, mode: modeArg(current(o)), scale: o.logical.scale, transform: t, vrr: !!o.vrr_enabled };
+}
+// Its `niri msg output NAME ...` commands, in order, each an argument list after the name.
+function commands(e) {
+    if (!e.on) return [["off"]];
+    return [["on"], ["mode", e.mode], ["scale", String(e.scale)], ["transform", e.transform], ["vrr", e.vrr ? "on" : "off"]];
+}
+// rutile-display.kdl from the kept entries ({name: entry}); "" when there are none.
+function entriesKdl(entries) {
+    const names = Object.keys(entries ?? {}).sort();
+    if (names.length === 0) return "";
+    return "// Written by Rutile Shell from Settings > Display; niri reads it through rutile.kdl.\n" + names.map(n => {
+        const e = entries[n];
+        if (!e.on) return 'output "' + n + '" {\n    off\n}\n';
+        const lines = ['output "' + n + '" {', '    mode "' + e.mode + '"', "    scale " + e.scale];
+        if (e.transform !== "normal") lines.push('    transform "' + e.transform + '"');
+        if (e.vrr) lines.push("    variable-refresh-rate");
+        return lines.join("\n") + "\n}\n";
+    }).join("");
 }

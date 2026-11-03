@@ -15,6 +15,12 @@
           "default": 1,
           "title": "Animation speed",
           "description": "How fast every animation runs: 1 is Material's speed, 2 twice as fast, 0 turns motion off."
+        },
+        "niri": {
+          "type": "boolean",
+          "default": false,
+          "title": "niri's animations too",
+          "description": "Windows and workspaces in niri move at this speed too (0: no animations), through rutile.kdl."
         }
       }
     },
@@ -222,6 +228,45 @@
           "default": false,
           "title": "Set niri's input here",
           "description": "Apply these to niri, through rutile.kdl (include it at the end of niri's config.kdl). Off: niri's config alone."
+        },
+        "keyboardLayout": {
+          "type": "string",
+          "default": "",
+          "enum": [
+            "",
+            "us",
+            "gb",
+            "de",
+            "fr",
+            "es",
+            "it",
+            "pt",
+            "br",
+            "nl",
+            "be",
+            "ch",
+            "at",
+            "se",
+            "no",
+            "dk",
+            "fi",
+            "pl",
+            "cz",
+            "hu",
+            "ro",
+            "tr",
+            "gr",
+            "ru",
+            "ua",
+            "il",
+            "ara",
+            "in",
+            "jp",
+            "kr",
+            "latam"
+          ],
+          "title": "Keyboard layout",
+          "description": "The keyboard's layout (xkb). Not set: niri's config chooses."
         },
         "repeatDelay": {
           "type": "integer",

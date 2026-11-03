@@ -2,15 +2,15 @@
 // refresh rate, and on or off (not the last one on). A page view: the app sets `app`, `store` and `backend`
 // (DisplayBackend.qml, or the tests' fake), which has
 //   available; outputs: niri's JSON (`niri msg -j outputs`'s values); error: the last change's complaint;
-//   command(name, args) (`niri msg output NAME ARGS...`), copy(text).
-// Changes last until niri restarts: "Copy for niri's config" gives the output's KDL to keep them. The outputs
-// are the group `setting_display.outputs` (Pages.js entries).
+//   command(name, args) (`niri msg output NAME ARGS...`), kept (the outputs whose choices the shell keeps, D74),
+//   reset(name) (back to niri's own config).
+// The outputs are the group `setting_display.outputs` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.common
 import qs.components
 import qs.settingsapp
-import "Display.js" as Display
+import "../../services/NiriDisplay.js" as Display
 
 Column {
     id: page
@@ -35,6 +35,15 @@ Column {
         iconName: "desktop_access_disabled"
         text: "No displays found"
         supportingText: "niri is not running, or `niri msg` is not on PATH"
+    }
+    ListItem {
+        objectName: "displayNotice"
+        visible: page.app?.conditions?.niriNotIncluded === true
+        width: page.width
+        tone: Colors.tertiaryContainer
+        iconName: "info"
+        text: "niri does not read Rutile's file yet"
+        supportingText: 'The shell applies these while it runs; to keep them without it, add include optional=true "rutile.kdl" to niri\'s config.kdl'
     }
     ListItem {
         objectName: "displayError"
@@ -63,8 +72,9 @@ Column {
                 readonly property var rates: mode ? Display.rates(modelData, mode.width, mode.height) : []
                 readonly property var scales: Display.scales(modelData)
                 readonly property bool vrr: on && modelData.vrr_supported
-                readonly property int rows: on ? 6 + (vrr ? 1 : 0) : 1
+                readonly property int rows: (on ? 5 + (vrr ? 1 : 0) : 1) + (kept ? 1 : 0)
                 readonly property string key: "display." + modelData.name
+                readonly property bool kept: (page.backend?.kept ?? []).indexOf(modelData.name) >= 0
                 width: page.width
                 spacing: ControlSpec.listSpec.segmentedGap
 
@@ -173,22 +183,15 @@ Column {
                     }
                 }
                 ListItem {
-                    objectName: "displayKeep_" + out.index
-                    visible: out.on
+                    objectName: "displayReset_" + out.index
+                    visible: out.kept
                     width: page.width
                     position: "last"
                     tone: Colors.surfaceContainer
-                    iconName: "content_copy"
-                    text: "Keep these settings"
-                    supportingText: "They last until niri restarts. Copy them into niri's config to keep them."
-                    onClicked: page.backend.copy(Display.kdl(out.modelData))
-                    Button {
-                        objectName: "displayCopy_" + out.index
-                        type: "tonal"
-                        size: "xs"
-                        text: "Copy"
-                        onClicked: page.backend.copy(Display.kdl(out.modelData))
-                    }
+                    iconName: "restart_alt"
+                    text: "Back to niri's config"
+                    supportingText: "Rutile keeps these choices for this display, over niri's own config"
+                    onClicked: page.backend.reset(out.modelData.name)
                 }
             }
         }

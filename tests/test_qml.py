@@ -335,3 +335,22 @@ class SkipPath(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class QuickshellHeaders(unittest.TestCase):
+    """Quickshell reads a file's header only up to the first brace (LESSONS): a `{` in a leading comment hides the
+    `pragma Singleton` below it, and the singleton comes out as an empty object (NiriDisplayService did)."""
+
+    def test_no_brace_before_a_singleton_pragma(self):
+        bad = []
+        for f in sorted((ROOT / "shell").rglob("*.qml")):
+            head = []
+            for line in f.read_text().splitlines():
+                if line.startswith("pragma Singleton"):
+                    if any("{" in h for h in head):
+                        bad.append(str(f.relative_to(ROOT)))
+                    break
+                if line.startswith("import ") or line.startswith("Singleton {"):
+                    break
+                head.append(line)
+        self.assertEqual(bad, [], "a brace above `pragma Singleton`")

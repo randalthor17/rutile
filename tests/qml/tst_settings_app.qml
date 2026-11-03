@@ -108,7 +108,7 @@ TestCase {
     function test_every_setting_is_on_a_page() {
         const shown = [];
         for (const p of Pages.pages)
-            for (const s of p.sections) shown.push(...s.keys.filter(k => Pages.hints[k]?.kind !== "action"));
+            for (const s of p.sections) shown.push(...s.keys.filter(k => Pages.hints[k]?.kind !== "action" && Pages.hints[k]?.kind !== "notice"));
         // and those a page of its own shows (its entries name them)
         for (const p of Pages.pages)
             for (const e of p.entries ?? []) if (Schema.schema.properties[e.key.split(".")[0]]?.properties?.[e.key.split(".")[1]]) shown.push(e.key);
@@ -120,7 +120,7 @@ TestCase {
             }
         };
         walk(Schema.schema, "");
-        compare(shown.slice().sort().join(), all.slice().sort().join(), "each schema setting once, nothing else but actions and pages' own");
+        compare(shown.slice().sort().join(), all.slice().sort().join(), "each schema setting once, nothing else but actions, notices and pages' own");
         compare(new Set(Pages.pages.map(p => p.id)).size, Pages.pages.length, "page ids are unique");
     }
 
@@ -374,6 +374,22 @@ TestCase {
         const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.key);
         verify(keys("pywalfox").indexOf("appColors.firefox") === 0, "found by what people call it");
         verify(keys("matugen").indexOf("appColors.enabled") >= 0);
+    }
+
+    // a notice (D74): shown only while its condition holds (niri does not include rutile.kdl)
+    function test_notice() {
+        const t = make();
+        open(t, "input");
+        const n = findChild(t.a, "setting_notice.niriInclude");
+        verify(n && !n.visible, "no condition: hidden");
+        t.a.conditions = { niriNotIncluded: true };
+        waitForRendering(t.a);
+        verify(n.visible);
+        compare(n.item.iconName, "info");
+        verify(n.item.supportingText.indexOf('include optional=true "rutile.kdl"') >= 0, n.item.supportingText);
+        mouseClick(n);
+        compare(t.s.sets.length, 0, "nothing to set");
+        compare(Model.search("niri does not read", Pages.pages, Schema.schema, Pages.hints).length, 0, "not a search result");
     }
 
     // an action (D66): a button, no setting; found by search; the app asks the window to run it

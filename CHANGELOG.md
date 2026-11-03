@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings win over your niri config, and reach more of it.** Display's choices are kept (no more "Copy"),
+  applied again over your own `output` sections whenever the shell starts or your config changes. New:
+  keyboard layout (Keyboard, mouse & touchpad) and "niri's animations too" (Accessibility: niri at the shell's
+  animation speed). The niri pages say so while niri's config does not include `rutile.kdl`.
 - **Right click on the shelf**: a pinned app offers Open, its own actions (a private window, say) and Unpin; an
   open window offers a new window, Pin or Unpin, and Close window.
 - **Settings > Shelf works**: the pinned apps in order, each moved up or down or unpinned, and back to the

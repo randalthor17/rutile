@@ -33,6 +33,8 @@ Rectangle {
     readonly property alias search: searchInput
     // the open page's backend (Pages.js `backend`), which the window loads; null for the others
     property var backend: null
+    // what notices show on (Pages.js `when`): {niriNotIncluded} from the window
+    property var conditions: ({})
     readonly property alias pageView: pageView
 
     signal pathRequested(string key, var filters)
@@ -342,6 +344,7 @@ Rectangle {
                                 onToggleMenu: root.toggleMenu(settingRow)
                                 onPickPath: root.pathRequested(modelData.key, modelData.filters)
                                 onRunAction: root.actionRequested(modelData.key)
+                                conditions: root.conditions
                             }
                         }
                     }

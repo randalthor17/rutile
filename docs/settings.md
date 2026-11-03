@@ -27,6 +27,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `motion.speed` | number, 0 to 4 | 1 | how fast every animation runs (D43): 2 twice as fast, 0 no motion |
+| `motion.niri` | true or false | false | niri's own animations at the same speed (0: none), through rutile-settings.kdl (D74) |
 | `notifications.sound` | true or false | true | a sound when a notification pops up (pw-play): the sender's, or the sound theme's message sound; none in Do not disturb, except for critical ones |
 | `wallpaper.path` | file path | unset | the wallpaper image on every screen, also blurred on the lock screen (unset: a plain surface) |
 | `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
@@ -47,7 +48,8 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `appColors.btop` | true or false | false | btop's theme; the previous one comes back when off |
 | `appColors.nvim` | true or false | false | a `rutile` colorscheme for Neovim |
 | `appColors.firefox` | true or false | false | Firefox through the Pywalfox extension, with Rutile's own host |
-| `input.enabled` | true or false | false | apply the input settings below to niri: a rutile-input.kdl that niri reads through rutile.kdl, which you include at the end of config.kdl (D70, D72) |
+| `input.enabled` | true or false | false | apply the input settings below to niri: a rutile-settings.kdl that niri reads through rutile.kdl, which you include at the end of config.kdl (D70, D72) |
+| `input.keyboardLayout` | an xkb layout (us, gb, de, fr, ...) or "" | "" | the keyboard's layout; "" leaves niri's config to choose |
 | `input.repeatDelay` | integer, 100 to 1000 | 600 | milliseconds a key is held before it repeats |
 | `input.repeatRate` | integer, 5 to 80 | 25 | repeats per second |
 | `input.touchpadTap` | true or false | true | tap to click; off leaves niri's config as it is (an included file cannot turn a flag off) |

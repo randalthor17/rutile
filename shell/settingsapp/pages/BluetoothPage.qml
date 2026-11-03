@@ -1,7 +1,7 @@
 // Bluetooth (plan 5.2): the switch, paired devices (connect, disconnect, forget) and the devices around to pair.
 // A page view: the app sets `app`, `store` and `backend` (BluetoothBackend.qml, or the tests' fake), which has
-//   available, enabled, discovering; devices: [{id, name, icon (BlueZ's), paired, connected, busy, battery (0-1,
-//   -1 unknown)}]; setEnabled(b), toggle(id) (connect, disconnect, or pair), forget(id).
+//   available, enabled, discovering; devices: [(id, name, icon (BlueZ's), paired, connected, busy, battery (0-1,
+//   -1 unknown))]; setEnabled(b), toggle(id) (connect, disconnect, or pair), forget(id).
 // The groups are `setting_bluetooth.paired` and `setting_bluetooth.available` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick

@@ -228,6 +228,8 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **A `{` in a comment above the imports breaks Quickshell's `qs.*` imports.** A test header comment holding
   `{ws}` made `import qs.common` fail with "module is not installed"; the same file without the brace loaded.
   Quickshell seems to read a file's header only up to the first brace. Keep braces out of leading comments.
+  It hit again with `pragma Singleton` below a comment with a brace: NiriDisplayService came out as an empty
+  object (every property undefined, no error at all). tests/test_qml.py now rejects a brace above that pragma.
 
 - **`JsonAdapter` drops keys it does not declare when it writes** (Quickshell 0.3.2, probed). A settings file
   written back through it loses whatever a newer shell or the user added. The settings store (D45) parses and

@@ -29,6 +29,7 @@ FloatingWindow {
         anchors.fill: parent
         store: Settings
         backend: pageBackend.item
+        conditions: ({ niriNotIncluded: NiriConfigCheck.included === false })
         focus: true
         onPathRequested: (key, filters) => {
             const current = Settings.value(key) ?? "";

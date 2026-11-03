@@ -121,8 +121,9 @@ class ShellModule(unittest.TestCase):
         self.assertIn("xray false", kdl)
         self.assertIn('include optional=true "/home/test/.config/niri/rutile-colors.kdl"', kdl,
                       "the shell's niri colors, when that switch is on (the file is missing otherwise: still valid)")
-        self.assertIn('include optional=true "/home/test/.config/niri/rutile-input.kdl"', kdl,
-                      "Settings > Input, when its switch is on (D70)")
+        self.assertIn('include optional=true "/home/test/.config/niri/rutile-settings.kdl"', kdl,
+                      "Settings > Input and niri's animations, when their switches are on (D70, D74)")
+        self.assertIn('include optional=true "/home/test/.config/niri/rutile-display.kdl"', kdl, "Settings > Display (D74)")
         self.assertNotIn("binds", kdl, "binds are opt-in")
         valid = niri_valid(kdl)
         if valid is not None:

@@ -263,7 +263,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   repeat, touchpad and mouse settings that the shell writes to rutile-input.kdl for niri to include, behind a
   switch that is off by default. Apps done (D71): default apps for links,
   folders, mail, pictures, videos, music, text and PDFs, written to the user's mimeapps.list (not when it is
-  home-manager's). Shelf: a page of its own for the pins (D72). Left: Widgets, which waits for Phase 4's
+  home-manager's). Shelf: a page of its own for the pins (D72). niri: every setting
+  that niri takes goes through the shell's included files, and wins over the user's config (D74). Left: Widgets, which waits for Phase 4's
   widget system.
 
 ## Phase 6: NixOS distro (the v1 goal)

@@ -1,6 +1,7 @@
 // One setting in the settings app (plan 5.1), as a list item built from its row (Model.sections): a switch for a
 // boolean, a slider for a number with limits, a menu of choices, a file for a path (`pickPath`: the app opens the
-// file chooser), swatches for a color (D65), a button for an action (`runAction`, D66), or the value as text for a list (its editor comes with its page,
+// file chooser), swatches for a color (D65), a button for an action (`runAction`, D66), a notice shown while the
+// app's `conditions[when]` holds (D74), or the value as text for a list (its editor comes with its page,
 // 5.2). A setting set in Nix shows its value with a lock and takes no changes (D45). Changes go through `store.set(key, value)`; a slider saves once it has been still for a moment, so
 // a drag does not write the file at every step. A choice asks the app for its menu (`toggleMenu`): the app shows one
 // menu above everything, which a row of its own could not be (later sections are drawn over it).
@@ -19,6 +20,7 @@ Item {
     property bool highlighted: false
     property string position: "single"
     property bool menuOpen: false           // the app's menu is showing this row's choices
+    property var conditions: ({})           // the app's: a notice shows while its `when` is true
 
     signal toggleMenu()
     signal pickPath()
@@ -32,6 +34,7 @@ Item {
     readonly property alias item: listItem
 
     objectName: "setting_" + row.key
+    visible: row.kind !== "notice" || conditions[row.when] === true
     implicitWidth: listItem.implicitWidth
     implicitHeight: listItem.implicitHeight
 
@@ -47,7 +50,8 @@ Item {
                 return "Set in your Nix configuration" + (root.row.kind === "switch" ? "" : ": " + root.shownValue);
             return valueBelow ? root.shownValue : root.row.description;
         }
-        tone: Colors.surfaceContainer
+        tone: root.row.kind === "notice" ? Colors.tertiaryContainer : Colors.surfaceContainer
+        iconName: root.row.kind === "notice" ? "info" : ""
         trailingText: !root.managed && root.row.kind === "slider" ? root.shownValue : ""
         selected: root.highlighted
         enabled: !root.managed && root.applies
