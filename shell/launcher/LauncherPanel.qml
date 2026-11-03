@@ -8,7 +8,8 @@ pragma ComponentBehavior: Bound
 // [{id, name}]), and Pin to shelf or Unpin from shelf (`pinnedIds`; left out while `pinsEditable` is false, as
 // when Nix sets the pins); while it is open the arrows and Enter work in it and Escape closes only it. It grows in and out
 // with the shared popup motion (D43), then reports `hidden`. A search in All also finds the Quick Settings
-// controls (`settings`), which `settingChosen` hands to the shell.
+// controls (`settings`) and the Settings app's pages and settings (`findSettings(query)`, Model.launcherItems),
+// which `settingChosen` hands to the shell.
 import QtQuick
 import qs.common
 import qs.components
@@ -31,8 +32,10 @@ Rectangle {
     // Quick Settings controls a search also finds (Controls.searchItems: type "setting", a `symbol`, a `status`);
     // only while typing in All, and choosing one asks `settingChosen` instead of opening an app.
     property var settings: []
+    property var findSettings: null         // query => the Settings app's results, in the same form
     readonly property var results: Scorer.rank(Categories.filter(apps, category)
-                                                   .concat(category === "" && query.trim() !== "" ? settings : []),
+                                                   .concat(category === "" && query.trim() !== ""
+                                                           ? settings.concat(findSettings ? findSettings(query) : []) : []),
                                                query, item => Usage.score(usage[item.id], now))
     readonly property alias currentIndex: grid.currentIndex
     readonly property int columns: 5

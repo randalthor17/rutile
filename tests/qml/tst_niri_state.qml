@@ -74,6 +74,21 @@ TestCase {
         compare(Niri.apply(same, { KeyboardLayoutsChanged: { keyboard_layouts: {} } }), same, "other events: unchanged");
     }
 
+    // The shell's own Settings window, by its process and title: another app's "Settings" is not it.
+    function test_find_window() {
+        var s = start();
+        s = Niri.apply(s, { WindowOpenedOrChanged: { window: Object.assign(win(20, "org.gnome.Settings", 1, 3, 1),
+                                                                           { title: "Settings", pid: 7 }) } });
+        s = Niri.apply(s, { WindowOpenedOrChanged: { window: Object.assign(win(21, "org.quickshell", 1, 4, 1),
+                                                                           { title: "Settings", pid: 42 }) } });
+        compare(Niri.findWindow(s, 42, "Settings"), 21);
+        compare(Niri.findWindow(s, 7, "Settings"), 20);
+        compare(Niri.findWindow(s, 42, "Other"), null);
+        compare(Niri.findWindow(s, 43, "Settings"), null);
+        s = Niri.apply(s, { WindowOpenedOrChanged: { window: { id: 21, title: "Settings" } } });
+        compare(Niri.findWindow(s, 42, "Settings"), 21, "a change without the pid keeps it");
+    }
+
     function test_focus_requests() {
         compare(Niri.focusWindowRequest(12), '{"Action":{"FocusWindow":{"id":12}}}');
         compare(Niri.focusWorkspaceRequest(6), '{"Action":{"FocusWorkspace":{"reference":{"Id":6}}}}',

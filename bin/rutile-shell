@@ -39,7 +39,9 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  state
   settings       open PAGE         open the Settings app on a page ("" keeps the current one): wallpaper,
                                    network, bluetooth, display, sound, power, input, apps, notifications,
-                                   security, shelf, accessibility, about
+                                   security, shelf, accessibility, about; open already, it is focused.
+                                   "rutile-shell settings" alone opens it as it was (its desktop file)
+                 openSetting PAGE KEY   the same, with one setting ringed (e.g. security lock.idleMinutes)
                  close | toggle
                  isOpen
                  search TEXT       type into the open Settings app's search
@@ -54,7 +56,7 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  isOpen
                  search QUERY      type into the open launcher; the first results' ids
                  category ID       choose a category ("" is All); the first results' ids
-                 launch ID         open an app, or a setting such as qs:dark, from the open launcher
+                 launch ID         open an app, a setting such as qs:dark, or a result shown (settings:security)
                  actions APP       an app's desktop actions
                  chooseAction APP ACTION
                  togglePin APP     pin or unpin an app; false if the pins are set in Nix
@@ -207,6 +209,10 @@ case "$1" in
         ;;
     *)
         if is_target "$1"; then
+            # the Settings app's desktop file: open it, on the page it shows (one window, focused if open)
+            if [ "$1" = settings ] && [ $# -eq 1 ]; then
+                exec "$qs" ipc -p "$qml" call settings open ""
+            fi
             if [ $# -lt 2 ]; then
                 echo "rutile-shell: $1 needs a function; see rutile-shell --help" >&2
                 exit 2

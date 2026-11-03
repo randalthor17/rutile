@@ -96,6 +96,10 @@ class Forwarding(unittest.TestCase):
         self.check(["lock", "lock"], ["ipc", "-p", "/s/shell.qml", "call", "lock", "lock"])
         self.check(["toast", "send", "two words", ""],
                    ["ipc", "-p", "/s/shell.qml", "call", "toast", "send", "two words", ""])
+        # the Settings app's desktop file runs `rutile-shell settings`
+        self.check(["settings"], ["ipc", "-p", "/s/shell.qml", "call", "settings", "open", ""])
+        self.check(["settings", "openSetting", "security", "lock.idleMinutes"],
+                   ["ipc", "-p", "/s/shell.qml", "call", "settings", "openSetting", "security", "lock.idleMinutes"])
 
     def test_ipc_passthrough(self):
         self.check(["ipc"], ["ipc", "-p", "/s/shell.qml", "show"])
@@ -218,6 +222,22 @@ class FlatpakTheming(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("Not finished", r.stdout)
         self.assertIn("Press Enter to close", r.stdout)
+
+
+class SettingsDesktopFile(unittest.TestCase):
+    """The Settings app in app launchers: a desktop file running `rutile-shell settings`, which the package installs
+    with its own CLI's full path."""
+    def test_desktop_file(self):
+        f = ROOT / "share" / "applications" / "rutile-settings.desktop"
+        entry = dict(l.split("=", 1) for l in f.read_text().splitlines()[1:] if "=" in l)
+        self.assertEqual(f.read_text().splitlines()[0], "[Desktop Entry]")
+        self.assertEqual(entry["Type"], "Application")
+        self.assertEqual(entry["Exec"], "rutile-shell settings")
+        self.assertIn("Settings;", entry["Categories"])
+        package = (ROOT / "nix" / "package.nix").read_text()
+        self.assertIn("../share\n", package, "in the package's sources")
+        self.assertIn("$out/share/applications/rutile-settings.desktop", package)
+        self.assertIn('"Exec=$out/bin/rutile-shell "', package)
 
 
 if __name__ == "__main__":

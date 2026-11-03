@@ -13,6 +13,7 @@ function windowFrom(w, old) {
         id: w.id,
         appId: w.app_id !== undefined ? (w.app_id || "") : (old ? old.appId : ""),
         title: w.title !== undefined ? (w.title || "") : (old ? old.title : ""),
+        pid: w.pid !== undefined ? w.pid : (old ? old.pid : null),
         // null while a window is being moved: keep the last workspace
         workspaceId: w.workspace_id !== undefined && w.workspace_id !== null ? w.workspace_id : (old ? old.workspaceId : null),
         floating: w.is_floating !== undefined ? !!w.is_floating : (old ? old.floating : false),
@@ -130,6 +131,15 @@ function focusWorkspaceRequest(id) {
 // The request line for focusing a window (niri's Action::FocusWindow).
 function focusWindowRequest(id) {
     return JSON.stringify({ Action: { FocusWindow: { id: id } } });
+}
+
+// The id of a window of process `pid` titled `title` (the shell's own Settings window), or null.
+function findWindow(state, pid, title) {
+    for (var id in state.windows) {
+        var w = state.windows[id];
+        if (w.pid === pid && w.title === title) return w.id;
+    }
+    return null;
 }
 
 // The request line for closing a window (niri's Action::CloseWindow).

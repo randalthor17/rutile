@@ -6,6 +6,9 @@ import "../qs/launcher/Scorer.js" as Scorer
 import "../qs/launcher/Categories.js" as Categories
 import "../qs/launcher/Usage.js" as Usage
 import "../qs/quicksettings/Controls.js" as Controls
+import "../qs/settingsapp/Model.js" as SettingsModel
+import "../qs/settingsapp/Pages.js" as SettingsPages
+import "../qs/services/SettingsSchema.js" as SettingsSchema
 
 TestCase {
     id: root
@@ -564,6 +567,45 @@ TestCase {
         compare(Controls.choose(items[4], b), "open", "a slider: Quick Settings opens");
         compare(Controls.choose(items[5], b), "open");
         compare(b.asked.length, 3, "and nothing else was asked");
+    }
+
+    // The Settings app's pages and settings (Model.launcherItems), next to the apps while searching in All.
+    function test_settings_app_results() {
+        const find = q => SettingsModel.launcherItems(q, SettingsPages.pages, SettingsSchema.schema, SettingsPages.hints, 5);
+        var p = createTemporaryObject(panelComp, root, { findSettings: find });
+        waitForRendering(p);
+        var chosen = createTemporaryObject(spyComp, root, { target: p, signalName: "settingChosen" });
+        compare(ids(p.results), "org.gnome.Nautilus,firefox,firewall,foot,code", "no query: apps only");
+        p.query = "lock when idle";
+        compare(p.results[0].id, "settings:security/lock.idleMinutes");
+        compare(p.results[0].subtitle, "Settings · Security & privacy");
+        compare(p.results[0].symbol, SettingsPages.page("security").icon, "the page's icon");
+        p.query = "bluetooth";
+        compare(p.results[0].id, "settings:bluetooth", "a page");
+        compare(p.results[0].key, "");
+        p.query = "fire";
+        compare(ids(p.results).split(",").slice(0, 2).join(), "firefox,firewall", "apps first");
+        p.query = "term";
+        verify(find("term").length > 0, "a setting has it among its words");
+        compare(p.results[0].id, "foot", "an app found by its generic name before a setting found by a keyword");
+        p.query = "idle";
+        p.category = "system";
+        verify(p.results.every(r => r.type !== "setting"), "a category shows only apps");
+        p.category = "";
+        mouseClick(findChild(p, "launcherApp_" + p.results[0].id));
+        compare(chosen.count, 1);
+        compare(chosen.signalArguments[0][0].page, "security");
+        compare(chosen.signalArguments[0][0].key, "lock.idleMinutes");
+        // found by its description alone, as in the app ("Lock when the computer suspends or hibernates"): the
+        // launcher's own ranking keeps it through its keywords
+        const asleep = find("hibernates");
+        compare(asleep[0].id, "settings:security/lock.beforeSleep");
+        verify(asleep[0].name.toLowerCase().indexOf("hibernates") < 0, asleep[0].name);
+        p.query = "hibernates";
+        verify(p.results.some(r => r.id === asleep[0].id), "kept by Scorer: " + ids(p.results));
+        verify(find("a").length <= 5, "at most `max`");
+        compare(find("  ").length, 0, "nothing without a query");
+        compare(find("qqqq").length, 0);
     }
 
     function test_settings_results() {

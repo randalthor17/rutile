@@ -17,7 +17,7 @@ Item {
 
     required property var row
     required property var store
-    property bool highlighted: false
+    property bool highlighted: false        // opened from a search: the app draws a ring around it
     property string position: "single"
     property bool menuOpen: false           // the app's menu is showing this row's choices
     property var conditions: ({})           // the app's: a notice shows while its `when` is true
@@ -53,7 +53,6 @@ Item {
         tone: root.row.kind === "notice" ? Colors.tertiaryContainer : Colors.surfaceContainer
         iconName: root.row.kind === "notice" ? "info" : ""
         trailingText: !root.managed && root.row.kind === "slider" ? root.shownValue : ""
-        selected: root.highlighted
         enabled: !root.managed && root.applies
 
         onClicked: {

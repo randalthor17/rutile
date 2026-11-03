@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Rutile Settings
+GenericName=Settings
+Comment=Wallpaper, network, Bluetooth, displays, sound and the rest of Rutile Shell
+Icon=preferences-system
+Exec=rutile-shell settings
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=settings;preferences;configuration;control;rutile;
+StartupNotify=false

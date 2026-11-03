@@ -50,6 +50,7 @@ stdenv.mkDerivation {
       ../bin
       ../native
       ../shell
+      ../share
       ../theme/apps
       ../theme/templates
       ../theme/roles.json
@@ -71,6 +72,10 @@ stdenv.mkDerivation {
     cp -r shell theme $out/share/rutile/
     install -Dm755 build/rutile-pywalfox-host $out/share/rutile/build/rutile-pywalfox-host
     install -Dm755 bin/rutile-shell $out/share/rutile/bin/rutile-shell
+    # the Settings app in app launchers, run by this package's own CLI
+    install -Dm644 share/applications/rutile-settings.desktop $out/share/applications/rutile-settings.desktop
+    substituteInPlace $out/share/applications/rutile-settings.desktop \
+      --replace-fail "Exec=rutile-shell " "Exec=$out/bin/rutile-shell "
     makeWrapper $out/share/rutile/bin/rutile-shell $out/bin/rutile-shell \
       --set RUTILE_SHELL_QML $out/share/rutile/shell/shell.qml \
       --set RUTILE_CLI $out/bin/rutile-shell \

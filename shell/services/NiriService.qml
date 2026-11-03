@@ -26,6 +26,14 @@ Singleton {
         request(NiriState.focusWindowRequest(id));
     }
 
+    // Focuses this process's window titled `title`; false when niri does not list one.
+    function focusOwnWindow(title) {
+        const id = NiriState.findWindow(state, Quickshell.processId, title);
+        if (id === null) return false;
+        focusWindow(id);
+        return true;
+    }
+
     function closeWindow(id) {
         request(NiriState.closeWindowRequest(id));
     }

@@ -98,8 +98,9 @@ function textScore(name, query) {
     return 0;
 }
 
-// item: {type, id, name, subtitle, keywords: [], genericName}; usageCount: how often it was opened, weighed by
-// how lately (Usage.score).
+// item: {type, id, name, subtitle, keywords: [], keywordWeight, genericName}; usageCount: how often it was opened,
+// weighed by how lately (Usage.score). `keywordWeight` (0.3 when not given) is what a keyword match is worth against
+// the name; the settings app's results give 0.1, so an app found by its generic name ranks first (D77).
 // 0 means "not a result" when there is a query.
 function score(item, query, usageCount) {
     var typeBonus = Weights.typeBonus[item.type] || 0;
@@ -111,7 +112,7 @@ function score(item, query, usageCount) {
     if (s === 0 && item.subtitle) s = textScore(item.subtitle.toLowerCase(), q) * 0.5;
     if (s === 0 && item.keywords) {
         for (var i = 0; i < item.keywords.length && s === 0; i++)
-            s = textScore(item.keywords[i].toLowerCase(), q) * 0.3;
+            s = textScore(item.keywords[i].toLowerCase(), q) * (item.keywordWeight || 0.3);
     }
     if (s === 0 && item.genericName) {
         var g = item.genericName.toLowerCase();

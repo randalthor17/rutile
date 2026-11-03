@@ -762,3 +762,23 @@ background, the bright ones and color8 at 3:1; across three seeds the lowest see
 The old rutile-colors.conf is removed on the next run (an app's `formerly` paths, only when the record says the
 shell wrote it); a home-manager config still including it by name logs a missing file until the line is changed.
 Ghostty keeps D52's way for now.
+
+**D77. Settings in the launcher, one focused Settings window, a ring for the found setting (plan 5.1).** The
+maintainer asked for settings to be searchable from the launcher, a ring that fades on the setting found, a
+desktop file, and a reused, focused window. The launcher asks `Model.launcherItems` (the settings app's own
+search, its best five) while a query is typed in All; the results are "setting" items (as Quick Settings'
+controls) with the page's icon, "Settings · <page>" below, and keywords holding what the search matched besides
+the title, so the launcher's ranking (Scorer.js) keeps one found only by its description; a keyword is worth
+0.1 of a name match there (apps' are 0.3), so "term" still finds the terminal before a setting whose alias is
+"terminal" (the smoke test caught that). Its own search being
+the filter keeps the hundred-odd titles from flooding app results through Scorer's typo matching. Choosing one
+calls `openSettings(page, key)`, which `ipc call settings openSetting` also reaches. Quickshell cannot raise a
+window it already shows, so the shell asks niri: NiriState now keeps each window's pid, and
+`NiriService.focusOwnWindow("Settings")` focuses the window of the shell's own process (`Quickshell.processId`)
+with that title: GNOME's Settings, also titled "Settings", is not taken for it (tested in a nested niri: the
+window's app id is `org.quickshell`, the same for every Quickshell window, so the id alone could not tell).
+Without niri nothing is focused, and the window is still reused. The ring is M3's focus indicator over the row
+(secondary, 3 thick, the list's corner), drawn by the app over any `setting_<key>` item, so a page view's
+groups get it too; it shows at once and fades over long4 with the highlight's end (the row's own selected
+tint is gone). The desktop file runs `rutile-shell settings`, which with no function opens the app as it was;
+the package writes its full path into Exec.

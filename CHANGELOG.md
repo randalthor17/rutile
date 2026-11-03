@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings from the launcher.** Searching in the launcher also finds the settings app's pages and settings;
+  choosing one opens Settings there, and the setting gets a ring that fades away (as it does from Settings' own
+  search). The Settings app has a desktop file, so other app launchers show "Rutile Settings" too.
+- **One Settings window.** Opening Settings while it is open (Quick Settings' gear, the launcher, its desktop
+  file, `rutile-shell settings ...`) brings that window forward, on whichever workspace it is.
 - **kitty gets a whole Rutile theme**, the 16 terminal colors included (they were left as they were), in
   `~/.config/kitty/themes/Rutile.conf`, where `kitten themes` lists it. With home-manager, change
   `include rutile-colors.conf` to `globinclude themes/Rutile.conf`; the old file is removed.

@@ -111,3 +111,26 @@ function search(query, pages, schema, hints) {
     hits.sort((a, b) => b.score - a.score || a.order - b.order);
     return hits;
 }
+
+// The settings app's search as the launcher's results (type "setting", as Quick Settings' controls): the best
+// `max` hits of search(), each with the page's icon as its symbol and where it is as its subtitle. Choosing one
+// opens Settings on that page and rings the setting (`page`, `key`). `keywords` hold what search() matched besides
+// the title, so the launcher's own ranking (Scorer.js) keeps them, worth less there than an app's own words.
+function launcherItems(query, pages, schema, hints, max) {
+    if (String(query ?? "").trim() === "") return [];
+    const leaves = Store.leaves(schema);
+    const byId = {};
+    for (const p of pages) byId[p.id] = p;
+    return search(query, pages, schema, hints).slice(0, max).map(h => {
+        const p = byId[h.page];
+        const entry = (p.entries ?? []).find(e => e.key === h.key);
+        const hint = hints[h.key] ?? {};
+        const leaf = entry ?? (hint.kind === "action" ? hint : leaves[h.key]) ?? {};
+        const section = (p.sections ?? []).find(s => s.keys.indexOf(h.key) >= 0);
+        const keywords = h.key === "" ? [].concat(p.aliases ?? [], [p.summary ?? ""])
+                                      : [].concat(entry?.aliases ?? hint.aliases ?? [], [section?.title ?? "", leaf.description ?? ""]);
+        return { type: "setting", id: "settings:" + h.page + (h.key ? "/" + h.key : ""), page: h.page, key: h.key,
+                 name: h.title, subtitle: h.key === "" ? "Settings" : "Settings · " + p.title,
+                 keywords: keywords.filter(k => k !== ""), keywordWeight: 0.1, symbol: p.icon };
+    });
+}

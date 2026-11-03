@@ -614,8 +614,14 @@ def run_wayland_smoke(screenshot=None):
                     st = settings_state()
                     if (st.get("results") or [""])[0] != "security/lock.idleMinutes":
                         problems.append(f"ipc settings search idle: results {st.get('results')}")
+                    # opened again (no niri here to focus it): the same window, on the page asked, the setting ringed
+                    if ipc("openSetting", "accessibility", "motion.speed", target="settings") != "true":
+                        problems.append("ipc settings openSetting: refused")
+                    st = settings_state()
+                    if (st.get("open"), st.get("page"), st.get("highlight")) != (True, "accessibility", "motion.speed"):
+                        problems.append(f"ipc settings openSetting accessibility motion.speed: state {st}")
                     ipc("close", target="settings")
-                    if settings_state() != {"open": False, "page": "", "query": "", "results": []}:
+                    if settings_state() != {"open": False, "page": "", "query": "", "highlight": "", "results": []}:
                         problems.append(f"ipc settings close: state {settings_state()}")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),

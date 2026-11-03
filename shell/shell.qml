@@ -30,6 +30,9 @@ import "quicksettings/Controls.js" as Controls
 import "lock/LockWallpaper.js" as LockWallpaper
 import "power/PowerActions.js" as PowerActions
 import "bar/TrayModel.js" as TrayModel
+import "settingsapp/Model.js" as SettingsModel
+import "settingsapp/Pages.js" as SettingsPages
+import "services/SettingsSchema.js" as SettingsSchema
 
 ShellRoot {
     id: shell
@@ -217,13 +220,17 @@ ShellRoot {
     }
 
     // The settings app (plan 5.1), a window of its own, created only while open (D31). `page` opens one of its
-    // pages ("" keeps the one showing). Quickshell cannot raise a window that is already open; niri focuses a new one.
+    // pages ("" keeps the one showing), `key` rings one of its settings. There is one window: opened again (Quick
+    // Settings, the launcher, its desktop file, IPC) it is reused, and niri focuses it, as Quickshell cannot raise
+    // a window it already shows (a new one niri focuses itself).
     readonly property bool settingsOpen: settingsApp.active
-    function openSettings(page) {
+    function openSettings(page, key) {
+        const reused = settingsApp.active;
         settingsApp.active = true;
         const app = settingsApp.item?.app;
         if (!app) return false;
-        return page === "" || app.openPage(page);
+        if (reused) NiriService.focusOwnWindow(settingsApp.item.title);
+        return page === "" || app.openPage(page, key ?? "");
     }
     LazyLoader {
         id: settingsApp
@@ -235,6 +242,8 @@ ShellRoot {
     IpcHandler {
         target: "settings"
         function open(page: string): bool { return shell.openSettings(page); }
+        // A page with one of its settings ringed, as the launcher's settings results open it
+        function openSetting(page: string, key: string): bool { return shell.openSettings(page, key); }
         function close(): void { settingsApp.active = false; }
         function toggle(): void {
             if (settingsApp.active) settingsApp.active = false;
@@ -244,6 +253,7 @@ ShellRoot {
         function state(): string {
             const app = settingsApp.item?.app;
             return JSON.stringify({ open: settingsApp.active, page: app?.currentPage ?? "", query: app?.query ?? "",
+                                    highlight: app?.highlightKey ?? "",
                                     results: app ? app.results.map(r => r.page + (r.key ? "/" + r.key : "")) : [] });
         }
         // As typing in its search field would (the smoke test).
@@ -527,10 +537,14 @@ ShellRoot {
             pinnedIds: shelfBackend.pinnedIds
             pinsEditable: shelfBackend.pinsEditable
             onPinToggled: app => shelfBackend.togglePin(app.id)
-            // Quick Settings' controls as search results: a toggle flips, a slider opens Quick Settings
+            // Quick Settings' controls as search results: a toggle flips, a slider opens Quick Settings; and the
+            // Settings app's pages and settings, which open it there
             settings: Controls.searchItems(shellBackend)
+            findSettings: query => SettingsModel.launcherItems(query, SettingsPages.pages, SettingsSchema.schema,
+                                                               SettingsPages.hints, 5)
             onSettingChosen: item => {
-                if (Controls.choose(item, shellBackend) === "open" && !shell.quickSettingsOpen)
+                if (item.page !== undefined) shell.openSettings(item.page, item.key);
+                else if (Controls.choose(item, shellBackend) === "open" && !shell.quickSettingsOpen)
                     shell.toggleQuickSettings(shell.launcherScreen);
             }
             onCloseRequested: launcher.active = false
@@ -566,7 +580,7 @@ ShellRoot {
         // Open an app, or choose a setting ("qs:dark"), as a click in the open launcher would (the smoke test).
         function launch(id: string): bool {
             const p = launcher.item?.panel;
-            const item = p?.apps.concat(p.settings).find(a => a.id === id);
+            const item = p?.apps.concat(p.settings, p.results).find(a => a.id === id);
             if (!item) return false;
             p.choose(item);
             return true;

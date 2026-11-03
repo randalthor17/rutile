@@ -100,7 +100,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   view) goes to `$XDG_STATE_HOME/rutile/state.json`. Settings so far: `motion.speed`, `shelf.pins`. The
   home-manager module (`homeManagerModules.default`, `nix/home-manager.nix`) builds `programs.rutile.settings`
   from the same schema. The registry (pages, icons, aliases, advanced) and settings search came with the
-  settings app (5.1, D50); the launcher does not search settings yet. Not done: a home-manager option to
+  settings app (5.1, D50); the launcher finds them too (D77). Not done: a home-manager option to
   install the shell
   (needs the package, 6.1). The whole item: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
@@ -248,8 +248,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   button that opens the desktop portal's file chooser (D51; the maintainer's choice over our own picker). Pages
   of their own (D67): a page names a `view` (a QML file in `shell/settingsapp/pages/`, loaded only while open) and a
   `backend` (its Quickshell services, loaded by the window only while open; tests give a fake), and `entries`
-  for search. About is one now. Not done: a choice dialog as Googlebook's (a menu now), raising a window that
-  is already open (Quickshell cannot).
+  for search. About is one now. One window (D77): opened again from anywhere it is reused, and niri focuses it
+  (Quickshell cannot raise it; the shell asks niri for its own window by process id and title). The launcher
+  lists its pages and settings as results; a desktop file (`rutile-settings.desktop`) opens it from any app
+  launcher. A setting opened from a search gets a ring (M3's focus indicator) that fades. Not done: a choice
+  dialog as Googlebook's (a menu now).
 - [ ] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
   Widgets, Shelf, Apps, Power, Input, About. Wallpaper & style done (D65): mode (dark or light), color style,
   contrast, the seed color (a swatch row, the first custom row); the palette renders again on any of them, and

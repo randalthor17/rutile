@@ -442,7 +442,14 @@ TestCase {
         compare(t.a.query, "", "the search clears");
         compare(t.a.highlightKey, "lock.idleMinutes");
         verify(findChild(t.a, "setting_lock.idleMinutes").highlighted, "the setting is marked");
+        const ring = findChild(t.a, "settingRing");
+        const row = findChild(t.a, "setting_lock.idleMinutes");
+        tryVerify(() => ring.visible && ring.opacity === 1, 1000, "a ring around it");
+        const at = row.mapToItem(ring.parent, 0, 0);
+        compare(Qt.rect(ring.x, ring.y, ring.width, ring.height), Qt.rect(at.x, at.y, row.width, row.height), "exactly");
         tryCompare(t.a, "highlightKey", "", 3000, "for a moment");
+        verify(ring.opacity > 0, "then it fades, not gone at once");
+        tryCompare(ring, "visible", false, 3000, "faded");
 
         mouseClick(t.a.search);
         type("qqqq");

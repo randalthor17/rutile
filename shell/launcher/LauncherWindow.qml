@@ -19,6 +19,7 @@ PanelWindow {
     property alias pinnedIds: panel.pinnedIds
     property alias pinsEditable: panel.pinsEditable
     property alias settings: panel.settings
+    property alias findSettings: panel.findSettings
 
     signal closeRequested()
     signal pinToggled(var app)

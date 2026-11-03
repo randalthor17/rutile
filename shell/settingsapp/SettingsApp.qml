@@ -1,7 +1,8 @@
 // The settings app's contents (plan 5.1), as Googlebook's Settings: a sidebar with a search field and the pages
 // (Pages.js) as a list with tonal icon circles, and the chosen page on the right: its title and its settings in
 // segmented groups (SettingRow), an Advanced group last. Typing in the search field lists matching pages and
-// settings instead (Model.search); choosing one opens its page and marks the setting for a moment. Narrower than
+// settings instead (Model.search); choosing one opens its page and rings the setting, the ring fading after a
+// moment (the launcher's settings results open it the same way). Narrower than
 // `narrowWidth`, only one side shows: the list, or the page with a back button.
 // `store` is the Settings service, or anything with value(key), set(key, value), isManaged(key) and configDir (the
 // tests' fake). A path setting asks for a file (`pathRequested`); the window has the file chooser, and runs an action
@@ -48,6 +49,7 @@ Rectangle {
         highlightKey = key ?? "";
         searchInput.text = "";
         pageShown = true;
+        ring.target = null;
         if (highlightKey !== "") {
             unmark.restart();
             Qt.callLater(scrollToHighlight);
@@ -64,6 +66,7 @@ Rectangle {
         pageColumn.forceLayout();
         const y = row.mapToItem(pageColumn, 0, 0).y;
         pageFlick.contentY = Math.max(0, Math.min(y - Spacing.xl, pageFlick.contentHeight - pageFlick.height));
+        ring.show(row);
     }
     function findRow(key) {
         const stack = [pageColumn];
@@ -103,7 +106,10 @@ Rectangle {
     Timer {
         id: unmark
         interval: 2000
-        onTriggered: root.highlightKey = ""
+        onTriggered: {
+            root.highlightKey = "";
+            ring.fade();
+        }
     }
 
     Keys.onPressed: event => {
@@ -363,6 +369,39 @@ Rectangle {
                 Binding { target: pageView.item; property: "app"; value: root; when: pageView.status === Loader.Ready }
                 Binding { target: pageView.item; property: "store"; value: root.store; when: pageView.status === Loader.Ready }
                 Binding { target: pageView.item; property: "backend"; value: root.backend; when: pageView.status === Loader.Ready }
+            }
+
+            // The ring around a setting opened from a search: M3's focus indicator (its color, 3 thick, the
+            // list's corner), there at once, then fading out with the highlight.
+            Rectangle {
+                id: ring
+                objectName: "settingRing"
+                property Item target: null
+                function show(row) {
+                    fading.enabled = false;
+                    const at = row.mapToItem(pageColumn, 0, 0);
+                    x = at.x;
+                    y = at.y;
+                    width = row.width;
+                    height = row.height;
+                    target = row;
+                    opacity = 1;
+                }
+                function fade() {
+                    fading.enabled = true;
+                    opacity = 0;
+                }
+                visible: target !== null && opacity > 0
+                opacity: 0
+                z: 1
+                color: "transparent"
+                radius: ControlSpec.listSpec.containerShape
+                border.width: 3
+                border.color: Colors[ControlSpec.listSpec.focusIndicatorColor]
+                Behavior on opacity {
+                    id: fading
+                    EffectsNumber { duration: Motion.duration(Motion.long4) }
+                }
             }
         }
     }

@@ -16,8 +16,10 @@ whether the panel and pills reached the backend, whether brightness shows, which
 layer, the space reserved per screen and the clocks' text). The launcher works the same way: `ipc call launcher toggle`, `open`, `close`, `isOpen`, `state`, and
 `search <query>` (types into the open launcher, returns the best ids), `category <id>` (chooses a chip, `""` for
 All, returns the best ids), `setListView <true|false>`, `actions <appId>` (the desktop actions it found) and
-`chooseAction <appId> <actionId>` (runs one as the app menu would), `launch <id>` (an app or a setting such as
-`qs:dark`) and `togglePin <appId>`. Notifications (D47): `ipc call notifications toggle` opens or closes the list
+`chooseAction <appId> <actionId>` (runs one as the app menu would), `launch <id>` (an app, a setting such as
+`qs:dark`, or a result shown, such as `settings:security/lock.idleMinutes`) and `togglePin <appId>`. A search in
+All also lists the settings app's pages and settings (at most five, as its own search finds them; D77):
+choosing one opens Settings on that page with the setting ringed. Notifications (D47): `ipc call notifications toggle` opens or closes the list
 under the bell, `isOpen`, `setDnd <true|false>`, `dnd`, `dismiss <id>`, `dismissAll`, `invoke <id> <action>` and
 `state` (what is kept and popping up, the windows, each screen's bell). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
@@ -64,7 +66,10 @@ over the blurred desktop (namespace `rutile-polkit`, so the layer rule above nee
 
 The gear at the panel's top left opens the settings app (`shell/settingsapp/`, D50) and closes the panel.
 `ipc call settings open <page>` (wallpaper, network, bluetooth, display, sound, power, input, apps, notifications, security, shelf, accessibility, about; "" for the one
-showing), `close`, `toggle`, `isOpen`, `search <text>` (as typing would), `state`.
+showing), `openSetting <page> <key>` (the page with that setting ringed, the ring fading), `close`, `toggle`,
+`isOpen`, `search <text>` (as typing would), `state`. There is one Settings window: opened again from anywhere
+(Quick Settings, the launcher, its desktop file `rutile-settings.desktop`, which runs `rutile-shell settings`,
+or IPC) it is reused and niri focuses it, on whichever workspace it is (D77).
 
 A clock pill sits at the top left of every screen: the time and date ("8:55  Fri, Oct 9"; 12-hour without AM/PM
 as Googlebook shows it, or 24-hour when the locale's short time format is), from Quickshell's `SystemClock`.
