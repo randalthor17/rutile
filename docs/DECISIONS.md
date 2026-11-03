@@ -699,3 +699,12 @@ unpin, back to the default), apps being pinned from the shelf's or the launcher'
 as "firefox.desktop" now name the same app as "firefox". `rutile-shell shelf` drives the menu from scripts (the
 headless test compositor has no pointer to right click with).
 
+**D73. The include into home-manager's niri config, as an opt-in (amends D72).** D72 stopped the module from
+adding Rutile's include to the niri config home-manager's niri module generates; the maintainer's test user,
+whose niri config is that module's, had got its colors and binds through it without knowing. Now
+`programs.rutile.niri.includeInConfig` (off by default) adds `include optional=true "<XDG_CONFIG_HOME>/niri/rutile.kdl"`
+at the end of that module's `extraConfig`: the path in full (the generated config.kdl is a link into the store),
+optional so the module's `niri validate` at build time passes while the file is not there yet. With the option on
+and no niri module, an assertion stops the switch and gives the line to add by hand. Off, nothing in niri's
+config changes (D72).
+

@@ -129,6 +129,21 @@ class ShellModule(unittest.TestCase):
             self.assertTrue(valid[0], valid[1])
         self.assertNotIn("niri/rutile.kdl", module("{ enable = true; niri.enable = false; }")[0]["files"])
 
+    def test_include_in_config_is_opt_in(self):
+        # D73: off by default (D72); on, the include goes at the end of home-manager's niri config
+        got, err = module("{ enable = true; niri.includeInConfig = true; }", niri=True)
+        self.assertEqual(got["failed"], [], err)
+        self.assertEqual(got["extraConfig"], 'include optional=true "/home/test/.config/niri/rutile.kdl"')
+        self.assertIn("niri/rutile.kdl", got["files"], "the file is still written")
+        valid = niri_valid(got["extraConfig"] + "\n")
+        if valid is not None:
+            self.assertTrue(valid[0], "valid while the file is missing: " + valid[1])
+        got, _ = module("{ enable = true; niri.includeInConfig = true; niri.enable = false; }", niri=True)
+        self.assertEqual(got["extraConfig"], "", "no niri part: nothing to include")
+        got, _ = module("{ enable = true; niri.includeInConfig = true; }")
+        self.assertIn("needs home-manager's niri module", got["failed"][0], "without the module: says what to do")
+        self.assertIn('include optional=true "/home/test/.config/niri/rutile.kdl"', got["failed"][0])
+
     def test_a_switch_says_to_include_rutile_kdl_until_it_is(self):
         got, err = module("{ enable = true; }")
         data = got["activation"]["rutileNiriInclude"]["data"]

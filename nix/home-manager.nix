@@ -5,8 +5,9 @@
 #                                      a layer rule so the power menu and the password dialog blur windows, not
 #                                      only the wallpaper, and (opt-in) keybinds for the shell, in
 #                                      ~/.config/niri/rutile.kdl. Add `include optional=true "rutile.kdl"` at
-#                                      the end of your niri config.kdl yourself; it is never changed for you
-#                                      (D72). optional=true: no error while the file is not there.
+#                                      the end of your niri config.kdl yourself (D72; optional=true: no error
+#                                      while the file is not there), or, with home-manager's niri module, set
+#                                      programs.rutile.niri.includeInConfig = true and it is added there (D73).
 #   programs.rutile.theming.enable     GTK, Qt and KDE apps set up to wear the shell's colors, its font and an icon
 #                                      theme (D59): adw-gtk3 for GTK 3, a dark color scheme, gtk.css importing the
 #                                      shell's colors, qt5ct/qt6ct with Fusion, kdeglobals' fonts, and the shell's
@@ -18,6 +19,7 @@
 #                                      stay the shell's to change. Works without `enable`.
 {
   config,
+  options,
   lib,
   pkgs,
   ...
@@ -112,6 +114,10 @@ let
   );
   niriConfig = pkgs.writeText "rutile.kdl" niriText;
   niriOn = cfg.enable && cfg.niri.enable;
+  hasNiriModule = options ? wayland && options.wayland ? windowManager && options.wayland.windowManager ? niri;
+  niriModuleOn = hasNiriModule && config.wayland.windowManager.niri.enable;
+  # the line that brings rutile.kdl into niri: absolute, since a generated config.kdl is a link into the store
+  includeLine = ''include optional=true "${config.xdg.configHome}/niri/rutile.kdl"'';
 
   th = cfg.theming;
   # the icon theme apps are given: Rutile (Papirus-Dark with its folders in the accent, made by the shell, D64)
@@ -172,8 +178,13 @@ in
           Write Rutile's part of niri's configuration to ~/.config/niri/rutile.kdl (the blur layer rule, the binds
           if enabled, and the includes of the files the shell writes: niri's colors, Settings > Input). Add
           `include optional=true "rutile.kdl"` at the end of your niri config.kdl yourself (optional: no error
-          while the file is not there, niri 26.04 and later); it is never changed for you.'';
+          while the file is not there, niri 26.04 and later), or let `niri.includeInConfig` add it to the config
+          home-manager's niri module writes.'';
       };
+      includeInConfig = lib.mkEnableOption ''
+          adding `include optional=true "~/.config/niri/rutile.kdl"` (written out in full) at the end of the niri
+          config that home-manager's niri module (`wayland.windowManager.niri`) generates, so you need not add it
+          yourself. Needs that module; without it, add the line to your config.kdl'';
       binds = {
         enable = lib.mkEnableOption ''
           keybinds for the shell (off by default: they replace binds of yours on the same keys, which win
@@ -447,8 +458,25 @@ in
       };
     })
 
-    # niri's part: a file of its own that the user includes at the end of config.kdl (D72); niri's own config,
-    # and home-manager's niri module, are never written to
+    # niri's part: a file of its own that the user includes at the end of config.kdl (D72); home-manager's niri
+    # module gets the include only when asked (niri.includeInConfig, D73)
+    (lib.mkIf (niriOn && cfg.niri.includeInConfig) {
+      assertions = [
+        {
+          assertion = niriModuleOn;
+          message = ''
+            programs.rutile.niri.includeInConfig needs home-manager's niri module (wayland.windowManager.niri.enable).
+            Without it, add this line at the end of your niri config.kdl instead:
+              ${includeLine}'';
+        }
+      ];
+    })
+    # opt-in (D73): the include into the niri config home-manager's niri module writes, at its end
+    (lib.optionalAttrs hasNiriModule {
+      wayland.windowManager.niri.extraConfig = lib.mkIf (niriOn && cfg.niri.includeInConfig && niriModuleOn) (
+        lib.mkAfter includeLine
+      );
+    })
     (lib.mkIf niriOn {
       xdg.configFile."niri/rutile.kdl".source = niriConfig;
       # says, at every switch, what to add while niri's config does not include it (read, never written)

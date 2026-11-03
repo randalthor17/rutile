@@ -62,8 +62,15 @@ What `enable` gives:
   installed yet, or `programs.rutile.niri.enable = false`): niri only logs a warning, and picks the file up as
   soon as it appears. A plain `include "rutile.kdl"` makes a missing file an error.
 
-  With home-manager's niri module, put it in `wayland.windowManager.niri.extraConfig` (or the module's own
-  include option). Until it is there, every home-manager switch prints a reminder, and the shell says so in a
+  With home-manager's niri module (`wayland.windowManager.niri`), Rutile can add it for you instead:
+
+  ```nix
+  programs.rutile.niri.includeInConfig = true;
+  ```
+
+  which puts `include optional=true "~/.config/niri/rutile.kdl"` (the path written out) at the end of the config
+  that module generates (D73). Without that module the option stops the switch and says to add the line
+  yourself. Until it is there, every home-manager switch prints a reminder, and the shell says so in a
   toast when you turn on a setting that needs it.
 
 The package brings what the shell runs (matugen, brightnessctl, pw-play, dbus-monitor, systemd's tools) and its
