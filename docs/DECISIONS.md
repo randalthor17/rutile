@@ -939,7 +939,8 @@ saver (PowerProfiles' power-saver mode, off meaning balanced). Quickshell cannot
 there and PowerProfiles is not touched until it is known, so `busctl` looks for it the first time Quick Settings
 opens, as the Power page does. Night light is left out: it needs a gamma program, a new dependency. The Wi-Fi and
 Bluetooth tiles' bodies open detail pages in place of the panel's contents, as Googlebook does, instead of opening
-Settings: Network and Bluetooth have no Settings pages yet, and the lists belong next to the switch. What the pages
+Settings, so the lists sit next to the switch. (Written first as "Network and Bluetooth have no Settings pages yet":
+wrong, they have since D68; the Quick Settings pages repeat their lists through Details.js.) What the pages
 list and what a click does are plain functions (Details.js) over plain lists the services build, so they test without
 NetworkManager or BlueZ. A password is typed in a field under its network and goes to NetworkManager with
 `connectWithPsk`; networks needing more (802.1X) are listed but do nothing. A Bluetooth device not paired is trusted
@@ -968,3 +969,12 @@ screen; only its nested (winit) backend lacks it. Sunset to sunrise (the maintai
 `nightLight.schedule` runs wlsunset with the daylight temperature for the day, at the weather place's latitude and
 longitude (`-l -L`), or, with no place set, at `nightLight.sunset` and `nightLight.sunrise` (`-S -s`); the tile says
 "Sunset to sunrise" while on. NightLight.js builds the command. gammastep was the alternative, larger (GTK tray, geoclue) for the same job.
+
+**D92. Settings' choices in a dialog (plan 5.1).** A setting with choices opened a menu under its row; Googlebook
+asks in a dialog ("Choose modifier key" in the reference): headline, a line on what it does, the choices with the
+current one checked, Cancel and Done. Now that the kit has a Dialog (1.5g) the settings app does the same, centered
+over a scrim: a click picks (nothing is applied yet), Done applies the pick (the current one picked applies nothing),
+and Cancel, Escape or a press on the scrim leave the setting as it was; the arrows move the pick and Enter is Done.
+The headline is the setting's title and the line its description (a page's own ChoiceRow gives its text and
+supporting text). More than six choices scroll. The app's interface did not change (`toggleMenu`, `menuKey`,
+`settingChoice_N`), so pages kept working; their tests now press Done.

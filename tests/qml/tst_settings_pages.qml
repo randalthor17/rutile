@@ -143,6 +143,15 @@ TestCase {
         verify(text.indexOf("DP-1") < text.indexOf("HDMI-A-1"), "by name");
     }
 
+    // picks a choice in the open choice dialog and presses Done
+    function pickChoice(a, i) {
+        const menu = findChild(a, "settingMenu");
+        tryVerify(() => menu.item && menu.motion.progress > 0.99, 2000);
+        mouseClick(findChild(menu.item, "settingChoice_" + i));
+        mouseClick(findChild(menu.item, "dialogAction_done"));
+        tryVerify(() => !menu.active, 2000);
+    }
+
     function test_display_page() {
         const t = make("display", displayComp);
         const a = t.a, b = t.b;
@@ -157,24 +166,24 @@ TestCase {
         compare(findChild(a, "displayOn_2").supportingText, "Off");
         verify(!findChild(a, "choice_display.eDP-1.resolution").visible, "off: only its switch");
 
-        // a choice through the app's menu
+        // a choice through the app's choice dialog
         mouseClick(findChild(a, "choice_display.DP-1.scale"));
         waitForRendering(a);
         compare(a.menuKey, "display.DP-1.scale");
-        mouseClick(findChild(a, "settingChoice_2"));
+        pickChoice(a, 2);
         compare(b.calls, ["DP-1 scale 1.5"]);
         compare(a.menuKey, "", "closed");
         mouseClick(findChild(a, "choice_display.DP-1.resolution"));
         waitForRendering(a);
-        mouseClick(findChild(a, "settingChoice_2"));
+        pickChoice(a, 2);
         compare(b.calls[1], "DP-1 mode 1280x1024@75.025");
         mouseClick(findChild(a, "choice_display.DP-1.rate"));
         waitForRendering(a);
-        mouseClick(findChild(a, "settingChoice_2"));
+        pickChoice(a, 2);
         compare(b.calls[2], "DP-1 mode 1920x1080@60.000");
         mouseClick(findChild(a, "choice_display.DP-1.transform"));
         waitForRendering(a);
-        mouseClick(findChild(a, "settingChoice_1"));
+        pickChoice(a, 1);
         compare(b.calls[3], "DP-1 transform 90");
         mouseClick(findChild(a, "displayVrrSwitch_0"));
         compare(b.calls[4], "DP-1 vrr on");
@@ -330,7 +339,7 @@ TestCase {
         compare(findChild(a, "choice_apps.text").current, "Not set", "apps, but no default: the system picks");
         mouseClick(browser);
         waitForRendering(a);
-        mouseClick(findChild(a, "settingChoice_1"));
+        pickChoice(a, 1);
         compare(b.calls, ["browser:firefox.desktop"]);
         verify(!findChild(a, "appsManaged").visible);
         b.managed = true;

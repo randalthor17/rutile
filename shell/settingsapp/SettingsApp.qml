@@ -77,16 +77,13 @@ Rectangle {
         }
         return null;
     }
-    // Opens a row's choices under it (above it when there is no room below), or closes them.
+    // Opens a row's choices in the choice dialog, or closes it.
     function toggleMenu(row) {
         if (menuKey === row.row.key) {
             menuKey = "";
             return;
         }
         menuRow = row;
-        const at = row.mapToItem(root, 0, 0);
-        menu.below = at.y + row.height + menu.wanted <= root.height - Spacing.sm;
-        menu.at = at;
         menuKey = row.row.key;
     }
     // a setting's row saves the choice; a page's own row (ChoiceRow) is told and does the rest
@@ -421,31 +418,77 @@ Rectangle {
         }
     }
 
-    // ---- the open setting's choices, above everything; a press anywhere else closes them ----
-    MouseArea {
+    // ---- the open setting's choices: a dialog over a scrim, as Googlebook's (the reference's "Choose modifier
+    // key"): pick one, then Done; Cancel, Escape or a press on the scrim leaves the setting as it was ----
+    property int pick: -1                           // the choice picked in the dialog, not yet applied
+    readonly property var menuChoices: menuRow?.row.choices ?? []
+    onMenuKeyChanged: if (menuKey !== "") pick = menuChoices.indexOf(menuRow.current)
+    Rectangle {
         objectName: "settingMenuCatcher"
         anchors.fill: parent
         z: 10
-        visible: root.menuKey !== ""
-        onPressed: root.menuKey = ""
+        visible: root.menuKey !== "" || opacity > 0     // there from the first frame, while it fades in
+        opacity: root.menuKey !== "" ? 1 : 0
+        color: Qt.alpha(Colors.scrim, 0.32)
+        Behavior on opacity { EffectsNumber { speed: "fast" } }
+        MouseArea {
+            anchors.fill: parent
+            enabled: root.menuKey !== ""
+            onPressed: root.menuKey = ""
+        }
     }
     PopupLoader {
         id: menu
         objectName: "settingMenu"
-        property point at: Qt.point(0, 0)              // the row's top left, when it opened
-        property bool below: true
-        readonly property real wanted: (root.menuRow?.row.choices.length ?? 0) * ControlSpec.listSpec.itemOneLineContainerHeight + Spacing.lg
         z: 11
         open: root.menuKey !== ""
-        origin: below ? Item.TopRight : Item.BottomRight
-        x: Math.max(Spacing.sm, at.x + (root.menuRow?.width ?? 0) - width - Spacing.sm)
-        y: below ? at.y + (root.menuRow?.height ?? 0) : Math.max(Spacing.sm, at.y - height)
-        sourceComponent: Menu {
+        origin: Item.Center
+        x: Math.round((root.width - width) / 2)
+        y: Math.round((root.height - height) / 2)
+        sourceComponent: Dialog {
+            id: choiceDialog
             readonly property var row: root.menuRow
-            items: (row?.row.choices ?? []).map((v, i) => ({ id: String(i), text: Model.valueText(row.row.key, v, Pages.hints),
-                                                             icon: v === row.current ? "check" : "" }))
-            itemPrefix: "settingChoice_"
-            onChosen: id => root.choose(Number(id))
+            headline: row?.row.title ?? row?.text ?? ""
+            supportingText: row?.row.description ?? ""
+            actions: [{ id: "cancel", text: "Cancel", type: "outlined" }, { id: "done", text: "Done", type: "filled" }]
+            acceptId: "done"
+            dismissId: "cancel"
+            onChosen: id => {
+                // Done with the current one picked changes nothing
+                if (id === "done" && root.pick >= 0 && root.pick !== root.menuChoices.indexOf(row?.current)) root.choose(root.pick);
+                else root.menuKey = "";
+            }
+            Keys.onUpPressed: root.pick = Math.max(0, root.pick - 1)
+            Keys.onDownPressed: root.pick = Math.min(root.menuChoices.length - 1, root.pick + 1)
+            Component.onCompleted: forceActiveFocus()
+
+            Flickable {
+                width: parent.width
+                height: Math.min(choiceList.implicitHeight, 6 * ControlSpec.listSpec.itemOneLineContainerHeight)
+                contentHeight: choiceList.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                Column {
+                    id: choiceList
+                    width: parent.width
+                    spacing: ControlSpec.listSpec.segmentedGap
+                    Repeater {
+                        model: root.menuChoices
+                        delegate: ListItem {
+                            required property var modelData
+                            required property int index
+                            objectName: "settingChoice_" + index
+                            width: choiceList.width
+                            position: root.segment(index, root.menuChoices.length)
+                            tone: Colors[ControlSpec.dialogSpec.containerColor]
+                            selected: root.pick === index
+                            iconName: root.pick === index ? "check" : ""
+                            text: Model.valueText(choiceDialog.row?.row.key ?? "", modelData, Pages.hints)
+                            onClicked: root.pick = index
+                        }
+                    }
+                }
+            }
         }
     }
 }

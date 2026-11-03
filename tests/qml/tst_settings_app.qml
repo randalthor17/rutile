@@ -211,7 +211,7 @@ TestCase {
         verify(!sw.checked, "and a change from elsewhere");
     }
 
-    function test_choice_menu() {
+    function test_choice_dialog() {
         const t = make();
         open(t, "security");
         const row = findChild(t.a, "setting_lock.idleMinutes");
@@ -222,52 +222,53 @@ TestCase {
         compare(t.a.menuKey, "lock.idleMinutes");
         const menu = findChild(t.a, "settingMenu");
         tryVerify(() => menu.item && menu.motion.progress > 0.99, 2000);
-        verify(menu.y >= row.mapToItem(t.a, 0, row.height).y - 1, "under the row");
+        compare(findChild(menu.item, "dialogHeadline").text, Schema.schema.properties.lock.properties.idleMinutes.title);
+        verify(Math.abs(menu.x + menu.width / 2 - t.a.width / 2) <= 1 && Math.abs(menu.y + menu.height / 2 - t.a.height / 2) <= 1,
+               "centered on the window");
         compare(findChild(menu.item, "settingChoice_4").iconName, "check", "the current one is checked");
-        // above everything: the later Advanced section does not cover it (it did when the menu was the row's)
         waitForRendering(t.a);
         const two = findChild(menu.item, "settingChoice_2");
         const c = two.mapToItem(t.a, two.width / 2, two.height / 2);
-        compare(t.a.childAt(c.x, c.y), menu, "the menu is on top where the rows below are");
+        compare(t.a.childAt(c.x, c.y), menu, "the dialog is on top of everything");
         mouseClick(two);
-        compare(t.s.sets, [["lock.idleMinutes", 2]]);
+        compare(t.s.sets.length, 0, "picking is not choosing");
+        compare(two.iconName, "check");
+        compare(findChild(menu.item, "settingChoice_4").iconName, "");
+        mouseClick(findChild(menu.item, "dialogAction_done"));
+        compare(t.s.sets, [["lock.idleMinutes", 2]], "Done chooses");
         verify(!row.menuOpen, "it closes");
         compare(row.shownValue, "After 2 minutes");
         tryVerify(() => !menu.active, 2000, "and unloads");
 
+        // the keyboard: Enter on the row opens it, the arrows pick, Enter is Done, Escape is Cancel
         row.item.forceActiveFocus();
         keyClick(Qt.Key_Return);
         verify(row.menuOpen, "Enter on the row opens it");
+        tryVerify(() => menu.item && menu.item.activeFocus, 2000, "the dialog takes the keys");
         keyClick(Qt.Key_Return);
-        verify(!row.menuOpen, "and again closes it");
+        verify(!row.menuOpen, "Enter with the current one: closes");
+        compare(t.s.sets.length, 1, "and sets nothing");
         mouseClick(row);
-        verify(row.menuOpen);
+        tryVerify(() => menu.item && menu.item.activeFocus, 2000);
+        keyClick(Qt.Key_Down);
         keyClick(Qt.Key_Escape);
-        verify(!row.menuOpen, "Escape closes it");
+        verify(!row.menuOpen, "Escape cancels");
+        compare(t.s.sets.length, 1);
+        mouseClick(row);
+        tryVerify(() => menu.item && menu.item.activeFocus, 2000);
+        keyClick(Qt.Key_Down);
+        keyClick(Qt.Key_Return);
+        compare(t.s.sets[1], ["lock.idleMinutes", 5], "the arrow picked the next one");
         mouseClick(row);
         verify(row.menuOpen);
-        mouseClick(t.a, t.a.width - 300, t.a.height - 40);
-        verify(!row.menuOpen, "a click on the page's empty space closes it");
+        mouseClick(t.a, 10, 10);
+        verify(!row.menuOpen, "a press on the scrim cancels");
         mouseClick(row);
-        mouseClick(findChild(t.a, "settingsPage_network"));
-        verify(!row.menuOpen, "a click on the sidebar only closes it");
-        compare(t.a.currentPage, "security");
-        compare(t.s.sets.length, 1, "and chooses nothing");
-    }
-
-    function test_menu_opens_above_near_the_bottom() {
-        const t = make();
-        t.a.anchors.fill = undefined;
-        t.a.width = 1100;
-        t.a.height = 330;
-        waitForRendering(t.a);
-        open(t, "security");
-        const row = findChild(t.a, "setting_lock.idleMinutes");
-        mouseClick(row);
-        const menu = findChild(t.a, "settingMenu");
-        verify(!menu.below, "no room below");
         tryVerify(() => menu.item && menu.motion.progress > 0.99, 2000);
-        verify(menu.y >= 0);
+        mouseClick(findChild(menu.item, "dialogAction_cancel"));
+        verify(!row.menuOpen);
+        compare(t.a.currentPage, "security");
+        compare(t.s.sets.length, 2, "Cancel chooses nothing");
     }
 
     function test_slider_saves_when_still() {

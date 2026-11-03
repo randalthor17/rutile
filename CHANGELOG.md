@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings asks in a dialog.** A setting with choices (lock after, grid columns, a screen's resolution...) opens a
+  dialog like Googlebook's: the choices with the current one checked, then Done or Cancel.
 - **Floating action buttons and cards** join the shell's Material 3 building blocks (in the gallery).
 - **Night light.** A new Quick Settings tile warms the screen's colors (with wlsunset, which the package now
   brings). Set how warm in Settings > Display, and whether it warms all day or only from sunset to sunrise (at your

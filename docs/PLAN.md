@@ -295,9 +295,9 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   for search. About is one now. One window (D77): opened again from anywhere it is reused, and niri focuses it
   (Quickshell cannot raise it; the shell asks niri for its own window by process id and title). The launcher
   lists its pages and settings as results; a desktop file (`rutile-settings.desktop`) opens it from any app
-  launcher. A setting opened from a search gets a ring (M3's focus indicator) that fades. Not done: a choice
-  dialog as Googlebook's (a menu now).
-- [ ] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
+  launcher. A setting opened from a search gets a ring (M3's focus indicator) that fades. Choices open a dialog as
+  Googlebook's (D92, the Dialog of 1.5g): pick, then Done; Cancel, Escape or the scrim leave it.
+- [x] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
   Widgets, Shelf, Apps, Power, Input, About. Wallpaper & style done (D65): mode (dark or light), color style,
   contrast, the seed color (a swatch row, the first custom row); the palette renders again on any of them, and
   everything that takes the shell's colors follows (checked by screenshots in light mode). Sound done (D67): the
@@ -312,8 +312,8 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   switch that is off by default. Apps done (D71): default apps for links,
   folders, mail, pictures, videos, music, text and PDFs, written to the user's mimeapps.list (not when it is
   home-manager's). Shelf: a page of its own for the pins (D72). niri: every setting
-  that niri takes goes through the shell's included files, and wins over the user's config (D74). Left: Widgets, which waits for Phase 4's
-  widget system.
+  that niri takes goes through the shell's included files, and wins over the user's config (D74). Widgets: its
+  settings (grid, editor, text scaling, weather place, web addresses) came with Phase 4.
 
 ## Phase 6: NixOS distro (the v1 goal)
 
