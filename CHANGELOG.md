@@ -9,6 +9,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   dot, and the chosen day's events are listed below. It reads .ics files from a folder (Settings > Calendar,
   `~/.calendars` by default, the layout vdirsyncer syncs Google or CalDAV calendars into). Repeating events now show
   every time, here and in calendar widgets, which before showed only the first.
+- **Google Calendar in the calendar.** Paste a calendar's "Secret address in iCal format" (Google Calendar, Settings,
+  the calendar, Integrate calendar) into Settings > Calendar, and its events show under the clock. Outlook, iCloud,
+  Proton and Nextcloud calendar addresses work the same way. The events are fetched each time the calendar opens
+  and kept for when you are offline.
 
 - **Settings asks in a dialog.** A setting with choices (lock after, grid columns, a screen's resolution...) opens a
   dialog like Googlebook's: the choices with the current one checked, then Done or Cancel.

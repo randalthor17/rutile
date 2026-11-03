@@ -201,6 +201,28 @@ function readCommand(path) {
             'for f in "$1"/*.ics "$1"/*/*.ics; do [ -f "$f" ] && cat "$f"; done; exit 0; else exit 3; fi', "sh", path];
 }
 
+// ---- calendar addresses (D94): Google's "secret address in iCal format", Outlook's, iCloud's... ----
+// webcal:// is https:// for fetching; an address that is neither http(s) nor webcal is "".
+function feedUrl(address) {
+    var a = String(address || "").trim();
+    if (/^webcal:\/\//i.test(a)) return "https://" + a.substring(9);
+    return /^https?:\/\//i.test(a) ? a : "";
+}
+// What an address answered is a calendar (a sign-in page or an error is not).
+function isCalendar(text) {
+    return /^\s*BEGIN:VCALENDAR/i.test(String(text || ""));
+}
+// The cache file's name for an address: a hash, so the secret address itself is in no file name.
+function cacheName(address) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    var s = String(address || "");
+    for (var i = 0; i < s.length; i++) {
+        h1 = Math.imul(h1 ^ s.charCodeAt(i), 0x01000193) >>> 0;
+        h2 = Math.imul(h2 ^ s.charCodeAt(i), 0x5bd1e995) >>> 0;
+    }
+    return ("0000000" + h1.toString(16)).slice(-8) + ("0000000" + h2.toString(16)).slice(-8);
+}
+
 // ---- the popup ----
 function sameDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();

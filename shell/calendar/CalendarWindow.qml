@@ -1,7 +1,8 @@
 // The calendar's layer-shell surface at the top left, under the clock (D93). As the notification list's (D41): the
 // shell creates it in a LazyLoader only while open (D31), it takes the keyboard on opening, Escape or a click into a
-// window closes it, and closing plays the panel's motion before closeRequested asks the shell to unload it. It reads
-// the calendar folder (Settings > Calendar) each time it opens, and no more: nothing runs while it is closed.
+// window closes it, and closing plays the panel's motion before closeRequested asks the shell to unload it. Each time
+// it opens it reads the calendar folder and fetches the calendar addresses (Settings > Calendar: Google Calendar's
+// secret address and the like, D94), and no more: nothing runs while it is closed.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -18,6 +19,8 @@ PanelWindow {
     readonly property string folder: Calendar.expandHome(Settings.value("calendar.folder") ?? "", Quickshell.env("HOME"))
     property bool hasFolder: true
     property bool read: false                // the folder has been read once
+    property string folderText: ""
+    readonly property alias feeds: feeds
 
     signal closeRequested()
     signal settingsRequested()
@@ -52,11 +55,16 @@ PanelWindow {
     Process {
         id: reader
         command: Calendar.readCommand(root.folder)
-        stdout: StdioCollector { onStreamFinished: panel.events = Calendar.icsEvents(text) }
+        stdout: StdioCollector { onStreamFinished: root.folderText = text }
         onExited: code => {
             root.hasFolder = code === 0;
             root.read = true;
         }
+    }
+
+    CalendarFeeds {
+        id: feeds
+        addresses: Settings.value("calendar.feeds") ?? []
     }
 
     CalendarPanel {
@@ -64,7 +72,10 @@ PanelWindow {
         objectName: "calendarPanel"
         focus: true
         now: clock.date
-        hasFolder: root.folder !== "" && root.hasFolder
+        events: Calendar.icsEvents(root.folderText + "\n" + feeds.text)
+        hasFolder: (root.folder !== "" && root.hasFolder) || feeds.addresses.length > 0
+        note: feeds.failed.length === 0 ? "" : feeds.failed.length === 1 ? "A calendar could not be refreshed: showing its saved events."
+            : feeds.failed.length + " calendars could not be refreshed: showing their saved events."
         onSettingsRequested: root.settingsRequested()
         onWindowFocusLost: root.close()
         onHidden: root.closeRequested()

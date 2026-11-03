@@ -110,6 +110,24 @@ TestCase {
                 "2026-11-02,2026-11-03,2026-11-04");
     }
 
+    // ---- calendar addresses (D94) ----
+    function test_feed_addresses() {
+        compare(Calendar.feedUrl("webcal://p01-calendars.icloud.com/x.ics"), "https://p01-calendars.icloud.com/x.ics");
+        compare(Calendar.feedUrl(" https://calendar.google.com/calendar/ical/a%40gmail.com/private-k/basic.ics "),
+                "https://calendar.google.com/calendar/ical/a%40gmail.com/private-k/basic.ics", "trimmed");
+        compare(Calendar.feedUrl("http://127.0.0.1:8000/c.ics"), "http://127.0.0.1:8000/c.ics");
+        compare(Calendar.feedUrl("ftp://x/c.ics"), "");
+        compare(Calendar.feedUrl("file:///etc/passwd"), "", "never a local file");
+        verify(Calendar.isCalendar("BEGIN:VCALENDAR\r\nEND:VCALENDAR"));
+        verify(Calendar.isCalendar("\r\n  begin:vcalendar"));
+        verify(!Calendar.isCalendar("<html>Sign in</html>"));
+        verify(!Calendar.isCalendar(""));
+        const a = Calendar.cacheName("https://calendar.google.com/secret-a/basic.ics");
+        verify(/^[0-9a-f]{16}$/.test(a), a);
+        compare(Calendar.cacheName("https://calendar.google.com/secret-a/basic.ics"), a, "the same each time");
+        verify(Calendar.cacheName("https://calendar.google.com/secret-b/basic.ics") !== a);
+    }
+
     // ---- the month ----
     function test_month_days() {
         // Nov 1 2026 is a Sunday
@@ -222,12 +240,21 @@ TestCase {
     }
     function test_panel_no_folder() {
         const p = panel({ hasFolder: false });
-        verify(findChild(p, "calendarEmpty").text.startsWith("No calendar folder"));
+        verify(findChild(p, "calendarEmpty").text.startsWith("No calendars yet"));
         const button = findChild(p, "calendarSettings");
         verify(button.visible);
         const spy = createTemporaryObject(spyComp, root, { target: p, signalName: "settingsRequested" });
         mouseClick(button);
         compare(spy.count, 1);
+    }
+    function test_panel_note() {
+        const p = panel();
+        const note = findChild(p, "calendarNote");
+        verify(!note.visible);
+        const before = p.maxHeight;
+        p.note = "A calendar could not be refreshed: showing its saved events.";
+        verify(note.visible);
+        verify(p.maxHeight > before, "the window makes room for it");
     }
     function test_panel_fixed_height() {
         // the window keeps the tallest the panel gets: a day with many events stays within it

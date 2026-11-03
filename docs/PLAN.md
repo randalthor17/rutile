@@ -220,8 +220,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   and the chosen day's events, from `calendar.folder` (Settings > Calendar; default `~/.calendars`, vdirsyncer's
   layout). Repeating events (RRULE: daily, weekly, monthly, yearly with INTERVAL, COUNT, UNTIL, BYDAY, BYMONTHDAY;
   EXDATE; RECURRENCE-ID) for the popup and the widgets' calendar source. Arrows, Page Up/Down, Home, the wheel;
-  IPC `calendar toggle|open|close|isOpen|select DAY|state`. Not yet: syncing (vdirsyncer would be a new
-  dependency), adding events, time zones (TZID times are taken as local), rules beyond those listed.
+  IPC `calendar toggle|open|close|isOpen|select DAY|state`. Google Calendar (D94): `calendar.feeds`, the calendars'
+  secret iCal addresses (Outlook, iCloud, Proton, Nextcloud alike), fetched as it opens and saved for offline use.
+  Not yet: signing in to Google (see D94), adding or changing events, time zones (TZID times are taken as local),
+  rules beyond those listed, addresses for widgets.
 
 ## Phase 3: windows on niri
 

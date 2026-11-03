@@ -117,8 +117,8 @@ var pages = [
     },
     {
         id: "calendar", title: "Calendar", icon: "calendar_month", tone: "secondaryContainer",
-        summary: "Where events come from", aliases: ["events", "ics", "vdirsyncer", "caldav", "agenda"],
-        sections: [{ title: "", keys: ["calendar.folder"] }]
+        summary: "Google and other calendars", aliases: ["events", "ics", "vdirsyncer", "caldav", "agenda"],
+        sections: [{ title: "", keys: ["calendar.feeds", "calendar.folder"] }]
     },
     {
         id: "security", title: "Security & privacy", icon: "lock", tone: "primaryContainer",
@@ -166,6 +166,7 @@ var hints = {
         filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
+    "calendar.feeds": { aliases: ["google calendar", "gmail", "outlook", "icloud", "ical", "webcal", "secret address"] },
     "style.mode": { label: v => v === "light" ? "Light" : "Dark", aliases: ["dark mode", "light mode", "night", "theme"] },
     "style.scheme": {
         label: v => ({ "scheme-tonal-spot": "Tonal spot", "scheme-content": "Content", "scheme-expressive": "Expressive",

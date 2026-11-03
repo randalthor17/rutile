@@ -17,7 +17,8 @@ Rectangle {
     property var events: []
     property date now: new Date()
     property bool shown: true
-    property bool hasFolder: true           // false: the calendar folder is missing, nothing to read
+    property bool hasFolder: true           // false: no calendar address and no calendar folder, nothing to read
+    property string note: ""                // under the events: an address that did not answer
     property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
     property var locale: Qt.locale()
     property date selected: Calendar.startOfDay(now)
@@ -33,6 +34,7 @@ Rectangle {
     // The tallest it gets (a full list of events), for the window: a fixed size, as the notification list's.
     readonly property real maxHeight: 2 * Spacing.md + header.height + weekdays.height + grid.height + dayTitle.height
                                       + maxRows * (rowHeight + ControlSpec.listSpec.segmentedGap) + 4 * column.spacing
+                                      + (note !== "" ? noteText.height + column.spacing : 0)
 
     signal settingsRequested()
     signal windowFocusLost()
@@ -223,7 +225,7 @@ Rectangle {
             leftPadding: Spacing.sm
             width: parent.width
             wrapMode: Text.Wrap
-            text: root.hasFolder ? "No events" : "No calendar folder. Choose one in Settings, or sync one with vdirsyncer."
+            text: root.hasFolder ? "No events" : "No calendars yet. Add your Google Calendar's address in Settings."
             color: Colors.surfaceVariantOn
             font: Type.font(Type.bodyMedium)
         }
@@ -263,6 +265,17 @@ Rectangle {
                     }
                 }
             }
+        }
+        Text {
+            id: noteText
+            objectName: "calendarNote"
+            visible: root.note !== ""
+            leftPadding: Spacing.sm
+            width: parent.width
+            wrapMode: Text.Wrap
+            text: root.note
+            color: Colors.surfaceVariantOn
+            font: Type.font(Type.bodySmall)
         }
     }
 }

@@ -432,6 +432,8 @@ def run_wayland_smoke(screenshot=None):
             "XDG_DATA_HOME": str(ROOT / "tests" / "qs" / "apps" / "no-user-apps"),
             # a copy: setting a wallpaper renders the palette into this file (WallpaperService)
             "RUTILE_PALETTE": str(comp.runtime / "palette.json"),
+            # the calendar addresses' saved copies (D94), never in the user's cache
+            "XDG_CACHE_HOME": str(comp.runtime / "cache"),
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         no_polkit_agent(comp.runtime / "config")
@@ -443,9 +445,19 @@ def run_wayland_smoke(screenshot=None):
             "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Smoke standup\r\n"
             f"DTSTART:{today:%Y%m%d}T100000\r\nDTEND:{today:%Y%m%d}T103000\r\nRRULE:FREQ=WEEKLY\r\nEND:VEVENT\r\n"
             f"BEGIN:VEVENT\r\nSUMMARY:Smoke holiday\r\nDTSTART;VALUE=DATE:{today:%Y%m%d}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+        # and a calendar address (D94), served by a web server of the test's own
+        www = comp.runtime / "www"
+        www.mkdir()
+        (www / "web.ics").write_text(
+            "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Smoke web event\r\n"
+            f"DTSTART:{today:%Y%m%d}T120000\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+        port = free_port()
+        web = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory",
+                                str(www)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         settings_file = comp.runtime / "config" / "rutile" / "settings.json"
         settings_file.write_text(json.dumps(dict(json.loads(settings_file.read_text()),
-                                                 calendar={"folder": str(calendars)})))
+                                                 calendar={"folder": str(calendars),
+                                                           "feeds": [f"http://127.0.0.1:{port}/web.ics"]})))
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
@@ -936,14 +948,17 @@ def run_wayland_smoke(screenshot=None):
                     cal = {}
                     for _ in range(50):
                         cal = calendar_state()
-                        if cal.get("read"):
+                        if cal.get("read") and len(cal.get("events", [])) == 3 and not cal.get("feedsBusy"):
                             break
                         time.sleep(0.1)
                     titles = [e.get("title") for e in cal.get("events", [])]
                     if (not cal.get("open") or not cal.get("hasFolder") or cal.get("selected") != today.isoformat()
-                            or titles != ["Smoke holiday", "Smoke standup"] or cal.get("clocksOpen") != [True]):
+                            or titles != ["Smoke holiday", "Smoke standup", "Smoke web event"]
+                            or cal.get("feedsFailed") != 0 or cal.get("clocksOpen") != [True]):
                         problems.append(f"ipc calendar toggle: {cal}, expected it open on today with the folder's two "
-                                        "events and the clock marked")
+                                        "events, the address's one and the clock marked")
+                    if not list((comp.runtime / "cache" / "rutile" / "calendars").glob("*.ics")):
+                        problems.append("calendar address: nothing saved in XDG_CACHE_HOME/rutile/calendars")
                     if screenshot and shutil.which("grim"):
                         time.sleep(1)                   # the popup's motion
                         shot = Path(screenshot).with_name(Path(screenshot).stem + "-calendar.png")
@@ -1125,6 +1140,8 @@ def run_wayland_smoke(screenshot=None):
                     shell_proc.wait(5)
                 except subprocess.TimeoutExpired:
                     shell_proc.kill()
+                web.terminate()
+                web.wait(5)
         text = log_path.read_text()
     # QML errors and warnings from our files; service connection errors are expected here (no PipeWire,
     # no BlueZ in the private runtime dir) and are not ours.

@@ -992,3 +992,31 @@ EXDATE and RECURRENCE-ID; a rule with anything else shows its first time, as bef
 a TZID time is taken as local: right for events made where the user is, an hour off for one made in another zone
 around a DST change. Six weeks are always shown, so the popup keeps its size from month to month. The widget source
 keeps its required `path` (no change to the widget spec).
+
+**D94. Google Calendar through its secret iCal address.** The maintainer asked for Google Calendar support
+(2026-11-04) and left the choice to Claude. Considered:
+1. Sign in with Google in the shell. It needs an OAuth client. Google's device flow (a code typed on another
+   device) does not allow calendar scopes; it allows only sign-in, two Drive scopes and YouTube. The loopback flow
+   needs a listener that Quickshell lacks. A client shipped with Rutile would need Google's verification for a
+   sensitive scope, and Google's terms forbid publishing its secret in open source (vdirsyncer's reason for having
+   none).
+2. vdirsyncer's google storage. Every user must create a Google Cloud project, enable CalDAV and make a desktop
+   OAuth client first. It also adds Python and vdirsyncer[google] to the package.
+3. GNOME Online Accounts with evolution-data-server. GNOME's verified client gives a real sign-in, but it brings the
+   GNOME data stack, needs gnome-control-center to add the account, and reading events would go through D-Bus calls
+   the shell does not have.
+4. The calendar's secret address in iCal format, which Google gives for every calendar (Settings, Integrate
+   calendar). Chosen: no dependency, no Google project, nothing to sign in to, and the same setting serves Outlook,
+   iCloud, Proton and Nextcloud.
+`calendar.feeds` lists the addresses (webcal:// read as https://). `CalendarFeeds.qml` fetches each with
+XMLHttpRequest when the calendar opens. It keeps an answer only if it is a calendar: a sign-in page or an error
+leaves the last copy, and the popup notes the failure. That copy is kept in `$XDG_CACHE_HOME/rutile/calendars`,
+one file per address named by a hash, so the secret is in no file name, and it shows at once and offline.
+Costs:
+- Read only.
+- Each calendar has its own address.
+- Anyone with the address can read the calendar. The setting says so, and that Nix settings put it in the
+  world-readable store.
+- How soon Google's address reflects a change was not measured: no Google account was used. Third-party reports
+  about Google's polling of *other* feeds (hours) do not apply to its own export, but this is unverified.
+A real sign-in can come later through option 3, if the maintainer approves that dependency.
