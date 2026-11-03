@@ -539,6 +539,8 @@ Rectangle {
                         readonly property bool darkTheme: Colors.mode === "dark"
                         property bool dnd: false
                         property bool powerSaverAvailable: true
+                        property bool nightLightAvailable: true
+                        property bool nightLight: false
                         property bool powerSaver: false
                         function setBrightness(v) { brightness = v; }
                         function setVolume(v) { volume = v; muted = false; }
@@ -549,6 +551,7 @@ Rectangle {
                         function setAirplaneMode(b) { wifiEnabled = !b; bluetoothEnabled = !b; }
                         function setDnd(b) { dnd = b; }
                         function setPowerSaver(b) { powerSaver = b; }
+                        function setNightLight(b) { nightLight = b; }
                         function refresh() {}
                     }
                     StatusPill {

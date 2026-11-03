@@ -374,6 +374,20 @@ var schema = {
                 }
             }
         },
+        "nightLight": {
+            "type": "object",
+            "title": "Night light",
+            "properties": {
+                "temperature": {
+                    "type": "integer",
+                    "default": 4000,
+                    "minimum": 2500,
+                    "maximum": 6000,
+                    "title": "Night light warmth",
+                    "description": "The screen's color temperature in kelvin while Night light is on (Quick Settings): lower is warmer. Daylight is 6500."
+                }
+            }
+        },
         "widgets": {
             "type": "object",
             "title": "Widgets",

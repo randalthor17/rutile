@@ -65,6 +65,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `input.mouseNaturalScroll` | true or false | false | the wheel moves content the other way |
 | `input.mouseSpeed` | -1 to 1 | 0 | mouse pointer speed |
 | `input.mouseFlat` | true or false | false | no mouse acceleration (niri's flat profile) |
+| `nightLight.temperature` | integer, 2500 to 6000 | 4000 | the screen's color temperature in kelvin while Night light is on (Quick Settings; wlsunset, D91) |
 | `windows.enabled` | true or false | false | apply the window settings below to niri, as one window rule after niri's own (rutile-settings.kdl, D88) |
 | `windows.floating` | true or false | true | new windows open floating, as on Googlebook, instead of in niri's columns |
 | `windows.cornerRadius` | integer, 0 to 32 | 16 | window corners' radius in pixels; windows are clipped to them |

@@ -119,8 +119,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   chips to add the tiles not shown, Do not disturb and Power saver tiles, Wi-Fi and Bluetooth detail pages (networks
   with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
   button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Not done:
-  Night light, detail pages for the other
-  tiles, hidden networks. Forgetting a saved network: done. Not verified: Wi-Fi and Bluetooth on real hardware (none active on
+  detail pages for the other
+  tiles, hidden networks. Forgetting a saved network: done. Night light (D91): wlsunset,
+  warmth in Settings > Display; not verified on real niri (nested niri has no gamma control); no schedule yet. Not verified: Wi-Fi and Bluetooth on real hardware (none active on
   the maintainer's machine).
 - [ ] **2.7** Started (`shell/launcher/`): the shelf's launcher button (and `ipc call launcher toggle`) opens a
   panel above the shelf with a search field and a 5-column grid of the desktop entries, ranked by DMS's

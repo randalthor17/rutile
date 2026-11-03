@@ -36,6 +36,8 @@ TestCase {
             property bool darkTheme: true
             property bool dnd: false
             property bool powerSaverAvailable: true
+            property bool nightLightAvailable: true
+            property bool nightLight: false
             property bool powerSaver: false
             property var wifiNetworks: [
                 { name: "Cafe", signal: 0.9, secure: false, psk: false, connected: false, known: false, busy: false },
@@ -58,6 +60,7 @@ TestCase {
             function setAirplaneMode(b) { log("airplane " + b); }
             function setDnd(b) { log("dnd " + b); }
             function setPowerSaver(b) { log("powerSaver " + b); }
+            function setNightLight(b) { log("nightLight " + b); }
             function connectWifi(n, psk) { log("connectWifi " + n + (psk ? " " + psk : "")); }
             function disconnectWifi(n) { log("disconnectWifi " + n); }
             function forgetWifi(n) { log("forgetWifi " + n); }
@@ -412,7 +415,7 @@ TestCase {
         compare(t.backend.calls.indexOf("micMuted true"), -1, "editing does not toggle");
         verify(remove.enabled);
         clickItem(remove);
-        compare(t.panel.tiles.map(x => x.id).join(), "wifi,bluetooth,dark,airplane,dnd");
+        compare(t.panel.tiles.map(x => x.id).join(), "wifi,bluetooth,dark,airplane,dnd,nightLight");
         compare(spy.count, 1);
         clickItem(findChild(t.panel, "qsEditDone"));
         verify(!t.panel.editMode);
@@ -432,7 +435,7 @@ TestCase {
         compare(t.panel.addableTiles.length, 0);
         // removing one offers it again, wide if it has a details side
         t.panel.tiles = [{ id: "mic", w: 1 }];
-        compare(t.panel.addableTiles.join(), "wifi,bluetooth,dark,airplane,dnd,powerSaver", "in catalog order");
+        compare(t.panel.addableTiles.join(), "wifi,bluetooth,dark,airplane,dnd,nightLight,powerSaver", "in catalog order");
         t.panel.addTile("bluetooth");
         compare(JSON.stringify(t.panel.tiles), JSON.stringify([{ id: "mic", w: 1 }, { id: "bluetooth", w: 2 }]));
         t.panel.addTile("bluetooth");
@@ -461,6 +464,21 @@ TestCase {
         verify(t.backend.calls.indexOf("powerSaver true") >= 0, "" + t.backend.calls);
         t.backend.powerSaver = true;
         verify(p.active);
+    }
+
+    function test_night_light_tile() {
+        var t = make({ nightLightAvailable: false });
+        tryCompare(t.panel, "appearProgress", 1, 2000);
+        var n = tile(t.panel, "nightLight");
+        verify(n.visible, "among the defaults");
+        compare(n.secondaryText, "Unavailable", "no wlsunset");
+        t.backend.nightLightAvailable = true;
+        compare(n.secondaryText, "Off");
+        clickItem(n);
+        compare(t.backend.calls[t.backend.calls.length - 1], "nightLight true");
+        t.backend.nightLight = true;
+        verify(n.active);
+        compare(n.iconName, "nightlight");
     }
 
     function test_saved_tiles_are_made_safe() {

@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Night light.** A new Quick Settings tile warms the screen's colors (with wlsunset, which the package now
+  brings). Set how warm in Settings > Display. It stays on across restarts. If another program already controls the
+  screen's colors, it turns itself off and says so.
 - **Settings > Display keeps your last change.** Several quick changes to a screen (a scale, then a rotation)
   could be kept without the last one, so it was lost at the next restart or config change. Fixed.
 - **Text fields and dialogs.** Two new building blocks in the Material 3 look: a text field (outlined or filled,

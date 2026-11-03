@@ -90,6 +90,8 @@ fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that 
 - xdg-desktop-portal with a file chooser (GNOME's or GTK's; home-manager's niri module sets up GNOME's), for
   Settings' Choose... buttons.
 - PAM's `login` service, for the lock screen (on NixOS by default).
+- Nothing else for Night light: the package brings wlsunset. Turn off any other gamma program (gammastep,
+  wlsunset of your own) or Night light stops with a toast saying the gamma is in use.
 
 ## GTK, Qt and KDE apps in the shell's look
 

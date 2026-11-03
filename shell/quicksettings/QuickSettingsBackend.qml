@@ -30,6 +30,8 @@ QtObject {
     // the style's mode (D65): the shell's palette and the apps that take its colors; saved
     readonly property bool darkTheme: Settings.value("style.mode") === "dark"
     readonly property bool dnd: NotificationService.dnd
+    readonly property bool nightLightAvailable: NightLightService.available
+    readonly property bool nightLight: NightLightService.on
     // Power saver needs power-profiles-daemon, which Quickshell cannot tell is there: `busctl` looks for it once,
     // when Quick Settings first opens (refresh), and PowerProfiles is not touched before it is found
     property bool powerSaverAvailable: false
@@ -64,6 +66,7 @@ QtObject {
     function disconnectBluetooth(address) { BluetoothService.disconnectDevice(address); }
     function setBluetoothDiscovering(on) { BluetoothService.setDiscovering(on); }
     function setDnd(on) { NotificationService.setDnd(on); }
+    function setNightLight(on) { NightLightService.setOn(on); }
     function setPowerSaver(on) {
         if (powerSaverAvailable)
             PowerProfiles.profile = on ? PowerProfile.PowerSaver : PowerProfile.Balanced;

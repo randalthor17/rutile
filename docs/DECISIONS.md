@@ -954,3 +954,14 @@ open). A press on a shelf button does what the button does (the launcher button 
 covered: a press on another program's layer surface (another bar), which tells the shell nothing. Tested offscreen
 for the shelf and the widgets; the wallpaper's and the clock's wiring was not clicked with a real pointer (neither
 the headless sway nor the nested niri has one the tests can drive).
+
+**D91. Night light through wlsunset.** The maintainer approved wlsunset as a dependency for Quick Settings' Night
+light (2026-11-04). It is in the package's PATH and the dev shell. wlsunset follows the sun between a day and a
+night temperature and has no "always on"; the shell runs it with the night temperature and one kelvin more for the
+day (`-t T -T T+1`), so the screen is warm at any hour while the tile is on, and stopping it hands the gamma back
+(the compositor restores it when wlr-gamma-control's client goes). On or off is shell state (state.json, back on
+with the shell); the warmth is a setting (`nightLight.temperature`, 2500 to 6000 K, Settings > Display); a new
+warmth restarts it. A wlsunset that stops by itself turns the switch off and shows its last line in a toast: another
+gamma program (gammastep) holds the outputs, or the compositor has none (niri nested in a window, where it could
+not be tried: niri's winit backend has no gamma control). Not done: a schedule (sunset to sunrise from the
+weather place); gammastep was the alternative, larger (GTK tray, geoclue) for the same job.

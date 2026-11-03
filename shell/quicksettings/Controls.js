@@ -15,6 +15,8 @@ var catalog = {
     airplane: { text: "Airplane mode", icon: "flight", offIcon: "flight", keywords: ["flight mode", "offline", "radios"] },
     dnd: { text: "Do not disturb", icon: "do_not_disturb_on", offIcon: "do_not_disturb_off",
            keywords: ["notifications", "silence", "quiet", "focus", "dnd"] },
+    nightLight: { text: "Night light", icon: "nightlight", offIcon: "nightlight",
+                  keywords: ["blue light", "warm", "night shift", "eye", "wlsunset"] },
     powerSaver: { text: "Power saver", icon: "energy_savings_leaf", offIcon: "energy_savings_leaf",
                   keywords: ["battery saver", "power mode", "power profile", "energy"] }
 };
@@ -22,7 +24,8 @@ var catalog = {
 // The tiles a new user gets, {id, w} (w: 2 is a wide tile with its name, 1 the icon alone).
 var defaultTiles = [
     { id: "wifi", w: 2 }, { id: "bluetooth", w: 2 },
-    { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }, { id: "dnd", w: 1 }
+    { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }, { id: "dnd", w: 1 },
+    { id: "nightLight", w: 2 }
 ];
 
 // A saved layout made safe to show: known ids once each, widths 1 or 2; the defaults for anything not a list.
@@ -80,6 +83,9 @@ function state(id, b) {
     }
     case "dnd":
         return { active: b.dnd, available: true, secondary: b.dnd ? "On" : "Off" };
+    case "nightLight":
+        return { active: b.nightLight, available: b.nightLightAvailable,
+                 secondary: !b.nightLightAvailable ? "Unavailable" : b.nightLight ? "On" : "Off" };
     case "powerSaver":
         return { active: b.powerSaver, available: b.powerSaverAvailable,
                  secondary: !b.powerSaverAvailable ? "Unavailable" : b.powerSaver ? "On" : "Off" };
@@ -97,6 +103,7 @@ function toggle(id, wanted, b) {
     case "airplane": b.setAirplaneMode(wanted); break;
     case "dnd": b.setDnd(wanted); break;
     case "powerSaver": b.setPowerSaver(wanted); break;
+    case "nightLight": b.setNightLight(wanted); break;
     }
 }
 
