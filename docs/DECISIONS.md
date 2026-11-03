@@ -782,3 +782,18 @@ Without niri nothing is focused, and the window is still reused. The ring is M3'
 groups get it too; it shows at once and fades over long4 with the highlight's end (the row's own selected
 tint is gone). The desktop file runs `rutile-shell settings`, which with no function opens the app as it was;
 the package writes its full path into Exec.
+
+**D78. The widget renderer: one recursive node, bindings looked up, tones passed down (plan 4.3).** `WidgetHost`
+draws a spec (D18) with `WidgetNode`, which picks its node's component by type through a Loader, so only what is
+drawn is created (D31); a container's children are `WidgetChild` Loaders of the same file, created with their
+node, depth and colors already set (bound afterwards), so nothing fades in from the defaults. Bindings are paths
+looked up in `values` ({source: {field: value}}, which the data sources of 4.2 will fill): never evaluated, so a
+widget runs no code; a missing value, an object or a function shows a dash, a list is joined. A card (surface
+container unless given) or a tile sets the colors its children draw with: a surface tone's On roles, or a tinted
+tone's own On role, in which a progress bar also draws (the theme's secondary-container track vanished on a
+primary-container card in light mode). A row shares its width equally, except chips, which keep their own width
+and pack to the left; a grid has equal columns. A picture is cropped to its aspect with rounded corners (a
+MultiEffect mask, created only while a picture shows), a tinted placeholder before. The renderer draws what it
+can of a spec that `tools/widget_check.py` would refuse and lists the rest in `problems` (an unknown type, deeper
+than 12 levels); a spec of another version draws nothing. Lists repeated over a source's array (the list
+example's `{{calendar.events.title}}`) wait for 4.2, which defines what a source's array looks like.

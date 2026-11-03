@@ -219,7 +219,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **4.2** Data sources: clock, weather (keyless API), calendar, battery, system stats, countdown, HTTP JSON
   (allowlisted), files; bindings `{{source.field}}` with no arbitrary JS. Types: `SystemClock`, `UPower`,
   `Mpris`, `FileView`, `Process`.
-- [ ] **4.3** WidgetHost renderer: builds QML from the spec with Loader/Repeater.
+- [x] **4.3** WidgetHost renderer (D78, `shell/widgethost/`): `WidgetHost { spec; values }` draws every node of
+  spec v1 with Loader and Repeater, a node's component created only when drawn; bindings are looked up in
+  `values` (`{source: {field}}`, a dash while missing), never evaluated; a card or tile passes its tone's On
+  colors to its children; a row shares its width, chips keeping theirs; `problems` lists what it left out (an
+  unknown type, deeper than 12 levels; another version draws nothing) and `bindings` what the widget reads.
+  Tested offscreen on the spec's examples in both modes. Not yet: lists that repeat over a source's array (with
+  4.2), a preview command (4.6).
 - [ ] **4.4** Desktop widget grid reusing the EditableGrid (1.6): snap, edit mode, persistence.
 - [ ] **4.5** Custom widgets app: category list and template cards (weather, daily update, world clock, finance,
   countdown, sports) plus a "Create a widget" prompt box. Templates are local-model task `widget-templates`.

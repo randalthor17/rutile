@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -174,6 +174,10 @@ def workspace(tests_dir="qml"):
     if found and tests_dir == "qml":
         shutil.copy(ROOT / "tests" / "qml_optional" / "tst_fonts.qml", tests / "tst_fonts.qml")
     shutil.copy(ROOT / "theme" / "roles.json", data)
+    # the widget spec's examples, for the renderer's tests (plan 4.3)
+    (data / "widgets").mkdir()
+    for f in sorted((ROOT / "widgets" / "examples").glob("*.json")):
+        shutil.copy(f, data / "widgets" / f.name)
     shutil.copy(ROOT / "tokens" / "m3e.json", data)
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", data / "palette.json")
     sys.path.insert(0, str(ROOT / "tests"))

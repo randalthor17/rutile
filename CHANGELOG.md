@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Widgets draw.** The widget renderer (plan 4.3) draws a widget spec: cards, tiles, rows, columns, grids,
+  headers, stats, progress bars, list rows, chips and pictures, in the wallpaper's colors, with `{{source.field}}`
+  filled from data (the data sources are next). Nothing on the desktop yet: that is the widget grid (4.4).
 - **Settings from the launcher.** Searching in the launcher also finds the settings app's pages and settings;
   choosing one opens Settings there, and the setting gets a ring that fades away (as it does from Settings' own
   search; it follows the setting when the window is resized). The Settings app has a desktop file, so other app launchers show "Rutile Settings" too.
