@@ -21,6 +21,7 @@ PanelWindow {
     signal addListRequested()
     signal galleryRequested()
     signal editRequested(int index)
+    signal pressed()
 
     anchors.top: true
     anchors.bottom: true
@@ -57,5 +58,6 @@ PanelWindow {
         onAddListRequested: root.addListRequested()
         onGalleryRequested: root.galleryRequested()
         onEditRequested: index => root.editRequested(index)
+        onPressed: root.pressed()
     }
 }

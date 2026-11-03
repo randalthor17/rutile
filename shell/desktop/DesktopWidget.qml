@@ -32,12 +32,17 @@ Item {
     objectName: "desktopWidget_" + (modelData.id ?? "")
 
     signal editRequested(int index)
+    signal pressed()                        // any press on it (the shell closes its popups, D90)
 
     MouseArea {
         anchors.fill: parent
         enabled: !root.editMode
-        acceptedButtons: Qt.RightButton
-        onClicked: root.editRequested(root.index)
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onPressed: root.pressed()
+        onClicked: mouse => {
+            if (mouse.button === Qt.RightButton)
+                root.editRequested(root.index);
+        }
     }
 
     Rectangle {

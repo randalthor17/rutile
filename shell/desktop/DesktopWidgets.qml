@@ -33,6 +33,7 @@ Item {
     signal addListRequested()              // Add was opened: the owner lists the widget files again
     signal galleryRequested()              // "More widgets": the Widgets app
     signal editRequested(int index)        // a widget was right-clicked: edit, with it selected
+    signal pressed()                        // a widget was pressed (the shell closes its popups, D90)
 
     function commit(next) {
         if (commitHandler)
@@ -108,6 +109,7 @@ Item {
                           Desktop.NEW_SIZE.h * desktopGrid.rowHeight + (Desktop.NEW_SIZE.h - 1) * desktopGrid.gap)
             editMode: root.editMode
             onEditRequested: index => root.editRequested(index)
+            onPressed: root.pressed()
         }
     }
 

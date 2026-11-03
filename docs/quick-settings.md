@@ -151,7 +151,7 @@ window (`niri msg action focus-column-right`) closed the panel.
 
 ## Not done yet
 
-- Closing on a click on empty desktop or another bar (D41). Detail pages for the other tiles; forgetting a saved
+- Closing on a click on another program's bar (D90 covers the shell's own desktop, shelf and clock). Detail pages for the other tiles; forgetting a saved
   network; hidden networks.
 - Blur behind the panel (`BackgroundEffect`, D38): the panel is opaque like Googlebook's for now.
 - The power menu is a small dropdown for now. Planned (maintainer's request): a full-screen power menu over the

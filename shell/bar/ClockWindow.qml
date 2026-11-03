@@ -11,6 +11,8 @@ PanelWindow {
 
     readonly property alias pill: pill
 
+    signal pressed()                        // the shell closes its popups (D90)
+
     anchors.top: true
     anchors.left: true
     margins.top: Spacing.sm
@@ -30,5 +32,9 @@ PanelWindow {
     ClockPill {
         id: pill
         now: clock.date
+    }
+    MouseArea {
+        anchors.fill: pill
+        onPressed: root.pressed()
     }
 }

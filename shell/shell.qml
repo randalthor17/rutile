@@ -48,6 +48,14 @@ ShellRoot {
     // Open, and not on its way out: a closing panel plays its motion before the loader drops it.
     readonly property bool quickSettingsOpen: quickSettings.active && !(quickSettings.item?.closing ?? false)
 
+    // A press on the shell's own desktop surfaces (wallpaper, widgets, shelf, clock) closes the popups that close on
+    // focus loss: niri moves no keyboard focus on such a press, so they would stay open (D41's gap, D90).
+    function closePopups() {
+        if (quickSettingsOpen) closeQuickSettings();
+        if (launcherOpen) closeLauncher();
+        if (notificationListOpen) closeNotificationList();
+    }
+
     function closeQuickSettings() {
         if (quickSettings.item) quickSettings.item.close();
         else quickSettings.active = false;
@@ -129,6 +137,7 @@ ShellRoot {
             screen: modelData
             onEditWidgetsRequested: shell.widgetsEditing = true
             onWallpaperSettingsRequested: shell.openSettings("wallpaper", "")
+            onPressed: shell.closePopups()
         }
     }
 
@@ -177,6 +186,7 @@ ShellRoot {
                 scaleText: Settings.value("widgets.scaleText") === true
                 commitHandler: next => shell.saveDesktop(desktop.modelData.name, next)
                 onDoneRequested: shell.widgetsEditing = false
+                onPressed: shell.closePopups()
                 onAddListRequested: widgetLibrary.scan()
                 onEditRequested: index => {
                     shell.widgetsEditing = true;
@@ -530,6 +540,7 @@ ShellRoot {
             notificationsOpen: shell.notificationListOpen && notificationList.item?.screen === modelData
             onClicked: shell.toggleQuickSettings(modelData)
             onBellClicked: shell.toggleNotificationList(modelData)
+            onClockPressed: shell.closePopups()
             trayItems: shell.trayItems
             trayMenuId: shell.trayMenuOpen && trayMenu.item?.screen === modelData ? shell.trayMenuId : ""
             onTrayMenuRequested: (entry, right) => shell.toggleTrayMenu(modelData, entry, right)
@@ -616,6 +627,7 @@ ShellRoot {
             screen: modelData
             backend: shelfBackend
             onLauncherClicked: shell.toggleLauncher(modelData)
+            onPressed: shell.closePopups()
             onMenuRequested: (target, x) => shell.openShelfMenu(modelData, target, x, height)
         }
     }

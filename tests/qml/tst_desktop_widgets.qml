@@ -158,10 +158,13 @@ TestCase {
                                  { id: "b", path: "/w/card.json", w: 2, h: 2, col: 6, row: 1 }] });
         settle(d);
         const asked = signalSpy.createObject(root, { target: d, signalName: "editRequested" });
+        const pressed = signalSpy.createObject(root, { target: d, signalName: "pressed" });
         mouseClick(widget(d, "b"), 10, 10, Qt.LeftButton);
         compare(asked.count, 0, "a left click asks nothing");
+        compare(pressed.count, 1, "but closes the shell's popups (D90)");
         mouseClick(widget(d, "b"), 10, 10, Qt.RightButton);
         compare(asked.count, 1);
+        compare(pressed.count, 2);
         compare(asked.signalArguments[0][0], 1, "the widget right-clicked");
         d.editMode = true;
         d.select(1);

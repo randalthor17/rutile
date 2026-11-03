@@ -944,3 +944,13 @@ list and what a click does are plain functions (Details.js) over plain lists the
 NetworkManager or BlueZ. A password is typed in a field under its network and goes to NetworkManager with
 `connectWithPsk`; networks needing more (802.1X) are listed but do nothing. A Bluetooth device not paired is trusted
 and paired, and the service connects it when BlueZ reports it paired. The sound button opens Settings > Sound.
+
+**D90. A press on the shell's own desktop closes its popups (amends D41).** D41 closed Quick Settings when its
+window lost keyboard focus, and left a gap: on niri a click on the wallpaper or on a bar moves no focus, so the
+panel stayed open. Those surfaces are the shell's own, so they say so: a press on the wallpaper, on a desktop
+widget, on the shelf between its buttons, or on the clock closes Quick Settings, the launcher and the notification
+list (`closePopups` in shell.qml). Still rejected: D41's full-screen catcher window (a screen-sized buffer while
+open). A press on a shelf button does what the button does (the launcher button still toggles the launcher). Not
+covered: a press on another program's layer surface (another bar), which tells the shell nothing. Tested offscreen
+for the shelf and the widgets; the wallpaper's and the clock's wiring was not clicked with a real pointer (neither
+the headless sway nor the nested niri has one the tests can drive).

@@ -12,6 +12,7 @@ PanelWindow {
     readonly property alias shelf: shelf
 
     signal launcherClicked()
+    signal pressed()
     signal menuRequested(var target, real x)    // a button's right click (Shelf.menuRequested)
 
     anchors.bottom: true
@@ -24,6 +25,7 @@ PanelWindow {
 
     Shelf {
         id: shelf
+        onPressed: root.pressed()
         anchors.left: parent.left
         anchors.right: parent.right
         pinned: root.backend.pinned

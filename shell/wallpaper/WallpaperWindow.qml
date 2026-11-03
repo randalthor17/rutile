@@ -15,6 +15,7 @@ PanelWindow {
 
     signal editWidgetsRequested()
     signal wallpaperSettingsRequested()
+    signal pressed()                        // any press: the shell closes its popups (a click outside them, D90)
 
     function openMenu(x, y) {
         menu.at = Qt.point(x, y);
@@ -40,6 +41,7 @@ PanelWindow {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onPressed: root.pressed()
         onClicked: mouse => {
             if (mouse.button === Qt.RightButton)
                 root.openMenu(mouse.x, mouse.y);

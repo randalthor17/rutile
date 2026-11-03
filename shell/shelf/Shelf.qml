@@ -42,6 +42,13 @@ Rectangle {
     height: implicitHeight
     color: Colors.surfaceContainerLowest
 
+    signal pressed()                        // a press on the shelf between its buttons (the shell closes its popups, D90)
+    MouseArea {
+        objectName: "shelfBackground"
+        anchors.fill: parent
+        onPressed: root.pressed()
+    }
+
     Row {
         id: row
         anchors.centerIn: parent

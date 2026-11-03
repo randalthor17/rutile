@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Clicking the desktop closes Quick Settings.** A click on the wallpaper, a widget, the shelf (between its
+  buttons) or the clock now closes Quick Settings, the launcher and the notification list, which before closed only
+  when a window took focus.
 - **Quick Settings remembers its tiles, and lists networks and devices.** The tiles you arrange stay that way after
   a restart, and "Edit tiles" now offers the tiles you removed to add back. New tiles: Do not disturb and Power saver.
   Clicking the Wi-Fi or Bluetooth tile's name opens a page listing networks or devices: click one to connect or

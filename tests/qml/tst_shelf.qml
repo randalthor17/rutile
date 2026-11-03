@@ -79,6 +79,23 @@ TestCase {
         compare(asked.signalArguments[1][0].window.id, 14);
     }
 
+    // D90: a press between the buttons closes the shell's popups; one on a button does what the button does
+    function test_press_between_buttons() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, groups: ShelfApps.decorate(niriGroups, lookup) });
+        waitForRendering(shelf);
+        var pressed = createTemporaryObject(spyComp, root, { target: shelf, signalName: "pressed" });
+        var launcher = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launcherClicked" });
+        mouseClick(shelf, 4, shelf.height / 2);
+        compare(pressed.count, 1);
+        var l = findChild(shelf, "shelfLauncher");
+        mouseClick(l, l.width / 2, l.height / 2);
+        compare(launcher.count, 1);
+        compare(pressed.count, 1, "the launcher button toggles the launcher, not closes it");
+        var b = findChild(shelf, "shelfPin_firefox");
+        mouseClick(b, b.width / 2, b.height / 2);
+        compare(pressed.count, 1);
+    }
+
     function test_toggle_pin() {
         compare(ShelfApps.togglePin(["a", "b"], "c").join(), "a,b,c", "pins at the end");
         compare(ShelfApps.togglePin(["a", "b", "c"], "b").join(), "a,c", "unpins in place");

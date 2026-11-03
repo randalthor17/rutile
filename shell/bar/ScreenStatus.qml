@@ -18,6 +18,7 @@ Scope {
     readonly property real reserved: exclusion.size
 
     signal clicked()
+    signal clockPressed()
     signal bellClicked()
     signal trayMenuRequested(var entry, real right)
 
@@ -38,6 +39,7 @@ Scope {
     ClockWindow {
         id: clockWindow
         screen: root.screen
+        onPressed: root.clockPressed()
     }
 
     EdgeExclusion {
