@@ -447,6 +447,12 @@ TestCase {
         tryVerify(() => ring.visible && ring.opacity === 1, 1000, "a ring around it");
         const at = row.mapToItem(ring.parent, 0, 0);
         compare(Qt.rect(ring.x, ring.y, ring.width, ring.height), Qt.rect(at.x, at.y, row.width, row.height), "exactly");
+        // the window resized after it opened (niri tiles a new window): the ring follows the row
+        t.a.anchors.fill = undefined;
+        t.a.width = 900;
+        tryVerify(() => ring.width === row.width && ring.x === row.mapToItem(ring.parent, 0, 0).x
+                  && ring.y === row.mapToItem(ring.parent, 0, 0).y, 1000, "still around it after a resize");
+        verify(row.width < 1100 - 400, "the row did shrink: " + row.width);
         tryCompare(t.a, "highlightKey", "", 3000, "for a moment");
         verify(ring.opacity > 0, "then it fades, not gone at once");
         tryCompare(ring, "visible", false, 3000, "faded");

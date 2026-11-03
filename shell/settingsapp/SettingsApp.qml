@@ -372,20 +372,35 @@ Rectangle {
             }
 
             // The ring around a setting opened from a search: M3's focus indicator (its color, 3 thick, the
-            // list's corner), there at once, then fading out with the highlight.
+            // list's corner), there at once, then fading out with the highlight. It follows the row while the
+            // page is laid out again (niri resizes a new window right after it opens).
             Rectangle {
                 id: ring
                 objectName: "settingRing"
                 property Item target: null
                 function show(row) {
                     fading.enabled = false;
-                    const at = row.mapToItem(pageColumn, 0, 0);
+                    target = row;
+                    place();
+                    opacity = 1;
+                }
+                function place() {
+                    if (!target) return;
+                    const at = target.mapToItem(pageColumn, 0, 0);
                     x = at.x;
                     y = at.y;
-                    width = row.width;
-                    height = row.height;
-                    target = row;
-                    opacity = 1;
+                    width = target.width;
+                    height = target.height;
+                }
+                Connections {
+                    target: ring.target
+                    function onWidthChanged() { ring.place(); }
+                    function onHeightChanged() { ring.place(); }
+                }
+                Connections {
+                    target: pageColumn
+                    function onWidthChanged() { Qt.callLater(ring.place); }
+                    function onImplicitHeightChanged() { Qt.callLater(ring.place); }
                 }
                 function fade() {
                     fading.enabled = true;
