@@ -492,7 +492,7 @@ def run_wayland_smoke(screenshot=None):
                     # the fixture's default pins; no niri and no windows here, so no workspace groups
                     if shelves != [{"pinned": ["org.gnome.Nautilus", "firefox", "foot"], "workspaces": []}]:
                         problems.append(f"ipc state: shelves {shelves!r}, expected the fixture's default pins")
-                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "darkTheme": True, "pillsOpen": [True],
+                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "details": "", "detailRows": [], "darkTheme": True, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:
                         problems.append(f"ipc state: got {state}, expected {want}")

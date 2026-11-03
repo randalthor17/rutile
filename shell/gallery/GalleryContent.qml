@@ -512,6 +512,9 @@ Rectangle {
                         property bool bluetoothEnabled: false
                         property string bluetoothDevice: ""
                         readonly property bool darkTheme: Colors.mode === "dark"
+                        property bool dnd: false
+                        property bool powerSaverAvailable: true
+                        property bool powerSaver: false
                         function setBrightness(v) { brightness = v; }
                         function setVolume(v) { volume = v; muted = false; }
                         function setMicMuted(m) { micMuted = m; }
@@ -519,6 +522,8 @@ Rectangle {
                         function setBluetoothEnabled(b) { bluetoothEnabled = b; }
                         function setDarkTheme(b) { Colors.mode = b ? "dark" : "light"; }
                         function setAirplaneMode(b) { wifiEnabled = !b; bluetoothEnabled = !b; }
+                        function setDnd(b) { dnd = b; }
+                        function setPowerSaver(b) { powerSaver = b; }
                         function refresh() {}
                     }
                     StatusPill {

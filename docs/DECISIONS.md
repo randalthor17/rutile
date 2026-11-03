@@ -929,3 +929,18 @@ button, and edges to resize by (startSystemResize). No minimize button: niri has
 empty workspace for the desktop instead). Tested in a nested niri: a maximized floating window goes to niri's columns
 maximized, and restoring brings it back floating at its size. Third-party apps keep their own decorations: GTK's
 header bars, and Qt's (the theming of D59 covers their colors).
+
+**D89. Quick Settings keeps its tiles, offers the rest, and opens detail pages (plan 2.6).** The tile layout was
+kept in memory only. It now goes to state.json (`quicksettings.tiles`, like the desktop's widgets: it is the shell's
+state, not a setting with a schema); a saved layout is made safe before it is shown (known tiles once each, widths 1
+or 2), and nothing saved means the defaults. Edit mode lists the tiles not shown as chips under the grid; a click adds
+one at the end, wide when it has a detail side. Two tiles join: Do not disturb (the notifications' switch) and Power
+saver (PowerProfiles' power-saver mode, off meaning balanced). Quickshell cannot tell whether power-profiles-daemon is
+there and PowerProfiles is not touched until it is known, so `busctl` looks for it the first time Quick Settings
+opens, as the Power page does. Night light is left out: it needs a gamma program, a new dependency. The Wi-Fi and
+Bluetooth tiles' bodies open detail pages in place of the panel's contents, as Googlebook does, instead of opening
+Settings: Network and Bluetooth have no Settings pages yet, and the lists belong next to the switch. What the pages
+list and what a click does are plain functions (Details.js) over plain lists the services build, so they test without
+NetworkManager or BlueZ. A password is typed in a field under its network and goes to NetworkManager with
+`connectWithPsk`; networks needing more (802.1X) are listed but do nothing. A Bluetooth device not paired is trusted
+and paired, and the service connects it when BlueZ reports it paired. The sound button opens Settings > Sound.

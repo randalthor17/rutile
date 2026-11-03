@@ -112,7 +112,12 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `docs/quick-settings.md`.
 - [ ] **2.6** Status tray and Quick Settings on the shared EditableGrid: tiles as saved data (id + size),
   per-tile detail pages, Add Widget sheet, sliders. Types: `PopupWindow` or `PanelWindow` in a `LazyLoader`,
-  the 2.1 services, `SystemTray` with `QsMenuOpener`.
+  the 2.1 services, `SystemTray` with `QsMenuOpener`. Since D89 (unreleased): the layout in state.json, edit mode's
+  chips to add the tiles not shown, Do not disturb and Power saver tiles, Wi-Fi and Bluetooth detail pages (networks
+  with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
+  button opening Settings > Sound. Not done: closing on a click outside (D41), Night light, detail pages for the other
+  tiles, forgetting networks, hidden networks. Not verified: Wi-Fi and Bluetooth on real hardware (none active on
+  the maintainer's machine).
 - [ ] **2.7** Started (`shell/launcher/`): the shelf's launcher button (and `ipc call launcher toggle`) opens a
   panel above the shelf with a search field and a 5-column grid of the desktop entries, ranked by DMS's
   `Scorer.js` (ported: exact, prefix, word starts, substring, typos, then subtitle, keywords, generic name, id);

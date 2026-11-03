@@ -16,7 +16,34 @@ Singleton {
     readonly property real wifiSignal: wifiNetwork?.signalStrength ?? 0     // 0..1
     readonly property bool wiredConnected: Networking.devices.values.some(d => d.type === DeviceType.Wired && d.connected)
 
+    // Quick Settings' Wi-Fi page (plan 2.6): every access point the device sees, as plain data (Details.js), and
+    // what it can do with one. A password goes to NetworkManager, which keeps it with the new connection.
+    readonly property var wifiNetworks: (wifiDevice?.networks.values ?? []).map(n => ({
+        name: n.name ?? "", signal: n.signalStrength ?? 0, connected: n.connected, known: n.known, busy: n.stateChanging,
+        secure: n.security !== WifiSecurityType.Open && n.security !== WifiSecurityType.Owe,
+        psk: n.security === WifiSecurityType.WpaPsk || n.security === WifiSecurityType.Wpa2Psk
+             || n.security === WifiSecurityType.Sae
+    }))
+    readonly property bool wifiScanning: wifiDevice?.scannerEnabled ?? false
+
     function setWifiEnabled(on) {
         Networking.wifiEnabled = on;
+    }
+    function network(name) {
+        return wifiDevice?.networks.values.find(n => n.name === name && n.connected)
+            ?? wifiDevice?.networks.values.find(n => n.name === name) ?? null;
+    }
+    function connectWifi(name, psk) {
+        const n = network(name);
+        if (!n) return;
+        if (psk) n.connectWithPsk(psk);
+        else n.connect();
+    }
+    function disconnectWifi(name) {
+        network(name)?.disconnect();
+    }
+    // Scanning while the page is open: NetworkManager looks for networks more often then
+    function setWifiScanning(on) {
+        if (wifiDevice) wifiDevice.scannerEnabled = on;
     }
 }

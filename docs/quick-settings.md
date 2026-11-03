@@ -106,11 +106,24 @@ through its `backend` (the interface is listed at the top of `QuickSettingsPanel
 offscreen in the tests and in the gallery with a fake. Its tiles are controlled (D33): a toggle asks the
 backend and the tile changes when the system does. The sliders follow the backend except while dragged.
 
-Tiles: Wi-Fi and Bluetooth (large, dual target: the icon toggles, the body emits `detailsRequested`),
+Tiles: Wi-Fi and Bluetooth (large, dual target: the icon toggles, the body opens its detail page),
 Microphone (mute), Dark theme, Airplane mode (on when every radio that exists is off; turning it off turns
-Wi-Fi and Bluetooth on). Missing hardware makes a tile unavailable; a missing backlight or audio output hides
-its slider. "Edit tiles" (the header's first button) removes and rearranges tiles; the result is reported
-by `tilesEdited(tiles)` and kept in memory until settings persistence (plan 2.5).
+Wi-Fi and Bluetooth on), Do not disturb (the notifications' own, D47) and Power saver (power-profiles-daemon's
+power-saver mode; off goes back to balanced; unavailable without the daemon, which `busctl` looks for the first time
+Quick Settings opens). Missing hardware makes a tile unavailable; a missing backlight or audio output hides its
+slider. "Edit tiles" (the header's first button) removes and rearranges tiles, and lists the tiles not shown as chips
+to add (D89); the layout is kept in state.json (`quicksettings.tiles`), and a saved layout naming a tile that no
+longer exists shows the rest. Power saver is not among the defaults.
+
+Detail pages (D89): the Wi-Fi or Bluetooth tile's body replaces the panel's contents with that tile's page: back,
+its name and switch, and a list. Wi-Fi lists the networks the device sees (one row per name, the connected first,
+then saved ones, then by signal); a click connects, disconnects, or asks for the password in a field under the
+network (Enter connects, Escape cancels; NetworkManager keeps the password with the connection). A network that needs
+more than a password (enterprise sign-in) does nothing. Bluetooth lists the adapter's devices (connected, then
+paired, then by name): a click connects or disconnects; one not paired is trusted and paired, then connected once
+BlueZ says it is paired. While a page is open NetworkManager scans and BlueZ discovers. `ipc call quicksettings
+details wifi` (or `bluetooth`, or "" for the tiles) opens one; `state` lists what it shows. The sound button next to
+the volume slider opens Settings > Sound.
 
 Memory: an open panel is about 1.4 MiB (5 tiles, 2 sliders, the grid, 4 icon buttons); closed, nothing but the
 services and the pills remains. A pill is 58 KiB (one `Icon` for all its symbols, no container while closed; the first version was 123).
@@ -138,15 +151,13 @@ window (`niri msg action focus-column-right`) closed the panel.
 
 ## Not done yet
 
-- Closing on a click on empty desktop or another bar (D41); per-tile detail pages (Wi-Fi networks, Bluetooth devices); the
-  available-tiles list in edit mode; saving the tile layout and the dark theme (plan 2.5).
+- Closing on a click on empty desktop or another bar (D41). Detail pages for the other tiles; forgetting a saved
+  network; hidden networks.
 - Blur behind the panel (`BackgroundEffect`, D38): the panel is opaque like Googlebook's for now.
-- Settings and sound settings buttons only emit signals: nothing opens yet.
 - The power menu is a small dropdown for now. Planned (maintainer's request): a full-screen power menu over the
   blurred desktop, replacing it (plan 2.8). Lock runs `loginctl lock-session`, which locks nothing until a lock
   screen listens (plan 2.8) or e.g. swayidle runs one. Clicking elsewhere in the panel does not close the menu.
-- More tiles: Do not disturb (needs the notification server, 2.8), Night light, Power saver (`PowerProfiles`,
-  needs power-profiles-daemon and a way to tell it is missing).
+- More tiles: Night light (needs a gamma tool such as wlsunset, a new dependency).
 - **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path
   live), several screens; the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real
   hardware; Wi-Fi, Bluetooth and a backlight have not been seen working at all (the machine it ran on has none

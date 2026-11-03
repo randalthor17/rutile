@@ -915,6 +915,9 @@ ShellRoot {
         QuickSettingsWindow {
             screen: shell.quickSettingsScreen
             backend: shellBackend
+            // the tile layout, kept in state.json (plan 2.6); a saved one with unknown tiles shows the rest
+            tiles: Controls.tiles(Settings.stateValue("quicksettings.tiles", null))
+            onTilesEdited: tiles => Settings.setState("quicksettings.tiles", tiles)
             onCloseRequested: quickSettings.active = false
             onPowerMenuRequested: {
                 shell.openPowerMenu(screen);
@@ -922,6 +925,10 @@ ShellRoot {
             }
             onSettingsRequested: {
                 shell.openSettings("");
+                shell.closeQuickSettings();
+            }
+            onSoundSettingsRequested: {
+                shell.openSettings("sound");
                 shell.closeQuickSettings();
             }
         }
@@ -933,6 +940,13 @@ ShellRoot {
         function open(): void { if (!shell.quickSettingsOpen) shell.toggleQuickSettings(null); }
         function close(): void { shell.closeQuickSettings(); }
         function isOpen(): bool { return shell.quickSettingsOpen; }
+        // Opens Quick Settings at a tile's detail page ("wifi", "bluetooth"); "" goes back to the tiles.
+        function details(page: string): bool {
+            if (page !== "" && page !== "wifi" && page !== "bluetooth") return false;
+            if (!shell.quickSettingsOpen) shell.toggleQuickSettings(null);
+            quickSettings.item.details = page;
+            return true;
+        }
         // What the windows see, as JSON: for diagnostics and tools/qtws.py test-wayland.
         function state(): string {
             const w = quickSettings.item;
@@ -941,6 +955,8 @@ ShellRoot {
                 loaded: quickSettings.active,
                 panelHasBackend: !!w && w.panelHasBackend,
                 brightnessShown: !!w && w.brightnessShown,
+                details: w?.details ?? "",
+                detailRows: w?.detailRows ?? [],
                 darkTheme: shellBackend.darkTheme,
                 pillsOpen: statusWindows.instances.map(s => s.pill.open),
                 pillsHaveBackend: statusWindows.instances.map(s => !!s.pill.backend),

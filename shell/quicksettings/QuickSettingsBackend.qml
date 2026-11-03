@@ -3,6 +3,8 @@
 // gallery use fakes with the same names.
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import Quickshell.Services.UPower
 import qs.common
 import qs.services
 
@@ -25,9 +27,20 @@ QtObject {
     readonly property bool bluetoothAvailable: BluetoothService.available
     readonly property bool bluetoothEnabled: BluetoothService.enabled
     readonly property string bluetoothDevice: BluetoothService.connectedName
-    // In-session only until settings persistence (plan 2.5); palette.json carries both modes.
     // the style's mode (D65): the shell's palette and the apps that take its colors; saved
     readonly property bool darkTheme: Settings.value("style.mode") === "dark"
+    readonly property bool dnd: NotificationService.dnd
+    // Power saver needs power-profiles-daemon, which Quickshell cannot tell is there: `busctl` looks for it once,
+    // when Quick Settings first opens (refresh), and PowerProfiles is not touched before it is found
+    property bool powerSaverAvailable: false
+    readonly property bool powerSaver: powerSaverAvailable && PowerProfiles.profile === PowerProfile.PowerSaver
+    property Process profilesProbe: Process {
+        command: ["busctl", "--system", "list", "--no-legend", "--no-pager"]
+        stdout: StdioCollector {
+            onStreamFinished: powerSaverAvailable = /^(net\.hadess|org\.freedesktop\.UPower)\.PowerProfiles\s/m.test(text)
+        }
+    }
+    property bool probed: false
 
     function setBrightness(v) { BrightnessService.set(v); }
     function setVolume(v) { AudioService.setVolume(v); }
@@ -40,5 +53,25 @@ QtObject {
         NetworkService.setWifiEnabled(!on);
         BluetoothService.setEnabled(!on);
     }
-    function refresh() { BrightnessService.refresh(); }
+    // the detail pages (Details.js has the shapes)
+    readonly property var wifiNetworks: NetworkService.wifiNetworks
+    readonly property var bluetoothDevices: BluetoothService.devices
+    function connectWifi(name, psk) { NetworkService.connectWifi(name, psk); }
+    function disconnectWifi(name) { NetworkService.disconnectWifi(name); }
+    function setWifiScanning(on) { NetworkService.setWifiScanning(on); }
+    function connectBluetooth(address) { BluetoothService.connectDevice(address); }
+    function disconnectBluetooth(address) { BluetoothService.disconnectDevice(address); }
+    function setBluetoothDiscovering(on) { BluetoothService.setDiscovering(on); }
+    function setDnd(on) { NotificationService.setDnd(on); }
+    function setPowerSaver(on) {
+        if (powerSaverAvailable)
+            PowerProfiles.profile = on ? PowerProfile.PowerSaver : PowerProfile.Balanced;
+    }
+    function refresh() {
+        BrightnessService.refresh();
+        if (!probed) {
+            probed = true;
+            profilesProbe.running = true;
+        }
+    }
 }

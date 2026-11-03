@@ -11,15 +11,20 @@ PanelWindow {
     id: root
 
     required property var backend
+    property var tiles: []                  // the saved layout, {id, w} (Controls.tiles made it safe)
 
     signal closeRequested()
     signal powerMenuRequested()
     signal settingsRequested()
+    signal soundSettingsRequested()
+    signal tilesEdited(var tiles)
 
     // For `ipc call quicksettings state` (diagnostics and the Wayland smoke test).
     readonly property bool panelHasBackend: !!panel.backend
     readonly property bool brightnessShown: panel.brightnessShown
     readonly property bool closing: !panel.shown
+    property alias details: panel.details
+    readonly property var detailRows: panel.detailRows       // what the detail page lists, for `state`
 
     function close() { panel.shown = false; }
     function reopen() { panel.shown = true; }
@@ -48,11 +53,14 @@ PanelWindow {
         id: panel
         objectName: "quickSettingsPanel"
         backend: root.backend
+        tiles: root.tiles
         focus: true
         onWindowFocusLost: root.close()
         onHidden: root.closeRequested()
         onPowerMenuRequested: root.powerMenuRequested()
         onSettingsRequested: root.settingsRequested()
+        onSoundSettingsRequested: root.soundSettingsRequested()
+        onTilesEdited: tiles => root.tilesEdited(tiles)
         Keys.onEscapePressed: root.close()
     }
 }

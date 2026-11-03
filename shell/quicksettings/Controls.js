@@ -12,8 +12,45 @@ var catalog = {
     mic: { text: "Microphone", icon: "mic", offIcon: "mic_off", keywords: ["mute", "input", "audio"] },
     dark: { text: "Dark theme", icon: "contrast", offIcon: "contrast",
             keywords: ["dark mode", "light", "night", "appearance"] },
-    airplane: { text: "Airplane mode", icon: "flight", offIcon: "flight", keywords: ["flight mode", "offline", "radios"] }
+    airplane: { text: "Airplane mode", icon: "flight", offIcon: "flight", keywords: ["flight mode", "offline", "radios"] },
+    dnd: { text: "Do not disturb", icon: "do_not_disturb_on", offIcon: "do_not_disturb_off",
+           keywords: ["notifications", "silence", "quiet", "focus", "dnd"] },
+    powerSaver: { text: "Power saver", icon: "energy_savings_leaf", offIcon: "energy_savings_leaf",
+                  keywords: ["battery saver", "power mode", "power profile", "energy"] }
 };
+
+// The tiles a new user gets, {id, w} (w: 2 is a wide tile with its name, 1 the icon alone).
+var defaultTiles = [
+    { id: "wifi", w: 2 }, { id: "bluetooth", w: 2 },
+    { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }, { id: "dnd", w: 1 }
+];
+
+// A saved layout made safe to show: known ids once each, widths 1 or 2; the defaults for anything not a list.
+function tiles(saved) {
+    if (!Array.isArray(saved)) return defaultTiles;
+    var seen = {};
+    var out = [];
+    for (var i = 0; i < saved.length; i++) {
+        var t = saved[i];
+        if (!t || !catalog.hasOwnProperty(t.id) || seen[t.id]) continue;
+        seen[t.id] = true;
+        out.push({ id: t.id, w: t.w === 2 ? 2 : 1 });
+    }
+    return out;
+}
+
+// The tiles not in `current`, in catalog order: what edit mode offers to add.
+function addable(current) {
+    var used = {};
+    for (var i = 0; i < current.length; i++) used[current[i].id] = true;
+    return Object.keys(catalog).filter(id => !used[id]);
+}
+
+// `current` with tile `id` added at the end: wide when it has a details side (dual target), as the defaults.
+function withTile(current, id) {
+    if (!catalog.hasOwnProperty(id) || current.some(t => t.id === id)) return current;
+    return current.concat([{ id: id, w: catalog[id].dualTarget ? 2 : 1 }]);
+}
 
 // The sliders: a search finds them, and choosing one opens Quick Settings.
 var sliders = {
@@ -41,6 +78,11 @@ function state(id, b) {
         var on = radios && !(b.wifiAvailable && b.wifiEnabled) && !(b.bluetoothAvailable && b.bluetoothEnabled);
         return { active: on, available: radios, secondary: on ? "On" : "Off" };
     }
+    case "dnd":
+        return { active: b.dnd, available: true, secondary: b.dnd ? "On" : "Off" };
+    case "powerSaver":
+        return { active: b.powerSaver, available: b.powerSaverAvailable,
+                 secondary: !b.powerSaverAvailable ? "Unavailable" : b.powerSaver ? "On" : "Off" };
     }
     return { active: false, available: false, secondary: "" };
 }
@@ -53,6 +95,8 @@ function toggle(id, wanted, b) {
     case "mic": b.setMicMuted(!wanted); break;
     case "dark": b.setDarkTheme(wanted); break;
     case "airplane": b.setAirplaneMode(wanted); break;
+    case "dnd": b.setDnd(wanted); break;
+    case "powerSaver": b.setPowerSaver(wanted); break;
     }
 }
 

@@ -5,6 +5,8 @@ import qs.components
 import qs.quicksettings
 import "../qs/services/BrightnessCtl.js" as Ctl
 import "../qs/power/PowerActions.js" as PowerActions
+import "../qs/quicksettings/Controls.js" as Controls
+import "../qs/quicksettings/Details.js" as Details
 
 TestCase {
     id: root
@@ -32,6 +34,19 @@ TestCase {
             property bool bluetoothEnabled: false
             property string bluetoothDevice: ""
             property bool darkTheme: true
+            property bool dnd: false
+            property bool powerSaverAvailable: true
+            property bool powerSaver: false
+            property var wifiNetworks: [
+                { name: "Cafe", signal: 0.9, secure: false, psk: false, connected: false, known: false, busy: false },
+                { name: "Home", signal: 0.4, secure: true, psk: true, connected: true, known: true, busy: false },
+                { name: "Neighbour", signal: 0.6, secure: true, psk: true, connected: false, known: false, busy: false },
+                { name: "Work", signal: 0.3, secure: true, psk: false, connected: false, known: false, busy: false }
+            ]
+            property var bluetoothDevices: [
+                { address: "AA", name: "Mouse", named: true, icon: "input-mouse", connected: false, paired: true, busy: false, battery: -1 },
+                { address: "BB", name: "Buds", named: true, icon: "audio-headset", connected: true, paired: true, busy: false, battery: 0.8 }
+            ]
             property var calls: []
             function log(c) { calls = calls.concat([c]); }
             function setBrightness(v) { log("brightness " + v.toFixed(2)); }
@@ -41,6 +56,14 @@ TestCase {
             function setBluetoothEnabled(b) { log("bluetooth " + b); }
             function setDarkTheme(b) { log("dark " + b); }
             function setAirplaneMode(b) { log("airplane " + b); }
+            function setDnd(b) { log("dnd " + b); }
+            function setPowerSaver(b) { log("powerSaver " + b); }
+            function connectWifi(n, psk) { log("connectWifi " + n + (psk ? " " + psk : "")); }
+            function disconnectWifi(n) { log("disconnectWifi " + n); }
+            function setWifiScanning(b) { log("wifiScanning " + b); }
+            function connectBluetooth(a) { log("connectBluetooth " + a); }
+            function disconnectBluetooth(a) { log("disconnectBluetooth " + a); }
+            function setBluetoothDiscovering(b) { log("discovering " + b); }
             function refresh() { log("refresh"); }
         }
     }
@@ -154,6 +177,112 @@ TestCase {
     }
 
     Component { id: spyComp; SignalSpy {} }
+
+    function openDetails(t, id) {
+        tryCompare(t.panel, "appearProgress", 1, 2000);
+        var x = tile(t.panel, id);
+        mouseClick(x, x.width - 20, x.height / 2);
+        compare(t.panel.details, id);
+        waitForRendering(t.panel);
+    }
+    function row(panel, key) { return findChild(panel, "qsDetailsRow_" + key); }
+    function rowY(panel, key) { return row(panel, key).mapToItem(panel, 0, 0).y; }
+
+    function test_wifi_details_list_and_connect() {
+        var t = make();
+        openDetails(t, "wifi");
+        verify(t.backend.calls.indexOf("wifiScanning true") >= 0, "scans while open");
+        verify(!findChild(t.panel, "qsBrightness").visible, "the page replaces the rest");
+        verify(!tile(t.panel, "wifi").visible);
+        verify(findChild(t.panel, "qsDetailsSwitch").checked);
+        compare(row(t.panel, "Home").supportingText, "Connected");
+        verify(rowY(t.panel, "Home") < rowY(t.panel, "Cafe"), "the connected first");
+        verify(rowY(t.panel, "Cafe") < rowY(t.panel, "Neighbour"), "then by signal");
+        clickItem(row(t.panel, "Cafe"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "connectWifi Cafe", "an open one connects");
+        clickItem(row(t.panel, "Home"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "disconnectWifi Home");
+        var n = t.backend.calls.length;
+        clickItem(row(t.panel, "Work"));
+        compare(t.backend.calls.length, n, "enterprise sign-in: nothing to do here");
+        verify(!findChild(t.panel, "qsPassword_Work").visible, "nor a password to ask for");
+        // a secured one asks for its password, under it
+        clickItem(row(t.panel, "Neighbour"));
+        var field = findChild(t.panel, "qsPassword_Neighbour");
+        verify(field.visible);
+        tryVerify(() => field.activeFocus, 1000, "the field takes the keys");
+        keyClick(Qt.Key_Return);
+        compare(t.backend.calls.length, n, "no empty password");
+        for (const c of "s3cret") keyClick(c);
+        compare(field.text, "s3cret");
+        keyClick(Qt.Key_Return);
+        compare(t.backend.calls[t.backend.calls.length - 1], "connectWifi Neighbour s3cret");
+        verify(!field.visible);
+        // back: scanning stops, the panel returns
+        clickItem(findChild(t.panel, "qsDetailsBack"));
+        compare(t.panel.details, "");
+        compare(t.backend.calls[t.backend.calls.length - 1], "wifiScanning false");
+        verify(findChild(t.panel, "qsBrightness").visible);
+    }
+
+    function test_wifi_switch_and_empty_page() {
+        var t = make({ wifiEnabled: false, wifiNetworks: [] });
+        openDetails(t, "wifi");
+        compare(findChild(t.panel, "qsDetailsEmpty").text, "Turn on Wi-Fi to see networks");
+        var sw = findChild(t.panel, "qsDetailsSwitch");
+        clickItem(sw);
+        compare(t.backend.calls[t.backend.calls.length - 1], "wifi true");
+        t.backend.wifiEnabled = true;
+        compare(findChild(t.panel, "qsDetailsEmpty").text, "Looking for networks…");
+    }
+
+    function test_bluetooth_details() {
+        var t = make({ bluetoothEnabled: true });
+        openDetails(t, "bluetooth");
+        verify(t.backend.calls.indexOf("discovering true") >= 0);
+        compare(row(t.panel, "BB").supportingText, "Connected · 80%");
+        compare(row(t.panel, "BB").iconName, "headset_mic");
+        verify(rowY(t.panel, "BB") < rowY(t.panel, "AA"), "the connected first");
+        clickItem(row(t.panel, "AA"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "connectBluetooth AA");
+        clickItem(row(t.panel, "BB"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "disconnectBluetooth BB");
+        t.panel.details = "";
+        compare(t.backend.calls[t.backend.calls.length - 1], "discovering false", "stops when the page goes");
+    }
+
+    function test_details_lists() {
+        var nets = Details.networks([
+            { name: "A", signal: 0.2, connected: false, known: true }, { name: "", signal: 1 },
+            { name: "B", signal: 0.9, connected: false, known: false }, { name: "A", signal: 0.7, connected: false, known: true },
+            null, { name: "C", signal: 0.1, connected: true, known: true }]);
+        compare(nets.map(n => n.name + n.signal).join(), "C0.1,A0.7,B0.9", "connected, known, signal; strongest of a name");
+        compare(Details.signalIcon(0.8), "network_wifi");
+        compare(Details.signalIcon(0.5), "network_wifi_3_bar");
+        compare(Details.signalIcon(0.3), "network_wifi_2_bar");
+        compare(Details.signalIcon(0.1), "network_wifi_1_bar");
+        compare(Details.networkStatus({ busy: true, connected: false }), "Connecting…");
+        compare(Details.networkStatus({ busy: true, connected: true }), "Disconnecting…");
+        compare(Details.networkStatus({ known: true }), "Saved");
+        compare(Details.networkStatus({ secure: false }), "Open");
+        compare(Details.networkAction({ busy: true, connected: true }), "");
+        compare(Details.networkAction({ known: true, secure: true }), "connect");
+        compare(Details.networkAction({ secure: true, psk: true }), "password");
+        var devs = Details.devices([
+            { address: "1", name: "1", named: false, paired: false, connected: false },
+            { address: "2", name: "Zed", named: true, paired: false, connected: false },
+            { address: "3", name: "Alpha", named: true, paired: true, connected: false },
+            { address: "", name: "x" },
+            { address: "4", name: "Mid", named: true, paired: true, connected: true }]);
+        compare(devs.map(d => d.address).join(), "4,3,2,1", "connected, paired, named, by name");
+        compare(Details.deviceIcon("input-keyboard"), "keyboard");
+        compare(Details.deviceIcon("something-new"), "bluetooth");
+        compare(Details.deviceStatus({ busy: true, paired: false }), "Pairing…");
+        compare(Details.deviceStatus({ busy: true, paired: true }), "Connecting…");
+        compare(Details.deviceStatus({ connected: true, battery: -1 }), "Connected");
+        compare(Details.deviceStatus({ paired: false }), "Not paired");
+        compare(Details.deviceAction({ busy: true }), "");
+    }
 
     function test_sliders_follow_the_backend_and_report_moves() {
         var t = make();
@@ -279,10 +408,64 @@ TestCase {
         compare(t.backend.calls.indexOf("micMuted true"), -1, "editing does not toggle");
         verify(remove.enabled);
         clickItem(remove);
-        compare(t.panel.tiles.map(x => x.id).join(), "wifi,bluetooth,dark,airplane");
+        compare(t.panel.tiles.map(x => x.id).join(), "wifi,bluetooth,dark,airplane,dnd");
         compare(spy.count, 1);
         clickItem(findChild(t.panel, "qsEditDone"));
         verify(!t.panel.editMode);
+    }
+
+    function test_edit_mode_adds_tiles() {
+        var t = make();
+        var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "tilesEdited" });
+        verify(!findChild(t.panel, "qsAdd_powerSaver").visible, "only in edit mode");
+        t.panel.editMode = true;
+        waitForRendering(t.panel);
+        compare(t.panel.addableTiles.join(), "powerSaver", "what the defaults leave out");
+        verify(!findChild(t.panel, "qsAdd_wifi"), "a shown tile is not offered");
+        clickItem(findChild(t.panel, "qsAdd_powerSaver"));
+        compare(spy.count, 1);
+        compare(JSON.stringify(spy.signalArguments[0][0].slice(-1)), JSON.stringify([{ id: "powerSaver", w: 1 }]));
+        compare(t.panel.addableTiles.length, 0);
+        // removing one offers it again, wide if it has a details side
+        t.panel.tiles = [{ id: "mic", w: 1 }];
+        compare(t.panel.addableTiles.join(), "wifi,bluetooth,dark,airplane,dnd,powerSaver", "in catalog order");
+        t.panel.addTile("bluetooth");
+        compare(JSON.stringify(t.panel.tiles), JSON.stringify([{ id: "mic", w: 1 }, { id: "bluetooth", w: 2 }]));
+        t.panel.addTile("bluetooth");
+        t.panel.addTile("nope");
+        compare(t.panel.tiles.length, 2, "no twice, nothing unknown");
+        compare(spy.count, 2);
+    }
+
+    function test_dnd_and_power_saver_tiles() {
+        var t = make({ dnd: true, powerSaverAvailable: false });
+        t.panel.tiles = [{ id: "dnd", w: 2 }, { id: "powerSaver", w: 2 }];
+        tryCompare(t.panel, "appearProgress", 1, 2000);
+        waitForRendering(t.panel);
+        var d = tile(t.panel, "dnd");
+        verify(d.active);
+        compare(d.secondaryText, "On");
+        compare(d.iconName, "do_not_disturb_on");
+        clickItem(d);
+        verify(t.backend.calls.indexOf("dnd false") >= 0, "a click asks to turn it off: " + t.backend.calls);
+        var p = tile(t.panel, "powerSaver");
+        verify(!p.available, "no power-profiles-daemon");
+        compare(p.secondaryText, "Unavailable");
+        t.backend.powerSaverAvailable = true;
+        compare(p.secondaryText, "Off");
+        clickItem(p);
+        verify(t.backend.calls.indexOf("powerSaver true") >= 0, "" + t.backend.calls);
+        t.backend.powerSaver = true;
+        verify(p.active);
+    }
+
+    function test_saved_tiles_are_made_safe() {
+        compare(JSON.stringify(Controls.tiles(null)), JSON.stringify(Controls.defaultTiles), "nothing saved: the defaults");
+        compare(JSON.stringify(Controls.tiles({ id: "wifi" })), JSON.stringify(Controls.defaultTiles), "not a list");
+        compare(JSON.stringify(Controls.tiles([])), "[]", "an empty layout stays empty");
+        compare(JSON.stringify(Controls.tiles([{ id: "dnd", w: 2 }, { id: "gone", w: 1 }, null, { id: "dnd", w: 1 },
+                                               { id: "mic", w: 4 }])),
+                JSON.stringify([{ id: "dnd", w: 2 }, { id: "mic", w: 1 }]), "unknown, twice and odd widths");
     }
 
     // ---- brightnessctl ----

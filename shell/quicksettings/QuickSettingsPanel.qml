@@ -9,8 +9,9 @@ pragma ComponentBehavior: Bound
 //
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
-// darkTheme; and setBrightness(v), setVolume(v), setMicMuted(b), setWifiEnabled(b),
-// setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), refresh(). The power button asks for the power menu (powerMenuRequested).
+// darkTheme, dnd, powerSaverAvailable, powerSaver; and setBrightness(v), setVolume(v), setMicMuted(b),
+// setWifiEnabled(b), setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), setDnd(b), setPowerSaver(b),
+// refresh(). The power button asks for the power menu (powerMenuRequested).
 import QtQuick
 import qs.common
 import qs.components
@@ -21,14 +22,15 @@ Rectangle {
 
     required property var backend      // duck-typed: the real backend or a fake with the same members
 
-    // Saved data, {id, w}: which tiles, in which order and size. Kept in memory until settings
-    // persistence (plan 2.5); `tilesEdited` reports each change for whoever saves it.
+    // Saved data, {id, w}: which tiles, in which order and size. The shell keeps it in state.json and hands it
+    // over (through Controls.tiles); `tilesEdited` reports each change for it to save.
     property var tiles: defaultTiles
-    readonly property var defaultTiles: [
-        { id: "wifi", w: 2 }, { id: "bluetooth", w: 2 },
-        { id: "mic", w: 1 }, { id: "dark", w: 1 }, { id: "airplane", w: 1 }
-    ]
+    readonly property var defaultTiles: Controls.defaultTiles
+    readonly property var addableTiles: Controls.addable(tiles)
     property alias editMode: grid.editMode
+    // A tile's detail page in place of the rest ("wifi", "bluetooth"; "" none): a dual-target tile's body opens it
+    property string details: ""
+    readonly property var detailRows: (detailsLoader.item as QuickSettingsDetails)?.rows ?? []
     // Open and close motion: false shrinks and fades the panel away, then `hidden` fires.
     property bool shown: true
     readonly property real appearProgress: appear.progress
@@ -63,6 +65,12 @@ Rectangle {
     // The power button asks for the full-screen power menu (shell/power/); the shell closes this panel.
     signal powerMenuRequested()
 
+    function addTile(id) {
+        var next = Controls.withTile(tiles, id);
+        if (next === tiles) return;
+        tiles = next;
+        tilesEdited(next);
+    }
     function removeSelected() {
         if (grid.selectedIndex < 0) return;
         var next = tiles.filter((item, i) => i !== grid.selectedIndex);
@@ -98,8 +106,24 @@ Rectangle {
         width: parent.width - 2 * Spacing.lg
         spacing: Spacing.md
 
+        // ---- a tile's details, created while shown ----
+        Loader {
+            id: detailsLoader
+            objectName: "qsDetailsLoader"
+            active: root.details !== ""
+            visible: active
+            width: parent.width
+            sourceComponent: QuickSettingsDetails {
+                width: parent?.width ?? 0
+                backend: root.backend
+                page: root.details
+                onBack: root.details = ""
+            }
+        }
+
         // ---- header: edit tiles, settings, power; in edit mode: back, title, remove ----
         Item {
+            visible: root.details === ""
             width: parent.width
             height: ControlSpec.iconButtonSizes.s.height
 
@@ -189,7 +213,7 @@ Rectangle {
         Column {
             width: parent.width
             spacing: Spacing.sm
-            visible: !root.editMode
+            visible: !root.editMode && root.details === ""
 
             Row {
                 id: brightnessRow
@@ -250,6 +274,7 @@ Rectangle {
 
         // ---- tiles ----
         Rectangle {
+            visible: root.details === ""
             width: parent.width
             height: grid.height + (root.editMode ? 2 * Spacing.sm : 0)
             radius: Shapes.extraLarge
@@ -285,7 +310,33 @@ Rectangle {
                     dualTarget: tile.info.dualTarget ?? false
                     iconOnly: !(tile.modelData.w > 1)
                     onToggled: wanted => root.toggleTile(tile.modelData.id, wanted)
-                    onClicked: root.detailsRequested(tile.modelData.id)
+                    onClicked: {
+                        root.details = tile.modelData.id;
+                        root.detailsRequested(tile.modelData.id);
+                    }
+                }
+            }
+        }
+
+        // ---- edit mode: the tiles not shown, to add ----
+        Text {
+            visible: root.editMode
+            text: root.addableTiles.length ? "Add tiles" : "Every tile is shown"
+            color: Colors.surfaceVariantOn
+            font: Type.font(Type.titleSmall)
+        }
+        Flow {
+            visible: root.editMode && root.addableTiles.length > 0
+            width: parent.width
+            spacing: Spacing.sm
+            Repeater {
+                model: root.addableTiles
+                delegate: Chip {
+                    required property string modelData
+                    objectName: "qsAdd_" + modelData
+                    text: root.catalog[modelData].text
+                    iconName: root.catalog[modelData].icon
+                    onClicked: root.addTile(modelData)
                 }
             }
         }
