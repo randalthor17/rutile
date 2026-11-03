@@ -15,6 +15,7 @@ Item {
     property int depth: 0                       // 0: the app's menu; more: a submenu, with a Back row
     property string title: ""                   // the submenu's name, on its Back row
     property bool shown: true
+    property int origin: Item.TopRight          // where it grows from (the shelf's menu: Item.Bottom)
     readonly property alias menu: choices
     readonly property var items: depth > 0
         ? [{ id: "back", text: title || "Back", icon: "arrow_back" }, { id: "backSep", separator: true }].concat(entries)
@@ -72,7 +73,7 @@ Item {
     PopupMotion {
         target: choices
         shown: root.shown
-        origin: Item.TopRight
+        origin: root.origin
         onHidden: root.hidden()
     }
 }

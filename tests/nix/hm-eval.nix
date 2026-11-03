@@ -12,6 +12,7 @@ let
     options.gtk = lib.mkOption { type = lib.types.anything; default = { }; };
     options.home.sessionVariables = lib.mkOption { type = lib.types.anything; default = { }; };
     options.xdg.dataFile = lib.mkOption { type = lib.types.anything; default = { }; };
+    options.home.activation = lib.mkOption { type = lib.types.anything; default = { }; };
     options.qt = lib.mkOption { type = lib.types.anything; default = { }; };
     options.fonts = lib.mkOption { type = lib.types.anything; default = { }; };
   };

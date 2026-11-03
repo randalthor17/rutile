@@ -1,6 +1,6 @@
 // One app or window on the shelf: its icon (or its initial on a tonal circle when the icon theme has none), a state
 // layer, a press that shrinks it on the spatial spring, and a mark under it: a dot for `running`, a longer primary
-// dash for `active` (the shelf marks the focused window).
+// dash for `active` (the shelf marks the focused window). A right click asks for its menu (menuRequested, D72).
 import QtQuick
 import qs.common
 import qs.components
@@ -14,6 +14,7 @@ Item {
     property bool active: false
 
     signal clicked()
+    signal menuRequested()
 
     implicitWidth: Spacing.xxl + Spacing.sm
     implicitHeight: Spacing.xxl + Spacing.sm
@@ -63,6 +64,13 @@ Item {
             radius: width / 2
             stateColor: Colors.surfaceOn
             onClicked: root.clicked()
+        }
+        // the right button only: a left press goes on to the state layer
+        MouseArea {
+            objectName: "shelfMenuArea"
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton
+            onClicked: root.menuRequested()
         }
     }
 

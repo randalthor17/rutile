@@ -18,6 +18,8 @@ Rectangle {
     signal windowClicked(var window)
     signal launcherClicked()
     signal workspaceScrolled(int delta)     // +1: the next workspace (down), -1: the previous
+    // a right click: `target` is {app} for a pin or {window} for a window, `x` the button's middle on the shelf
+    signal menuRequested(var target, real x)
 
     // Wheel deltas add up until a notch (120), so a touchpad's small steps move one workspace at a time.
     property real wheelRest: 0
@@ -75,6 +77,7 @@ Rectangle {
                 name: modelData.name
                 iconSource: modelData.icon
                 onClicked: root.launched(modelData)
+                onMenuRequested: root.menuRequested({ app: modelData }, mapToItem(root, width / 2, 0).x)
             }
         }
 
@@ -124,6 +127,7 @@ Rectangle {
                             running: modelData.focused
                             active: modelData.focused
                             onClicked: root.windowClicked(modelData)
+                            onMenuRequested: root.menuRequested({ window: modelData }, mapToItem(root, width / 2, 0).x)
                         }
                     }
                 }

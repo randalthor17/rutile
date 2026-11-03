@@ -681,3 +681,21 @@ other group and key. When that file is a link (home-manager's xdg.mimeApps), not
 says to set defaults there. No default set shows "Not set": the system then picks one itself (mimeinfo.cache,
 which the page does not read).
 
+**D72. Rutile's niri part is a file the user includes; the shelf's right-click menu; a pins page (amends
+D55, D70).** The maintainer's rule: Rutile never writes into the user's niri config. With home-manager's niri
+module on, the module had appended `include "<store path>"` to config.kdl through `extraConfig`; now it always
+writes `~/.config/niri/rutile.kdl` (the layer rule, opt-in binds, and optional includes of the shell's
+`rutile-colors.kdl` and `rutile-input.kdl`) and the user adds `include "rutile.kdl"` at the end of their
+config.kdl. They are told: install.md, the option's description, a home-manager activation step that prints the
+line to add at every switch while config.kdl has no such include, and a toast from the shell (NiriConfigCheck,
+which reads config.kdl and watches it, never writes it) when niri's colors or Settings > Input are turned on
+without it. The check is a text match on an include line naming rutile.kdl; one included through another file
+is not seen (the toast then says it once per run, harmlessly). The shelf had no right-click: a button now asks
+for a menu (ShelfApps.menuItems): a pin offers Open, its desktop actions and Unpin; a window offers New window,
+the app's actions, Pin or Unpin, and Close window (niri's CloseWindow, or the toplevel's close without niri), in
+a layer-shell window above the shelf with the shared menu panel (TrayMenuPanel, now with an `origin`). The
+pinned apps setting had no editor: Settings > Shelf is a page of its own listing the pins (move up or down,
+unpin, back to the default), apps being pinned from the shelf's or the launcher's right click; pin ids written
+as "firefox.desktop" now name the same app as "firefox". `rutile-shell shelf` drives the menu from scripts (the
+headless test compositor has no pointer to right click with).
+

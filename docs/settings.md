@@ -37,7 +37,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `style.contrast` | -1 to 1 | 0 | -1 the least, 0 Material's own, 1 the most |
 | `style.seed` | #rrggbb | #134aae | the palette's color when there is no wallpaper or colors do not follow it |
 | `appColors.enabled` | true or false | false | give other apps the shell's colors (D52); each app below also needs its own switch on |
-| `appColors.niri` | true or false | false | niri's focus ring, borders, tab indicators and overview backdrop (a rutile-colors.kdl that niri includes) |
+| `appColors.niri` | true or false | false | niri's focus ring, borders, tab indicators and overview backdrop (a rutile-colors.kdl that niri reads through rutile.kdl, which you include) |
 | `appColors.gtk` | true or false | false | GTK 3 and 4 (a rutile.css that gtk.css imports) |
 | `appColors.qt` | true or false | false | qt5ct and qt6ct's color scheme |
 | `appColors.kde` | true or false | false | KDE apps (Dolphin, Kate) outside Plasma: the colors into kdeglobals, and a Rutile color scheme |
@@ -47,7 +47,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `appColors.btop` | true or false | false | btop's theme; the previous one comes back when off |
 | `appColors.nvim` | true or false | false | a `rutile` colorscheme for Neovim |
 | `appColors.firefox` | true or false | false | Firefox through the Pywalfox extension, with Rutile's own host |
-| `input.enabled` | true or false | false | apply the input settings below to niri: a rutile-input.kdl that niri includes after its own config (the home-manager module adds the include; D70) |
+| `input.enabled` | true or false | false | apply the input settings below to niri: a rutile-input.kdl that niri reads through rutile.kdl, which you include at the end of config.kdl (D70, D72) |
 | `input.repeatDelay` | integer, 100 to 1000 | 600 | milliseconds a key is held before it repeats |
 | `input.repeatRate` | integer, 5 to 80 | 25 | repeats per second |
 | `input.touchpadTap` | true or false | true | tap to click; off leaves niri's config as it is (an included file cannot turn a flag off) |

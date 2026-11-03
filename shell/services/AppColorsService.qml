@@ -98,8 +98,15 @@ Singleton {
         }
     }
 
-    onWantedChanged: schedule()
-    Component.onCompleted: schedule()
+    onWantedChanged: {
+        schedule();
+        // niri's colors reach niri only through rutile.kdl, which the user includes (D72)
+        if (wanted.indexOf("niri") >= 0) NiriConfigCheck.remind();
+    }
+    Component.onCompleted: {
+        schedule();
+        if (wanted.indexOf("niri") >= 0) NiriConfigCheck.remind();
+    }
 
     // Several switches flipped together, or a palette written in steps, make one run.
     Timer {

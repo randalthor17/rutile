@@ -449,6 +449,70 @@ ShellRoot {
             screen: modelData
             backend: shelfBackend
             onLauncherClicked: shell.toggleLauncher(modelData)
+            onMenuRequested: (target, x) => shell.openShelfMenu(modelData, target, x, height)
+        }
+    }
+
+    // A shelf button's right-click menu (D72), loaded only while open (D31).
+    property var shelfMenuScreen: null
+    property var shelfMenuTarget: null
+    property real shelfMenuX: 0
+    property real shelfMenuShelfHeight: 0
+    readonly property bool shelfMenuOpen: shelfMenu.active && !(shelfMenu.item?.closing ?? false)
+    function openShelfMenu(screen, target, x, shelfHeight) {
+        shelfMenu.active = false;
+        shelfMenuScreen = screen;
+        shelfMenuTarget = target;
+        shelfMenuX = x;
+        shelfMenuShelfHeight = shelfHeight;
+        shelfMenu.active = true;
+    }
+    // Scripts and tests: the shelf's pins, and its right-click menu (as a right click on a pin or a window).
+    IpcHandler {
+        target: "shelf"
+        function state(): string {
+            return JSON.stringify({ pins: shelfBackend.pinnedIds, menuOpen: shell.shelfMenuOpen,
+                                    menu: shelfMenu.item ? shelfMenu.item.items.map(i => i.separator ? "-" : i.text) : [] });
+        }
+        // TARGET: a pinned app's id, or window:<niri window id>; on the first screen's shelf
+        function openMenu(target: string): bool {
+            const shelf = shelves.instances[0];
+            if (!shelf) return false;
+            let t = null;
+            if (target.startsWith("window:")) {
+                const id = Number(target.slice(7));
+                for (const g of shelf.shelf.groups)
+                    for (const w of g.windows) if (w.id === id) t = { window: w };
+            } else {
+                const app = shelfBackend.pinned.find(p => p.id === target);
+                if (app) t = { app: app };
+            }
+            if (!t) return false;
+            shell.openShelfMenu(shelf.screen, t, shelf.width / 2, shelf.height);
+            return true;
+        }
+        // an entry of the open menu by its text, as a click
+        function choose(text: string): bool {
+            const w = shelfMenu.item;
+            const it = w ? w.items.find(i => i.text === text) : null;
+            if (!it) return false;
+            w.chosen(it.id);
+            w.close();
+            return true;
+        }
+        function closeMenu(): void {
+            if (shelfMenu.item) shelfMenu.item.close();
+        }
+    }
+    LazyLoader {
+        id: shelfMenu
+        ShelfMenuWindow {
+            screen: shell.shelfMenuScreen
+            items: shelfBackend.menuFor(shell.shelfMenuTarget)
+            centerX: shell.shelfMenuX
+            shelfHeight: shell.shelfMenuShelfHeight
+            onChosen: id => shelfBackend.runMenu(shell.shelfMenuTarget, id)
+            onCloseRequested: shelfMenu.active = false
         }
     }
 

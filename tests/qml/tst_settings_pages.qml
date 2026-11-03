@@ -327,6 +327,55 @@ TestCase {
         verify(findChild(a, "appsError").visible);
     }
 
+    Component {
+        id: pinsComp
+        QtObject {
+            property bool managed: false
+            property bool isDefault: false
+            property var pins: [{ id: "org.gnome.Nautilus", name: "Files", icon: "", installed: true },
+                                { id: "firefox", name: "Firefox", icon: "", installed: true },
+                                { id: "gone", name: "gone", icon: "", installed: false }]
+            property var calls: []
+            function setPins(ids) {
+                calls = calls.concat(["set:" + ids.join()]);
+                pins = ids.map(id => pins.find(p => p.id === id));
+                return true;
+            }
+            function reset() { calls = calls.concat(["reset"]); }
+        }
+    }
+
+    function test_shelf_pins() {
+        const t = make("shelf", pinsComp);
+        const a = t.a, b = t.b;
+        compare(findChild(a, "shelfPinRow_0").text, "Files");
+        compare(findChild(a, "shelfPinRow_2").supportingText, "Not installed");
+        verify(!findChild(a, "shelfPinUp_0").enabled && !findChild(a, "shelfPinDown_2").enabled, "nothing past the ends");
+        mouseClick(findChild(a, "shelfPinDown_0"));
+        compare(b.calls, ["set:firefox,org.gnome.Nautilus,gone"]);
+        waitForRendering(a);
+        compare(findChild(a, "shelfPinRow_0").text, "Firefox", "moved");
+        mouseClick(findChild(a, "shelfPinUp_2"));
+        compare(b.calls[1], "set:firefox,gone,org.gnome.Nautilus");
+        waitForRendering(a);
+        mouseClick(findChild(a, "shelfPinRemove_1"));
+        compare(b.calls[2], "set:firefox,org.gnome.Nautilus", "unpinned");
+        verify(findChild(a, "shelfPinsReset").enabled);
+        mouseClick(findChild(a, "shelfPinsReset"));
+        compare(b.calls[3], "reset");
+        b.isDefault = true;
+        verify(!findChild(a, "shelfPinsReset").enabled, "already the default");
+        b.pins = [];
+        waitForRendering(a);
+        verify(findChild(a, "shelfNoPins").visible);
+        b.managed = true;
+        b.pins = [{ id: "firefox", name: "Firefox", icon: "", installed: true }];
+        waitForRendering(a);
+        verify(findChild(a, "shelfManaged").visible);
+        verify(!findChild(a, "shelfPinUp_0").visible, "set in Nix: no buttons");
+        verify(!findChild(a, "shelfPinsReset").visible);
+    }
+
     function make(page, backendComp) {
         const s = createTemporaryObject(storeComp, root);
         const a = createTemporaryObject(appComp, root, { store: s });
@@ -471,6 +520,7 @@ TestCase {
         compare(keys("power saver")[0], "power/power.mode");
         compare(keys("battery")[0], "power/power.battery");
         compare(keys("default browser")[0], "apps/apps.defaults");
+        compare(keys("pinned apps")[0], "shelf/shelf.pins");
         compare(keys("bluetooth")[0], "bluetooth/");
         compare(keys("add device")[0], "bluetooth/bluetooth.available");
         verify(keys("pair").slice(0, 2).indexOf("bluetooth/bluetooth.available") >= 0);

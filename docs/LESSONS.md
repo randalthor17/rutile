@@ -369,4 +369,8 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
   in the real shell (a screenshot under headless sway), not only in offscreen tests.
 - **A Quickshell test only gets the `qs` modules something imports.** A test that loads a file by URL which
   imports `qs.services` must import `qs.services` itself, as the shell does, or the file fails to load.
+- **A headless sway has no pointer: `swaymsg seat seat0 cursor press` reaches no client.** Without an input
+  device the seat has no pointer capability, so synthetic clicks go nowhere (the launcher button did not open the
+  launcher). Drive a real-shell check over IPC (`rutile-shell shelf openMenu firefox`) and test the click itself
+  offscreen (QtTest's mouseClick with Qt.RightButton).
 

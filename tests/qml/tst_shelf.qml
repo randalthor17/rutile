@@ -32,6 +32,51 @@ TestCase {
         compare(ShelfApps.pins(undefined, id => false).length, 0);
         compare(ShelfApps.pins(["a", "b", "", "c"], id => false).join(), "a,b,c", "the setting wins, as given");
         compare(ShelfApps.pins([], id => true).length, 0, "an empty setting pins nothing");
+        compare(ShelfApps.pins(["firefox.desktop", "org.gnome.Nautilus.desktop", "foot"], id => true).join(),
+                "firefox,org.gnome.Nautilus,foot", "ids written with .desktop name the same apps");
+    }
+
+    function test_move() {
+        compare(ShelfApps.move(["a", "b", "c"], 1, -1).join(), "b,a,c");
+        compare(ShelfApps.move(["a", "b", "c"], 1, 1).join(), "a,c,b");
+        compare(ShelfApps.move(["a", "b", "c"], 0, -1).join(), "a,b,c", "not past the start");
+        compare(ShelfApps.move(["a", "b", "c"], 2, 1).join(), "a,b,c", "nor the end");
+        const ids = ["a", "b"];
+        ShelfApps.move(ids, 0, 1);
+        compare(ids.join(), "a,b", "the given list is not changed");
+    }
+
+    function test_menu_items() {
+        const ids = info => ShelfApps.menuItems(info).map(i => i.separator ? "-" : i.id).join(",");
+        compare(ids({ window: false, entry: true, actions: ["New private window"], pinned: true, editable: true }),
+                "open,action:0,-,unpin", "a pin: open, its actions, unpin");
+        compare(ids({ window: true, entry: true, actions: [], pinned: false, editable: true }), "open,-,pin,-,close",
+                "a window: a new one, pin, close");
+        compare(ShelfApps.menuItems({ window: true, entry: true, actions: [], pinned: false, editable: true })[0].text, "New window");
+        compare(ids({ window: true, entry: false, actions: ["x"], pinned: false, editable: true }), "close",
+                "a window without a desktop entry: only close");
+        compare(ids({ window: false, entry: true, actions: [], pinned: true, editable: false }), "open", "pins set in Nix: no pin or unpin");
+        compare(ShelfApps.menuItems({ window: false, entry: true, actions: ["A", "B"], pinned: true, editable: true })[2].text, "B");
+    }
+
+    function test_right_click_asks_for_the_menu() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, groups: ShelfApps.decorate(niriGroups, lookup) });
+        waitForRendering(shelf);
+        var asked = createTemporaryObject(spyComp, root, { target: shelf, signalName: "menuRequested" });
+        var launched = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launched" });
+        var b = findChild(shelf, "shelfPin_firefox");
+        mouseClick(b, b.width / 2, b.height / 2, Qt.RightButton);
+        compare(asked.count, 1);
+        compare(asked.signalArguments[0][0].app.id, "firefox");
+        compare(asked.signalArguments[0][1], b.mapToItem(shelf, b.width / 2, 0).x, "its middle on the shelf");
+        compare(launched.count, 0, "a right click does not launch");
+        mouseClick(b, b.width / 2, b.height / 2);
+        compare(launched.count, 1, "a left click still does");
+        compare(asked.count, 1);
+        var w = findChild(shelf, "shelfWindow_14");
+        mouseClick(w, w.width / 2, w.height / 2, Qt.RightButton);
+        compare(asked.count, 2);
+        compare(asked.signalArguments[1][0].window.id, 14);
     }
 
     function test_toggle_pin() {

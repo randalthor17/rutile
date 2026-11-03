@@ -3,10 +3,9 @@
 #   programs.rutile.enable = true;     the shell as a systemd user service in the graphical session, the
 #                                      `rutile-shell` command (rutile-shell ipc call lock lock), and niri's side:
 #                                      a layer rule so the power menu and the password dialog blur windows, not
-#                                      only the wallpaper, and (opt-in) keybinds for the shell. With home-manager's
-#                                      niri module on, that goes into your config.kdl as an `include`, checked
-#                                      by `niri validate` at build time; otherwise it is ~/.config/niri/rutile.kdl
-#                                      and you add `include "rutile.kdl"` yourself.
+#                                      only the wallpaper, and (opt-in) keybinds for the shell, in
+#                                      ~/.config/niri/rutile.kdl. Add `include "rutile.kdl"` at the end of your
+#                                      niri config.kdl yourself; it is never changed for you (D72).
 #   programs.rutile.theming.enable     GTK, Qt and KDE apps set up to wear the shell's colors, its font and an icon
 #                                      theme (D59): adw-gtk3 for GTK 3, a dark color scheme, gtk.css importing the
 #                                      shell's colors, qt5ct/qt6ct with Fusion, kdeglobals' fonts, and the shell's
@@ -18,7 +17,6 @@
 #                                      stay the shell's to change. Works without `enable`.
 {
   config,
-  options,
   lib,
   pkgs,
   ...
@@ -112,8 +110,6 @@ let
     ''
   );
   niriConfig = pkgs.writeText "rutile.kdl" niriText;
-  hasNiriModule = options ? wayland && options.wayland ? windowManager && options.wayland.windowManager ? niri;
-  niriModuleOn = hasNiriModule && config.wayland.windowManager.niri.enable;
   niriOn = cfg.enable && cfg.niri.enable;
 
   th = cfg.theming;
@@ -171,7 +167,10 @@ in
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Add Rutile's part of niri's configuration (the blur layer rule, and the binds if enabled).";
+        description = ''
+          Write Rutile's part of niri's configuration to ~/.config/niri/rutile.kdl (the blur layer rule, the binds
+          if enabled, and the includes of the files the shell writes: niri's colors, Settings > Input). Add
+          `include "rutile.kdl"` at the end of your niri config.kdl yourself: it is never changed for you.'';
       };
       binds = {
         enable = lib.mkEnableOption ''
@@ -446,14 +445,22 @@ in
       };
     })
 
-    # niri's part: into home-manager's niri config when that module is on (validated there), else a file to include
-    (lib.mkIf (niriOn && !niriModuleOn) {
+    # niri's part: a file of its own that the user includes at the end of config.kdl (D72); niri's own config,
+    # and home-manager's niri module, are never written to
+    (lib.mkIf niriOn {
       xdg.configFile."niri/rutile.kdl".source = niriConfig;
-    })
-    (lib.optionalAttrs hasNiriModule {
-      wayland.windowManager.niri.extraConfig = lib.mkIf (niriOn && niriModuleOn) (
-        lib.mkAfter ''include "${niriConfig}"''
-      );
+      # says, at every switch, what to add while niri's config does not include it (read, never written)
+      home.activation.rutileNiriInclude = {
+        after = [ "linkGeneration" ];
+        before = [ ];
+        data = ''
+          niriConf="${config.xdg.configHome}/niri/config.kdl"
+          if ! ${pkgs.gnugrep}/bin/grep -Eqs '^[[:space:]]*include.*rutile\.kdl' "$niriConf"; then
+            echo "Rutile: niri does not include Rutile's part yet. Add this line at the end of $niriConf:"
+            echo '    include "rutile.kdl"'
+          fi
+        '';
+      };
     })
   ];
 }

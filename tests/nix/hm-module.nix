@@ -26,6 +26,7 @@ let
       # home-manager's gtk, qt and fontconfig options, as plain values (programs.rutile.theming sets them)
       gtk = anything;
       home.sessionVariables = anything;
+      home.activation = anything;
       qt = anything;
       fonts = anything;
     } // lib.optionalAttrs niriModule {
@@ -51,10 +52,10 @@ builtins.toJSON {
   dataFiles = lib.mapAttrs (_: f: f.source) c.xdg.dataFile;
   niriFile = if c.xdg.configFile ? "niri/rutile.kdl" then c.programs.rutile.niri.config else null;
   extraConfig = if niriModule then c.wayland.windowManager.niri.extraConfig else null;
-  included = if niriModule && c.wayland.windowManager.niri.extraConfig != "" then c.programs.rutile.niri.config else null;
   exe = lib.getExe pkg;
   gtk = c.gtk;
   sessionVariables = c.home.sessionVariables;
+  activation = c.home.activation;
   qt = c.qt;
   fonts = c.fonts;
   managed = c.programs.rutile.settings.appColors;

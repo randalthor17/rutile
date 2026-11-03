@@ -129,25 +129,45 @@ class ShellModule(unittest.TestCase):
             self.assertTrue(valid[0], valid[1])
         self.assertNotIn("niri/rutile.kdl", module("{ enable = true; niri.enable = false; }")[0]["files"])
 
-    def test_niri_with_its_module_is_included_and_valid(self):
+    def test_a_switch_says_to_include_rutile_kdl_until_it_is(self):
+        got, err = module("{ enable = true; }")
+        data = got["activation"]["rutileNiriInclude"]["data"]
+        self.assertEqual(got["activation"]["rutileNiriInclude"]["after"], ["linkGeneration"], err)
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            script = data.replace("/home/test/.config", d)
+            conf = Path(d) / "niri" / "config.kdl"
+            conf.parent.mkdir()
+            run = lambda: subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=30).stdout
+            self.assertIn('include "rutile.kdl"', run(), "no config yet: says what to add")
+            conf.write_text('// include "rutile.kdl"\ninput {}\n')
+            self.assertIn("at the end of " + str(conf), run(), "a comment does not count")
+            conf.write_text('input {}\ninclude "rutile.kdl"\n')
+            self.assertEqual(run(), "", "included: nothing to say")
+            conf.write_text('input {}\n    include optional=true "/home/u/.config/niri/rutile.kdl"\n')
+            self.assertEqual(run(), "")
+        self.assertNotIn("rutileNiriInclude", module("{ enable = true; niri.enable = false; }")[0]["activation"])
+
+    def test_niri_config_is_never_touched_even_with_its_module(self):
+        # D72: a file of its own that the user includes; home-manager's niri module gets nothing
         got, err = module("{ enable = true; niri.binds.enable = true; }", niri=True)
-        self.assertNotIn("niri/rutile.kdl", got["files"], err)
-        self.assertRegex(got["extraConfig"], r'include "/nix/store/[^"]+-rutile\.kdl"')
-        kdl = got["included"]
+        self.assertIn("niri/rutile.kdl", got["files"], err)
+        self.assertEqual(got["extraConfig"], "", "nothing added to the user's niri config")
+        kdl = got["niriFile"]
         self.assertIn(f'XF86AudioRaiseVolume allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "osd" "volumeUp"; }}', kdl)
         self.assertIn(f'Mod+Alt+L {{ spawn "{got["exe"]}" "ipc" "call" "lock" "lock"; }}', kdl, "only media keys when locked")
         valid = niri_valid(kdl)
         if valid is not None:
             self.assertTrue(valid[0], valid[1])
-            # and included after binds of the user's own on the same key: still valid (the later one wins)
+            # included at the end of a config with binds of the user's own on the same key: still valid
             import tempfile
             with tempfile.TemporaryDirectory() as d:
                 (Path(d) / "rutile.kdl").write_text(kdl)
                 both = niri_valid('binds {\n    Mod+Alt+L { spawn "foot"; }\n}\n' + f'include "{d}/rutile.kdl"\n')
             self.assertTrue(both[0], both[1])
         got, _ = module('{ enable = true; niri.binds = { enable = true; keys = { "Mod+X" = [ "power" "toggle" ]; }; }; }', niri=True)
-        self.assertIn("Mod+X", got["included"])
-        self.assertNotIn("XF86", got["included"], "your keys replace the defaults")
+        self.assertIn("Mod+X", got["niriFile"])
+        self.assertNotIn("XF86", got["niriFile"], "your keys replace the defaults")
 
     def test_theming_sets_up_gtk_qt_kde_and_fonts(self):
         got, err = module("{ enable = true; theming.enable = true; }")

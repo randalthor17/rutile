@@ -47,13 +47,20 @@ What `enable` gives:
 - A systemd user service, `rutile-shell.service`, started with `graphical-session.target` (niri-session starts it)
   and stopped with it. `systemctl --user status rutile-shell`, `journalctl --user -u rutile-shell`.
   `programs.rutile.systemd.enable = false` if you would rather start it from niri's `spawn-at-startup`.
-- niri's part (`programs.rutile.niri.enable`, on): a layer rule so the power menu and the password dialog blur
-  your windows, not only the wallpaper, the binds if you turned them on, and
-  `include optional=true "~/.config/niri/rutile-colors.kdl"` (written out in full), which gives niri the shell's
-  colors while Settings > Wallpaper > Colors in other apps > niri is on (the file is missing otherwise, and niri
-  keeps its own). With home-manager's niri module
-  (`wayland.windowManager.niri.enable`), it is included into your config.kdl and checked by `niri validate` when
-  you switch. Without it, it is `~/.config/niri/rutile.kdl`: add `include "rutile.kdl"` to your config.kdl.
+- niri's part (`programs.rutile.niri.enable`, on), in a file of its own, `~/.config/niri/rutile.kdl`: a layer
+  rule so the power menu and the password dialog blur your windows, not only the wallpaper, the binds if you
+  turned them on, and optional includes of the files the shell writes: `rutile-colors.kdl` (niri's colors, while
+  Settings > Wallpaper & style > Colors in other apps > niri is on) and `rutile-input.kdl` (Settings > Keyboard,
+  mouse & touchpad, while its switch is on). Your niri config is never changed for you (D72). **Add this line at
+  the end of `~/.config/niri/config.kdl` yourself**, so Rutile's settings come after yours and win:
+
+  ```kdl
+  include "rutile.kdl"
+  ```
+
+  With home-manager's niri module, put it in `wayland.windowManager.niri.extraConfig` (or the module's own
+  include option). Until it is there, every home-manager switch prints a reminder, and the shell says so in a
+  toast when you turn on a setting that needs it.
 
 The package brings what the shell runs (matugen, brightnessctl, pw-play, dbus-monitor, systemd's tools) and its
 fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that includes the system's).

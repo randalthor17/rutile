@@ -26,6 +26,10 @@ Singleton {
         request(NiriState.focusWindowRequest(id));
     }
 
+    function closeWindow(id) {
+        request(NiriState.closeWindowRequest(id));
+    }
+
     // Move `delta` workspaces up (-1) or down (+1) on one output, stopping at the first and at niri's blank last one.
     function scrollWorkspace(output, delta) {
         const id = NiriState.neighbourWorkspace(state, output, delta);

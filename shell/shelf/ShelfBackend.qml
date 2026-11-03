@@ -45,6 +45,28 @@ QtObject {
         return ShelfApps.decorate(groups, appId => lookup(appId));
     }
 
+    // A button's right-click menu (D72): `target` is {app} (a pin) or {window}.
+    function entryOf(target) {
+        if (target.window) return target.window.appId ? DesktopEntries.heuristicLookup(target.window.appId) : null;
+        return DesktopEntries.byId(target.app.id);
+    }
+    function menuFor(target) {
+        const e = entryOf(target);
+        return ShelfApps.menuItems({ window: !!target.window, entry: !!e, actions: e ? e.actions.map(a => a.name) : [],
+                                     pinned: !!e && pinnedIds.indexOf(e.id) >= 0, editable: pinsEditable });
+    }
+    function runMenu(target, id) {
+        const e = entryOf(target);
+        if (id === "open") e?.execute();
+        else if (id.startsWith("action:")) e?.actions[Number(id.slice(7))]?.execute();
+        else if ((id === "pin" || id === "unpin") && e) togglePin(e.id);
+        else if (id === "close" && target.window) closeWindow(target.window);
+    }
+    function closeWindow(window) {
+        if (niri) NiriService.closeWindow(window.id);
+        else if (toplevels[window.id]) toplevels[window.id].close();
+    }
+
     function launch(app) {
         const e = DesktopEntries.byId(app.id);
         if (e) e.execute();

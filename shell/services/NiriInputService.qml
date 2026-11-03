@@ -26,6 +26,7 @@ Singleton {
     property string error: ""
 
     function sync() {
+        if (enabled) NiriConfigCheck.remind();
         if (enabled && text !== written) {
             file.setText(text);
             written = text;

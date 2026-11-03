@@ -96,7 +96,7 @@ TestCase {
         compare(rows["motion.speed"].maximum, 4);
         compare(rows["lock.idleMinutes"].kind, "choice");
         compare(rows["wallpaper.path"].kind, "path");
-        compare(rows["shelf.pins"].kind, "list");
+        compare(Model.kind({ type: "array" }, {}), "list", "a list (shelf.pins has a page of its own now)");
         verify(rows["polkit.agent"].advanced);
         compare(Model.kind({ type: "string", enum: ["a", "b"] }, {}), "choice");
         compare(Model.kind({ type: "integer", minimum: 0, maximum: 9 }, {}), "slider");
@@ -109,6 +109,9 @@ TestCase {
         const shown = [];
         for (const p of Pages.pages)
             for (const s of p.sections) shown.push(...s.keys.filter(k => Pages.hints[k]?.kind !== "action"));
+        // and those a page of its own shows (its entries name them)
+        for (const p of Pages.pages)
+            for (const e of p.entries ?? []) if (Schema.schema.properties[e.key.split(".")[0]]?.properties?.[e.key.split(".")[1]]) shown.push(e.key);
         const all = [];
         const walk = (node, prefix) => {
             for (const [k, v] of Object.entries(node.properties ?? {})) {
@@ -117,7 +120,7 @@ TestCase {
             }
         };
         walk(Schema.schema, "");
-        compare(shown.slice().sort().join(), all.slice().sort().join(), "each schema setting once, nothing else but actions");
+        compare(shown.slice().sort().join(), all.slice().sort().join(), "each schema setting once, nothing else but actions and pages' own");
         compare(new Set(Pages.pages.map(p => p.id)).size, Pages.pages.length, "page ids are unique");
     }
 
@@ -403,15 +406,6 @@ TestCase {
         mouseClick(row, 40, row.height / 2);
         compare(asked.count, 2, "a click on the row asks too");
         compare(t.s.sets.length, 0, "no setting changes");
-    }
-
-    function test_list_shows_its_value() {
-        const t = make();
-        open(t, "shelf");
-        const pins = findChild(t.a, "setting_shelf.pins");
-        compare(pins.item.supportingText, "firefox, foot");
-        mouseClick(pins);
-        compare(t.s.sets.length, 0, "nothing to change here yet");
     }
 
     function test_search() {

@@ -10,10 +10,11 @@ var defaultPinGroups = [
     ["com.mitchellh.ghostty", "foot", "kitty", "Alacritty", "org.wezfurlong.wezterm", "org.gnome.Console"]
 ];
 
-// The ids to pin: `saved` (the shelf.pins setting, a list of ids) if set, else the first id of each default
-// group that `exists(id)` says is installed.
+// The ids to pin: `saved` (the shelf.pins setting, a list of ids, with or without ".desktop") if set, else the
+// first id of each default group that `exists(id)` says is installed.
 function pins(saved, exists) {
-    if (Array.isArray(saved)) return saved.filter(s => s !== "");
+    // "firefox.desktop" names the same app as "firefox" (desktop ids are written both ways)
+    if (Array.isArray(saved)) return saved.map(s => String(s).replace(/\.desktop$/, "")).filter(s => s !== "");
     var out = [];
     for (var g = 0; g < defaultPinGroups.length; g++) {
         var hit = defaultPinGroups[g].find(id => exists(id));
@@ -46,4 +47,33 @@ function ungrouped(windows) {
     if (windows.length === 0) return [];
     return [{ id: -1, idx: 0, name: "", active: false,
               windows: windows.map((w, i) => ({ id: i, appId: w.appId, title: w.title, focused: !!w.activated })) }];
+}
+
+// A shelf button's right-click menu (D72) as Menu items. `info`: {window (a window, not a pin), entry (it has a
+// desktop entry), actions (its desktop actions' names), pinned, editable (pins not set in Nix)}. Ids: "open",
+// "action:<n>", "pin", "unpin", "close".
+function menuItems(info) {
+    var out = [];
+    if (info.entry) out.push({ id: "open", text: info.window ? "New window" : "Open", icon: info.window ? "open_in_new" : "launch" });
+    var actions = info.entry ? info.actions || [] : [];
+    for (var i = 0; i < actions.length; i++) out.push({ id: "action:" + i, text: actions[i] });
+    if (info.entry && info.editable) {
+        if (out.length) out.push({ id: "sepPin", separator: true });
+        out.push(info.pinned ? { id: "unpin", text: "Unpin", icon: "keep_off" } : { id: "pin", text: "Pin to shelf", icon: "keep" });
+    }
+    if (info.window) {
+        if (out.length) out.push({ id: "sepClose", separator: true });
+        out.push({ id: "close", text: "Close window", icon: "close" });
+    }
+    return out;
+}
+
+// `ids` with the one at `index` moved by `delta` (-1 earlier, +1 later); unchanged at an end.
+function move(ids, index, delta) {
+    var to = index + delta;
+    if (index < 0 || index >= ids.length || to < 0 || to >= ids.length) return ids.slice();
+    var out = ids.slice();
+    var it = out.splice(index, 1)[0];
+    out.splice(to, 0, it);
+    return out;
 }

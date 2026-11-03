@@ -147,7 +147,7 @@ var schema = {
                     "type": "boolean",
                     "default": false,
                     "title": "niri",
-                    "description": "Window borders, focus ring, tab indicators and the overview's backdrop: a rutile-colors.kdl that niri includes (the home-manager module adds the include)."
+                    "description": "Window borders, focus ring, tab indicators and the overview's backdrop: a rutile-colors.kdl that niri reads through rutile.kdl (include it in niri's config.kdl)."
                 },
                 "gtk": {
                     "type": "boolean",
@@ -225,7 +225,7 @@ var schema = {
                     "type": "boolean",
                     "default": false,
                     "title": "Set niri's input here",
-                    "description": "Apply these to niri, through a file it includes after its own config. Off: niri's config alone."
+                    "description": "Apply these to niri, through rutile.kdl (include it at the end of niri's config.kdl). Off: niri's config alone."
                 },
                 "repeatDelay": {
                     "type": "integer",

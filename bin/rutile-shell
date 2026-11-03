@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings tray"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings tray shelf"
 
 usage() {
     cat <<'EOF'
@@ -83,6 +83,10 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  choose TEXT      the open menu's entry with that text (a submenu opens in place)
                  back             out of a submenu
                  iconPath NAME    where the shell finds that icon ("": not found)
+                 state
+  shelf          openMenu TARGET   a pin's (its app id) or a window's (window:ID) right-click menu
+                 choose TEXT       the open menu's entry with that text
+                 closeMenu
                  state
 
 Examples:

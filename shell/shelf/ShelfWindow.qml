@@ -12,6 +12,7 @@ PanelWindow {
     readonly property alias shelf: shelf
 
     signal launcherClicked()
+    signal menuRequested(var target, real x)    // a button's right click (Shelf.menuRequested)
 
     anchors.bottom: true
     anchors.left: true
@@ -29,6 +30,7 @@ PanelWindow {
         groups: root.backend.groupsFor(root.screen?.name ?? "")
         onLaunched: app => root.backend.launch(app)
         onLauncherClicked: root.launcherClicked()
+        onMenuRequested: (target, x) => root.menuRequested(target, x)
         onWindowClicked: window => root.backend.focusWindow(window)
         onWorkspaceScrolled: delta => root.backend.scrollWorkspace(root.screen?.name ?? "", delta)
     }

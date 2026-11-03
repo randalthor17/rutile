@@ -131,3 +131,8 @@ function focusWorkspaceRequest(id) {
 function focusWindowRequest(id) {
     return JSON.stringify({ Action: { FocusWindow: { id: id } } });
 }
+
+// The request line for closing a window (niri's Action::CloseWindow).
+function closeWindowRequest(id) {
+    return JSON.stringify({ Action: { CloseWindow: { id: id } } });
+}

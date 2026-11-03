@@ -117,7 +117,12 @@ var pages = [
     {
         id: "shelf", title: "Shelf", icon: "dock_to_bottom", tone: "secondaryContainer",
         summary: "Pinned apps", aliases: ["dock", "taskbar", "pins"],
-        sections: [{ title: "", keys: ["shelf.pins"] }]
+        sections: [],
+        view: "pages/ShelfPage.qml", backend: "pages/ShelfPinsBackend.qml",
+        entries: [
+            { key: "shelf.pins", title: "Pinned apps", description: "The apps on the shelf, in order",
+              aliases: ["pin", "unpin", "favorites", "dock apps"] }
+        ]
     },
     {
         id: "accessibility", title: "Accessibility", icon: "accessibility_new", tone: "primaryContainer",
@@ -187,7 +192,6 @@ var hints = {
     },
     "lock.beforeSleep": { aliases: ["suspend", "hibernate"] },
     "polkit.agent": { advanced: true, aliases: ["pkexec", "sudo", "authentication"] },
-    "shelf.pins": { kind: "list" },
     "motion.speed": {
         step: 0.25,
         label: v => v === 0 ? "Off" : v + "×",
