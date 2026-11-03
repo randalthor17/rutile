@@ -1,8 +1,9 @@
 // The Widgets app's window (plan 4.5, D82): an ordinary app window, created only while open (D31), like Settings.
 // It reads the templates and the user's widgets (WidgetLibrary) and does what the app asks. Using a template copies
 // it to $XDG_CONFIG_HOME/rutile/widgets under a name not taken yet, allows the web address it reads (Settings >
-// Widgets), and asks the shell to put it on the desktop and preview it; then it opens in the editor
-// (`widgets.editor`, or xdg-open). The shell does the placing, so this window stays free of the desktop.
+// Widgets), and asks the shell to put it on the desktop; a toast says so. Nothing else opens (D86): Edit, on one of
+// the user's widgets, opens it in the editor (`widgets.editor`, or xdg-open) beside the preview. The shell does the
+// placing, so this window stays free of the desktop.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -45,8 +46,7 @@ FloatingWindow {
         if (prefix !== "" && allow.indexOf(prefix) < 0)
             Settings.set("widgets.httpAllow", allow.concat([prefix]));
         root.placeRequested(path);
-        root.edit(path);
-        app.openCategory("yours");
+        ToastService.show("Added to the desktop", { icon: "widgets" });
         mine.scan();
     }
 

@@ -5,7 +5,8 @@ pragma ComponentBehavior: Bound
 // - a widget that stretches (a card or tile, D83) fills the cells; one that cannot is centered in them;
 // - one without a card or tile at its root is bare text on the wallpaper, so it keeps a margin from the edges;
 // - one still taller than its cells is scaled down to fit, never up, so all of it shows.
-// While editing, an outline shows its cells. A file that cannot be read shows nothing, except while editing: then a
+// Outside edit mode a right-click on it asks to edit the widgets, with this one selected (D86). While editing, an
+// outline shows its cells. A file that cannot be read shows nothing, except while editing: then a
 // card names it, so it can be found and removed.
 import QtQuick
 import qs.common
@@ -15,6 +16,7 @@ Item {
     id: root
 
     property var modelData: ({})
+    property int index: -1
     property var specs: ({})
     property bool editMode: false
     property size base: Qt.size(width, height)             // the size of a new widget's cells
@@ -28,6 +30,15 @@ Item {
     readonly property real fit: widgetHost.implicitHeight > room && widgetHost.implicitHeight > 0 ? room / widgetHost.implicitHeight : 1
 
     objectName: "desktopWidget_" + (modelData.id ?? "")
+
+    signal editRequested(int index)
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: !root.editMode
+        acceptedButtons: Qt.RightButton
+        onClicked: root.editRequested(root.index)
+    }
 
     Rectangle {
         anchors.fill: parent

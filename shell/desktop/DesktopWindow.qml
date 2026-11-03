@@ -1,6 +1,6 @@
 // The desktop widgets' layer-shell surface on one screen (plan 4.4, D81): above the wallpaper and under every
-// window, in the space bars leave free. It takes no input outside edit mode, so a click or a right-click goes to
-// the wallpaper; while editing it takes the pointer and the keyboard.
+// window, in the space bars leave free. Outside edit mode it takes the pointer only on the widgets (D86), where a
+// right-click edits them; elsewhere clicks go to the wallpaper. While editing it takes the pointer and the keyboard.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -20,6 +20,7 @@ PanelWindow {
     signal doneRequested()
     signal addListRequested()
     signal galleryRequested()
+    signal editRequested(int index)
 
     anchors.top: true
     anchors.bottom: true
@@ -30,9 +31,24 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.keyboardFocus: editMode ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     color: "transparent"
-    mask: editMode ? null : nothing
+    mask: editMode ? null : onWidgets
 
-    Region { id: nothing }
+    // the widgets' cells, from the geometry (Quickshell's Region measures an item once, with its scale)
+    Region {
+        id: onWidgets
+        regions: cells.instances
+    }
+    Variants {
+        id: cells
+        model: content.inputRects
+        Region {
+            required property var modelData
+            x: modelData.x
+            y: modelData.y
+            width: modelData.width
+            height: modelData.height
+        }
+    }
 
     DesktopWidgets {
         id: content
@@ -40,5 +56,6 @@ PanelWindow {
         onDoneRequested: root.doneRequested()
         onAddListRequested: root.addListRequested()
         onGalleryRequested: root.galleryRequested()
+        onEditRequested: index => root.editRequested(index)
     }
 }

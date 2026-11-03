@@ -20,11 +20,19 @@ Item {
     property bool scaleText: false         // text follows a widget's size (widgets.scaleText, D84)
     property var commitHandler: null       // a callback, as EditableGrid's: the whole list after each change
     readonly property alias grid: desktopGrid
+    // where the widgets are, in this item: outside edit mode the window takes the pointer only there (D86)
+    readonly property var inputRects: desktopGrid.slotLayout.slots.filter(s => !!s)
+        .map(s => ({ x: desktopGrid.x + s.x, y: desktopGrid.y + s.y, width: s.w, height: s.h }))
+    // Starts editing with widget `index` selected (a right-click on it).
+    function select(index) {
+        desktopGrid.selectedIndex = index;
+    }
     readonly property bool addOpen: addMenu.open
 
     signal doneRequested()
     signal addListRequested()              // Add was opened: the owner lists the widget files again
     signal galleryRequested()              // "More widgets": the Widgets app
+    signal editRequested(int index)        // a widget was right-clicked: edit, with it selected
 
     function commit(next) {
         if (commitHandler)
@@ -99,6 +107,7 @@ Item {
             base: Qt.size(Desktop.NEW_SIZE.w * desktopGrid.rowHeight + (Desktop.NEW_SIZE.w - 1) * desktopGrid.gap,
                           Desktop.NEW_SIZE.h * desktopGrid.rowHeight + (Desktop.NEW_SIZE.h - 1) * desktopGrid.gap)
             editMode: root.editMode
+            onEditRequested: index => root.editRequested(index)
         }
     }
 

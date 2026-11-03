@@ -730,11 +730,18 @@ def run_wayland_smoke(screenshot=None):
                         placed = [i["path"] for items in (desktop_layout().get("screens") or {}).values() for i in items]
                         if placed != [made]:
                             problems.append(f"ipc widgets use finance-1: on the desktop {placed}")
-                        if json.loads(ipc("state", target="widgets")).get("path") != made:
-                            problems.append("ipc widgets use finance-1: not previewed")
+                        # nothing else opens (D86): no preview, the app stays where it was
+                        if json.loads(ipc("state", target="widgets")).get("open") is not False:
+                            problems.append("ipc widgets use finance-1: a preview opened")
                         gs = gallery_state()
-                        if gs.get("category") != "yours":
+                        if gs.get("category") != "finance":
                             problems.append(f"ipc widgets use finance-1: the app shows {gs}")
+                        try:
+                            toast = json.loads(ipc("state", target="toast"))
+                        except ValueError:
+                            toast = {}
+                        if "Added to the desktop" not in json.dumps(toast):
+                            problems.append(f"ipc widgets use finance-1: no toast ({toast})")
                         ipc("use", "finance-1", target="widgets")      # again: another name
                         time.sleep(1)
                         if gallery_state().get("lastCreated") != str(user_widgets / "dollar-to-euro-2.json"):
@@ -893,13 +900,15 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
                     # both toasts have shown and gone (4 s each and the motion), and the window with them
                     toast = {}
-                    # (asked at least once: the steps before may have taken longer than the toasts)
+                    # (asked at least once, and long enough for the Widgets app's toast, D86: the steps before may
+                    # have taken longer than the two toasts)
+                    toast_deadline = max(toast_sent + 15, time.time() + 8)
                     while True:
                         try:
                             toast = json.loads(ipc("state", target="toast"))
                         except ValueError:
                             toast = {}
-                        if toast.get("loaded") is False or time.time() >= toast_sent + 15:
+                        if toast.get("loaded") is False or time.time() >= toast_deadline:
                             break
                         time.sleep(0.2)
                     if toast != {"loaded": False, "open": False, "current": None, "queued": []}:
@@ -1104,7 +1113,7 @@ def run_wayland_surfaces():
     motion stuttered); the list's never; and a popup window's input mask covers the whole panel, not the panel
     as its opening motion had scaled it (Quickshell's Region measures an item with its scale and keeps that).
     The OSD's surface is sized once, also when a second key comes while it shows; the toasts' once per toast.
-    The desktop widgets' surface takes no input outside edit mode. Returns (code, report)."""
+    The desktop widgets' surface takes input only on the widgets outside edit mode. Returns (code, report)."""
     qs, sway = shutil.which("quickshell"), shutil.which("sway")
     if not qs or not sway:
         return SKIPPED, "needs quickshell and sway"
@@ -1163,7 +1172,7 @@ def run_wayland_surfaces():
                 ipc("toast", "send", "Short", "")
                 ipc("toast", "send", "A much longer message than the first one", "")
                 time.sleep(10)                           # both shown and gone (4 s each, and the motion)
-                # the desktop widgets' layer (D81): input goes through it to the wallpaper, except while editing
+                # the desktop widgets' layer (D81, D86): input only on the widgets, except while editing
                 ipc("widgets", "add", str(ROOT / "widgets" / "examples" / "countdown.json"))
                 time.sleep(1.5)
                 ipc("widgets", "edit")
@@ -1204,10 +1213,11 @@ def run_wayland_surfaces():
     toast = surfaces.get("rutile-toast", {"sizes": []})["sizes"]
     if len(set(toast)) != 2:                     # resized from one toast to the next, never in between
         problems.append(f"rutile-toast: sizes {toast} for two toasts, expected two sizes")
+    # the widget's cells outside edit mode (D86), the whole surface while editing, the cells again
     inputs = surfaces.get("rutile-widgets", {"inputs": []})["inputs"]
-    if [r == [] for r in inputs] != [True, False, True] or inputs[1] is not None:
-        problems.append(f"rutile-widgets: input regions {inputs}, expected none, the whole surface while "
-                        "editing, then none again")
+    if len(inputs) != 3 or inputs[1] is not None or not inputs[0] or len(inputs[0]) != 1 or inputs[2] != inputs[0]:
+        problems.append(f"rutile-widgets: input regions {inputs}, expected the widget's cells, the whole surface "
+                        "while editing, then the cells again")
     return (1 if problems else 0), "\n".join(problems)
 
 

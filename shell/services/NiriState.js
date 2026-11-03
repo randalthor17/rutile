@@ -123,6 +123,53 @@ function neighbourWorkspace(state, output, delta) {
     return to === at ? null : list[to].id;
 }
 
+// The desktop shown on every output (D86; niri has no minimize): each output's last empty workspace, the focused
+// output's last so the keyboard stays there. {focus: [workspace ids, in order], back: {output: the workspace it showed}};
+// an output already on an empty workspace, or with none, is left alone.
+function showDesktop(state) {
+    var outputs = {};
+    for (var k in state.workspaces) {
+        var ws = state.workspaces[k];
+        (outputs[ws.output] = outputs[ws.output] || []).push(ws);
+    }
+    var used = {};
+    for (var id in state.windows) {
+        var wid = state.windows[id].workspaceId;
+        if (wid !== null && wid !== undefined) used[wid] = true;
+    }
+    var focus = [], back = {}, last = null;
+    for (var output in outputs) {
+        var list = outputs[output].sort((a, b) => a.idx - b.idx);
+        var active = list.find(w => w.active);
+        if (!active || !used[active.id]) continue;
+        var blank = list.filter(w => !used[w.id]).pop();
+        if (!blank) continue;
+        back[output] = active.id;
+        if (active.focused) last = blank.id;
+        else focus.push(blank.id);
+    }
+    if (last !== null) focus.push(last);
+    return { focus: focus, back: back };
+}
+
+// Back from showDesktop: each output that still shows the workspace it was moved to goes back to the one it showed,
+// the focused output last. Ids of workspaces to focus, in order.
+function hideDesktop(state, plan, moved) {
+    var focus = [], last = null;
+    for (var output in plan.back) {
+        var now = null, focused = false;
+        for (var k in state.workspaces) {
+            var ws = state.workspaces[k];
+            if (ws.output === output && ws.active) { now = ws.id; focused = ws.focused; }
+        }
+        if (now === null || moved.indexOf(now) < 0 || !state.workspaces[plan.back[output]]) continue;
+        if (focused) last = plan.back[output];
+        else focus.push(plan.back[output]);
+    }
+    if (last !== null) focus.push(last);
+    return focus;
+}
+
 // The request line for focusing a workspace by id (niri's Action::FocusWorkspace).
 function focusWorkspaceRequest(id) {
     return JSON.stringify({ Action: { FocusWorkspace: { reference: { Id: id } } } });

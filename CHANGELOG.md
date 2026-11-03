@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Editing widgets clears the screen.** Right-click a widget to edit the widgets with it selected (right-clicks on
+  widgets no longer open the desktop menu). While editing, every screen shows its empty workspace, so the apps are
+  out of the way; Done brings them back.
 - **Check and install widgets from a terminal.** `rutile-shell widgets check my-widget.json` lists what is wrong,
   each problem with where it is (`$.root.children[0].label: ...`; `--json` for scripts), and
   `rutile-shell widgets install my-widget.json --place` checks it, copies it to `~/.config/rutile/widgets` and puts
@@ -14,9 +17,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   text with widget size" (off by default) also makes a bigger widget's text larger, up to twice.
 - **Widgets app.** "Rutile Widgets" in your app launcher (or "More widgets…" in the desktop's Add menu, or
   `rutile-shell widgets gallery`) shows 30 ready-made widgets in six categories, live: weather, daily update,
-  world clock, finance, countdown and sports. "Use" copies one to `~/.config/rutile/widgets`, puts it on the
-  desktop and opens it in your editor (Settings > Widgets > Open widget files with; xdg-open otherwise) beside a
-  live preview, so you can change it. Widgets are JSON files you write; "Your widgets" lists them.
+  world clock, finance, countdown and sports. "Use" puts one on the desktop (a copy in `~/.config/rutile/widgets`);
+  under "Your widgets", "Edit" opens it in your editor (Settings > Widgets > Open widget files with, e.g. neovide;
+  xdg-open otherwise) beside a live preview.
 - **Widgets on the desktop.** Right-click the desktop and choose "Edit widgets" (or run `rutile-shell widgets
   edit`): add widgets from `~/.config/rutile/widgets` or the examples, drag them where you like, resize them from
   their edges, remove them, then Done. Each screen keeps its own, and they come back after a restart. Settings >

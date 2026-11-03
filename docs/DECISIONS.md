@@ -881,3 +881,12 @@ and template, and tst_widget_check.qml compares (it caught Qt counting an emoji 
 the repository's gate (it also checks the schema itself and the templates' rules). `install` is the CLI's own copy
 into the user's folder under a free name; `--place` asks the shell to put it on the desktop. The preview window
 lists the check's problems too. `docs/widgets.md` is the guide for people writing widgets.
+
+**D86. Editing widgets clears the screen; right-click edits; Use only adds.** From the maintainer's first try:
+(1) edit mode should get the apps out of the way. niri has no minimize, so every output switches to its last empty
+workspace (the focused output last, so the keyboard stays), and Done switches each back unless the user moved on
+(NiriState.showDesktop and hideDesktop). (2) A right-click on a widget went through to the wallpaper's menu; now the
+widgets' layer takes the pointer on the widgets' cells (an input region from the grid's slots), and a right-click
+there starts editing with that widget selected. (3) Use opened a preview window, the editor and the desktop at once.
+Now Use copies and places it and says so in a toast; editing is "Edit" under Your widgets (editor and preview).
+(4) xdg-open may open JSON in a browser: the user sets `widgets.editor`.

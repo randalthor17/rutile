@@ -152,6 +152,29 @@ TestCase {
         verify(missing("gone"), "a file never read too");
     }
 
+    // D86: a right-click on a widget asks to edit, with it selected; the window takes the pointer only on the widgets
+    function test_right_click_edits_and_input_rects() {
+        const d = make({ items: [{ id: "a", path: "/w/card.json", w: 4, h: 3, col: 0, row: 0 },
+                                 { id: "b", path: "/w/card.json", w: 2, h: 2, col: 6, row: 1 }] });
+        settle(d);
+        const asked = signalSpy.createObject(root, { target: d, signalName: "editRequested" });
+        mouseClick(widget(d, "b"), 10, 10, Qt.LeftButton);
+        compare(asked.count, 0, "a left click asks nothing");
+        mouseClick(widget(d, "b"), 10, 10, Qt.RightButton);
+        compare(asked.count, 1);
+        compare(asked.signalArguments[0][0], 1, "the widget right-clicked");
+        d.editMode = true;
+        d.select(1);
+        compare(d.grid.selectedIndex, 1, "and selected");
+        mouseClick(widget(d, "b"), 10, 10, Qt.RightButton);
+        compare(asked.count, 1, "while editing, a right-click asks nothing more");
+        const rects = d.inputRects;
+        compare(rects.length, 2);
+        const b = widget(d, "b").mapToItem(d, 0, 0);
+        compare([rects[1].x, rects[1].y, rects[1].width, rects[1].height],
+                [b.x, b.y, widget(d, "b").width, widget(d, "b").height], "each widget's cells, in the window");
+    }
+
     // ---- edit mode ----
     function test_add_remove_done() {
         let saved = null;

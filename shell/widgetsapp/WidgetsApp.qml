@@ -103,7 +103,7 @@ Rectangle {
                 wrapMode: Text.Wrap
                 text: root.showingMine
                       ? "Widgets are JSON files in " + root.userDir + ". Edit one and the desktop shows it when you save."
-                      : "Use a template to copy it to your widgets, put it on the desktop and open it to change."
+                      : "Use a template to put it on the desktop. It is copied to Your widgets, where Edit opens it to change."
                 color: Colors.surfaceVariantOn
                 font: Type.font(Type.bodyMedium)
             }

@@ -44,6 +44,20 @@ Singleton {
         if (id !== null) request(NiriState.focusWorkspaceRequest(id));
     }
 
+    // The desktop on every output while the widgets are edited (D86), and back.
+    property var _desktopPlan: null
+    function showDesktop() {
+        const plan = NiriState.showDesktop(state);
+        _desktopPlan = plan;
+        plan.focus.forEach(id => request(NiriState.focusWorkspaceRequest(id)));
+    }
+    function hideDesktop() {
+        if (!_desktopPlan) return;
+        NiriState.hideDesktop(state, _desktopPlan, _desktopPlan.focus)
+            .forEach(id => request(NiriState.focusWorkspaceRequest(id)));
+        _desktopPlan = null;
+    }
+
     property var _queue: []
     function request(line) {
         if (socketPath === "") return;

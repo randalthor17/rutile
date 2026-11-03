@@ -6,10 +6,12 @@ no code in it. The shell draws it in the wallpaper's colors (D18, D78).
 ## Quick start
 
 1. Open **Rutile Widgets** from the app launcher (or `rutile-shell widgets gallery`), pick a template, and press
-   **Use**. It is copied to `~/.config/rutile/widgets/`, put on the desktop, and opened in your editor beside a live
-   preview. Settings > Widgets > "Open widget files with" picks the editor (`xdg-open` when unset).
-2. Edit and save. The preview and the desktop show the change at once, and the preview lists what is wrong.
-3. From a terminal:
+   **Use**. It is copied to `~/.config/rutile/widgets/` and put on the desktop.
+2. Under **Your widgets**, press **Edit**: the file opens in your editor beside a live preview. Settings > Widgets >
+   "Open widget files with" picks the editor, e.g. `neovide` or `kitty -e nvim` (`xdg-open` when unset, which may
+   pick a browser for JSON).
+3. Edit and save. The preview and the desktop show the change at once, and the preview lists what is wrong.
+4. From a terminal:
 
 ```
 rutile-shell widgets preview my-widget.json            # a window with it, live, redrawn on save
@@ -88,7 +90,9 @@ widgets may read" allows it (the Widgets app's Use allows a template's own).
 
 ## On the desktop
 
-Right-click the desktop and choose "Edit widgets" to move, resize, add and remove them. A widget made bigger
+Right-click a widget, or the desktop and choose "Edit widgets", to move, resize, add and remove them. While you
+edit, every screen switches to its empty workspace so the apps are out of the way (niri has no minimize); Done
+switches back. A widget made bigger
 stretches its cards and tiles to fill the space; one without a card is centered in it with a margin. Settings >
 Widgets > "Scale text with widget size" also makes text bigger in a bigger widget (off by default). A widget taller
 than its space is shrunk to fit.

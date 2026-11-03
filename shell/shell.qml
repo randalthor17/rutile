@@ -134,6 +134,8 @@ ShellRoot {
     // Widgets on the desktop (plan 4.4, D81): each screen's own, saved in state.json by output name. A screen's
     // layer exists only while it has widgets or they are being edited (D31); the files are read once for all.
     property bool widgetsEditing: false
+    // while editing, every screen shows its empty workspace, the apps out of the way (niri has no minimize, D86)
+    onWidgetsEditingChanged: widgetsEditing ? NiriService.showDesktop() : NiriService.hideDesktop()
     readonly property var desktopLayouts: Settings.stateValue("desktop.widgets", {})
     function saveDesktop(screenName, items) {
         Settings.setState("desktop.widgets", Desktop.withScreen(desktopLayouts, screenName, items));
@@ -164,6 +166,7 @@ ShellRoot {
             readonly property var items: Desktop.placed(shell.desktopLayouts, modelData.name)
             active: shell.widgetsEditing || items.length > 0
             DesktopWindow {
+                id: desktopWindow
                 screen: desktop.modelData
                 items: desktop.items
                 specs: widgetLibrary.specs
@@ -174,6 +177,10 @@ ShellRoot {
                 commitHandler: next => shell.saveDesktop(desktop.modelData.name, next)
                 onDoneRequested: shell.widgetsEditing = false
                 onAddListRequested: widgetLibrary.scan()
+                onEditRequested: index => {
+                    shell.widgetsEditing = true;
+                    desktopWindow.content.select(index);
+                }
                 onGalleryRequested: {
                     shell.widgetsEditing = false;
                     shell.openWidgets("");

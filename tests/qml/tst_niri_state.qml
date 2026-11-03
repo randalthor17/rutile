@@ -89,6 +89,29 @@ TestCase {
         compare(Niri.findWindow(s, 42, "Settings"), 21, "a change without the pid keeps it");
     }
 
+    // D86: editing the widgets shows the desktop on every output, and Done goes back
+    function test_show_desktop_and_back() {
+        var s = Niri.empty();
+        var w = (id, idx, out, active, focused) => Object.assign(ws(id, idx, out, active), { is_focused: !!focused });
+        s = Niri.apply(s, { WorkspacesChanged: { workspaces: [w(1, 1, "DP-1", true, true), w(2, 2, "DP-1", false),
+                                                              w(3, 3, "DP-1", false), w(4, 1, "HDMI-A-1", true),
+                                                              w(5, 2, "HDMI-A-1", false), w(6, 1, "eDP-1", true),
+                                                              w(7, 1, "DP-2", true)] } });
+        s = Niri.apply(s, { WindowsChanged: { windows: [win(10, "kitty", 1, 1, 1, true), win(11, "mpv", 2, 1, 1),
+                                                         win(12, "foot", 4, 1, 1), win(13, "zed", 7, 1, 1)] } });
+        var plan = Niri.showDesktop(s);
+        compare(plan.focus, [5, 3], "each output's last empty workspace, the focused output's last");
+        compare(JSON.stringify(plan.back), JSON.stringify({ "DP-1": 1, "HDMI-A-1": 4 }),
+                "eDP-1 already shows an empty one; DP-2 has none");
+        // niri did it: the outputs show 3 and 5, DP-1 focused
+        var shown = Niri.apply(Niri.apply(s, { WorkspaceActivated: { id: 5, focused: false } }),
+                               { WorkspaceActivated: { id: 3, focused: true } });
+        compare(Niri.hideDesktop(shown, plan, plan.focus), [4, 1], "back, the focused output last");
+        var moved = Niri.apply(shown, { WorkspaceActivated: { id: 2, focused: true } });
+        compare(Niri.hideDesktop(moved, plan, plan.focus), [4], "an output the user moved on stays where it is");
+        compare(Niri.showDesktop(Niri.empty()).focus, [], "without niri: nothing");
+    }
+
     function test_focus_requests() {
         compare(Niri.focusWindowRequest(12), '{"Action":{"FocusWindow":{"id":12}}}');
         compare(Niri.focusWorkspaceRequest(6), '{"Action":{"FocusWorkspace":{"reference":{"Id":6}}}}',
