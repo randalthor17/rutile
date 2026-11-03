@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings tray shelf"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings tray shelf widgets"
 
 usage() {
     cat <<'EOF'
@@ -45,6 +45,10 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  close | toggle
                  isOpen
                  search TEXT       type into the open Settings app's search
+                 state
+  widgets        preview PATH      show a widget file in a window with its live data; saving the file shows it
+                                   again (the package's examples: share/rutile/widgets/examples)
+                 close
                  state
   appcolors      state             colors for other apps (Settings, Wallpaper: off unless switched on)
   polkit         cancel            cancel the open password dialog
@@ -212,6 +216,13 @@ case "$1" in
             # the Settings app's desktop file: open it, on the page it shows (one window, focused if open)
             if [ "$1" = settings ] && [ $# -eq 1 ]; then
                 exec "$qs" ipc -p "$qml" call settings open ""
+            fi
+            # a widget file to preview: the shell needs its full path
+            if [ "$1" = widgets ] && [ "${2-}" = preview ] && [ $# -eq 3 ]; then
+                case "$3" in
+                    /*) ;;
+                    *) set -- "$1" "$2" "$PWD/$3" ;;
+                esac
             fi
             if [ $# -lt 2 ]; then
                 echo "rutile-shell: $1 needs a function; see rutile-shell --help" >&2

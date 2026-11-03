@@ -51,6 +51,7 @@ stdenv.mkDerivation {
       ../native
       ../shell
       ../share
+      ../widgets/examples
       ../theme/apps
       ../theme/templates
       ../theme/roles.json
@@ -70,6 +71,7 @@ stdenv.mkDerivation {
     runHook preInstall
     mkdir -p $out/share/rutile/build
     cp -r shell theme $out/share/rutile/
+    mkdir -p $out/share/rutile/widgets && cp -r widgets/examples $out/share/rutile/widgets/
     install -Dm755 build/rutile-pywalfox-host $out/share/rutile/build/rutile-pywalfox-host
     install -Dm755 bin/rutile-shell $out/share/rutile/bin/rutile-shell
     # the Settings app in app launchers, run by this package's own CLI

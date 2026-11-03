@@ -234,7 +234,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [ ] **4.4** Desktop widget grid reusing the EditableGrid (1.6): snap, edit mode, persistence.
 - [ ] **4.5** Custom widgets app: category list and template cards (weather, daily update, world clock, finance,
   countdown, sports) plus a "Create a widget" prompt box. Templates are local-model task `widget-templates`.
-- [ ] **4.6** CLI: widget check / preview / install with machine-readable errors. Started: `tools/widget_check.py`
+- [ ] **4.6** CLI: widget check / preview / install with machine-readable errors. Preview done (D80):
+  `rutile-shell widgets preview FILE`, a window with the widget's live data, read again on save. Started: `tools/widget_check.py`
   checks a schema against the spec's rules and widgets against the schema (stdlib JSON Schema subset).
 - [ ] **4.7** Ollama bridge: structured output with the schema as format, system prompt from the LLM docs, retry
   loop feeding validator errors back, model configurable (Ollama Cloud now, local on the 9060 XT later).

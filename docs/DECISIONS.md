@@ -818,3 +818,12 @@ so a file it reads never leaves the machine. A calendar reads single events only
 first time (RRULE is not expanded), and a TZID time is taken as local. A listRow that binds into a list repeats
 per item, at most 8. The settings app gained typed fields for this (numbers, text, lists split at commas and
 spaces), as a slider cannot take a latitude.
+
+**D80. A widget preview window before the desktop grid (plan 4.6).** The maintainer asked to try widgets before the
+grid (4.4) exists. `rutile-shell widgets preview FILE` (IPC `widgets preview PATH`, `close`, `state`) opens one
+FloatingWindow, created only while open (D31), that draws the file with `WidgetSources` and `WidgetHost` and reads
+it again whenever it is saved (FileView), with the renderer's problems and the sources' errors listed under it:
+the way to write a widget and watch it, and later the Custom widgets app's and the LLM loop's preview. The CLI
+makes a relative path absolute, as the shell's working directory is not the caller's; the package ships the
+examples. Tried in a nested niri: clock, system, countdown, media (a real player) and weather (the real
+Open-Meteo, for Berlin) all filled in.

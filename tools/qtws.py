@@ -640,6 +640,19 @@ def run_wayland_smoke(screenshot=None):
                     ipc("close", target="settings")
                     if settings_state() != {"open": False, "page": "", "query": "", "highlight": "", "results": []}:
                         problems.append(f"ipc settings close: state {settings_state()}")
+                    # a widget preview (D80): the example draws with its countdown source and no problems
+                    if ipc("preview", str(ROOT / "widgets" / "examples" / "countdown.json"), target="widgets") != "true":
+                        problems.append("ipc widgets preview: refused")
+                    try:
+                        wp = json.loads(ipc("state", target="widgets"))
+                    except ValueError:
+                        wp = {}
+                    if (wp.get("open"), wp.get("name"), wp.get("problems"), wp.get("sources")) != (
+                            True, "Countdown Timer", [], ["countdown"]):
+                        problems.append(f"ipc widgets preview countdown.json: state {wp}")
+                    if ipc("preview", "relative.json", target="widgets") != "false":
+                        problems.append("ipc widgets preview of a relative path: accepted")
+                    ipc("close", target="widgets")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),

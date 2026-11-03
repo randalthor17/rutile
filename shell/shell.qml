@@ -26,6 +26,7 @@ import qs.settingsapp
 import qs.quicksettings
 import qs.services
 import qs.shelf
+import qs.widgethost
 import "quicksettings/Controls.js" as Controls
 import "lock/LockWallpaper.js" as LockWallpaper
 import "power/PowerActions.js" as PowerActions
@@ -262,6 +263,34 @@ ShellRoot {
             if (!app) return false;
             app.search.text = text;
             return true;
+        }
+    }
+
+    // A widget file shown with its live data (D80), until the desktop grid shows widgets: one window, created only
+    // while open. From a terminal: rutile-shell widgets preview ~/my-widget.json
+    property string widgetPreviewPath: ""
+    LazyLoader {
+        id: widgetPreview
+        WidgetPreviewWindow {
+            path: shell.widgetPreviewPath
+            onFinished: Qt.callLater(() => widgetPreview.active = false)
+        }
+    }
+    IpcHandler {
+        target: "widgets"
+        // An absolute path; false for a relative one. Another file replaces the one shown.
+        function preview(path: string): bool {
+            if (!path.startsWith("/")) return false;
+            shell.widgetPreviewPath = path;
+            widgetPreview.active = true;
+            return true;
+        }
+        function close(): void { widgetPreview.active = false; }
+        function state(): string {
+            const w = widgetPreview.item;
+            return JSON.stringify({ open: widgetPreview.active, path: w?.path ?? "", name: w?.spec?.name ?? "",
+                                    problems: w?.problems ?? [], sourceErrors: w?.sourceErrors ?? [],
+                                    sources: w ? Object.keys(w.values).sort() : [] });
         }
     }
 

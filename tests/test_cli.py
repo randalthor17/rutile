@@ -96,6 +96,10 @@ class Forwarding(unittest.TestCase):
         self.check(["lock", "lock"], ["ipc", "-p", "/s/shell.qml", "call", "lock", "lock"])
         self.check(["toast", "send", "two words", ""],
                    ["ipc", "-p", "/s/shell.qml", "call", "toast", "send", "two words", ""])
+        # a widget preview gets a full path from a relative one
+        r = run("widgets", "preview", "w.json")
+        self.assertIn(f"[preview][{os.getcwd()}/w.json]", r.stdout)
+        self.check(["widgets", "preview", "/a/w.json"], ["ipc", "-p", "/s/shell.qml", "call", "widgets", "preview", "/a/w.json"])
         # the Settings app's desktop file runs `rutile-shell settings`
         self.check(["settings"], ["ipc", "-p", "/s/shell.qml", "call", "settings", "open", ""])
         self.check(["settings", "openSetting", "security", "lock.idleMinutes"],

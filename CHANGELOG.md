@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Try a widget now:** `rutile-shell widgets preview my-widget.json` opens it in a window with its live data,
+  and shows it again whenever the file is saved; what is wrong with it is listed below it. The examples are in
+  `widgets/examples` (in the package too).
 - **Widget data.** Widgets can show the time (and other places' time), the battery, processor and memory use,
   a countdown, what is playing, the weather (Open-Meteo, no account; set the place in Settings > Widgets),
   upcoming events from a calendar file or folder, a text or JSON file, and JSON from web addresses you allow
