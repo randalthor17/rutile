@@ -913,3 +913,19 @@ then nvidia-smi's own; the package points RUTILE_AMDGPU_IDS and RUTILE_PCI_IDS a
 and xe's clock and a discrete Intel card's energy counter (power from two readings), nouveau's hwmon, and leaves out
 what a driver does not report (Intel has no use percentage), rather than showing 0. The scripts use sed, not grep,
 which the package does not put on PATH.
+
+**D88. Googlebook's windows: a window rule from Settings, and our own title bars (plan 3.1).** niri draws no title
+bars and decides how windows look through window rules. Settings > Windows (`windows.*`) adds one rule for every
+window to rutile-settings.kdl, the file the shell already writes for input and animations (D74): floating when
+opened (`open-floating`), a corner radius with clipping, niri's shadow, and no focus ring or border, each its own
+switch. The rule comes after the user's (rutile.kdl is included last), so its values win, as D74 has it; the main
+switch is off by default, like input, since floating every window changes how niri is used. Only the focus ring's
+"on" writes nothing, leaving ring and border to niri's config. The shadow takes niri's own softness, offset and
+color. Our own app windows (Settings, Widgets, the widget preview) had Qt's plain Wayland title bar; now Qt's
+decorations are off (`QT_WAYLAND_DISABLE_WINDOWDECORATION`, a pragma in shell.qml) and they draw an M3E one
+(AppFrame, TitleBar): the app's icon and name on the window's color, maximize or restore and close as icon buttons,
+the compositor's move on a press of the bar (Quickshell's startSystemMove), maximize on a double click or the middle
+button, and edges to resize by (startSystemResize). No minimize button: niri has no minimized state (D86 uses an
+empty workspace for the desktop instead). Tested in a nested niri: a maximized floating window goes to niri's columns
+maximized, and restoring brings it back floating at its size. Third-party apps keep their own decorations: GTK's
+header bars, and Qt's (the theming of D59 covers their colors).

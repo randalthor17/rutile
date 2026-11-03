@@ -7,6 +7,7 @@ import QtQuick
 import QtQuick.Dialogs
 import Quickshell
 import qs.common
+import qs.components
 import qs.services
 
 FloatingWindow {
@@ -24,25 +25,33 @@ FloatingWindow {
     color: Colors.surfaceContainerLow
     onClosed: root.finished()
 
-    SettingsApp {
-        id: app
+    AppFrame {
+        id: frame
         anchors.fill: parent
-        store: Settings
-        backend: pageBackend.item
-        conditions: ({ niriNotIncluded: NiriConfigCheck.included === false })
-        focus: true
-        onPathRequested: (key, filters) => {
-            const current = Settings.value(key) ?? "";
-            fileDialog.key = key;
-            fileDialog.nameFilters = filters.length ? filters : ["All files (*)"];
-            if (current !== "")
-                fileDialog.currentFolder = "file://" + current.substring(0, current.lastIndexOf("/"));
-            fileDialog.open();
-        }
-        // Flatpak apps (D66): the command opens a terminal for its downloads and questions
-        onActionRequested: key => {
-            if (key === "action.flatpak")
-                Quickshell.execDetached([Quickshell.env("RUTILE_CLI") || "rutile-shell", "flatpak-theming", "--terminal"]);
+        window: root
+        iconName: "settings"
+        onCloseRequested: root.finished()
+
+        SettingsApp {
+            id: app
+            anchors.fill: parent
+            store: Settings
+            backend: pageBackend.item
+            conditions: ({ niriNotIncluded: NiriConfigCheck.included === false })
+            focus: true
+            onPathRequested: (key, filters) => {
+                const current = Settings.value(key) ?? "";
+                fileDialog.key = key;
+                fileDialog.nameFilters = filters.length ? filters : ["All files (*)"];
+                if (current !== "")
+                    fileDialog.currentFolder = "file://" + current.substring(0, current.lastIndexOf("/"));
+                fileDialog.open();
+            }
+            // Flatpak apps (D66): the command opens a terminal for its downloads and questions
+            onActionRequested: key => {
+                if (key === "action.flatpak")
+                    Quickshell.execDetached([Quickshell.env("RUTILE_CLI") || "rutile-shell", "flatpak-theming", "--terminal"]);
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.common
+import qs.components
 import "WidgetSpec.js" as Spec
 import "WidgetCheck.js" as Check
 
@@ -40,7 +41,7 @@ FloatingWindow {
 
     title: "Widget preview: " + (spec?.name ?? path.substring(path.lastIndexOf("/") + 1))
     implicitWidth: 360 + 2 * Spacing.xl
-    implicitHeight: Math.max(240, content.implicitHeight + 2 * Spacing.xl)
+    implicitHeight: Math.max(240, frame.titleBar.implicitHeight + content.implicitHeight + 2 * Spacing.xl)
     color: Colors.surface
     onClosed: root.finished()
 
@@ -58,32 +59,41 @@ FloatingWindow {
         spec: root.spec
     }
 
-    Flickable {
+    AppFrame {
+        id: frame
         anchors.fill: parent
-        contentHeight: content.implicitHeight + 2 * Spacing.xl
-        boundsBehavior: Flickable.StopAtBounds
-        Column {
-            id: content
-            x: Spacing.xl
-            y: Spacing.xl
-            width: parent.width - 2 * Spacing.xl
-            spacing: Spacing.lg
-            WidgetHost {
-                id: host
-                objectName: "previewWidget"
-                width: parent.width
-                spec: root.spec
-                values: sources.values
-            }
-            Repeater {
-                model: root.problems.concat(root.sourceErrors)
-                delegate: Text {
-                    required property string modelData
-                    width: content.width
-                    wrapMode: Text.Wrap
-                    text: modelData
-                    color: Colors.error
-                    font: Type.font(Type.bodySmall)
+        window: root
+        iconName: "preview"
+        color: Colors.surface
+        onCloseRequested: root.finished()
+
+        Flickable {
+            anchors.fill: parent
+            contentHeight: content.implicitHeight + 2 * Spacing.xl
+            boundsBehavior: Flickable.StopAtBounds
+            Column {
+                id: content
+                x: Spacing.xl
+                y: Spacing.xl
+                width: parent.width - 2 * Spacing.xl
+                spacing: Spacing.lg
+                WidgetHost {
+                    id: host
+                    objectName: "previewWidget"
+                    width: parent.width
+                    spec: root.spec
+                    values: sources.values
+                }
+                Repeater {
+                    model: root.problems.concat(root.sourceErrors)
+                    delegate: Text {
+                        required property string modelData
+                        width: content.width
+                        wrapMode: Text.Wrap
+                        text: modelData
+                        color: Colors.error
+                        font: Type.font(Type.bodySmall)
+                    }
                 }
             }
         }

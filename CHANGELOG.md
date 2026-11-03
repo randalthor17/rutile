@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Windows like Googlebook's.** Settings > Windows (off by default) makes niri open windows floating, with rounded
+  corners, a soft shadow and no focus ring; each part has its own switch, and they win over niri's own window
+  rules. Settings, Widgets and the widget preview have a new title bar: the app's icon and name, maximize and close;
+  drag it to move the window, double-click it to maximize, drag an edge to resize.
 - **System monitor widgets and charts.** Widgets can show the processor (overall, per core, frequency), memory and
   swap, the disk, the network, the graphics card (use, video memory, temperatures, power, fan, clock; AMD, and NVIDIA
   through nvidia-smi) and every temperature sensor, read every second. New charts draw them: line, area, bar, pie,

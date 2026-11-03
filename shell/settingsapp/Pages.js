@@ -93,6 +93,14 @@ var pages = [
         ]
     },
     {
+        id: "windows", title: "Windows", icon: "web_asset", tone: "secondaryContainer",
+        summary: "Floating, rounded corners, shadows", aliases: ["window rules", "niri windows", "floating", "tiling"],
+        sections: [
+            { title: "", keys: ["notice.niriInclude", "windows.enabled"] },
+            { title: "Look", keys: ["windows.floating", "windows.cornerRadius", "windows.shadow", "windows.focusRing"] }
+        ]
+    },
+    {
         id: "apps", title: "Apps", icon: "apps", tone: "tertiaryContainer",
         summary: "Default apps", aliases: ["mimeapps", "open with", "xdg-mime"],
         sections: [],
@@ -204,6 +212,12 @@ var hints = {
     "input.mouseSpeed": { requires: "input.enabled", step: 0.1, label: v => (v > 0 ? "+" : "") + v.toFixed(1),
                           aliases: ["pointer speed", "sensitivity", "dpi"] },
     "input.mouseFlat": { requires: "input.enabled", aliases: ["acceleration", "accel", "raw input", "gaming"] },
+    "windows.enabled": { aliases: ["niri", "rutile-settings.kdl", "window-rule"] },
+    "windows.floating": { requires: "windows.enabled", aliases: ["tiling", "scrolling", "open-floating", "columns"] },
+    "windows.cornerRadius": { requires: "windows.enabled", step: 2, label: v => v + " px",
+                              aliases: ["rounded corners", "radius", "round"] },
+    "windows.shadow": { requires: "windows.enabled", aliases: ["drop shadow", "elevation"] },
+    "windows.focusRing": { requires: "windows.enabled", aliases: ["border", "outline", "active window"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
     // typed, not a slider: a place is a number to a few decimals
     "widgets.columns": {

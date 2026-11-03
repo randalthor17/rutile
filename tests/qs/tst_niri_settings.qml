@@ -1,8 +1,8 @@
 // The shell's settings into niri (D70, D74), end to end in a sandbox XDG_CONFIG_HOME: Settings > Input on writes
 // rutile-settings.kdl, which `niri validate` accepts included after a config of its own; a change rewrites it (a
 // keyboard layout, a flag off left out: niri replaces the user's whole touchpad section with it); niri's animations
-// follow the shell's speed, turned on over the user's `off` (and none at speed 0); with
-// every part off the file goes. Without niri on PATH the validation is skipped (logged), the rest still runs.
+// follow the shell's speed, turned on over the user's `off` (and none at speed 0); Settings > Windows writes one
+// window rule after the user's (D88), its parts following the switches; with every part off the file goes. Without niri on PATH the validation is skipped (logged), the rest still runs.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -20,7 +20,7 @@ ShellRoot {
         id: look
         // the file, and niri's verdict on a config that includes it after sections of its own
         command: ["sh", "-c", 'if [ ! -f "$1" ]; then echo "file=none"; exit 0; fi; cat "$1"; ' +
-                  'd=$(mktemp -d); printf "input {\\n    touchpad {\\n        tap\\n    }\\n}\\nanimations {\\n    off\\n    slowdown 3\\n}\\ninclude \\"%s\\"\\n" "$1" > "$d/config.kdl"; ' +
+                  'd=$(mktemp -d); printf "window-rule {\\n    open-floating false\\n}\\ninput {\\n    touchpad {\\n        tap\\n    }\\n}\\nanimations {\\n    off\\n    slowdown 3\\n}\\ninclude \\"%s\\"\\n" "$1" > "$d/config.kdl"; ' +
                   'if command -v niri >/dev/null; then niri validate -c "$d/config.kdl" >/dev/null 2>&1 && echo "niri=valid" || echo "niri=invalid"; ' +
                   'else echo "niri=missing"; fi; rm -rf "$d"', "sh", root.file]
         stdout: StdioCollector { onStreamFinished: root.out = text }
@@ -76,13 +76,40 @@ ShellRoot {
             case 7:
                 t.verify(root.out.indexOf("input {") < 0, "input off: gone from the file");
                 t.verify(/animations \{\n\s+off\n\}/.test(root.out), "speed 0: no animations");
+                t.verify(root.out.indexOf("window-rule") < 0, "windows off by default");
                 root.valid();
                 Settings.set("motion.niri", false);
+                Settings.set("windows.enabled", true);
                 break;
             case 8:
                 look.running = true;
                 break;
             case 9:
+                t.verify(/window-rule \{\n\s+open-floating true\n\s+geometry-corner-radius 16\n\s+clip-to-geometry true\n/.test(root.out), "windows: " + root.out);
+                t.verify(/shadow \{\n\s+on\n\s+\}/.test(root.out), "a shadow");
+                t.verify(/focus-ring \{\n\s+off\n\s+\}\n\s+border \{\n\s+off\n\s+\}/.test(root.out), "no focus ring, no border");
+                t.verify(root.out.indexOf("animations") < 0 && root.out.indexOf("input {") < 0, "only the windows part");
+                root.valid();
+                Settings.set("windows.floating", false);
+                Settings.set("windows.cornerRadius", 8);
+                Settings.set("windows.shadow", false);
+                Settings.set("windows.focusRing", true);
+                break;
+            case 10:
+                look.running = true;
+                break;
+            case 11:
+                t.verify(root.out.indexOf("open-floating") < 0, "not floating: niri's columns");
+                t.verify(root.out.indexOf("geometry-corner-radius 8") >= 0, "the radius: " + root.out);
+                t.verify(root.out.indexOf("shadow") < 0, "no shadow");
+                t.verify(root.out.indexOf("focus-ring") < 0 && root.out.indexOf("border") < 0, "the ring left to niri");
+                root.valid();
+                Settings.set("windows.enabled", false);
+                break;
+            case 12:
+                look.running = true;
+                break;
+            case 13:
                 t.verify(root.out.indexOf("file=none") >= 0, "every part off: removed");
                 t.compare(NiriSettingsService.error, "");
                 t.done();

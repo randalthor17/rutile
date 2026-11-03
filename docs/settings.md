@@ -65,6 +65,11 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `input.mouseNaturalScroll` | true or false | false | the wheel moves content the other way |
 | `input.mouseSpeed` | -1 to 1 | 0 | mouse pointer speed |
 | `input.mouseFlat` | true or false | false | no mouse acceleration (niri's flat profile) |
+| `windows.enabled` | true or false | false | apply the window settings below to niri, as one window rule after niri's own (rutile-settings.kdl, D88) |
+| `windows.floating` | true or false | true | new windows open floating, as on Googlebook, instead of in niri's columns |
+| `windows.cornerRadius` | integer, 0 to 32 | 16 | window corners' radius in pixels; windows are clipped to them |
+| `windows.shadow` | true or false | true | a soft shadow under every window (niri's own look) |
+| `windows.focusRing` | true or false | false | off hides niri's focus ring and border; on leaves them to niri's config |
 | `polkit.agent` | true or false | true | be the session's polkit agent (an app asking for an administrator's password asks in the shell); turn off when another agent does it (polkit allows one per session) |
 | `shelf.pins` | list of desktop ids | unset | the shelf's pinned apps, in order; unset: the first installed file manager, browser and terminal |
 

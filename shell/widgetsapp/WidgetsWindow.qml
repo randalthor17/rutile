@@ -8,6 +8,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.common
+import qs.components
 import qs.desktop
 import qs.services
 import "Gallery.js" as Gallery
@@ -75,18 +76,26 @@ FloatingWindow {
         stdout: StdioCollector { onStreamFinished: root.created(text.trim()) }
     }
 
-    WidgetsApp {
-        id: app
+    AppFrame {
+        id: frame
         anchors.fill: parent
-        templates: templates.available
-        mine: mine.available
-        specs: Object.assign({}, templates.specs, mine.specs)
-        allow: Settings.value("widgets.httpAllow") ?? []
-        userDir: mine.userDir.replace(Quickshell.env("HOME"), "~")
-        onCurrentCategoryChanged: if (showingMine) mine.scan()
-        onUseRequested: path => root.use(path)
-        onEditRequested: path => root.edit(path)
-        onPlaceRequested: path => root.placeRequested(path)
-        onFolderRequested: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "sh", mine.userDir])
+        window: root
+        iconName: "widgets"
+        onCloseRequested: root.finished()
+
+        WidgetsApp {
+            id: app
+            anchors.fill: parent
+            templates: templates.available
+            mine: mine.available
+            specs: Object.assign({}, templates.specs, mine.specs)
+            allow: Settings.value("widgets.httpAllow") ?? []
+            userDir: mine.userDir.replace(Quickshell.env("HOME"), "~")
+            onCurrentCategoryChanged: if (showingMine) mine.scan()
+            onUseRequested: path => root.use(path)
+            onEditRequested: path => root.edit(path)
+            onPlaceRequested: path => root.placeRequested(path)
+            onFolderRequested: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "sh", mine.userDir])
+        }
     }
 }

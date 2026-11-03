@@ -336,6 +336,44 @@ var schema = {
                 }
             }
         },
+        "windows": {
+            "type": "object",
+            "title": "Windows",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Set niri's windows here",
+                    "description": "Apply these to every window in niri, through rutile.kdl (include it at the end of niri's config.kdl). They come after niri's own window rules, so they win. Off: niri's config alone."
+                },
+                "floating": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Open windows floating",
+                    "description": "New windows open floating, as on Googlebook, instead of in niri's columns. Mod+V (niri's default) moves one between the two."
+                },
+                "cornerRadius": {
+                    "type": "integer",
+                    "default": 16,
+                    "minimum": 0,
+                    "maximum": 32,
+                    "title": "Corner radius",
+                    "description": "How round window corners are, in pixels; windows are clipped to them."
+                },
+                "shadow": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Shadows",
+                    "description": "A soft shadow under every window."
+                },
+                "focusRing": {
+                    "type": "boolean",
+                    "default": false,
+                    "title": "Focus ring and border",
+                    "description": "Off hides niri's focus ring and border around windows, as on Googlebook. On leaves them to niri's config."
+                }
+            }
+        },
         "widgets": {
             "type": "object",
             "title": "Widgets",

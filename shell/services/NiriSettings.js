@@ -1,7 +1,8 @@
 // The shell's settings that niri takes (D70, D74), as rutile-settings.kdl, which niri reads through rutile.kdl,
 // included at the end of niri's own config: included sections merge, so each value here wins over the user's.
-// Each part has its own switch and is written only while on: input (Settings > Keyboard, mouse & touchpad) and
-// animations (niri's following the shell's animation speed, Settings > Accessibility). niri 26.04 merges an
+// Each part has its own switch and is written only while on: input (Settings > Keyboard, mouse & touchpad),
+// animations (niri's following the shell's animation speed, Settings > Accessibility) and windows (Settings >
+// Windows: floating, rounded, shadowed, D88). niri 26.04 merges an
 // included touchpad, mouse or xkb section by replacing the user's whole (merge_clone!), so a flag left out here
 // is off whatever the user's config says; animations take `on`, which undoes the user's `off`. No QML, so it
 // tests alone.
@@ -45,10 +46,26 @@ function animations(speed) {
     return "animations {\n    on\n    slowdown " + num(1 / speed) + "\n}\n";
 }
 
-// The whole file: `parts` {input: s or null, animations: speed or null}; "" when no part is on (the file goes).
+// Googlebook's windows (plan 3.1, D88): one rule for every window, after the user's own (rutile.kdl comes last),
+// so its values win. `w`: {floating, cornerRadius, shadow, focusRing}. Shadows take niri's own look; with the
+// focus ring off, niri's border goes too, and on, both are left to niri's config.
+function windows(w) {
+    const rule = [];
+    if (w.floating) rule.push("open-floating true");
+    rule.push("geometry-corner-radius " + Math.round(w.cornerRadius));
+    rule.push("clip-to-geometry true");
+    let text = rule.map(l => "    " + l + "\n").join("");
+    if (w.shadow) text += block("shadow", ["on"], 4);
+    if (!w.focusRing) text += block("focus-ring", ["off"], 4) + block("border", ["off"], 4);
+    return "window-rule {\n" + text + "}\n";
+}
+
+// The whole file: `parts` {input: s or null, animations: speed or null, windows: w or null}; "" when no part is
+// on (the file goes).
 function kdl(parts) {
     const out = [];
     if (parts.input) out.push(input(parts.input));
+    if (parts.windows) out.push(windows(parts.windows));
     if (parts.animations !== null && parts.animations !== undefined) out.push(animations(parts.animations));
     if (out.length === 0) return "";
     return "// Written by Rutile Shell from its settings; niri reads it through rutile.kdl, after its own config.\n" +

@@ -204,10 +204,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 ## Phase 3: windows on niri
 
-- [ ] **3.1** Googlebook-like floating windows via niri window rules (default floating, corner radius, shadow,
-  focus ring); our own apps draw M3E title bars with ChromeOS-style caption buttons; third-party apps get GTK/Qt
-  theming and rules (niri draws no title bars). Our own surfaces can blur with Quickshell's `BackgroundEffect`
-  (niri supports `ext-background-effect-v1`, D38); third-party windows get none.
+- [x] **3.1** Googlebook-like windows (D88, unreleased): Settings > Windows writes one niri window rule after the
+  user's (floating when opened, corner radius with clipping, niri's shadow, no focus ring or border; each its own
+  switch, the main one off by default) into rutile-settings.kdl. Our own windows (Settings, Widgets, the widget
+  preview) turn Qt's decorations off and draw an M3E title bar (AppFrame, TitleBar): icon and name, maximize and
+  close, move on press, maximize on double click, resize edges. No minimize (niri has none). Third-party apps keep
+  their own decorations with the GTK/Qt theming of D59. Not done: blur behind our windows (`BackgroundEffect`),
+  an app menu in the title bar (Googlebook's dropdown), keyboard window snapping.
 
 ## Phase 4: widget system (the core feature)
 

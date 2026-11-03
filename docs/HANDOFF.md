@@ -58,6 +58,9 @@ surfaces), no focus ring. See `docs/components.md`.
 2. Widget generation and the local-model trial are deferred (D82): widgets are hand-written JSON for now. When
    they return, `llm-docs` is the remaining task (`widget-templates` is retired).
 3. Finish the component kit (plan item 1.5), then Phase 2.
+4. The maintainer tries Settings > Windows (3.1, D88) on the real session: floating, corners, shadow, and the new
+   title bars on Settings and Widgets (move, maximize, resize with a real pointer, which the nested tests could not
+   do).
 
 ## 3. Resume in five minutes
 

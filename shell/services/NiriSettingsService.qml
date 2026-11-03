@@ -1,5 +1,5 @@
-// The shell's settings into niri (D70, D74): the parts that are on (Settings > Keyboard, mouse & touchpad;
-// Accessibility's "niri's animations too") go to $XDG_CONFIG_HOME/niri/rutile-settings.kdl (NiriSettings.js),
+// The shell's settings into niri (D70, D74, D88): the parts that are on (Settings > Keyboard, mouse & touchpad;
+// Accessibility's "niri's animations too"; Settings > Windows) go to $XDG_CONFIG_HOME/niri/rutile-settings.kdl (NiriSettings.js),
 // which niri reads through rutile.kdl; niri watches it and applies a change at once. With no part on the file is
 // removed, and niri's own config is all again. It writes only when the text changes.
 pragma Singleton
@@ -16,6 +16,7 @@ Singleton {
     readonly property string path: dir + "/rutile-settings.kdl"
     readonly property bool inputOn: Settings.value("input.enabled") === true
     readonly property bool animationsOn: Settings.value("motion.niri") === true
+    readonly property bool windowsOn: Settings.value("windows.enabled") === true
     readonly property string text: NiriSettings.kdl({
         input: !inputOn ? null : {
             keyboardLayout: Settings.value("input.keyboardLayout") ?? "",
@@ -27,7 +28,13 @@ Singleton {
             mouseNaturalScroll: Settings.value("input.mouseNaturalScroll") === true,
             mouseSpeed: Settings.value("input.mouseSpeed"), mouseFlat: Settings.value("input.mouseFlat") === true
         },
-        animations: animationsOn ? Motion.speed : null
+        animations: animationsOn ? Motion.speed : null,
+        windows: !windowsOn ? null : {
+            floating: Settings.value("windows.floating") === true,
+            cornerRadius: Settings.value("windows.cornerRadius"),
+            shadow: Settings.value("windows.shadow") === true,
+            focusRing: Settings.value("windows.focusRing") === true
+        }
     })
     property string written: "?"                // what the file has, as far as this shell knows ("?": not known)
     property string error: ""

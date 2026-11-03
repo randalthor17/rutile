@@ -1,5 +1,6 @@
 //@ pragma Env QT_QPA_PLATFORMTHEME = xdgdesktopportal
 //@ pragma IconTheme Papirus-Dark
+//@ pragma Env QT_WAYLAND_DISABLE_WINDOWDECORATION = 1
 // (Above: file dialogs go through the desktop portal, the user's own file chooser; read at start, D51. Icons from
 // Papirus-Dark, which has most apps' (tray icons sent by name; D62): the package brings it; an app's own icon in
 // hicolor is still found.)
