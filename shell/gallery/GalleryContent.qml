@@ -508,6 +508,55 @@ Rectangle {
                 }
             }
 
+            GallerySection {
+                title: "FABs and cards"
+                width: parent.width
+                Column {
+                    width: parent.width
+                    spacing: Spacing.lg
+                    Flow {
+                        width: parent.width
+                        spacing: Spacing.lg
+                        Fab { objectName: "galleryFab"; size: "small"; iconName: "edit" }
+                        Fab { objectName: "galleryFab"; iconName: "add" }
+                        Fab { objectName: "galleryFab"; size: "medium"; variant: "secondary"; iconName: "widgets" }
+                        Fab { objectName: "galleryFab"; size: "large"; iconName: "auto_awesome" }
+                        Fab { id: extendedFab; objectName: "galleryFab"; iconName: "edit"; text: "Compose"; onClicked: expanded = !expanded }
+                        Fab { objectName: "galleryFab"; size: "medium"; variant: "secondary"; iconName: "add"; text: "New widget" }
+                    }
+                    Flow {
+                        width: parent.width
+                        spacing: Spacing.lg
+                        Repeater {
+                            model: ["elevated", "filled", "outlined"]
+                            delegate: Card {
+                                id: galleryCard
+                                required property string modelData
+                                objectName: "galleryCard"
+                                type: modelData
+                                interactive: true
+                                width: 220
+                                height: 120
+                                Column {
+                                    x: Spacing.lg
+                                    y: Spacing.lg
+                                    spacing: Spacing.xs
+                                    Text { text: galleryCard.modelData; color: Colors.surfaceOn; font: Type.font(Type.titleMedium) }
+                                    Text { text: "A card you can click"; color: Colors.surfaceVariantOn; font: Type.font(Type.bodyMedium) }
+                                }
+                            }
+                        }
+                    }
+                    Text {
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        text: "Click the Compose FAB to collapse it to its icon. Cards and FABs have no shadows yet."
+                        color: Colors.surfaceVariantOn
+                        font: Type.font(Type.bodySmall)
+                    }
+                }
+            }
+
             // ---- editable grid: Quick Settings tiles ----
             GallerySection {
                 title: "Quick Settings panel"

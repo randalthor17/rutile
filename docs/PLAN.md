@@ -57,7 +57,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **1.5g** TextField and Dialog (unreleased): from the vendored Compose text field and dialog tokens; outlined
   and filled fields with a floating label, icons, supporting text, error and password; a basic dialog with icon,
   headline, actions, Enter and Escape; in the gallery; Quick Settings' Wi-Fi password uses the field.
-- [ ] **1.5** Component kit, remaining: FAB, Card, NavRail, GeminiGlow gradient border,
+- [x] **1.5h** FAB and Card (unreleased): from the vendored Compose FAB, extended FAB and card tokens; FAB sizes
+  small to large, primary or secondary, extended with a label that collapses to the icon; elevated, filled and
+  outlined cards, clickable when `interactive`; in the gallery. No shadows yet.
+- [ ] **1.5** Component kit, remaining: NavRail, GeminiGlow gradient border,
   and the 1.5c leftovers when something needs them. Likely next: GeminiGlow, or what Quick Settings (2.6) needs
   first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,

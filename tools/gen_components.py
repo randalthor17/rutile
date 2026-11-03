@@ -201,6 +201,26 @@ def token_table(file, corners):
     return out
 
 
+def fab_spec(corners):
+    """FAB sizes (small, baseline 56, medium, large), container colors and extended FAB sizes. The medium sizes'
+    ContainerShape is commented out upstream until ShapeKeyTokens has CornerLargeIncreased; it is that corner here,
+    and the generator fails once the TODO goes, so the token file gets read again."""
+    def sized(file):
+        t = token_table(file, corners)
+        if "container_shape" not in t:
+            find(file, r"// TODO: uncomment when ShapeKeyTokens\.CornerLargeIncreased is available\s*"
+                       r"// val ContainerShape = ShapeKeyTokens\.CornerLargeIncreased", "the medium FAB's shape TODO")
+            t["container_shape"] = corners["large_increased"]
+        return t
+    return {
+        "sizes": {name: sized(f"Fab{file}Tokens.kt")
+                  for name, file in (("small", "Small"), ("baseline", "Baseline"), ("medium", "Medium"), ("large", "Large"))},
+        "colors": {"primary": token_table("FabPrimaryContainerTokens.kt", corners),
+                   "secondary": token_table("FabSecondaryContainerTokens.kt", corners)},
+        "extended": {name: sized(f"ExtendedFab{name.capitalize()}Tokens.kt") for name in ("small", "medium", "large")},
+    }
+
+
 def find(file, pattern, what):
     m = re.search(pattern, (SRC / file).read_text(), re.S)
     if not m:
@@ -656,6 +676,9 @@ def build():
             "outlined": token_table("OutlinedTextFieldTokens.kt", corners),
         },
         "dialog": token_table("DialogTokens.kt", corners),
+        "fab": fab_spec(corners),
+        "card": {kind: token_table(f"{kind.capitalize()}CardTokens.kt", corners)
+                 for kind in ("elevated", "filled", "outlined")},
         "material_shapes": material_shapes(),
     }
 

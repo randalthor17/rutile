@@ -5,6 +5,7 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Floating action buttons and cards** join the shell's Material 3 building blocks (in the gallery).
 - **Night light.** A new Quick Settings tile warms the screen's colors (with wlsunset, which the package now
   brings). Set how warm in Settings > Display, and whether it warms all day or only from sunset to sunrise (at your
   weather place, or at times you choose). It stays on across restarts. If another program already controls the

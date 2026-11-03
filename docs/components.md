@@ -19,6 +19,8 @@ directory containing the entry file, so run things from `shell/`.
 | `Chip` | `assist` (flat or `elevated`) or `filter` (`selected`, `controlled`, check when selected); `iconName`, `trailingIconName` |
 | `TextField` | M3 text field, `type` outlined (default) or filled: `text`, `label` (floats up on focus or text), `placeholderText`, `iconName` (leading), `trailingIconName` with `trailingClicked()`, `supportingText`, `error`, `password`, `backgroundColor` (behind an outlined field, for its label's notch); `accepted(text)`, `input` |
 | `Dialog` | M3 basic dialog card: `iconName`, `headline`, `supportingText`, a default slot, `actions` [{id, text, type}], `acceptId` (Enter), `dismissId` (Escape); `chosen(id)`; 280 to 560 px wide; shown by the caller over a scrim with a `PopupLoader` |
+| `Fab` | M3 Expressive FAB: `size` small, baseline, medium, large; `variant` primary or secondary; `iconName`; with `text` an extended FAB (not small), `expanded` false collapses it to the icon; `clicked()` |
+| `Card` | M3 card, `type` elevated, filled or outlined; a default slot laid out by the caller; `interactive` for hover, press and `clicked()` |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 | `ShapeMorph` | a shape from the M3 Expressive shape library (`MaterialShapes.names`: `circle`, `cookie9Sided`, `softBurst`, ... 35 in all), filled with `color`; changing `shape` morphs to it; `morphing`, `progress` |
 | `PopupMotion` | the open and close motion every popup, dropdown and menu uses (D43): `target`, `shown`, `origin` (an `Item.TransformOrigin`); `hidden()` after closing |
@@ -114,6 +116,10 @@ override, records it in `components.json`, and fails if the upstream TODOs disap
 Text field and dialog tokens come from `FilledTextFieldTokens.kt`, `OutlinedTextFieldTokens.kt` and
 `DialogTokens.kt` (vendored 2026-11-03, after the others). The filled field's `CornerExtraSmallTop` shape is the
 extra-small radius on the top corners only; the generator takes the radius and TextField squares the bottom.
+FAB and card tokens (the `Fab*`, `ExtendedFab*` and `*CardTokens.kt` files) were vendored the next day. The medium
+FAB's and medium extended FAB's `ContainerShape` is commented out upstream until `CornerLargeIncreased` exists in
+ShapeKeyTokens; the generator uses that corner (20) and fails once the TODO goes. The extended FAB's label style is
+Compose's (`ExtendedFloatingActionButton`: titleMedium, titleLarge, headlineSmall), not a token.
 
 ## Not done yet
 
@@ -121,6 +127,8 @@ extra-small radius on the top corners only; the generator takes the radius and T
   other two track slots (end of the active part, start of the inactive part) that MDC also offers.
 - **TextField:** prefix and suffix, a character counter, multi-line; the label's notch is drawn over
   `backgroundColor`, not cut out of the outline. **Dialog:** full-screen dialogs, a scrim of its own.
+- **FAB and card:** no shadows (their elevation is the container color, as `elevated` buttons), no FAB menu, no
+  tertiary FAB (Compose has no tertiary container token file).
 - **ShapeMorph:** filling a shape with an image (the cookie-shaped picture in Googlebook's "Up next" widget),
   rotation while morphing (Compose's loading indicator), outlines.
 - **Progress:** indeterminate (flat and wavy) and circular indicators. The tokens for circular are generated.
