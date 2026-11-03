@@ -1,6 +1,7 @@
 # Rutile Shell as a package (plan 6.1): the QML shell, the theme templates it renders from, the compiled Firefox
 # host (D54), and `rutile-shell` (bin/rutile-shell), which runs it under Quickshell with everything it calls on PATH
 # and its fonts visible to Qt, Papirus-Dark for its icons (after the user's own folders; D62), and calls the running one (`rutile-shell lock lock`; `rutile-shell --help` lists all).
+# GPU widgets name cards from libdrm's amdgpu.ids (libdrm is in Qt's closure already) and hwdata's pci.ids (D87).
 {
   lib,
   stdenv,
@@ -21,6 +22,8 @@
   material-symbols,
   google-sans-flex,
   papirus-icon-theme,
+  libdrm,
+  hwdata,
 }:
 let
   # The system's fontconfig first (every other font keeps working), then the two fonts the shell is drawn with.
@@ -41,7 +44,7 @@ let
 in
 stdenv.mkDerivation {
   pname = "rutile-shell";
-  version = "0.8.0";
+  version = "0.9.0";
 
   src = lib.fileset.toSource {
     root = ../.;
@@ -86,7 +89,9 @@ stdenv.mkDerivation {
       --set RUTILE_CLI $out/bin/rutile-shell \
       --prefix PATH : ${lib.makeBinPath ([ quickshell ] ++ runtime)} \
       --set FONTCONFIG_FILE ${fontsConf} \
-      --suffix XDG_DATA_DIRS : ${papirus-icon-theme}/share
+      --suffix XDG_DATA_DIRS : ${papirus-icon-theme}/share \
+      --set RUTILE_AMDGPU_IDS ${libdrm}/share/libdrm/amdgpu.ids \
+      --set RUTILE_PCI_IDS ${hwdata}/share/hwdata/pci.ids
     runHook postInstall
   '';
 

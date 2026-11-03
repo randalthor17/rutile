@@ -9,7 +9,7 @@
 .import "SourceCatalog.js" as Catalog
 
 var MAX_PROBLEMS = 15;
-var NODE_TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"];
+var NODE_TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip", "chart"];
 var BINDING = /\{\{\s*([^{}]*?)\s*\}\}/g;
 
 function isObject(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }

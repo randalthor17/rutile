@@ -44,7 +44,8 @@ Item {
         height: root.height
         sourceComponent: Spec.drawable(root.node, root.depth) ? ({
             row: rowNode, column: columnNode, grid: gridNode, card: blockNode, tile: blockNode, header: headerNode,
-            heroImage: imageNode, stat: statNode, progress: progressNode, listRow: listRowNode, chip: chipNode
+            heroImage: imageNode, stat: statNode, progress: progressNode, listRow: listRowNode, chip: chipNode,
+            chart: chartNode
         })[root.node.type] : null
     }
 
@@ -230,6 +231,15 @@ Item {
                     font: root.font(Type.titleMedium)
                 }
             }
+        }
+    }
+    Component {
+        id: chartNode
+        ChartNode {
+            node: root.node
+            values: root.values
+            colors: root.colors
+            textScale: root.textScale
         }
     }
     Component {

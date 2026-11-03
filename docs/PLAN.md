@@ -254,6 +254,10 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   schema and `llms.txt`. First part is local-model task `llm-docs`.
 - [ ] **4.9** (deferred) Eval set of about 30 widget prompts; target at least 90% valid widgets within 3 retries on a model
   that fits 16 GB.
+- [x] **4.11** System monitor widgets and charts (D87): `system` extended, `gpu` and `sensors` sources, read every
+  second with 60-sample histories; a `chart` node (line, area, bar, pie, donut, gauge); five System templates. Several lines per chart (network), CPU and card names (amdgpu.ids, pci.ids), Intel, nouveau and NVIDIA readings.
+  Not done: Intel GPU use (i915 and xe give none in sysfs), several GPUs in one widget, per-disk and per-interface
+  choices.
 - [ ] **4.10** (later) QML escape-hatch widgets with a tiny base class.
 
 ## Phase 5: settings app UI

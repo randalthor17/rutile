@@ -61,6 +61,9 @@
         },
         {
           "$ref": "#/$defs/chip"
+        },
+        {
+          "$ref": "#/$defs/chart"
         }
       ]
     },
@@ -393,6 +396,211 @@
         }
       }
     },
+    "chart": {
+      "type": "object",
+      "description": "A chart (D87): a line or area chart of a list of numbers over time (one, or several as `series`), a bar chart of numbers or labelled values, a pie or donut of labelled values, or a gauge of one value.",
+      "required": [
+        "type",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "chart"
+        },
+        "kind": {
+          "enum": [
+            "line",
+            "area",
+            "bar",
+            "pie",
+            "donut",
+            "gauge"
+          ],
+          "description": "line and area: `values`, or `series` of histories (several lines); bar: `values` or `series`; pie and donut: `series`; gauge: `value`."
+        },
+        "values": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 300,
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "$ref": "#/$defs/binding"
+                  }
+                ]
+              }
+            }
+          ],
+          "description": "Numbers, oldest first: a binding to a source's numbers (e.g. {{system.cpuHistory}}) or a list of numbers and bindings."
+        },
+        "series": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "description": "Labelled values, one bar or slice each; for line and area, histories, one line each (e.g. download and upload).",
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "$ref": "#/$defs/text"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "$ref": "#/$defs/binding"
+                  }
+                ]
+              },
+              "tone": {
+                "$ref": "#/$defs/tone"
+              }
+            }
+          }
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/binding"
+            }
+          ],
+          "description": "A gauge's value."
+        },
+        "min": {
+          "type": "number",
+          "description": "The bottom of the scale; 0 when missing."
+        },
+        "max": {
+          "type": "number",
+          "description": "The top of the scale; the largest value when missing (100 for a gauge)."
+        },
+        "points": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 300,
+          "description": "How many samples a line or area chart's width spans, the newest at the right; 60 when missing (a minute of a source read every second)."
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 12
+        },
+        "tone": {
+          "$ref": "#/$defs/tone"
+        },
+        "size": {
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "description": "How tall it is; medium when missing."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "line",
+                  "area"
+                ]
+              }
+            }
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": [
+                  "values"
+                ]
+              },
+              {
+                "required": [
+                  "series"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "pie",
+                  "donut"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "series"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "gauge"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "bar"
+              }
+            }
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": [
+                  "values"
+                ]
+              },
+              {
+                "required": [
+                  "series"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
     "sources": {
       "type": "object",
       "additionalProperties": false,
@@ -407,6 +615,65 @@
               "minimum": -14,
               "maximum": 14,
               "description": "Hours from UTC for another place's time (a world clock); the local time when missing."
+            }
+          }
+        },
+        "system": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "history": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 300,
+              "description": "How many samples a history keeps; 60 when missing."
+            },
+            "every": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 10,
+              "description": "Seconds between readings; 1 when missing."
+            }
+          }
+        },
+        "gpu": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "card": {
+              "type": "string",
+              "pattern": "^(card[0-9]+|nvidia[0-9]+)$",
+              "description": "Which card: card1 (/sys/class/drm/card1) or nvidia0; the one with the most video memory when missing."
+            },
+            "history": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 300,
+              "description": "How many samples a history keeps; 60 when missing."
+            },
+            "every": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 10,
+              "description": "Seconds between readings; 1 when missing."
+            }
+          }
+        },
+        "sensors": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "history": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 300,
+              "description": "How many samples a history keeps; 60 when missing."
+            },
+            "every": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 10,
+              "description": "Seconds between readings; 1 when missing."
             }
           }
         },

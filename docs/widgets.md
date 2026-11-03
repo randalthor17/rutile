@@ -57,6 +57,7 @@ rutile-shell widgets install my-widget.json --place    # check, copy to ~/.confi
 | `progress` | `value` (0 to 1 or a binding), `style` (`linear`, `wavy`) | a progress bar |
 | `listRow` | `title`, `subtitle`, `icon`, `trailingIcon` | a list row; binding into a list repeats it (up to 8) |
 | `chip` | `label`, `icon` | a small outlined label |
+| `chart` | `kind`, then `values`, `series` or `value`; `min`, `max`, `points`, `label`, `unit`, `tone`, `size` | a chart (below) |
 | `heroImage` | `source` (path, URL or binding), `aspect` (`16:9`) | a picture |
 
 - `tone` is a surface color role: `primary_container`, `secondary_container`, `tertiary_container`,
@@ -81,12 +82,39 @@ Write `{{source.field}}` in any text. A missing value shows as a dash.
 | `files` | text, firstLine, lines (a list: text), json (the file's own fields) | `path` (required) |
 | `http` | the document's own fields, e.g. `{{http.rates.EUR}}` | `url` (required), `every` (seconds, at least 60) |
 
-`widgets/sources.json` describes every field. A web address is fetched only when Settings > Widgets > "Web data
+| `system` (more) | cpuName, cores (numbers), cpuFrequency, cpuHistory, memoryUsedGB, memoryFreeGB, memoryHistory, swap, swapUsed, swapTotal, disk, diskUsed, diskFree, diskTotal, diskUsedGB, diskFreeGB, download, upload, downloadRate, uploadRate, downloadHistory, uploadHistory | `every` (seconds, 1 when missing), `history` (samples, 60) |
+| `gpu` | available, name, usage, usageHistory, vram, vramUsed, vramTotal, vramUsedGB, vramFreeGB, temperature, temperatureHistory, hotspot, memoryTemperature, power, powerHistory, fan, clock | `card` (`card1`, `nvidia0`; the one with the most video memory when missing), `every`, `history` |
+| `sensors` | cpu, cpuHistory, nvme, hottest, temperatures (a list: name, value), cpuPower (RAPL; usually needs root) | `every`, `history` |
+
+`widgets/sources.json` describes every field. A field the hardware does not report (a GPU without a hotspot sensor)
+shows a dash. A web address is fetched only when Settings > Widgets > "Web data
 widgets may read" allows it (the Widgets app's Use allows a template's own).
 
 ```json
 "sources": { "http": { "url": "https://api.frankfurter.dev/v1/latest?from=USD", "every": 3600 } }
 ```
+
+## Charts
+
+```json
+{ "type": "chart", "kind": "area", "values": "{{system.cpuHistory}}", "label": "CPU", "unit": "%", "max": 100 }
+{ "type": "chart", "kind": "gauge", "value": "{{gpu.usage}}", "unit": "%", "label": "GPU", "size": "small" }
+{ "type": "chart", "kind": "donut", "label": "RAM", "unit": "GB", "series": [
+    { "label": "Used", "value": "{{system.memoryUsedGB}}" },
+    { "label": "Free", "value": "{{system.memoryFreeGB}}", "tone": "surface_variant" } ] }
+{ "type": "chart", "kind": "bar", "values": "{{system.cores}}", "max": 100 }
+```
+
+| Kind | Data | Draws |
+|---|---|---|
+| `line`, `area` | `values`: a history (`{{system.cpuHistory}}`) or a list of numbers; or `series` of histories, one line each | a line over time; the newest at the right, `points` samples across (60 when missing: a minute) |
+| `bar` | `values` (one bar each) or `series` (labelled bars) | bars from `min` |
+| `pie`, `donut` | `series`: `[{ "label", "value", "tone" }]` | slices with a legend; a donut shows `label` in its middle |
+| `gauge` | `value` | three quarters of a ring, from `min` (0) to `max` (100) |
+
+`min` is 0 and `max` the largest value unless given. `size` is `small`, `medium` (default) or `large`. `tone` colors a
+line, bars or a gauge; series take primary, tertiary, secondary and error in turn unless they name a tone (on a
+tinted card or tile, its text color, fading).
 
 ## On the desktop
 

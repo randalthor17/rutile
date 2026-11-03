@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "name": "Temperatures",
+  "root": {
+    "type": "tile",
+    "tone": "secondary_container",
+    "children": [
+      {
+        "type": "header",
+        "icon": "device_thermostat",
+        "title": "Temperatures"
+      },
+      {
+        "type": "chart",
+        "kind": "bar",
+        "unit": "°C",
+        "max": 100,
+        "series": [
+          {
+            "label": "CPU",
+            "value": "{{sensors.cpu}}"
+          },
+          {
+            "label": "GPU",
+            "value": "{{gpu.temperature}}"
+          },
+          {
+            "label": "Hotspot",
+            "value": "{{gpu.hotspot}}"
+          },
+          {
+            "label": "VRAM",
+            "value": "{{gpu.memoryTemperature}}"
+          },
+          {
+            "label": "NVMe",
+            "value": "{{sensors.nvme}}"
+          }
+        ]
+      }
+    ]
+  }
+}

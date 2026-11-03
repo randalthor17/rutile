@@ -26,7 +26,7 @@ Item {
         const add = t => Spec.bindingsOf(typeof t === "string" ? t : "").forEach(b => { if (out.indexOf(b) < 0) out.push(b); });
         const walk = n => {
             if (!n || typeof n !== "object") return;
-            ["title", "subtitle", "label", "value", "source"].forEach(k => add(n[k]));
+            Spec.textsOf(n).forEach(t => add(t[1]));
             (Spec.list(n.children) ?? []).forEach(walk);
         };
         walk(node);

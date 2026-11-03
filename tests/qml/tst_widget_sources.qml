@@ -67,12 +67,21 @@ TestCase {
     }
 
     function test_system() {
-        const proc = n => "cpu  " + n.join(" ") + "\ncpu0 1 2 3 4\nMemTotal:       16303112 kB\n" +
-                          "MemFree:         1000000 kB\nMemAvailable:   10781884 kB\n11523.45 80000.12\n0.52 0.48 0.40 2/1234 5678\n";
-        const a = Sources.procSample(proc([100, 0, 50, 800, 50, 0, 0, 0, 0, 0]));
-        const b = Sources.procSample(proc([160, 0, 70, 900, 70, 0, 0, 0, 10, 0]));
+        // what SystemSource's script prints (D87): /proc/stat, meminfo, uptime, loadavg, net/dev, df -P -B1 /, freqs
+        const proc = (n, core, rx, tx) => "cpu  " + n.join(" ") + "\ncpu0 " + core.join(" ") + "\nMemTotal:       16303112 kB\n" +
+            "MemFree:         1000000 kB\nMemAvailable:   10781884 kB\nSwapTotal:       8388604 kB\nSwapFree:        6291452 kB\n" +
+            "11523.45 80000.12\n0.52 0.48 0.40 2/1234 5678\n" +
+            "Inter-|   Receive                                                |  Transmit\n" +
+            " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n" +
+            "    lo: " + (rx * 3) + "   28935    0    0    0     0          0         0 " + (tx * 3) + "   28935    0    0    0     0       0          0\n" +
+            "enp8s0: " + rx + " 7967539    0   54    0     0          0      9857 " + tx + " 2171498    0    0    0     0       0          0\n" +
+            "Filesystem         1-blocks        Used   Available Capacity Mounted on\n" +
+            "/dev/nvme0n1p2 116489654272 99924738048 10598969344      91% /\nfreq 4201676\nfreq 3600000\n";
+        const p = n => proc(n, [10, 0, 10, 80, 0, 0, 0, 0], 1000000, 50000);
+        const a = Sources.procSample(p([100, 0, 50, 800, 50, 0, 0, 0, 0, 0]));
+        const b = Sources.procSample(proc([160, 0, 70, 900, 70, 0, 0, 0, 10, 0], [40, 0, 20, 140, 0, 0, 0, 0], 3097152, 1098576));
         compare(a.cpu.total, 1000, "guest is already in user: not counted twice");
-        const s = Sources.system(a, b);
+        const s = Sources.system(a, b, 2, { cpuHistory: [1, 2] }, {}, "AMD Ryzen 5 7600");
         fieldsMatch("system", s);
         // 200 ticks passed, 120 of them idle or waiting: 40 % busy
         compare(s.cpu, 40);
@@ -82,7 +91,90 @@ TestCase {
         compare(s.memoryTotal, "16 GB");
         compare(s.uptime, "3 h 12 min");
         compare(s.load, "0.52");
-        compare(Sources.system(null, b).cpu, 0, "one sample: no processor use yet");
+        compare(s.cores, [40], "a core: 100 more ticks, 60 of them idle");
+        compare(s.cpuName, "AMD Ryzen 5 7600");
+        compare(Sources.cpuName("processor\t: 0\nvendor_id\t: AuthenticAMD\nmodel name\t: AMD Ryzen 5 7600 6-Core Processor\n"), "AMD Ryzen 5 7600");
+        compare(Sources.cpuName("model name\t: Intel(R) Core(TM) i7-12700K CPU @ 3.60GHz\n"), "Intel Core i7-12700K");
+        compare(Sources.cpuName("model name\t: AMD Ryzen 7 7840U w/ Radeon 780M Graphics\n"), "AMD Ryzen 7 7840U w/ Radeon 780M Graphics");
+        compare(Sources.cpuName("processor\t: 0\nHardware\t: BCM2835\n"), "BCM2835", "ARM");
+        compare(Sources.cpuName(""), "");
+        compare(s.cpuFrequency, "4.2 GHz", "the fastest core");
+        compare(s.cpuHistory, [1, 2, 40], "the history grows");
+        compare([s.memoryUsedGB, s.memoryFreeGB], [5.3, 10.3]);
+        compare([s.swap, s.swapUsed, s.swapTotal].join(), "25,2 GB,8 GB");
+        compare([s.disk, s.diskUsed, s.diskFree, s.diskTotal].join(), "90,93 GB,9.9 GB,108 GB", "used of used and free, as df");
+        compare([s.download, s.upload, s.downloadRate, s.uploadRate].join(), "1 MB/s,512 KB/s,1024,512",
+                "2 MB and 1 MB in 2 s, loopback left out");
+        compare(Sources.system(null, b, 0, null, {}).cpu, 0, "one sample: no processor use yet");
+        compare(Sources.system(null, b, 0, null, {}).downloadRate, 0, "nor a rate");
+        let h = null;
+        for (let i = 0; i < 40; i++) h = Sources.system(a, b, 2, h, { history: 5 });
+        compare(h.cpuHistory.length, 5, "a history keeps `history` samples");
+        compare(Sources.historyLength({}), 60, "a minute at one reading a second");
+        compare(Sources.historyLength({ history: 1000 }), 60, "out of range: the default");
+        compare(Sources.pollInterval({}), 1000, "every second");
+        compare(Sources.pollInterval({ every: 0.5 }), 500);
+        compare(Sources.pollInterval({ every: 0.1 }), 1000, "too often: the default");
+        compare(Sources.rate(500 * 1024 * 1024), "500 MB/s");
+    }
+
+    // D87: the cards' sysfs as GpuSource's script prints it (this maintainer's iGPU and RX 9060 XT), nvidia-smi's line
+    function test_gpu() {
+        const text = "card card0\nvendor 0x1002\ngpu_busy_percent 0\nmem_info_vram_total 536870912\nmem_info_vram_used 22933504\n" +
+            "sclk 1: 600Mhz *\ntemp1_input 41000 edge\npower1_input 35091000 PPT\n" +
+            "card card1\nvendor 0x1002\ngpu_busy_percent 4\nmem_info_vram_total 17095983104\nmem_info_vram_used 569626624\n" +
+            "sclk 1: 2617Mhz *\ntemp1_input 43000 edge\ntemp2_input 45000 junction\ntemp3_input 60000 mem\n" +
+            "power1_average 17000000 PPT\npower1_input 99000000 PPT\nfan1_input 0 \n";
+        const cards = Sources.gpuSample(text);
+        compare(cards.map(c => c.name).join(), "card0,card1");
+        const names = Sources.gpuNames("name card0 1002:164e AMD Radeon 610M\nname card1 1002:7590 AMD Radeon RX 9060 XT\n");
+        const g = Sources.gpu(cards, {}, null, null, 0, names);
+        fieldsMatch("gpu", g);
+        compare(g.name, "AMD Radeon RX 9060 XT", "the one with the most video memory, by its name");
+        compare(Sources.gpu(cards, {}, null).name, "AMD card1", "no names: vendor and card");
+        compare(JSON.stringify(Sources.gpuNames("name card0 8086:a780 pci Raptor Lake-S GT1 [UHD Graphics 770]\n" +
+                                                "name card1 10de:2786 pci AD104 [GeForce RTX 4070]\nname card2 1af4:1050 \n" +
+                                                "name card3 1002:73bf pci Navi 21\n")),
+                JSON.stringify({ card0: "Intel UHD Graphics 770", card1: "NVIDIA GeForce RTX 4070", card2: "1af4 1af4:1050", card3: "AMD Navi 21" }),
+                "pci.ids: the bracket after the vendor; none: the PCI id");
+        compare([g.usage, g.vram, g.vramUsed, g.vramTotal, g.vramUsedGB, g.vramFreeGB].join(), "4,3,0.5 GB,16 GB,0.5,15.4");
+        compare([g.temperature, g.hotspot, g.memoryTemperature, g.power, g.fan, g.clock].join(), "43,45,60,17,0,2.62 GHz", "the average power, not the instant one, when there are both");
+        compare(g.usageHistory, [4]);
+        const i = Sources.gpu(cards, { card: "card0" }, null, null, 0, names);
+        compare([i.name, i.power, i.hotspot === undefined, i.fan === undefined].join(), "AMD Radeon 610M,35,true,true",
+                "the card named; power1_input when there is no average; what it lacks is missing");
+        compare(Sources.gpu(cards, { card: "card0" }, null).clock, "600 MHz", "under 1 GHz: in MHz");
+        compare(Sources.gpu(cards, { card: "card7" }, null).available, false);
+        compare(Sources.gpu([], {}, null).available, false);
+        const nv = Sources.gpu(Sources.gpuSample("nvidia 37, 2048, 8192, 55, 120.5, 40, 1800, NVIDIA GeForce RTX 4070, Ti\n"), {}, null);
+        compare([nv.name, nv.usage, nv.vram, nv.temperature, nv.power, nv.fan, nv.clock].join("|"),
+                "NVIDIA GeForce RTX 4070, Ti|37|25|55|121|40|1.80 GHz", "nvidia-smi names it (a comma in a name is kept)");
+        // Intel (i915 integrated, xe discrete): no use, a clock, a discrete card's temperature and energy counter
+        const intel = t => "card card0\nvendor 0x8086\ndriver i915\ngtfreq 350\n" +
+                           "card card1\nvendor 0x8086\ndriver xe\ngtfreq 2050\ntemp1_input 51000 pkg\nenergy1_input " + t + " \n";
+        const before = Sources.gpuSample(intel(1000000)), after = Sources.gpuSample(intel(91000000));
+        const xe = Sources.gpu(after, { card: "card1" }, null, before, 2, {});
+        compare([xe.available, xe.usage === undefined, xe.vram === undefined, xe.clock, xe.temperature, xe.power].join(),
+                "true,true,true,2.05 GHz,51,45", "no use or video memory; 90 J in 2 s: 45 W");
+        const igpu = Sources.gpu(after, { card: "card0" }, null, before, 2, {});
+        compare([igpu.clock, igpu.power === undefined, igpu.temperature === undefined].join(), "350 MHz,true,true");
+        compare(Sources.gpu(after, {}, null, before, 2, {}).name, "Intel card0", "no video memory anywhere: the first card");
+        // nouveau: what its hwmon gives
+        const nouveau = Sources.gpu(Sources.gpuSample("card card0\nvendor 0x10de\ndriver nouveau\ntemp1_input 48000 \npower1_input 31000000 \n"), {}, null);
+        compare([nouveau.temperature, nouveau.power, nouveau.usage === undefined].join(), "48,31,true");
+    }
+    function test_sensors() {
+        const text = "hwmon nvme\ntemp1_input 44850 Composite\nhwmon k10temp\ntemp1_input 46000 Tctl\ntemp3_input 37625 Tccd1\n" +
+            "hwmon gigabyte_wmi\ntemp1_input 33000 \ntemp4_input -55000 \nhwmon amdgpu\ntemp1_input 43000 edge\nrapl 1000000\n";
+        const a = Sources.sensorsSample(text);
+        const b = Sources.sensorsSample(text.replace("rapl 1000000", "rapl 31000000"));
+        const s = Sources.sensors(a, b, 2, null, {});
+        fieldsMatch("sensors", s);
+        compare([s.cpu, s.nvme, s.hottest, s.cpuPower].join(), "46,45,46,15", "30 J in 2 s: 15 W");
+        compare(s.temperatures.map(t => t.name + "=" + t.value).join(), "nvme Composite=45,k10temp Tctl=46,k10temp Tccd1=38,gigabyte_wmi temp1=33,amdgpu edge=43",
+                "every plausible sensor, unlabelled ones by their file; -55 is no sensor");
+        const noRapl = Sources.sensors(null, Sources.sensorsSample("hwmon coretemp\ntemp1_input 51000 Package id 0\n"), 0, null, {});
+        compare([noRapl.cpu, noRapl.cpuPower, noRapl.nvme].join(), "51,,", "Intel's package; no power without RAPL");
     }
 
     function test_countdown() {

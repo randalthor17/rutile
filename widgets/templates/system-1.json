@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "Processor",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "icon": "developer_board",
+        "title": "{{system.cpuName}}"
+      },
+      {
+        "type": "chart",
+        "kind": "area",
+        "values": "{{system.cpuHistory}}",
+        "label": "{{system.cpuFrequency}}",
+        "unit": "%",
+        "max": 100
+      },
+      {
+        "type": "row",
+        "spacing": "sm",
+        "children": [
+          {
+            "type": "chip",
+            "icon": "thermostat",
+            "label": "{{sensors.cpu}} °C"
+          },
+          {
+            "type": "chip",
+            "icon": "speed",
+            "label": "Load {{system.load}}"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -7,7 +7,7 @@
 .import "SourceCatalog.js" as Catalog
 
 var VERSION = 1;
-var TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"];
+var TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip", "chart"];
 var CONTAINERS = ["row", "column", "grid", "card", "tile"];
 var MAX_DEPTH = 12;                 // deeper nodes are left out (a widget is a few levels; this stops runaway ones)
 var MISSING = "—";                  // what a binding shows while its source has no value
@@ -71,14 +71,31 @@ function bindingProblem(path) {
     return parts.length === 2 ? "" : path + " has no fields below it";
 }
 
+// A node's texts that may hold bindings, as [where (a field path in the node), text]: its own fields, and a chart's
+// values and series (D87).
+function textsOf(node) {
+    var out = [];
+    ["title", "subtitle", "label", "value", "source", "values"].forEach(function (k) {
+        if (typeof node[k] === "string") out.push([k, node[k]]);
+    });
+    (list(node.values) || []).forEach(function (v, i) { if (typeof v === "string") out.push(["values[" + i + "]", v]); });
+    (list(node.series) || []).forEach(function (s, i) {
+        if (!s || typeof s !== "object") return;
+        ["label", "value"].forEach(function (k) {
+            if (typeof s[k] === "string") out.push(["series[" + i + "]." + k, s[k]]);
+        });
+    });
+    return out;
+}
+
 // The sources a widget binds, each with the fields it reads: {battery: ["level", "charging"], ...}; only sources the
 // catalog has (WidgetSources loads one object for each).
 function sourcesUsed(spec) {
     var out = {};
     function walk(node, depth) {
         if (!node || typeof node !== "object" || depth > MAX_DEPTH) return;
-        ["title", "subtitle", "label", "value", "source"].forEach(function (k) {
-            bindingsOf(typeof node[k] === "string" ? node[k] : "").forEach(function (b) {
+        textsOf(node).forEach(function (t) {
+            bindingsOf(t[1]).forEach(function (b) {
                 var parts = b.split(".");
                 if (!Catalog.sources[parts[0]]) return;
                 var fields = out[parts[0]] || (out[parts[0]] = []);
@@ -172,6 +189,92 @@ function toneColors(tone) {
     return { fill: fill, on: fill + "On", variant: fill + "On", tinted: true };
 }
 
+// ---- charts (D87) ----
+// The colors a chart's series take in turn when they name no tone.
+var CHART_TONES = ["primary", "tertiary", "secondary", "error"];
+var CHART_KINDS = ["line", "area", "bar", "pie", "donut", "gauge"];
+
+// A number from a literal or a binding ({{gpu.power}}, or text holding a number); NaN when there is none.
+function chartNumber(v, values) {
+    if (typeof v === "number") return v;
+    if (typeof v !== "string") return NaN;
+    var paths = bindingsOf(v);
+    var x = paths.length === 1 && v.trim().indexOf("{{") === 0 ? lookup(values, paths[0]) : v;
+    return typeof x === "number" ? x : (typeof x === "string" && x.trim() !== "" ? Number(x) : NaN);
+}
+// A chart's `values`: a binding to a source's numbers, or a list of numbers and bindings; the ones that are numbers.
+function chartValues(node, values) {
+    var v = node && node.values;
+    var items = typeof v === "string" ? list(lookup(values, bindingsOf(v)[0] || "")) : list(v);
+    return (items || []).map(function (x) { return chartNumber(x, values); }).filter(isFinite);
+}
+// A chart's `series`: [{label, value, tone}], the label filled, the value a number (0 when missing), the tone the
+// series' own or the next of CHART_TONES.
+function chartSeries(node, values) {
+    return (list(node && node.series) || []).map(function (s, i) {
+        var n = chartNumber(s && s.value, values);
+        return { label: resolve(s && s.label, values), value: isFinite(n) ? n : 0,
+                 tone: (s && s.tone) || CHART_TONES[i % CHART_TONES.length] };
+    });
+}
+// A line or area chart's lines: one per series, each its own history (`value` a binding to a source's numbers:
+// download and upload together), or the chart's `values` alone. [{label, numbers, tone}]; a tone is "" for the
+// chart's own color.
+function chartLines(node, values) {
+    var series = list(node && node.series);
+    if (!series) return [{ label: "", numbers: chartValues(node, values), tone: (node && node.tone) || "" }];
+    return series.map(function (s, i) {
+        return { label: resolve(s && s.label, values), numbers: chartValues({ values: s && s.value }, values),
+                 tone: (s && s.tone) || (i === 0 && node.tone) || CHART_TONES[i % CHART_TONES.length] };
+    });
+}
+// The scale: `min` (0, or lower when a value is), `max` (the largest value, at least min + 1; 100 for a gauge).
+function chartScale(node, numbers) {
+    var lo = typeof node.min === "number" ? node.min : Math.min.apply(null, [0].concat(numbers));
+    var hi = typeof node.max === "number" ? node.max
+           : node.kind === "gauge" ? 100 : Math.max.apply(null, [lo + 1].concat(numbers));
+    return { min: lo, max: hi > lo ? hi : lo + 1 };
+}
+// Where a value sits on the scale, 0 to 1.
+function chartPosition(v, scale) {
+    return Math.max(0, Math.min(1, (v - scale.min) / (scale.max - scale.min)));
+}
+// A value as a chart writes it: whole numbers as they are, others to one decimal.
+function chartText(v) {
+    if (!isFinite(v)) return MISSING;
+    return Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1);
+}
+// How many samples a line or area chart's width spans: its `points` (2 to 300), 60 when not given (a minute of a
+// source read every second), or as many values as it has when that is more and `points` is not given.
+function chartSpan(node, count) {
+    var n = Number(node && node.points);
+    return n >= 2 && n <= 300 ? Math.round(n) : Math.max(60, count);
+}
+// The points of a line through `numbers` across w x h: a fixed window of `span` samples, the newest at the right
+// edge, so a history fills in from the right and then scrolls, and its trend keeps its shape (D87). The oldest past
+// the window are left out; one value is a dot's worth of line.
+function linePoints(numbers, scale, w, h, span) {
+    span = Math.max(2, span || numbers.length);
+    if (numbers.length > span) numbers = numbers.slice(numbers.length - span);
+    if (numbers.length === 0) return [];
+    if (numbers.length === 1) numbers = [numbers[0], numbers[0]];
+    var step = w / (span - 1);
+    var first = w - (numbers.length - 1) * step;
+    return numbers.map(function (v, i) { return { x: first + i * step, y: h - chartPosition(v, scale) * h }; });
+}
+// The slices of a pie or donut: each series' start and sweep in degrees, clockwise from the top.
+function slices(series) {
+    var total = series.reduce(function (a, s) { return a + Math.max(0, s.value); }, 0);
+    var at = -90;
+    return series.map(function (s) {
+        var sweep = total > 0 ? Math.max(0, s.value) / total * 360 : 0;
+        var out = { start: at, sweep: sweep, label: s.label, value: s.value, tone: s.tone,
+                    share: total > 0 ? Math.max(0, s.value) / total : 0 };
+        at += sweep;
+        return out;
+    });
+}
+
 // What the renderer leaves out of a widget, as messages ("root.children[1]: unknown type 'map'"); empty when it
 // draws all of it.
 function problems(spec) {
@@ -182,10 +285,10 @@ function problems(spec) {
         if (depth > MAX_DEPTH) return out.push(where + ": deeper than " + MAX_DEPTH + " levels, left out");
         if (!node || typeof node !== "object" || TYPES.indexOf(node.type) < 0)
             return out.push(where + ": unknown type " + JSON.stringify(node && node.type) + ", left out");
-        ["title", "subtitle", "label", "value", "source"].forEach(function (k) {
-            bindingsOf(typeof node[k] === "string" ? node[k] : "").forEach(function (b) {
+        textsOf(node).forEach(function (t) {
+            bindingsOf(t[1]).forEach(function (b) {
                 var problem = bindingProblem(b);
-                if (problem) out.push(where + "." + k + ": " + problem + ", shows " + MISSING);
+                if (problem) out.push(where + "." + t[0] + ": " + problem + ", shows " + MISSING);
             });
         });
         if (CONTAINERS.indexOf(node.type) >= 0) {

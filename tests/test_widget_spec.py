@@ -27,7 +27,7 @@ class RealSpec(unittest.TestCase):
         self.assertEqual(wc.main([], out=out), 0, out.getvalue())
 
     def test_the_templates_pass_their_check(self):
-        # the Widgets app's 30 templates (plan 4.5, D82): written on main now, not by the local model
+        # the Widgets app's templates (plan 4.5, D82, D87): written on main now, not by the local model
         out = io.StringIO()
         self.assertEqual(wc.main(["--templates"], out=out), 0, out.getvalue())
 
@@ -74,7 +74,7 @@ class Sources(unittest.TestCase):
         for name, entry in catalog.items():
             self.assertTrue(entry["description"], name)
             for field, f in entry["fields"].items():
-                self.assertIn(f["type"], ("text", "number", "fraction", "boolean", "list", "open"), f"{name}.{field}")
+                self.assertIn(f["type"], ("text", "number", "fraction", "boolean", "numbers", "list", "open"), f"{name}.{field}")
                 self.assertTrue(f["description"], f"{name}.{field}")
                 if f["type"] == "list":
                     self.assertTrue(f["item"], f"{name}.{field}")

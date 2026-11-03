@@ -5,7 +5,7 @@
                                     and widgets/templates/*.json against it
     widget_check.py FILE ...        check only these widget files (against widgets/spec.schema.json)
     widget_check.py --schema S ...  use another schema file
-    widget_check.py --templates     also the widget-templates rules: 30 files <category>-<1..5>.json in
+    widget_check.py --templates     also the template rules: 5 files <category>-<1..5>.json per category in
                                     widgets/templates, no two with the same structure, each with a binding
 
 Standard library only, so the local model can run it in any shell (it once spent dozens of tool calls
@@ -29,7 +29,7 @@ MAX_PER_FILE = 15
 
 # The spec's node types (docs/sidework/tasks/widget-schema.md, plan item 4.1) and data sources (widgets/sources.json,
 # plan item 4.2: what each binding may read).
-NODE_TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
+NODE_TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip", "chart"]
 CATALOG = json.loads(SOURCES_FILE.read_text())["sources"]
 SOURCES = sorted(CATALOG)
 BINDING = re.compile(r"\{\{\s*([^{}]*?)\s*\}\}")
@@ -306,7 +306,7 @@ def find_property(schema, name, path=()):
             yield from find_property(v, name, path + (i,))
 
 
-TEMPLATE_CATEGORIES = ["weather", "daily-update", "world-clock", "finance", "countdown", "sports"]
+TEMPLATE_CATEGORIES = ["weather", "daily-update", "world-clock", "finance", "countdown", "sports", "system"]
 TEMPLATES_PER_CATEGORY = 5
 
 

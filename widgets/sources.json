@@ -1,5 +1,5 @@
 {
-  "_note": "The widget data sources (plan 4.2, D79): what a binding {{source.field}} can read. tools/widget_check.py checks bindings against it; tools/gen_sources.py makes shell/widgethost/SourceCatalog.js from it. A field's type: text, number, fraction (0 to 1, for progress), boolean, list (of items with the fields in `item`; a listRow that binds into one repeats per item), or open (any path below it: the source's own JSON). A source's options go in the widget's `sources` object (widgets/spec.schema.json).",
+  "_note": "The widget data sources (plan 4.2, D79): what a binding {{source.field}} can read. tools/widget_check.py checks bindings against it; tools/gen_sources.py makes shell/widgethost/SourceCatalog.js from it. A field's type: text, number, fraction (0 to 1, for progress), boolean, numbers (a list of numbers, newest last: a chart's `values`), list (of items with the fields in `item`; a listRow that binds into one repeats per item), or open (any path below it: the source's own JSON). A source's options go in the widget's `sources` object (widgets/spec.schema.json).",
   "version": 1,
   "sources": {
     "clock": {
@@ -29,16 +29,82 @@
       }
     },
     "system": {
-      "description": "Processor and memory use, read every 2 seconds.",
+      "description": "Processor, memory, swap, disk (/), network and uptime, read every second (option `every`, 0.5 to 10 s); histories keep the last `history` samples (60 when not given) for charts.",
       "fields": {
         "cpu": { "type": "number", "description": "Processor use in percent." },
         "cpuFraction": { "type": "fraction", "description": "Processor use, 0 to 1." },
+        "cpuName": { "type": "text", "description": "The processor's name, e.g. AMD Ryzen 5 7600 (from /proc/cpuinfo, without trademarks and core count)." },
+        "cores": { "type": "numbers", "description": "Each processor core's use in percent." },
+        "cpuFrequency": { "type": "text", "description": "The fastest core's clock, e.g. 4.2 GHz." },
+        "cpuHistory": { "type": "numbers", "description": "Processor use in percent, the last samples." },
         "memory": { "type": "number", "description": "Memory in use in percent." },
         "memoryFraction": { "type": "fraction", "description": "Memory in use, 0 to 1." },
         "memoryUsed": { "type": "text", "description": "Memory in use, e.g. 5.2 GB." },
         "memoryTotal": { "type": "text", "description": "All memory, e.g. 16 GB." },
+        "memoryUsedGB": { "type": "number", "description": "Memory in use in GB, for a pie chart." },
+        "memoryFreeGB": { "type": "number", "description": "Memory free (available) in GB." },
+        "memoryHistory": { "type": "numbers", "description": "Memory in use in percent, the last samples." },
+        "swap": { "type": "number", "description": "Swap in use in percent." },
+        "swapFraction": { "type": "fraction", "description": "Swap in use, 0 to 1." },
+        "swapUsed": { "type": "text", "description": "Swap in use, e.g. 1.2 GB." },
+        "swapTotal": { "type": "text", "description": "All swap." },
+        "disk": { "type": "number", "description": "The root file system's use in percent." },
+        "diskFraction": { "type": "fraction", "description": "Its use, 0 to 1." },
+        "diskUsed": { "type": "text", "description": "Used on it, e.g. 93 GB." },
+        "diskFree": { "type": "text", "description": "Free on it." },
+        "diskTotal": { "type": "text", "description": "Its size." },
+        "diskUsedGB": { "type": "number", "description": "Used, in GB, for a pie chart." },
+        "diskFreeGB": { "type": "number", "description": "Free, in GB." },
+        "download": { "type": "text", "description": "Receiving, e.g. 1.2 MB/s (every network but loopback)." },
+        "upload": { "type": "text", "description": "Sending." },
+        "downloadRate": { "type": "number", "description": "Receiving in KB/s." },
+        "uploadRate": { "type": "number", "description": "Sending in KB/s." },
+        "downloadHistory": { "type": "numbers", "description": "Receiving in KB/s, the last samples." },
+        "uploadHistory": { "type": "numbers", "description": "Sending in KB/s, the last samples." },
         "uptime": { "type": "text", "description": "Time since start, e.g. 3 h 12 min." },
         "load": { "type": "text", "description": "Load average over one minute, e.g. 0.52." }
+      }
+    },
+    "gpu": {
+      "description": "A graphics card, every second (option `every`); AMD, Intel, nouveau and NVIDIA (through nvidia-smi), each giving what its driver reports: amdgpu's sysfs, or nvidia-smi when installed. The card the `card` option names (e.g. card1), else the one with the most video memory. A field the card does not report is missing.",
+      "fields": {
+        "available": { "type": "boolean", "description": "Whether a card was found." },
+        "name": { "type": "text", "description": "The card's name, e.g. AMD Radeon RX 9060 XT (amdgpu.ids, pci.ids or nvidia-smi; the vendor and PCI id without them)." },
+        "usage": { "type": "number", "description": "Use in percent." },
+        "usageFraction": { "type": "fraction", "description": "Use, 0 to 1." },
+        "usageHistory": { "type": "numbers", "description": "Use in percent, the last samples." },
+        "vram": { "type": "number", "description": "Video memory in use in percent." },
+        "vramFraction": { "type": "fraction", "description": "Video memory in use, 0 to 1." },
+        "vramUsed": { "type": "text", "description": "Video memory in use, e.g. 4.2 GB." },
+        "vramTotal": { "type": "text", "description": "All video memory." },
+        "vramUsedGB": { "type": "number", "description": "Video memory in use in GB, for a pie chart." },
+        "vramFreeGB": { "type": "number", "description": "Video memory free in GB." },
+        "temperature": { "type": "number", "description": "Temperature in °C (amdgpu's edge)." },
+        "temperatureHistory": { "type": "numbers", "description": "Temperature in °C, the last samples." },
+        "hotspot": { "type": "number", "description": "The hottest spot in °C (amdgpu's junction)." },
+        "memoryTemperature": { "type": "number", "description": "Video memory temperature in °C." },
+        "power": { "type": "number", "description": "Power draw in watts." },
+        "powerHistory": { "type": "numbers", "description": "Power draw in watts, the last samples." },
+        "fan": { "type": "number", "description": "Fan speed: rpm (amdgpu) or percent (nvidia-smi)." },
+        "clock": { "type": "text", "description": "The graphics clock, e.g. 2.61 GHz (600 MHz below 1 GHz)." }
+      }
+    },
+    "sensors": {
+      "description": "Temperatures from every hwmon sensor, every second (option `every`), and the processor's power from RAPL when this user may read it (usually root only: then cpuPower is missing).",
+      "fields": {
+        "cpu": { "type": "number", "description": "The processor's temperature in °C (k10temp, zenpower or coretemp)." },
+        "cpuHistory": { "type": "numbers", "description": "The processor's temperature, the last samples." },
+        "nvme": { "type": "number", "description": "The first NVMe drive's temperature in °C." },
+        "hottest": { "type": "number", "description": "The hottest sensor in °C." },
+        "temperatures": {
+          "type": "list",
+          "description": "Every sensor with a plausible reading.",
+          "item": {
+            "name": { "type": "text", "description": "The driver and label, e.g. k10temp Tctl." },
+            "value": { "type": "number", "description": "°C." }
+          }
+        },
+        "cpuPower": { "type": "number", "description": "The processor's power in watts (RAPL)." }
       }
     },
     "countdown": {
@@ -99,14 +165,21 @@
     },
     "http": {
       "description": "A JSON document from a URL that Settings > Widgets allows (option url; every `every` seconds, at least 60). Its fields are read below http, e.g. {{http.rates.EUR}}.",
-      "fields": {}, "open": true
+      "open": true,
+      "fields": {}
     },
     "files": {
       "description": "A text file (option path; read again when it changes).",
       "fields": {
         "text": { "type": "text", "description": "The whole text, up to 2000 characters." },
         "firstLine": { "type": "text", "description": "The first line." },
-        "lines": { "type": "list", "description": "The lines, at most 50.", "item": { "text": { "type": "text", "description": "One line." } } },
+        "lines": {
+          "type": "list",
+          "description": "The lines, at most 50.",
+          "item": {
+            "text": { "type": "text", "description": "One line." }
+          }
+        },
         "json": { "type": "open", "description": "The file's JSON, when it is JSON, e.g. {{files.json.total}}." }
       }
     }

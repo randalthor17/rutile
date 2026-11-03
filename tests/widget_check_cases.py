@@ -46,6 +46,18 @@ BROKEN = {
     "not an object": [1, 2],
     "a number for a label": w({"type": "chip", "label": 5}),
     "constructor as a field": w({"type": "chip", "label": "x", "constructor": 1}),
+    "gauge without a value": w({"type": "chart", "kind": "gauge"}),
+    "pie without series": w({"type": "chart", "kind": "pie", "values": [1, 2]}),
+    "bar with neither": w({"type": "chart", "kind": "bar"}),
+    "unknown chart kind": w({"type": "chart", "kind": "radar", "values": [1]}),
+    "series item without a label": w({"type": "chart", "kind": "donut", "series": [{"value": 1}]}),
+    "values as code": w({"type": "chart", "kind": "line", "values": "{{system.cpuHistory}} * 2"}),
+    "values field unknown": w({"type": "chart", "kind": "line", "values": "{{system.cpuHist}}"}),
+    "gpu card option": w({"type": "chip", "label": "{{gpu.usage}}"}, sources={"gpu": {"card": "/dev/dri/card1"}}),
+    "two lines": w({"type": "chart", "kind": "line", "series": [{"label": "Down", "value": "{{system.downloadHistory}}"},
+                                                              {"label": "Up", "value": "{{system.uploadHistory}}"}]}),
+    "a line with neither": w({"type": "chart", "kind": "line"}),
+    "a good chart": w({"type": "chart", "kind": "bar", "series": [{"label": "A", "value": "{{gpu.power}}", "tone": "tertiary"}]}),
     "many problems": w({"type": "column", "children": [{"type": "chip", "x%d" % i: 1} for i in range(20)]}),
 }
 

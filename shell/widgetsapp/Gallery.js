@@ -10,6 +10,7 @@ var categories = [
     { id: "finance", title: "Finance", icon: "payments", tone: "primaryContainer", summary: "Exchange rates, crypto" },
     { id: "countdown", title: "Countdown", icon: "timer", tone: "secondaryContainer", summary: "Days to a date" },
     { id: "sports", title: "Sports", icon: "sports_soccer", tone: "tertiaryContainer", summary: "Fixtures, results, match day" },
+    { id: "system", title: "System", icon: "monitoring", tone: "secondaryContainer", summary: "CPU, GPU, memory, temperatures" },
     { id: "yours", title: "Your widgets", icon: "widgets", tone: "primaryContainer", summary: "~/.config/rutile/widgets" }
 ];
 

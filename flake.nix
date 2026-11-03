@@ -36,7 +36,7 @@
         # The Firefox colors' native-messaging host (D54), the shell's one compiled program.
         pywalfox-host = pkgs.stdenv.mkDerivation {
           pname = "rutile-pywalfox-host";
-          version = "0.8.0";
+          version = "0.9.0";
           src = pkgs.lib.fileset.toSource {
             root = ./.;
             fileset = pkgs.lib.fileset.unions [ ./Makefile ./native ];

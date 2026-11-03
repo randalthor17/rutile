@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "name": "Memory",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "icon": "memory_alt",
+        "title": "Memory"
+      },
+      {
+        "type": "chart",
+        "kind": "donut",
+        "label": "{{system.memory}} %",
+        "unit": "GB",
+        "series": [
+          {
+            "label": "Used",
+            "value": "{{system.memoryUsedGB}}"
+          },
+          {
+            "label": "Free",
+            "value": "{{system.memoryFreeGB}}",
+            "tone": "surface_variant"
+          }
+        ]
+      },
+      {
+        "type": "chip",
+        "icon": "swap_horiz",
+        "label": "Swap {{system.swapUsed}} of {{system.swapTotal}}"
+      }
+    ]
+  }
+}

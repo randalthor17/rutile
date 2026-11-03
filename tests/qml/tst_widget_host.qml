@@ -41,6 +41,88 @@ TestCase {
         return out;
     }
 
+    // ---- charts (D87) ----
+    function find(item, name, out) {
+        out = out ?? [];
+        if (item.objectName === name) out.push(item);
+        for (const c of item.children) find(c, name, out);
+        return out;
+    }
+    function chart(node, values) { return host(widget(Object.assign({ type: "chart" }, node)), values ?? {}); }
+    function test_chart_numbers() {
+        const v = { system: { cpuHistory: [10, 20, 30], cpu: 42 }, gpu: { power: "18" } };
+        compare(Spec.chartValues({ values: "{{system.cpuHistory}}" }, v), [10, 20, 30]);
+        compare(Spec.chartValues({ values: [1, "{{system.cpu}}", "{{nope.x}}", 3] }, v), [1, 42, 3], "a missing value is left out");
+        compare(Spec.chartValues({ values: "{{system.cpu}}" }, v), [], "a single number is no list");
+        const s = Spec.chartSeries({ series: [{ label: "Used", value: "{{system.cpu}}" }, { label: "Free {{system.cpu}}", value: 58, tone: "error" },
+                                              { label: "?", value: "{{gpu.missing}}" }] }, v);
+        compare(JSON.stringify(s), JSON.stringify([{ label: "Used", value: 42, tone: "primary" }, { label: "Free 42", value: 58, tone: "error" },
+                                                   { label: "?", value: 0, tone: "secondary" }]));
+        compare(Spec.chartNumber("{{gpu.power}}", v), 18, "text holding a number");
+        compare(JSON.stringify(Spec.chartScale({ kind: "line" }, [3, 9])), JSON.stringify({ min: 0, max: 9 }));
+        compare(JSON.stringify(Spec.chartScale({ kind: "gauge" }, [42])), JSON.stringify({ min: 0, max: 100 }));
+        compare(JSON.stringify(Spec.chartScale({ kind: "bar", min: 20, max: 10 }, [])), JSON.stringify({ min: 20, max: 21 }), "max below min: one step");
+        compare(JSON.stringify(Spec.chartScale({ kind: "line" }, [-5, 5])), JSON.stringify({ min: -5, max: 5 }));
+        const pts = Spec.linePoints([0, 50, 100], { min: 0, max: 100 }, 200, 100);
+        compare(JSON.stringify(pts), JSON.stringify([{ x: 0, y: 100 }, { x: 100, y: 50 }, { x: 200, y: 0 }]));
+        compare(Spec.linePoints([7], { min: 0, max: 7 }, 10, 10).length, 2, "one value: a flat line");
+        // a fixed window (the user's report: a few samples stretched across the width hid the trend)
+        const win = Spec.linePoints([0, 100], { min: 0, max: 100 }, 590, 100, 60);
+        compare(JSON.stringify(win), JSON.stringify([{ x: 580, y: 100 }, { x: 590, y: 0 }]), "two of 60 samples: at the right edge, 10 px apart");
+        const long = Spec.linePoints(Array.from({ length: 80 }, (_, i) => i), { min: 0, max: 100 }, 590, 100, 60);
+        compare([long.length, long[0].x, long[0].y].join(), "60,0,80", "more than the window: the newest 60");
+        compare(Spec.chartSpan({}, 10), 60);
+        compare(Spec.chartSpan({}, 90), 90, "a longer list than the default shows whole");
+        compare(Spec.chartSpan({ points: 20 }, 90), 20);
+        const sl = Spec.slices([{ value: 1 }, { value: 3 }, { value: -2 }]);
+        compare(sl.map(x => [x.start, x.sweep]).join(";"), "-90,90;0,270;270,0", "clockwise from the top; negative is nothing");
+        compare(Spec.chartText(42.0), "42");
+        compare(Spec.chartText(17.06), "17.1");
+        compare(Spec.chartText(NaN), Spec.MISSING);
+    }
+    function test_charts_draw() {
+        const v = { system: { cpuHistory: [10, 40, 20, 80], memoryUsedGB: 6, memoryFreeGB: 10, cores: [5, 50, 95] },
+                    gpu: { usage: 30 } };
+        const line = chart({ kind: "area", values: "{{system.cpuHistory}}", label: "CPU", unit: "%" }, v);
+        const plot = find(line, "chartLine")[0];
+        compare(plot.points.length, 4);
+        verify(plot.points[0].x > plot.width / 2, "4 of 60 samples sit at the right: " + plot.points[0].x);
+        compare(find(line, "chartLatest")[0].text, "80 %", "the newest value");
+        compare(find(line, "chartCaption")[0].text, "CPU");
+        verify(line.implicitHeight >= Spacing.xxxl * 2, "medium: two rows of 48");
+        const bars = chart({ kind: "bar", values: "{{system.cores}}", max: 100 }, v);
+        const b = find(bars, "chartBar");
+        compare(b.length, 3);
+        fuzzyCompare(b[2].height, 0.95 * Spacing.xxxl * 2, 0.5, "95 of 100");
+        const labelled = chart({ kind: "bar", series: [{ label: "A", value: 2 }, { label: "B", value: 4 }] });
+        compare(find(labelled, "chartBar").length, 2);
+        fuzzyCompare(find(labelled, "chartBar")[1].height, Spacing.xxxl * 2, 0.5, "the largest fills it");
+        const donut = chart({ kind: "donut", label: "Memory", unit: "GB",
+                              series: [{ label: "Used", value: "{{system.memoryUsedGB}}" }, { label: "Free", value: "{{system.memoryFreeGB}}" }] }, v);
+        const slices = find(donut, "chartSlice");
+        compare(slices.length, 2);
+        fuzzyCompare(slices[0].modelData.sweep, 135, 0.01, "6 of 16 GB");
+        compare(find(donut, "chartLegend").map(t => t.text).join("|"), "Used  6 GB|Free  10 GB");
+        const gauge = chart({ kind: "gauge", value: "{{gpu.usage}}", unit: "%", label: "GPU" }, v);
+        compare(find(gauge, "chartGaugeValue")[0].text, "30 %");
+        // several lines: download and upload in one chart, one scale, a legend with each newest value
+        const net = chart({ kind: "area", unit: "KB/s", series: [{ label: "Down", value: "{{system.downloadHistory}}" },
+                                                                   { label: "Up", value: "{{system.uploadHistory}}", tone: "tertiary" }] },
+                          { system: { downloadHistory: [100, 400], uploadHistory: [10, 50, 20] } });
+        const shapes = find(net, "chartLine");
+        compare(shapes.length, 2);
+        compare([shapes[0].points.length, shapes[1].points.length].join(), "2,3");
+        verify(shapes[1].points[2].y > shapes[0].points[1].y, "one scale for both: 20 sits lower than 400");
+        compare(shapes[1].color, Colors.tertiary, "the series' own tone");
+        compare(find(net, "chartLineLegend").map(t => t.text).join("|"), "Down  400 KB/s|Up  20 KB/s");
+        verify(!find(net, "chartLatest")[0].visible, "no single newest value");
+        compare(JSON.stringify(Spec.chartLines({ values: [1, 2], tone: "secondary" }, {})),
+                JSON.stringify([{ label: "", numbers: [1, 2], tone: "secondary" }]));
+        const empty = chart({ kind: "line", values: "{{system.nope}}" }, v);
+        compare(find(empty, "chartLine")[0].points.length, 0, "no data: nothing drawn, no error");
+        compare(host(widget({ type: "chart", kind: "pie", series: [{ label: "x", value: 1 }] })).problems.length, 0);
+    }
+
     // ---- more height than the content (a desktop widget made taller, D83) ----
     function test_a_taller_host_stretches_the_blocks() {
         const tile = t => ({ type: "tile", tone: "primary_container", children: [{ type: "header", title: t }] });

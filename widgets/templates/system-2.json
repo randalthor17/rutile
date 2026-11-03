@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "name": "Graphics card",
+  "root": {
+    "type": "card",
+    "tone": "surface_container_high",
+    "children": [
+      {
+        "type": "header",
+        "icon": "videogame_asset",
+        "title": "{{gpu.name}}"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "chart",
+            "kind": "gauge",
+            "value": "{{gpu.usage}}",
+            "unit": "%",
+            "label": "Use",
+            "size": "small"
+          },
+          {
+            "type": "chart",
+            "kind": "gauge",
+            "value": "{{gpu.vram}}",
+            "unit": "%",
+            "label": "{{gpu.vramUsed}}",
+            "size": "small",
+            "tone": "tertiary"
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "spacing": "sm",
+        "children": [
+          {
+            "type": "chip",
+            "icon": "thermostat",
+            "label": "{{gpu.temperature}} °C"
+          },
+          {
+            "type": "chip",
+            "icon": "bolt",
+            "label": "{{gpu.power}} W"
+          },
+          {
+            "type": "chip",
+            "icon": "speed",
+            "label": "{{gpu.clock}}"
+          }
+        ]
+      }
+    ]
+  }
+}

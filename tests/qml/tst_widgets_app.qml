@@ -14,7 +14,7 @@ TestCase {
     visible: true
     when: windowShown
 
-    readonly property var names: ["weather", "daily-update", "world-clock", "finance", "countdown", "sports"]
+    readonly property var names: ["weather", "daily-update", "world-clock", "finance", "countdown", "sports", "system"]
     function readJson(rel) {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", Qt.resolvedUrl(rel), false);

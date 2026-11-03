@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "name": "System overview",
+  "root": {
+    "type": "column",
+    "spacing": "sm",
+    "children": [
+      {
+        "type": "grid",
+        "columns": 4,
+        "spacing": "sm",
+        "children": [
+          {
+            "type": "tile",
+            "tone": "primary_container",
+            "children": [
+              {
+                "type": "chart",
+                "kind": "gauge",
+                "value": "{{system.cpu}}",
+                "unit": "%",
+                "label": "CPU",
+                "size": "small"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "tertiary_container",
+            "children": [
+              {
+                "type": "chart",
+                "kind": "gauge",
+                "value": "{{gpu.usage}}",
+                "unit": "%",
+                "label": "GPU",
+                "size": "small"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "secondary_container",
+            "children": [
+              {
+                "type": "chart",
+                "kind": "gauge",
+                "value": "{{system.memory}}",
+                "unit": "%",
+                "label": "RAM",
+                "size": "small"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "surface_container_high",
+            "children": [
+              {
+                "type": "chart",
+                "kind": "gauge",
+                "value": "{{system.disk}}",
+                "unit": "%",
+                "label": "Disk",
+                "size": "small"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "card",
+        "children": [
+          {
+            "type": "chart",
+            "kind": "area",
+            "label": "Network",
+            "unit": "KB/s",
+            "size": "small",
+            "series": [
+              {
+                "label": "Down",
+                "value": "{{system.downloadHistory}}"
+              },
+              {
+                "label": "Up",
+                "value": "{{system.uploadHistory}}",
+                "tone": "tertiary"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

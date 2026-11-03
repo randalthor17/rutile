@@ -234,7 +234,7 @@ class Templates(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.dir, True)
 
     def write_all(self):
-        """30 templates with distinct structures (a column of k chips) and a binding each."""
+        """Every category's templates with distinct structures (a column of k chips) and a binding each."""
         k = 0
         for c in wc.TEMPLATE_CATEGORIES:
             for n in range(1, wc.TEMPLATES_PER_CATEGORY + 1):

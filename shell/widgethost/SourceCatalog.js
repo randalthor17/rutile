@@ -70,6 +70,18 @@ var sources = {
             "cpuFraction": {
                 "type": "fraction"
             },
+            "cpuName": {
+                "type": "text"
+            },
+            "cores": {
+                "type": "numbers"
+            },
+            "cpuFrequency": {
+                "type": "text"
+            },
+            "cpuHistory": {
+                "type": "numbers"
+            },
             "memory": {
                 "type": "number"
             },
@@ -82,11 +94,160 @@ var sources = {
             "memoryTotal": {
                 "type": "text"
             },
+            "memoryUsedGB": {
+                "type": "number"
+            },
+            "memoryFreeGB": {
+                "type": "number"
+            },
+            "memoryHistory": {
+                "type": "numbers"
+            },
+            "swap": {
+                "type": "number"
+            },
+            "swapFraction": {
+                "type": "fraction"
+            },
+            "swapUsed": {
+                "type": "text"
+            },
+            "swapTotal": {
+                "type": "text"
+            },
+            "disk": {
+                "type": "number"
+            },
+            "diskFraction": {
+                "type": "fraction"
+            },
+            "diskUsed": {
+                "type": "text"
+            },
+            "diskFree": {
+                "type": "text"
+            },
+            "diskTotal": {
+                "type": "text"
+            },
+            "diskUsedGB": {
+                "type": "number"
+            },
+            "diskFreeGB": {
+                "type": "number"
+            },
+            "download": {
+                "type": "text"
+            },
+            "upload": {
+                "type": "text"
+            },
+            "downloadRate": {
+                "type": "number"
+            },
+            "uploadRate": {
+                "type": "number"
+            },
+            "downloadHistory": {
+                "type": "numbers"
+            },
+            "uploadHistory": {
+                "type": "numbers"
+            },
             "uptime": {
                 "type": "text"
             },
             "load": {
                 "type": "text"
+            }
+        }
+    },
+    "gpu": {
+        "open": false,
+        "fields": {
+            "available": {
+                "type": "boolean"
+            },
+            "name": {
+                "type": "text"
+            },
+            "usage": {
+                "type": "number"
+            },
+            "usageFraction": {
+                "type": "fraction"
+            },
+            "usageHistory": {
+                "type": "numbers"
+            },
+            "vram": {
+                "type": "number"
+            },
+            "vramFraction": {
+                "type": "fraction"
+            },
+            "vramUsed": {
+                "type": "text"
+            },
+            "vramTotal": {
+                "type": "text"
+            },
+            "vramUsedGB": {
+                "type": "number"
+            },
+            "vramFreeGB": {
+                "type": "number"
+            },
+            "temperature": {
+                "type": "number"
+            },
+            "temperatureHistory": {
+                "type": "numbers"
+            },
+            "hotspot": {
+                "type": "number"
+            },
+            "memoryTemperature": {
+                "type": "number"
+            },
+            "power": {
+                "type": "number"
+            },
+            "powerHistory": {
+                "type": "numbers"
+            },
+            "fan": {
+                "type": "number"
+            },
+            "clock": {
+                "type": "text"
+            }
+        }
+    },
+    "sensors": {
+        "open": false,
+        "fields": {
+            "cpu": {
+                "type": "number"
+            },
+            "cpuHistory": {
+                "type": "numbers"
+            },
+            "nvme": {
+                "type": "number"
+            },
+            "hottest": {
+                "type": "number"
+            },
+            "temperatures": {
+                "type": "list",
+                "item": [
+                    "name",
+                    "value"
+                ]
+            },
+            "cpuPower": {
+                "type": "number"
             }
         }
     },

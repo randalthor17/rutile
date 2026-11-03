@@ -203,7 +203,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/desktop/` | the desktop widget grid (plan 4.4, D81): `DesktopWindow` per screen on the bottom layer, `DesktopWidgets` (EditableGrid and the edit bar), `WidgetLibrary` reads the placed files, `Desktop.js` the saved layouts |
 | `shell/widgetsapp/` | the Widgets app (plan 4.5, D82): `WidgetsWindow` reads `widgets/templates` and the user's widgets, `WidgetsApp` the categories and `WidgetCard`s, `Gallery.js` the rules |
-| `shell/widgethost/` | the widget check (4.6, D85): `WidgetCheck.js`, the port of `tools/widget_check.py`, and `WidgetChecker` for IPC; the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
+| `shell/widgethost/` | charts (D87): `ChartNode.qml`; the widget check (4.6, D85): `WidgetCheck.js`, the port of `tools/widget_check.py`, and `WidgetChecker` for IPC; the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
 | `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
@@ -275,6 +275,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_CLI` | `bin/rutile-shell`, `shell/settingsapp/SettingsWindow.qml` | the `rutile-shell` command itself, which Settings starts for Flatpak apps (D66); the package sets its wrapper, a checkout the script's path |
 | `RUTILE_QUICKSHELL` | `bin/rutile-shell` | the quickshell binary, default `quickshell` on PATH (tests point it at a stand-in) |
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
+| `RUTILE_AMDGPU_IDS`, `RUTILE_PCI_IDS` | `shell/widgethost/sources/GpuSource.qml` | libdrm's amdgpu.ids and hwdata's pci.ids, for graphics card names (the package sets both; without them, /usr/share's) |
 | `RUTILE_WEATHER_URL` | `shell/widgethost/sources/WeatherSource.qml` | the weather address instead of Open-Meteo's (tests point it at a local server) |
 | `RUTILE_TEST_PORT` | `tests/qs/tst_widget_sources_live.qml` | tests only: the free local port of the test's own web server (`@PORT@` in a test's `// env` lines) |
 | `RUTILE_PAPIRUS` | `shell/services/Files.js` (folder icons, D64) | Papirus-Dark's folder when it is not in `XDG_DATA_DIRS` (tests) |

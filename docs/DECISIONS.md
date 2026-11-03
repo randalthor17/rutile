@@ -890,3 +890,26 @@ widgets' layer takes the pointer on the widgets' cells (an input region from the
 there starts editing with that widget selected. (3) Use opened a preview window, the editor and the desktop at once.
 Now Use copies and places it and says so in a toast; editing is "Edit" under Your widgets (editor and preview).
 (4) xdg-open may open JSON in a browser: the user sets `widgets.editor`.
+
+**D87. System monitor widgets and charts.** The maintainer asked for CPU, GPU, RAM, VRAM, power and temperature
+widgets, and the charts they need. Data: `system` gains per-core use, frequency, swap, the root disk (df), network
+rates (every interface but loopback) and histories; a new `gpu` source reads amdgpu's sysfs (use, VRAM, the starred
+clock, its hwmon's temperatures, power and fan) and nvidia-smi's line when installed, showing the card with the most
+VRAM unless `card` names one (this machine has an iGPU and an RX 9060 XT); a new `sensors` source reads every hwmon
+temperature (readings at or below 0 or above 150 dropped: boards report -55 for missing sensors) and RAPL's energy
+counter for the processor's power, which is root-only on most systems, so that field is usually missing. They read
+every second (`every`, 0.5 to 10) and keep 60 samples (`history`); a field the hardware lacks is missing, and shows a
+dash. A new catalog field type, `numbers`, is a list of numbers. Charts: one node, `chart`, with `kind` line, area,
+bar, pie, donut or gauge, drawn with Rectangles and QtQuick.Shapes' curve renderer (no Canvas). The maintainer saw
+a few samples stretched across the width hide the trend, so a line or area chart spans a fixed window (`points`, 60),
+filling in from the right and then scrolling. The checker (Python and its JavaScript port) knows the node and the new
+options; a "System" category of five templates joins the Widgets app.
+After a first look the maintainer asked for download and upload in one graph, real names, and hardware other than
+amdgpu. A line or area chart takes `series` of histories, one line each on one scale, with a legend of each newest
+value. `system.cpuName` comes from /proc/cpuinfo (read once, trademarks and core count dropped). Card names come
+from libdrm's amdgpu.ids (the exact marketing name by device and revision; libdrm is in Qt's closure already), then
+hwdata's pci.ids (its bracketed name after the vendor; hwdata added to the package with the maintainer's approval),
+then nvidia-smi's own; the package points RUTILE_AMDGPU_IDS and RUTILE_PCI_IDS at them. The gpu source reads i915's
+and xe's clock and a discrete Intel card's energy counter (power from two readings), nouveau's hwmon, and leaves out
+what a driver does not report (Intel has no use percentage), rather than showing 0. The scripts use sed, not grep,
+which the package does not put on PATH.

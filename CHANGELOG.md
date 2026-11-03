@@ -5,6 +5,12 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **System monitor widgets and charts.** Widgets can show the processor (overall, per core, frequency), memory and
+  swap, the disk, the network, the graphics card (use, video memory, temperatures, power, fan, clock; AMD, and NVIDIA
+  through nvidia-smi) and every temperature sensor, read every second. New charts draw them: line, area, bar, pie,
+  donut and gauge; a line keeps a minute of history and scrolls, and one chart can hold several lines (download and
+  upload). Cards and processors show their real names (AMD Radeon RX 9060 XT, AMD Ryzen 5 7600); AMD, Intel and
+  NVIDIA cards each show what their driver reports. The Widgets app has a new System category.
 - **Editing widgets clears the screen.** Right-click a widget to edit the widgets with it selected (right-clicks on
   widgets no longer open the desktop menu). While editing, every screen shows its empty workspace, so the apps are
   out of the way; Done brings them back.

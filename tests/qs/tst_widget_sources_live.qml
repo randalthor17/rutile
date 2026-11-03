@@ -41,7 +41,10 @@ ShellRoot {
         command: ["sh", "-c", 'printf "changed\\n" > "$1/note.txt"', "sh", root.home]
     }
 
-    WidgetSources { id: system; spec: root.widget("{{system.cpu}} {{system.memoryTotal}} {{system.uptime}}") }
+    WidgetSources { id: system; spec: root.widget("{{system.cpu}} {{system.memoryTotal}} {{system.uptime}} {{system.cores}} {{system.download}}") }
+    // D87: whatever this machine has; a machine without a card or sensors gets `available: false` and no fields
+    WidgetSources { id: gpu; spec: root.widget("{{gpu.usage}}") }
+    WidgetSources { id: sensors; spec: root.widget("{{sensors.hottest}}") }
     WidgetSources { id: battery; spec: root.widget("{{battery.level}}") }
     WidgetSources { id: media; spec: root.widget("{{media.title}}") }
     WidgetSources { id: files; spec: root.stage >= 1 ? root.widget("{{files.firstLine}}", { files: { path: "~/note.txt" } }) : null }
@@ -82,6 +85,14 @@ ShellRoot {
                 t.verify(s.cpu >= 0 && s.cpu <= 100, "processor use in percent: " + s.cpu);
                 t.verify(/GB$/.test(s.memoryTotal ?? ""), "memory: " + s.memoryTotal);
                 t.verify((s.uptime ?? "") !== "", "uptime: " + s.uptime);
+                t.verify(s.cores?.length > 0 && s.cores.every(c => c >= 0 && c <= 100), "cores: " + JSON.stringify(s.cores));
+                t.verify(/(KB|MB)\/s$/.test(s.download ?? ""), "download: " + s.download);
+                t.verify(s.cpuHistory?.length >= 1, "a history: " + JSON.stringify(s.cpuHistory));
+                const g = gpu.values.gpu ?? {};
+                t.verify(g.available === false || (g.usage >= 0 && g.usage <= 100 && g.vramTotal !== ""), "gpu: " + JSON.stringify(g));
+                const n = sensors.values.sensors ?? {};
+                t.verify(Array.isArray(n.temperatures) && n.temperatures.every(x => x.value > 0 && x.value < 150),
+                         "sensors: " + JSON.stringify(n));
                 const b = battery.values.battery ?? {};
                 t.verify(b.present === false || (b.level >= 0 && b.level <= 100), "battery: " + JSON.stringify(b));
                 t.compare(media.values.media?.playing, false, "no players on this bus");
