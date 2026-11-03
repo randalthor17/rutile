@@ -21,6 +21,7 @@ normally registers them itself.
 
 Exit code 3 means Qt tools were not found (callers treat that as "skipped").
 """
+import datetime
 import json
 import os
 import re
@@ -34,7 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -434,6 +435,17 @@ def run_wayland_smoke(screenshot=None):
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         no_polkit_agent(comp.runtime / "config")
+        # the calendar's folder (D93), never the user's: a calendar in a folder of its own, as vdirsyncer keeps it
+        calendars = comp.runtime / "calendars"
+        (calendars / "personal").mkdir(parents=True)
+        today = datetime.date.today()
+        (calendars / "personal" / "a.ics").write_text(
+            "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Smoke standup\r\n"
+            f"DTSTART:{today:%Y%m%d}T100000\r\nDTEND:{today:%Y%m%d}T103000\r\nRRULE:FREQ=WEEKLY\r\nEND:VEVENT\r\n"
+            f"BEGIN:VEVENT\r\nSUMMARY:Smoke holiday\r\nDTSTART;VALUE=DATE:{today:%Y%m%d}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+        settings_file = comp.runtime / "config" / "rutile" / "settings.json"
+        settings_file.write_text(json.dumps(dict(json.loads(settings_file.read_text()),
+                                                 calendar={"folder": str(calendars)})))
         log_path = comp.runtime / "shell.log"
         with open(log_path, "w") as log:
             shell_proc = subprocess.Popen([qs, "-p", str(shell)], env=env, stdout=log, stderr=subprocess.STDOUT)
@@ -913,6 +925,44 @@ def run_wayland_smoke(screenshot=None):
                         time.sleep(0.2)
                     if toast != {"loaded": False, "open": False, "current": None, "queued": []}:
                         problems.append(f"ipc toast state 15 s after two toasts: {toast}, expected none left")
+                    # the calendar under the clock (D93): it reads the folder when it opens, a weekly event comes back
+                    # a week on, and it closes and unloads
+                    def calendar_state():
+                        try:
+                            return json.loads(ipc("state", target="calendar"))
+                        except ValueError:
+                            return {}
+                    ipc("toggle", target="calendar")
+                    cal = {}
+                    for _ in range(50):
+                        cal = calendar_state()
+                        if cal.get("read"):
+                            break
+                        time.sleep(0.1)
+                    titles = [e.get("title") for e in cal.get("events", [])]
+                    if (not cal.get("open") or not cal.get("hasFolder") or cal.get("selected") != today.isoformat()
+                            or titles != ["Smoke holiday", "Smoke standup"] or cal.get("clocksOpen") != [True]):
+                        problems.append(f"ipc calendar toggle: {cal}, expected it open on today with the folder's two "
+                                        "events and the clock marked")
+                    if screenshot and shutil.which("grim"):
+                        time.sleep(1)                   # the popup's motion
+                        shot = Path(screenshot).with_name(Path(screenshot).stem + "-calendar.png")
+                        subprocess.run([shutil.which("grim"), str(shot)], env=comp.env(), timeout=10)
+                        notes.append(f"screenshot: {shot}")
+                    week = (today + datetime.timedelta(days=7)).isoformat()
+                    got = (ipc("select", week, target="calendar"), ipc("select", "2026-02-30", target="calendar"))
+                    cal = calendar_state()
+                    if got != ("true", "false") or [e.get("title") for e in cal.get("events", [])] != ["Smoke standup"]:
+                        problems.append(f"ipc calendar select: {got}, {cal}, expected a week on to show the weekly event "
+                                        "and Feb 30 refused")
+                    ipc("toggle", target="calendar")
+                    for _ in range(50):
+                        cal = calendar_state()
+                        if cal.get("loaded") is False:
+                            break
+                        time.sleep(0.1)
+                    if cal.get("loaded") is not False or cal.get("clocksOpen") != [False]:
+                        problems.append(f"ipc calendar toggle again: {cal}, expected it closed and unloaded")
                     # a notification (plan 2.8) on the private bus: kept, popped up in its window, gone when dismissed
                     # notify-send (libnotify, as apps send) when the dev shell has it, else busctl
                     if shutil.which("notify-send"):

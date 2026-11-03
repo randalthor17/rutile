@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **A calendar under the clock.** Click the clock for a month calendar: today is marked, days with events have a
+  dot, and the chosen day's events are listed below. It reads .ics files from a folder (Settings > Calendar,
+  `~/.calendars` by default, the layout vdirsyncer syncs Google or CalDAV calendars into). Repeating events now show
+  every time, here and in calendar widgets, which before showed only the first.
+
 - **Settings asks in a dialog.** A setting with choices (lock after, grid columns, a screen's resolution...) opens a
   dialog like Googlebook's: the choices with the current one checked, then Done or Cancel.
 - **Floating action buttons and cards** join the shell's Material 3 building blocks (in the gallery).

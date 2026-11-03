@@ -215,6 +215,13 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `pywalfox-host`), tested under AddressSanitizer and UBSan with malformed frames and fuzzing. Real use (D58):
   without a palette file the apps take the shell's own colors and follow them; a config that is a link
   (home-manager's) is never changed; niri is a new app (`rutile-colors.kdl`, included by the module).
+- [x] **2.12** The calendar under the clock (D93, the maintainer's request, 2026-11-04; `shell/calendar/`): a press
+  on the clock opens a month grid (the locale's first weekday, today in a primary circle, a dot on days with events)
+  and the chosen day's events, from `calendar.folder` (Settings > Calendar; default `~/.calendars`, vdirsyncer's
+  layout). Repeating events (RRULE: daily, weekly, monthly, yearly with INTERVAL, COUNT, UNTIL, BYDAY, BYMONTHDAY;
+  EXDATE; RECURRENCE-ID) for the popup and the widgets' calendar source. Arrows, Page Up/Down, Home, the wheel;
+  IPC `calendar toggle|open|close|isOpen|select DAY|state`. Not yet: syncing (vdirsyncer would be a new
+  dependency), adding events, time zones (TZID times are taken as local), rules beyond those listed.
 
 ## Phase 3: windows on niri
 

@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications osd toast quicksettings tray shelf widgets"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd toast quicksettings tray shelf widgets"
 
 usage() {
     cat <<'EOF'
@@ -43,8 +43,8 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  choose ID         lock, suspend, logout, reboot or poweroff, as a click in the open menu
                  state
   settings       open PAGE         open the Settings app on a page ("" keeps the current one): wallpaper,
-                                   network, bluetooth, display, sound, power, input, apps, notifications,
-                                   security, shelf, accessibility, about; open already, it is focused.
+                                   network, bluetooth, display, sound, power, input, windows, apps,
+                                   notifications, calendar, security, shelf, widgets, accessibility, about; open already, it is focused.
                                    "rutile-shell settings" alone opens it as it was (its desktop file)
                  openSetting PAGE KEY   the same, with one setting ringed (e.g. security lock.idleMinutes)
                  close | toggle
@@ -88,6 +88,10 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  dismiss ID | dismissAll
                  invoke ID ACTION  as a click on a notification's action
                  reply ID TEXT
+                 state
+  calendar       toggle | open | close   the calendar under the clock
+                 isOpen
+                 select DAY        open it on a day, as YYYY-MM-DD
                  state
   osd            volumeUp | volumeDown | toggleMute
                  brightnessUp | brightnessDown    false without a backlight

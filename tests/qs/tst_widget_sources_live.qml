@@ -31,9 +31,9 @@ ShellRoot {
     Process {
         id: setup
         running: true
-        command: ["sh", "-c", 'mkdir -p "$1/cal" && printf "first line\\nsecond\\n" > "$1/note.txt" && ' +
+        command: ["sh", "-c", 'mkdir -p "$1/cal/work" && printf "first line\\nsecond\\n" > "$1/note.txt" && ' +
                   'printf "BEGIN:VCALENDAR\\r\\nBEGIN:VEVENT\\r\\nSUMMARY:Far away\\r\\nDTSTART:20991231T100000\\r\\nEND:VEVENT\\r\\nEND:VCALENDAR\\r\\n" > "$1/cal/a.ics" && ' +
-                  'printf "BEGIN:VCALENDAR\\r\\nBEGIN:VEVENT\\r\\nSUMMARY:Tomorrow thing\\r\\nDTSTART;VALUE=DATE:$2\\r\\nEND:VEVENT\\r\\nEND:VCALENDAR\\r\\n" > "$1/cal/b.ics"',
+                  'printf "BEGIN:VCALENDAR\\r\\nBEGIN:VEVENT\\r\\nSUMMARY:Tomorrow thing\\r\\nDTSTART;VALUE=DATE:$2\\r\\nEND:VEVENT\\r\\nEND:VCALENDAR\\r\\n" > "$1/cal/work/b.ics"',
                   "sh", root.home, Qt.formatDate(new Date(Date.now() + 86400000), "yyyyMMdd")]
     }
     Process {

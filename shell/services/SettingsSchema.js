@@ -466,6 +466,18 @@ var schema = {
                     "description": "The beginnings of the addresses widgets may fetch JSON from, each with its host and a slash, e.g. https://api.frankfurter.app/; widgets fetch nothing else."
                 }
             }
+        },
+        "calendar": {
+            "type": "object",
+            "title": "Calendar",
+            "properties": {
+                "folder": {
+                    "type": "string",
+                    "default": "~/.calendars",
+                    "title": "Calendar folder",
+                    "description": "Where the calendar under the clock reads events from: every .ics file in this folder and the folders right in it, as vdirsyncer keeps them (one folder per calendar). A path starting with ~/ is in your home folder."
+                }
+            }
         }
     }
 };

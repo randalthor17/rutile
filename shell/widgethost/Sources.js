@@ -3,6 +3,7 @@
 // offscreen with fixed inputs. The QML in sources/ only gathers the inputs and calls these.
 .pragma library
 .import "../bar/ClockText.js" as ClockText
+.import "../calendar/Calendar.js" as Calendar
 
 // "3 h 12 min", "45 min", "2 d 4 h"; "" for nothing or unknown.
 function duration(seconds) {
@@ -429,49 +430,18 @@ function files(text) {
     return out;
 }
 
-// ---- calendar: single events from iCalendar text (RFC 5545), several files' text one after the other ----
-function unfold(text) {
-    return String(text || "").replace(/\r\n/g, "\n").replace(/\n[ \t]/g, "");
-}
-function unescapeText(v) {
-    return v.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1");
-}
-// "20261105T100000Z", "20261105T100000" (local, or in a TZID taken as local) or a date; {date, allDay} or null
-function icsDate(value, params) {
-    var m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(value || "");
-    if (!m) return null;
-    if (!m[4]) return { date: new Date(+m[1], +m[2] - 1, +m[3]), allDay: true };
-    if (m[7]) return { date: new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])), allDay: false };
-    return { date: new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]), allDay: /VALUE=DATE(;|$)/.test(params || "") };
-}
-// [{title, start: Date, allDay}] of the VEVENTs (a repeating one only at its first time)
+// ---- calendar: events from iCalendar text (RFC 5545), several files' text one after the other; Calendar.js reads
+// them, repeating ones included (D93) ----
 function icsEvents(text) {
-    var out = [];
-    var cur = null;
-    unfold(text).split("\n").forEach(function (line) {
-        if (line === "BEGIN:VEVENT") { cur = {}; return; }
-        if (line === "END:VEVENT") {
-            if (cur && cur.start) out.push({ title: cur.title || "Event", start: cur.start.date, allDay: cur.start.allDay });
-            cur = null;
-            return;
-        }
-        if (!cur) return;
-        var colon = line.indexOf(":");
-        if (colon < 0) return;
-        var head = line.substring(0, colon), value = line.substring(colon + 1);
-        var name = head.split(";")[0].toUpperCase();
-        if (name === "SUMMARY") cur.title = unescapeText(value);
-        else if (name === "DTSTART") cur.start = icsDate(value, head);
-    });
-    return out;
+    return Calendar.icsEvents(text);
 }
 // The events from now to `days` ahead (today's all-day ones included), soonest first, as the source's values.
 function calendar(events, now, days, use24h, locale) {
     var startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     var end = new Date(startOfToday.getTime() + (days || 7) * 86400000);
-    var coming = events.filter(function (e) {
-        return e.start < end && (e.allDay ? e.start >= startOfToday : e.start >= now);
-    }).sort(function (a, b) { return a.start - b.start; });
+    var coming = Calendar.occurrences(events, startOfToday, end).filter(function (e) {
+        return e.allDay ? e.start >= startOfToday : e.start >= now;
+    });
     var list = coming.slice(0, 8).map(function (e) {
         var day = new Date(e.start.getFullYear(), e.start.getMonth(), e.start.getDate());
         var diff = Math.round((day - startOfToday) / 86400000);

@@ -1,6 +1,6 @@
 // The clock's layer-shell surface at the top left of one screen, on the top layer like the status pill; the space
 // it sits in is the pill's reserved strip (ScreenStatus.qml). The time comes from Quickshell's SystemClock, which
-// ticks once a minute.
+// ticks once a minute. A press opens or closes the calendar under it (D93).
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -10,8 +10,9 @@ PanelWindow {
     id: root
 
     readonly property alias pill: pill
+    property bool open: false               // the calendar is showing on this screen
 
-    signal pressed()                        // the shell closes its popups (D90)
+    signal pressed()                        // the shell closes its other popups (D90) and toggles the calendar
 
     anchors.top: true
     anchors.left: true
@@ -32,6 +33,7 @@ PanelWindow {
     ClockPill {
         id: pill
         now: clock.date
+        open: root.open
     }
     MouseArea {
         anchors.fill: pill

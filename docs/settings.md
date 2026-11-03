@@ -68,6 +68,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `nightLight.temperature` | integer, 2500 to 6000 | 4000 | the screen's color temperature in kelvin while Night light is on (Quick Settings; wlsunset, D91) |
 | `nightLight.schedule` | true or false | false | warm only from sunset to sunrise (the weather place's sun, `widgets.latitude`/`longitude`), not all day |
 | `nightLight.sunset`, `nightLight.sunrise` | "HH:MM" | "19:00", "07:00" | the times used for the schedule while no weather place is set |
+| `calendar.folder` | folder or .ics file | ~/.calendars | where the calendar under the clock reads events: every .ics file in it and the folders right in it (vdirsyncer's layout, one folder per calendar; D93) |
 | `windows.enabled` | true or false | false | apply the window settings below to niri, as one window rule after niri's own (rutile-settings.kdl, D88) |
 | `windows.floating` | true or false | true | new windows open floating, as on Googlebook, instead of in niri's columns |
 | `windows.cornerRadius` | integer, 0 to 32 | 16 | window corners' radius in pixels; windows are clipped to them |

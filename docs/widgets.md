@@ -78,7 +78,7 @@ Write `{{source.field}}` in any text. A missing value shows as a dash.
 | `countdown` | days, hours, minutes, text, done, remaining, progress | `target` (required, `2026-12-25` or `2026-12-25T18:00`), `from` |
 | `media` | playing, title, artist, album, art, progress, player | |
 | `weather` | temperature, apparent, high, low, unit, humidity, wind, condition, symbol | `latitude`, `longitude`, `units`; Settings > Widgets otherwise |
-| `calendar` | events (a list: title, date, time, when), next, nextWhen, count | `path` (required: an .ics file or folder), `days` |
+| `calendar` | events (a list: title, date, time, when), next, nextWhen, count | `path` (required: an .ics file, or a folder and the folders right in it), `days`; repeating events at each time (D93) |
 | `files` | text, firstLine, lines (a list: text), json (the file's own fields) | `path` (required) |
 | `http` | the document's own fields, e.g. `{{http.rates.EUR}}` | `url` (required), `every` (seconds, at least 60) |
 

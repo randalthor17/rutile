@@ -1,20 +1,19 @@
-// The calendar source (plan 4.2, D79): an .ics file, or every .ics file in a folder (vdirsyncer keeps one event per
-// file), read every 5 minutes; the upcoming events worked out again at every minute.
+// The calendar source (plan 4.2, D79): an .ics file, or every .ics file in a folder and the folders in it (vdirsyncer
+// keeps one folder per calendar, one event per file), read every 5 minutes; the upcoming events, repeating ones
+// included (D93), worked out again at every minute.
 import QtQuick
 import qs.widgethost
 import Quickshell
 import Quickshell.Io
 import "../Sources.js" as Sources
 import "../../bar/ClockText.js" as ClockText
+import "../../calendar/Calendar.js" as Calendar
 
 WidgetSource {
     id: root
     value: Sources.calendar([], new Date(), 7, true, Qt.locale())
     property var events: []
-    readonly property string path: {
-        const p = options.path ?? "";
-        return p.startsWith("~/") ? Quickshell.env("HOME") + p.substring(1) : p;
-    }
+    readonly property string path: Calendar.expandHome(options.path ?? "", Quickshell.env("HOME"))
     readonly property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
 
     function update() {
@@ -24,7 +23,7 @@ WidgetSource {
     onPathChanged: read.running = path !== ""
     Process {
         id: read
-        command: ["sh", "-c", 'if [ -d "$1" ]; then cat "$1"/*.ics 2>/dev/null; else cat "$1"; fi', "sh", root.path]
+        command: Calendar.readCommand(root.path)
         stdout: StdioCollector { onStreamFinished: root.events = Sources.icsEvents(text) }
     }
     Timer {

@@ -116,6 +116,11 @@ var pages = [
         sections: [{ title: "", keys: ["notifications.sound"] }]
     },
     {
+        id: "calendar", title: "Calendar", icon: "calendar_month", tone: "secondaryContainer",
+        summary: "Where events come from", aliases: ["events", "ics", "vdirsyncer", "caldav", "agenda"],
+        sections: [{ title: "", keys: ["calendar.folder"] }]
+    },
+    {
         id: "security", title: "Security & privacy", icon: "lock", tone: "primaryContainer",
         summary: "Screen lock, passwords", aliases: ["lock screen", "idle", "polkit", "admin"],
         sections: [

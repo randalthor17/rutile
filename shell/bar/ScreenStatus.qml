@@ -11,6 +11,7 @@ Scope {
     required property var backend
     property bool open: false
     property bool notificationsOpen: false
+    property bool calendarOpen: false
     property var trayItems: []
     property string trayMenuId: ""
     readonly property alias pill: pillWindow
@@ -39,6 +40,7 @@ Scope {
     ClockWindow {
         id: clockWindow
         screen: root.screen
+        open: root.calendarOpen
         onPressed: root.clockPressed()
     }
 

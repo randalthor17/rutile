@@ -146,7 +146,7 @@
       }
     },
     "calendar": {
-      "description": "Upcoming events from an .ics file or a folder of them (vdirsyncer's); single events only, repeats are not expanded.",
+      "description": "Upcoming events from an .ics file or a folder of them and the folders right in it (vdirsyncer's), repeating events at each time.",
       "fields": {
         "events": {
           "type": "list",

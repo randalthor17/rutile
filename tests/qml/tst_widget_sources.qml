@@ -261,11 +261,16 @@ TestCase {
         const now = new Date(2026, 10, 3, 12, 0);
         const c = Sources.calendar(events, now, 7, true, en);
         fieldsMatch("calendar", c);
-        compare(c.events.map(e => e.title).join("|"), "Holiday|Standup|Dentist, Dr. A", "today's all-day, then by time; past and far left out");
+        compare(c.events.slice(0, 3).map(e => e.title).join("|"), "Holiday|Standup|Standup",
+                "today's all-day, then by time; a daily event every day (D93)");
+        verify(c.events.some(e => e.title === "Dentist, Dr. A"));
+        verify(!c.events.some(e => e.title === "Past" || e.title === "Far"), "past and far left out");
         compare(c.events[0].when, "Today, All day");
         compare(c.events[1].when, "Today, 15:00", "a TZID time taken as local");
-        compare(c.events[2].date, "Thu, Nov 5");
-        compare([c.next, c.count].join(), "Holiday,3");
+        compare(c.events[2].when, "Tomorrow, 15:00");
+        compare(c.events.find(e => e.title === "Dentist, Dr. A").date, "Thu, Nov 5");
+        compare(c.events.length, 8, "at most 8");
+        compare([c.next, c.count].join(), "Holiday,9", "the standup's 7 days, the holiday and the dentist");
         compare(Sources.calendar([], now, 7, true, en).next, "No events");
     }
 

@@ -978,3 +978,17 @@ and Cancel, Escape or a press on the scrim leave the setting as it was; the arro
 The headline is the setting's title and the line its description (a page's own ChoiceRow gives its text and
 supporting text). More than six choices scroll. The app's interface did not change (`toggleMenu`, `menuKey`,
 `settingChoice_N`), so pages kept working; their tests now press Done.
+
+**D93. The calendar under the clock (plan 2.12).** Googlebook's clock opens a calendar; Rutile's clock only closed
+the popups (D90). A press now closes the others and toggles a calendar popup under it, built as the notification list
+(D41): a LazyLoader'd layer-shell window that takes the keyboard, closes on focus loss or Escape, keeps its tallest
+size with a mask, and grows from the top left with PopupMotion. It reads the folder each time it opens and runs
+nothing while closed (D31). Events come from .ics files only: `calendar.folder` (default `~/.calendars`), searched
+with the folders right in it (sh globs: the package's PATH has no find), which is the layout vdirsyncer writes, so Google or CalDAV calendars arrive by running
+vdirsyncer; bundling vdirsyncer (and its account setup) would be a new dependency and was not done. Repeats are
+expanded in `shell/calendar/Calendar.js`, shared with the widgets' calendar source (which before showed a repeating
+event's first time only): the common RRULE parts (FREQ daily to yearly, INTERVAL, COUNT, UNTIL, BYDAY, BYMONTHDAY),
+EXDATE and RECURRENCE-ID; a rule with anything else shows its first time, as before. Times repeat in local time and
+a TZID time is taken as local: right for events made where the user is, an hour off for one made in another zone
+around a DST change. Six weeks are always shown, so the popup keeps its size from month to month. The widget source
+keeps its required `path` (no change to the widget spec).

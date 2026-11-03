@@ -5,7 +5,7 @@
 // Papirus-Dark, which has most apps' (tray icons sent by name; D62): the package brings it; an app's own icon in
 // hicolor is still found.)
 // Rutile Shell. Run with:   quickshell -p shell/shell.qml   (or `qs -p shell`)
-// A clock sits at the top left of every screen, a status pill at the top right and the shelf along the bottom; clicking it opens Quick Settings on that screen.
+// A clock sits at the top left of every screen, a status pill at the top right and the shelf along the bottom; clicking the pill opens Quick Settings on that screen, clicking the clock the calendar (D93).
 // From a niri keybind:   quickshell -p <path>/shell/shell.qml ipc call quicksettings toggle
 import QtQuick
 import Quickshell
@@ -15,6 +15,7 @@ import Quickshell.Services.SystemTray
 import Quickshell.Wayland
 import qs.common
 import qs.bar
+import qs.calendar
 import qs.launcher
 import qs.notifications
 import qs.osd
@@ -31,6 +32,7 @@ import qs.desktop
 import qs.widgetsapp
 import qs.widgethost
 import "quicksettings/Controls.js" as Controls
+import "calendar/Calendar.js" as CalendarModel
 import "lock/LockWallpaper.js" as LockWallpaper
 import "power/PowerActions.js" as PowerActions
 import "bar/TrayModel.js" as TrayModel
@@ -54,6 +56,36 @@ ShellRoot {
         if (quickSettingsOpen) closeQuickSettings();
         if (launcherOpen) closeLauncher();
         if (notificationListOpen) closeNotificationList();
+        if (calendarOpen) closeCalendar();
+    }
+
+    // The calendar under the clock (D93), as the notification list: on a screen (null: the compositor's choice). A
+    // press on the clock closes the other popups and opens or closes it.
+    property var calendarScreen: null
+    readonly property bool calendarOpen: calendar.active && !(calendar.item?.closing ?? false)
+    function closeCalendar() {
+        if (calendar.item) calendar.item.close();
+        else calendar.active = false;
+    }
+    function toggleCalendar(screen) {
+        const here = screen === null || screen === calendarScreen;
+        if (calendarOpen && here) {
+            closeCalendar();
+            return;
+        }
+        if (calendar.item?.closing && here) {
+            calendar.item.reopen();
+            return;
+        }
+        calendar.active = false;
+        calendarScreen = screen;
+        calendar.active = true;
+    }
+    function clockPressed(screen) {
+        if (quickSettingsOpen) closeQuickSettings();
+        if (launcherOpen) closeLauncher();
+        if (notificationListOpen) closeNotificationList();
+        toggleCalendar(screen);
     }
 
     function closeQuickSettings() {
@@ -540,7 +572,8 @@ ShellRoot {
             notificationsOpen: shell.notificationListOpen && notificationList.item?.screen === modelData
             onClicked: shell.toggleQuickSettings(modelData)
             onBellClicked: shell.toggleNotificationList(modelData)
-            onClockPressed: shell.closePopups()
+            calendarOpen: shell.calendarOpen && calendar.item?.screen === modelData
+            onClockPressed: shell.clockPressed(modelData)
             trayItems: shell.trayItems
             trayMenuId: shell.trayMenuOpen && trayMenu.item?.screen === modelData ? shell.trayMenuId : ""
             onTrayMenuRequested: (entry, right) => shell.toggleTrayMenu(modelData, entry, right)
@@ -792,6 +825,47 @@ ShellRoot {
         NotificationPopupWindow {
             screen: Quickshell.screens.find(s => s.name === NiriService.focusedOutput) ?? Quickshell.screens[0]
             onFinished: shell.notificationPopupsShown = false
+        }
+    }
+    LazyLoader {
+        id: calendar
+        CalendarWindow {
+            screen: shell.calendarScreen
+            onCloseRequested: calendar.active = false
+            onSettingsRequested: {
+                shell.openSettings("calendar");
+                shell.closeCalendar();
+            }
+        }
+    }
+    IpcHandler {
+        target: "calendar"
+        // from a niri keybind: quickshell -p <path>/shell/shell.qml ipc call calendar toggle
+        function toggle(): void { shell.toggleCalendar(null); }
+        function open(): void { if (!shell.calendarOpen) shell.toggleCalendar(null); }
+        function close(): void { shell.closeCalendar(); }
+        function isOpen(): bool { return shell.calendarOpen; }
+        // Opens the calendar on a day, "2026-11-04"; false for anything else.
+        function select(day: string): bool {
+            const d = CalendarModel.parseDay(day);
+            if (!d) return false;
+            if (!shell.calendarOpen) shell.toggleCalendar(null);
+            calendar.item.panel.select(d);
+            return true;
+        }
+        // What it shows, as JSON: for diagnostics and the smoke test.
+        function state(): string {
+            const p = calendar.item?.panel;
+            return JSON.stringify({
+                open: shell.calendarOpen,
+                loaded: calendar.active,
+                read: calendar.item?.read ?? false,
+                hasFolder: p?.hasFolder ?? false,
+                month: p ? CalendarModel.dayKey(p.month).substring(0, 7) : "",
+                selected: p ? CalendarModel.dayKey(p.selected) : "",
+                events: p ? p.dayEvents : [],
+                clocksOpen: statusWindows.instances.map(s => s.clock.open)
+            });
         }
     }
     LazyLoader {

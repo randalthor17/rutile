@@ -61,6 +61,8 @@ surfaces), no focus ring. See `docs/components.md`.
 4. The maintainer tries Settings > Windows (3.1, D88) on the real session: floating, corners, shadow, and the new
    title bars on Settings and Widgets (move, maximize, resize with a real pointer, which the nested tests could not
    do).
+5. The maintainer tries the calendar under the clock (D93) with a real calendar folder (vdirsyncer's
+   `~/.calendars`, or Settings > Calendar).
 
 ## 3. Resume in five minutes
 
