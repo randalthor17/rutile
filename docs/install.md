@@ -92,6 +92,18 @@ fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that 
 - PAM's `login` service, for the lock screen (on NixOS by default).
 - Nothing else for Night light: the package brings wlsunset. Turn off any other gamma program (gammastep,
   wlsunset of your own) or Night light stops with a toast saying the gamma is in use.
+- For Google (and other online) calendars under the clock (D95), in the NixOS configuration:
+
+  ```nix
+  services.gnome.evolution-data-server.enable = true;   # keeps the calendars, synced
+  services.gnome.gnome-online-accounts.enable = true;   # signs in to Google, Microsoft, Nextcloud...
+  services.gnome.gnome-keyring.enable = true;           # where the accounts' tokens are kept
+  programs.dconf.enable = true;                         # the data server's settings
+  ```
+
+  The package brings GNOME Calendar and the accounts window. Then Settings > Calendar > Online accounts >
+  Manage... signs in (in the browser), and the account's calendars show under the clock; GNOME Calendar adds and
+  changes events. Without these services the calendar still shows .ics files and calendar addresses.
 
 ## GTK, Qt and KDE apps in the shell's look
 

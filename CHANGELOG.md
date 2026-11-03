@@ -9,10 +9,12 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   dot, and the chosen day's events are listed below. It reads .ics files from a folder (Settings > Calendar,
   `~/.calendars` by default, the layout vdirsyncer syncs Google or CalDAV calendars into). Repeating events now show
   every time, here and in calendar widgets, which before showed only the first.
-- **Google Calendar in the calendar.** Paste a calendar's "Secret address in iCal format" (Google Calendar, Settings,
-  the calendar, Integrate calendar) into Settings > Calendar, and its events show under the clock. Outlook, iCloud,
-  Proton and Nextcloud calendar addresses work the same way. The events are fetched each time the calendar opens
-  and kept for when you are offline.
+- **Google Calendar under the clock.** Sign in to Google (or Microsoft, Nextcloud...) from Settings > Calendar >
+  Online accounts, and your calendars show under the clock, synced. Click an event to change it in GNOME Calendar,
+  or "Open Calendar" to add one. The system needs GNOME's calendar data and accounts services switched on (see the
+  install guide). Without an account, paste a calendar's "Secret address in iCal format" (Google Calendar, Settings,
+  the calendar, Integrate calendar) into Settings > Calendar instead: read only, fetched each time the calendar
+  opens and kept for when you are offline. Outlook, iCloud, Proton and Nextcloud addresses work the same way.
 
 - **Settings asks in a dialog.** A setting with choices (lock after, grid columns, a screen's resolution...) opens a
   dialog like Googlebook's: the choices with the current one checked, then Done or Cancel.

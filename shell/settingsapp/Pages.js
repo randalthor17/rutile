@@ -118,7 +118,8 @@ var pages = [
     {
         id: "calendar", title: "Calendar", icon: "calendar_month", tone: "secondaryContainer",
         summary: "Google and other calendars", aliases: ["events", "ics", "vdirsyncer", "caldav", "agenda"],
-        sections: [{ title: "", keys: ["calendar.feeds", "calendar.folder"] }]
+        sections: [{ title: "", keys: ["action.calendarAccounts", "action.calendarApp"] },
+                   { title: "Without an account", keys: ["calendar.feeds", "calendar.folder"] }]
     },
     {
         id: "security", title: "Security & privacy", icon: "lock", tone: "primaryContainer",
@@ -166,7 +167,18 @@ var hints = {
         filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
-    "calendar.feeds": { aliases: ["google calendar", "gmail", "outlook", "icloud", "ical", "webcal", "secret address"] },
+    // GNOME Online Accounts signs in; evolution-data-server keeps the calendars; GNOME Calendar edits them (D95)
+    "action.calendarAccounts": {
+        kind: "action", title: "Online accounts", button: "Manage…",
+        description: "Sign in to Google, Microsoft, Nextcloud and others: their calendars show under the clock",
+        aliases: ["google", "google calendar", "gmail", "microsoft", "outlook", "nextcloud", "caldav", "sign in", "goa"]
+    },
+    "action.calendarApp": {
+        kind: "action", title: "GNOME Calendar", button: "Open",
+        description: "Add and change events, and choose which calendars show",
+        aliases: ["new event", "edit event", "gnome calendar"]
+    },
+    "calendar.feeds": { aliases: ["ical", "webcal", "secret address", "icloud", "proton"] },
     "style.mode": { label: v => v === "light" ? "Light" : "Dark", aliases: ["dark mode", "light mode", "night", "theme"] },
     "style.scheme": {
         label: v => ({ "scheme-tonal-spot": "Tonal spot", "scheme-content": "Content", "scheme-expressive": "Expressive",

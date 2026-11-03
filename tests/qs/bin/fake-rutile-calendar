@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# A stand-in for rutile-calendar (native/calendar.c, D95) in tests: each run appends its arguments to
+# $FAKE_CALENDAR_LOG; `events` prints $FAKE_CALENDAR_EVENTS (a file of JSON lines, as the real one prints); while
+# the file $FAKE_CALENDAR_LOG.down exists it fails as with no evolution-data-server (exit 2).
+echo "$*" >> "$FAKE_CALENDAR_LOG"
+if [ -e "$FAKE_CALENDAR_LOG.down" ]; then
+    echo "rutile-calendar: no evolution-data-server" >&2
+    exit 2
+fi
+if [ "$1" = events ] && [ -f "$FAKE_CALENDAR_EVENTS" ]; then cat "$FAKE_CALENDAR_EVENTS"; fi
+exit 0

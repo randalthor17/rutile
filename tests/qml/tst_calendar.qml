@@ -128,6 +128,28 @@ TestCase {
         verify(Calendar.cacheName("https://calendar.google.com/secret-b/basic.ics") !== a);
     }
 
+    // ---- evolution-data-server (D95) ----
+    function test_eds_events() {
+        const text = '{"calendar":"Work","source":"g1","uid":"a","title":"Standup","start":1793761200,"end":1793763000,"allDay":false}\n' +
+                     'not json\n{"title":"no times"}\n\n' +
+                     '{"source":"g1","uid":"b","title":"","start":1793800000,"end":1793700000,"allDay":true}\n';
+        const e = Calendar.edsEvents(text);
+        compare(e.length, 2, "lines that are not events left out");
+        compare(e[0].title, "Standup");
+        compare(e[0].start.getTime(), 1793761200000);
+        compare(e[0].end - e[0].start, 1800000);
+        compare(e[0].rule, null, "EDS expands repeats itself");
+        compare(e[1].title, "Event", "no title");
+        compare(e[1].end.getTime(), e[1].start.getTime(), "an end before the start is the start");
+        verify(e[1].allDay);
+        compare(Calendar.eventUuid(e[0]), "g1:a");
+        compare(Calendar.eventUuid({ source: "", uid: "x" }), "", "an .ics file's event has no calendar to open it in");
+        compare(Calendar.edsCommand("/h", new Date(1000), new Date(2500)).join(" "), "/h events 1 3");
+        // the day's list keeps the id, so a click opens the event in GNOME Calendar
+        const day = Calendar.dayEvents(e, new Date(1793761200000), true, en, ClockText.time);
+        compare(day.find(d => d.title === "Standup").uuid, "g1:a");
+    }
+
     // ---- the month ----
     function test_month_days() {
         // Nov 1 2026 is a Sunday
@@ -148,8 +170,8 @@ TestCase {
                                          ["SUMMARY:Holiday", "DTSTART;VALUE=DATE:20261104"],
                                          ["SUMMARY:Pin", "DTSTART:20261104T080000"]));
         compare(JSON.stringify(Calendar.dayEvents(e, day(2026, 11, 4), true, en, ClockText.time)),
-                JSON.stringify([{ title: "Holiday", time: "All day" }, { title: "Pin", time: "08:00" },
-                                { title: "Late", time: "23:00 – Nov 5, 01:00" }]));
+                JSON.stringify([{ title: "Holiday", time: "All day", uuid: "" }, { title: "Pin", time: "08:00", uuid: "" },
+                                { title: "Late", time: "23:00 – Nov 5, 01:00", uuid: "" }]));
         compare(Calendar.dayEvents(e, day(2026, 11, 5), false, en, ClockText.time)[0].time, "Nov 4, 11:00 – 1:00",
                 "the next day shows when it began");
     }
@@ -246,6 +268,28 @@ TestCase {
         const spy = createTemporaryObject(spyComp, root, { target: p, signalName: "settingsRequested" });
         mouseClick(button);
         compare(spy.count, 1);
+    }
+    function test_panel_opens_events_and_the_app() {
+        const eds = Calendar.edsEvents('{"source":"g1","uid":"a","title":"Synced","start":' +
+                                       (new Date(2026, 10, 4, 9).getTime() / 1000) + ',"end":' +
+                                       (new Date(2026, 10, 4, 10).getTime() / 1000) + ',"allDay":false}');
+        const p = panel({ events: Calendar.icsEvents(sample).concat(eds) });
+        const opened = createTemporaryObject(spyComp, root, { target: p, signalName: "eventOpened" });
+        const app = createTemporaryObject(spyComp, root, { target: p, signalName: "appRequested" });
+        compare(p.dayEvents.map(e => e.title).join(), "Holiday,Synced,Gym");
+        mouseClick(findChild(p, "calendarEvent_1"));
+        compare(opened.count, 1);
+        compare(opened.signalArguments[0][0], "g1:a");
+        mouseClick(findChild(p, "calendarEvent_0"));
+        compare(opened.count, 1, "an .ics file's event opens nothing");
+        verify(!findChild(p, "calendarApp").visible, "no GNOME Calendar, no button");
+        const before = p.maxHeight;
+        p.hasApp = true;
+        verify(findChild(p, "calendarApp").visible);
+        verify(p.maxHeight > before, "room for the button");
+        waitForItemPolished(findChild(p, "calendarApp").parent);     // the column has placed it
+        mouseClick(findChild(p, "calendarApp"));
+        compare(app.count, 1);
     }
     function test_panel_note() {
         const p = panel();

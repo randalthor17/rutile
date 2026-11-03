@@ -1020,3 +1020,32 @@ Costs:
 - How soon Google's address reflects a change was not measured: no Google account was used. Third-party reports
   about Google's polling of *other* feeds (hours) do not apply to its own export, but this is unverified.
 A real sign-in can come later through option 3, if the maintainer approves that dependency.
+
+**D95. Google Calendar through GNOME Online Accounts and evolution-data-server.** The maintainer wanted a real
+sign-in and editing, and chose GNOME Online Accounts (2026-11-04). That approves these dependencies:
+gnome-online-accounts, evolution-data-server, gnome-calendar and gnome-online-accounts-gtk. The parts:
+- **Sign-in.** GNOME Online Accounts signs in through GNOME's verified Google client, in the browser
+  (goa-oauth2-handler). Its window outside GNOME's Settings is XApp's gnome-online-accounts-gtk, opened from
+  Settings > Calendar > Online accounts. The tokens go to the Secret Service (gnome-keyring).
+- **Sync.** evolution-data-server syncs the calendars.
+- **Editing.** GNOME Calendar edits events and chooses which calendars show. A click on a synced event opens it
+  there (`--uuid <calendar uid>:<event uid>`, unverified against GNOME Calendar's own format). "Open Calendar" opens
+  the app.
+- **Reading.** The shell reads through `rutile-calendar` (native/calendar.c on libecal; the second compiled
+  program after D54). Quickshell has no D-Bus client of its own, and one-shot `busctl` calls cannot work: the data
+  server closes a calendar the moment the connection that opened it goes. The helper has three commands:
+  - `events FROM TO` prints every shown calendar's events in the range, one JSON object per line. The data server
+    works out the repeats, exceptions and time zones itself, which the .ics reader (D93) only approximates.
+  - `refresh` asks each calendar to sync now.
+  - `sources` lists the calendars.
+  It opens the calendars side by side and waits 1 s for each to be online. Local calendars never report online
+  and took the whole 10 s wait first tried; a calendar that is not online still answers from its copy.
+- **The popup.** `EdsCalendar.qml` runs the helper when the popup opens: it reads, asks for a sync, then reads
+  again. It reads a new month's six weeks once both ends have changed (`Qt.callLater`: the command's binding lags
+  the range).
+- **The system.** It must run evolution-data-server, gnome-online-accounts, gnome-keyring and dconf (NixOS
+  `services.gnome.*`; docs/install.md). A home-manager module cannot add D-Bus services to the session bus. Without
+  them the helper exits 2 and the popup shows the other sources.
+- **Tests.** tests/test_calendar_helper.py runs a real data server on a private bus with calendars in a temporary
+  home. tests/qs/tst_eds_calendar.qml and the wayland smoke use a fake helper. Signing in to Google itself was not
+  tried.

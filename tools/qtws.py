@@ -434,6 +434,11 @@ def run_wayland_smoke(screenshot=None):
             "RUTILE_PALETTE": str(comp.runtime / "palette.json"),
             # the calendar addresses' saved copies (D94), never in the user's cache
             "XDG_CACHE_HOME": str(comp.runtime / "cache"),
+            # evolution-data-server's calendars (D95) from a fake reader, never the user's; GNOME Calendar a fake app
+            "RUTILE_CALENDAR": str(ROOT / "tests" / "qs" / "bin" / "fake-rutile-calendar"),
+            "FAKE_CALENDAR_LOG": str(comp.runtime / "calendar.log"),
+            "FAKE_CALENDAR_EVENTS": str(comp.runtime / "calendar-events.jsonl"),
+            "RUTILE_CALENDAR_APP": str(ROOT / "tests" / "qs" / "bin" / "fake-app"),
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         no_polkit_agent(comp.runtime / "config")
@@ -451,6 +456,11 @@ def run_wayland_smoke(screenshot=None):
         (www / "web.ics").write_text(
             "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Smoke web event\r\n"
             f"DTSTART:{today:%Y%m%d}T120000\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+        synced_at = int(datetime.datetime.combine(today, datetime.time(15, 0)).timestamp())
+        (comp.runtime / "calendar-events.jsonl").write_text(json.dumps(
+            {"calendar": "Work", "color": "#ff0000", "source": "google-1", "uid": "ev1", "rid": "",
+             "title": "Smoke synced event", "location": "", "start": synced_at, "end": synced_at + 1800,
+             "allDay": False}) + "\n")
         port = free_port()
         web = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory",
                                 str(www)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -948,15 +958,18 @@ def run_wayland_smoke(screenshot=None):
                     cal = {}
                     for _ in range(50):
                         cal = calendar_state()
-                        if cal.get("read") and len(cal.get("events", [])) == 3 and not cal.get("feedsBusy"):
+                        if (cal.get("read") and len(cal.get("events", [])) == 4 and not cal.get("feedsBusy")
+                                and cal.get("edsSynced")):
                             break
                         time.sleep(0.1)
                     titles = [e.get("title") for e in cal.get("events", [])]
                     if (not cal.get("open") or not cal.get("hasFolder") or cal.get("selected") != today.isoformat()
-                            or titles != ["Smoke holiday", "Smoke standup", "Smoke web event"]
-                            or cal.get("feedsFailed") != 0 or cal.get("clocksOpen") != [True]):
+                            or titles != ["Smoke holiday", "Smoke standup", "Smoke web event", "Smoke synced event"]
+                            or cal.get("feedsFailed") != 0 or not cal.get("eds") or not cal.get("app")
+                            or cal.get("clocksOpen") != [True]):
                         problems.append(f"ipc calendar toggle: {cal}, expected it open on today with the folder's two "
-                                        "events, the address's one and the clock marked")
+                                        "events, the address's one, evolution-data-server's one, GNOME Calendar found "
+                                        "and the clock marked")
                     if not list((comp.runtime / "cache" / "rutile" / "calendars").glob("*.ics")):
                         problems.append("calendar address: nothing saved in XDG_CACHE_HOME/rutile/calendars")
                     if screenshot and shutil.which("grim"):

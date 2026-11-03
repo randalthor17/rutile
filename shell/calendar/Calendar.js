@@ -162,6 +162,10 @@ function ruleTimes(e, from, more) {
     return out;
 }
 
+// one time of an event, with where it came from (an evolution-data-server event's calendar and uid, D95)
+function occurrence(e, start, end) {
+    return { title: e.title, start: start, end: end, allDay: e.allDay, source: e.source || "", uid: e.uid || "" };
+}
 // Every time of `events` that is on between `from` and `to` (Dates), soonest first, as [{title, start, end,
 // allDay}]: a repeating event once per time, without its EXDATEs and the times another event replaces.
 function occurrences(events, from, to) {
@@ -176,13 +180,13 @@ function occurrences(events, from, to) {
     (events || []).forEach(function (e) {
         var length = e.end - e.start;
         if (!e.rule || !e.rule.supported || e.recurrenceId !== null) {
-            if (on(e.start, e.end)) out.push({ title: e.title, start: e.start, end: e.end, allDay: e.allDay });
+            if (on(e.start, e.end)) out.push(occurrence(e, e.start, e.end));
             return;
         }
         ruleTimes(e, from, function (t) { return t < to; }).forEach(function (t) {
             var end = new Date(t.getTime() + length);
             if (e.exdates.indexOf(t.getTime()) >= 0 || replaced[e.uid + "@" + t.getTime()] || !on(t, end)) return;
-            out.push({ title: e.title, start: t, end: end, allDay: e.allDay });
+            out.push(occurrence(e, t, end));
         });
     });
     return out.sort(function (a, b) { return (a.start - b.start) || ((b.allDay ? 1 : 0) - (a.allDay ? 1 : 0)); });
@@ -221,6 +225,31 @@ function cacheName(address) {
         h2 = Math.imul(h2 ^ s.charCodeAt(i), 0x5bd1e995) >>> 0;
     }
     return ("0000000" + h1.toString(16)).slice(-8) + ("0000000" + h2.toString(16)).slice(-8);
+}
+
+// ---- evolution-data-server (D95): what native/calendar.c (rutile-calendar) prints ----
+// The command that prints the events on between two Dates.
+function edsCommand(helper, from, to) {
+    return [helper, "events", String(Math.floor(from.getTime() / 1000)), String(Math.ceil(to.getTime() / 1000))];
+}
+// Its lines (one JSON object each) as events like icsEvents' (each time on its own: EDS expands repeats). A line
+// that is not one is left out.
+function edsEvents(text) {
+    var out = [];
+    String(text || "").split("\n").forEach(function (line) {
+        if (line === "") return;
+        var o;
+        try { o = JSON.parse(line); } catch (e) { return; }
+        if (!o || typeof o.start !== "number" || typeof o.end !== "number") return;
+        out.push({ title: o.title || "Event", start: new Date(o.start * 1000), end: new Date(Math.max(o.start, o.end) * 1000),
+                   allDay: o.allDay === true, rule: null, exdates: [], uid: o.uid || "", recurrenceId: null,
+                   source: o.source || "" });
+    });
+    return out;
+}
+// What GNOME Calendar's --uuid opens: "<calendar>:<event uid>", for an evolution-data-server event; "" otherwise.
+function eventUuid(e) {
+    return e.source && e.uid ? e.source + ":" + e.uid : "";
 }
 
 // ---- the popup ----
@@ -277,6 +306,6 @@ function dayEvents(events, day, use24h, locale, timeText) {
         }
         var time = o.allDay ? "All day"
                  : o.end > o.start ? when(o.start) + " – " + when(o.end) : when(o.start);
-        return { title: o.title, time: time };
+        return { title: o.title, time: time, uuid: eventUuid(o) };
     });
 }

@@ -2,6 +2,9 @@
 # host (D54), and `rutile-shell` (bin/rutile-shell), which runs it under Quickshell with everything it calls on PATH
 # and its fonts visible to Qt, Papirus-Dark for its icons (after the user's own folders; D62), and calls the running one (`rutile-shell lock lock`; `rutile-shell --help` lists all).
 # GPU widgets name cards from libdrm's amdgpu.ids (libdrm is in Qt's closure already) and hwdata's pci.ids (D87).
+# The calendar reads evolution-data-server through rutile-calendar (native/calendar.c, built on libecal) and opens
+# GNOME Calendar and GNOME Online Accounts' window (D95); the system runs the data server and the accounts daemon
+# (docs/install.md).
 {
   lib,
   stdenv,
@@ -25,6 +28,10 @@
   papirus-icon-theme,
   libdrm,
   hwdata,
+  pkg-config,
+  evolution-data-server,
+  gnome-calendar,
+  gnome-online-accounts-gtk,
 }:
 let
   # The system's fontconfig first (every other font keeps working), then the two fonts the shell is drawn with.
@@ -40,8 +47,10 @@ let
   # What the shell runs (Process, execDetached): matugen (palette, other apps' colors), brightnessctl (backlight),
   # pw-play (notification sounds), dbus-monitor (logind's Lock), systemctl/systemd-inhibit/busctl (power, lock
   # before sleep, LockedHint), pkill (apps' reload), sh, coreutils and sed (file jobs; the folder icons, D64), dconf
-# and gsettings (GTK's dark or light, D65), wlsunset (Night light, D91). niri itself comes from the system.
-  runtime = [ matugen brightnessctl wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash ];
+# and gsettings (GTK's dark or light, D65), wlsunset (Night light, D91), GNOME Calendar and the
+# accounts window (D95). niri itself comes from the system.
+  runtime = [ matugen brightnessctl wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash
+              gnome-calendar gnome-online-accounts-gtk ];
 in
 stdenv.mkDerivation {
   pname = "rutile-shell";
@@ -63,7 +72,8 @@ stdenv.mkDerivation {
     ];
   };
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper pkg-config ];
+  buildInputs = [ evolution-data-server ];
 
   buildPhase = ''
     runHook preBuild
@@ -78,6 +88,7 @@ stdenv.mkDerivation {
     cp -r shell theme $out/share/rutile/
     mkdir -p $out/share/rutile/widgets && cp -r widgets/examples widgets/templates $out/share/rutile/widgets/
     install -Dm755 build/rutile-pywalfox-host $out/share/rutile/build/rutile-pywalfox-host
+    install -Dm755 build/rutile-calendar $out/share/rutile/build/rutile-calendar
     install -Dm755 bin/rutile-shell $out/share/rutile/bin/rutile-shell
     # the Settings and Widgets apps in app launchers, run by this package's own CLI
     for app in settings widgets; do

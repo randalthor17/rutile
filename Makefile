@@ -10,11 +10,20 @@ check: tokens-check generate-check native test lint qmllint
 CC ?= cc
 NATIVE_FLAGS = -std=c11 -O2 -g -Wall -Wextra -Werror -Wshadow -Wconversion -Wformat=2 -Wstrict-prototypes \
 	-Wmissing-prototypes -Wvla -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -pie -Wl,-z,relro,-z,now
-native: build/rutile-pywalfox-host
+native: build/rutile-pywalfox-host build/rutile-calendar
 
 build/rutile-pywalfox-host: native/pywalfox-host.c
 	@mkdir -p build
 	$(CC) $(NATIVE_FLAGS) -o $@ $<
+
+# The calendar's reader (D95), on evolution-data-server's libecal; its headers are system headers here, so the
+# strict warnings apply to our code only.
+PKG_CONFIG ?= pkg-config
+ECAL_CFLAGS = $(subst -I,-isystem ,$(shell $(PKG_CONFIG) --cflags libecal-2.0))
+ECAL_LIBS = $(shell $(PKG_CONFIG) --libs libecal-2.0)
+build/rutile-calendar: native/calendar.c
+	@mkdir -p build
+	$(CC) $(NATIVE_FLAGS) $(ECAL_CFLAGS) -o $@ $< $(ECAL_LIBS)
 
 tokens:
 	$(PY) tools/gen_tokens.py

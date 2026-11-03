@@ -19,6 +19,7 @@ Rectangle {
     property bool shown: true
     property bool hasFolder: true           // false: no calendar address and no calendar folder, nothing to read
     property string note: ""                // under the events: an address that did not answer
+    property bool hasApp: false             // GNOME Calendar is there to open (D95)
     property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
     property var locale: Qt.locale()
     property date selected: Calendar.startOfDay(now)
@@ -35,8 +36,11 @@ Rectangle {
     readonly property real maxHeight: 2 * Spacing.md + header.height + weekdays.height + grid.height + dayTitle.height
                                       + maxRows * (rowHeight + ControlSpec.listSpec.segmentedGap) + 4 * column.spacing
                                       + (note !== "" ? noteText.height + column.spacing : 0)
+                                      + (hasApp ? appButton.height + column.spacing : 0)
 
     signal settingsRequested()
+    signal eventOpened(string uuid)          // an evolution-data-server event clicked: GNOME Calendar opens it (D95)
+    signal appRequested()                    // "Open Calendar"
     signal windowFocusLost()
     signal hidden()
 
@@ -225,7 +229,7 @@ Rectangle {
             leftPadding: Spacing.sm
             width: parent.width
             wrapMode: Text.Wrap
-            text: root.hasFolder ? "No events" : "No calendars yet. Add your Google Calendar's address in Settings."
+            text: root.hasFolder ? "No events" : "No calendars yet. Add your Google account in Settings > Calendar."
             color: Colors.surfaceVariantOn
             font: Type.font(Type.bodyMedium)
         }
@@ -262,6 +266,8 @@ Rectangle {
                         iconName: "event"
                         text: modelData.title
                         supportingText: modelData.time
+                        // GNOME Calendar edits what came from evolution-data-server; the others have nowhere to go
+                        onClicked: if (modelData.uuid !== "") root.eventOpened(modelData.uuid)
                     }
                 }
             }
@@ -276,6 +282,16 @@ Rectangle {
             text: root.note
             color: Colors.surfaceVariantOn
             font: Type.font(Type.bodySmall)
+        }
+        Button {
+            id: appButton
+            objectName: "calendarApp"
+            visible: root.hasApp
+            type: "text"
+            size: "xs"
+            iconName: "edit_calendar"
+            text: "Open Calendar"
+            onClicked: root.appRequested()
         }
     }
 }

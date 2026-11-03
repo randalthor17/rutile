@@ -51,6 +51,11 @@ FloatingWindow {
             onActionRequested: key => {
                 if (key === "action.flatpak")
                     Quickshell.execDetached([Quickshell.env("RUTILE_CLI") || "rutile-shell", "flatpak-theming", "--terminal"]);
+                // the calendar's accounts and app (D95)
+                else if (key === "action.calendarAccounts")
+                    Quickshell.execDetached(["gnome-online-accounts-gtk"]);
+                else if (key === "action.calendarApp")
+                    Quickshell.execDetached([Quickshell.env("RUTILE_CALENDAR_APP") || "gnome-calendar"]);
             }
         }
     }

@@ -41,7 +41,7 @@
             root = ./.;
             fileset = pkgs.lib.fileset.unions [ ./Makefile ./native ];
           };
-          buildPhase = "make native CC=$CC";
+          buildPhase = "make build/rutile-pywalfox-host CC=$CC";
           installPhase = "install -Dm755 build/rutile-pywalfox-host $out/bin/rutile-pywalfox-host";
           meta.mainProgram = "rutile-pywalfox-host";
         };
@@ -80,6 +80,7 @@
             pkgs.sway # test only: a headless compositor for `qtws.py test-wayland` (D40)
             pkgs.grim # test only: screenshots of that compositor
             pkgs.pipewire # pw-play: the notification sound at run time (plan 2.8)
+            pkgs.pkg-config # finds libecal for native/calendar.c (D95)
             pkgs.libnotify # test only: notify-send, to send the shell notifications (plan 2.8)
           ];
           devHook = ''
@@ -101,6 +102,8 @@
           default = pkgs.mkShell {
             name = "rutile-dev";
             packages = devPackages;
+            # the calendar's reader is built against libecal (D95)
+            buildInputs = [ pkgs.evolution-data-server ];
             shellHook = devHook + ''
               echo "rutile dev shell: run 'make check'"
             '';

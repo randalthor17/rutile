@@ -222,8 +222,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   EXDATE; RECURRENCE-ID) for the popup and the widgets' calendar source. Arrows, Page Up/Down, Home, the wheel;
   IPC `calendar toggle|open|close|isOpen|select DAY|state`. Google Calendar (D94): `calendar.feeds`, the calendars'
   secret iCal addresses (Outlook, iCloud, Proton, Nextcloud alike), fetched as it opens and saved for offline use.
-  Not yet: signing in to Google (see D94), adding or changing events, time zones (TZID times are taken as local),
-  rules beyond those listed, addresses for widgets.
+  Signing in (D95, the maintainer's choice): GNOME Online Accounts adds Google (and Microsoft, Nextcloud...)
+  accounts, evolution-data-server syncs them, `rutile-calendar` (native/calendar.c, libecal) reads the shown
+  calendars' events with repeats and time zones worked out by EDS, and GNOME Calendar edits them (a click on such
+  an event opens it there; "Open Calendar"). Not yet: adding events from the popup, time zones for .ics files
+  (TZID times are taken as local), addresses and EDS for widgets, a real Google account tried.
 
 ## Phase 3: windows on niri
 

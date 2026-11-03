@@ -479,7 +479,7 @@ var schema = {
                     },
                     "default": [],
                     "title": "Calendar addresses",
-                    "description": "Calendars to show from the web, by their .ics address. For Google Calendar: in calendar.google.com, Settings, choose the calendar, then Integrate calendar and copy \"Secret address in iCal format\" (one address per calendar). Outlook, iCloud, Proton and Nextcloud give such addresses too. Read only; fetched when the calendar opens and kept for offline use. Anyone with a secret address can read that calendar: keep it out of shared files and out of Nix settings (the Nix store is readable by every user)."
+                    "description": "Calendars to show from the web without signing in (Online accounts is the better way), by their .ics address. For Google Calendar: in calendar.google.com, Settings, choose the calendar, then Integrate calendar and copy \"Secret address in iCal format\" (one address per calendar). Outlook, iCloud, Proton and Nextcloud give such addresses too. Read only; fetched when the calendar opens and kept for offline use. Anyone with a secret address can read that calendar: keep it out of shared files and out of Nix settings (the Nix store is readable by every user)."
                 },
                 "folder": {
                     "type": "string",

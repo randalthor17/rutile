@@ -61,8 +61,10 @@ surfaces), no focus ring. See `docs/components.md`.
 4. The maintainer tries Settings > Windows (3.1, D88) on the real session: floating, corners, shadow, and the new
    title bars on Settings and Widgets (move, maximize, resize with a real pointer, which the nested tests could not
    do).
-5. The maintainer tries the calendar under the clock (D93) with a real Google Calendar secret address (Settings >
-   Calendar, D94; not tried with a real Google account) and says how soon changes show.
+5. The maintainer turns on the NixOS services in docs/install.md (evolution-data-server, gnome-online-accounts,
+   gnome-keyring, dconf), signs in to Google from Settings > Calendar > Online accounts (D95), and checks the
+   calendar under the clock: events, a click opening GNOME Calendar on the event, and how soon edits show. None of
+   this was tried with a real Google account.
 
 ## 3. Resume in five minutes
 
@@ -221,7 +223,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call; `flatpak-theming` (D66) |
-| `native/` | the one C program, the Firefox colors' host (D54); `make native` builds `build/rutile-pywalfox-host` |
+| `native/` | the C programs: the Firefox colors' host (D54) and the calendar's evolution-data-server reader (D95); `make native` builds `build/rutile-pywalfox-host` and `build/rutile-calendar` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
 | `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`, `settings.md`) |
 | `flake.nix` | dev shells (`default`, and x86_64-only `local-ai`), the font package, the NixOS module, the home-manager module |
@@ -282,6 +284,9 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
 | `RUTILE_AMDGPU_IDS`, `RUTILE_PCI_IDS` | `shell/widgethost/sources/GpuSource.qml` | libdrm's amdgpu.ids and hwdata's pci.ids, for graphics card names (the package sets both; without them, /usr/share's) |
 | `RUTILE_WEATHER_URL` | `shell/widgethost/sources/WeatherSource.qml` | the weather address instead of Open-Meteo's (tests point it at a local server) |
+| `RUTILE_CALENDAR` | `shell/calendar/EdsCalendar.qml` | the evolution-data-server reader when it is not `build/rutile-calendar` beside the shell (D95; tests point it at a stand-in) |
+| `RUTILE_CALENDAR_APP` | `shell/calendar/CalendarWindow.qml`, `shell/settingsapp/SettingsWindow.qml` | the calendar app instead of `gnome-calendar` (tests: a stand-in) |
+| `FAKE_CALENDAR_LOG`, `FAKE_CALENDAR_EVENTS` | `tests/qs/bin/fake-rutile-calendar` | tests only: where the stand-in logs its calls, and the events it prints |
 | `RUTILE_TEST_PORT` | `tests/qs/tst_widget_sources_live.qml` | tests only: the free local port of the test's own web server (`@PORT@` in a test's `// env` lines) |
 | `RUTILE_PAPIRUS` | `shell/services/Files.js` (folder icons, D64) | Papirus-Dark's folder when it is not in `XDG_DATA_DIRS` (tests) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
