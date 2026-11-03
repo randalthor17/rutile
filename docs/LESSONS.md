@@ -391,3 +391,7 @@ so only loading the shell shows it; the smoke test caught it.
 a Loader stops the file from loading; give a layout `Layout.preferredHeight` from the item instead. A filler Item
 with `visible: false` takes no space in a ColumnLayout, so it cannot hold the extra; and a visible one adds a
 spacing gap. The renderer's column node sizes its layout itself instead (D83).
+
+**Qt's JavaScript splits a string into UTF-16 units in `Array.from`.** A character outside the BMP (an emoji) counts
+as two, where Python counts one, so the shell's widget check refused a 31-emoji name that widget_check.py takes.
+Count surrogate pairs instead (WidgetCheck.js `chars`); the cross-test with tests/widget_check_cases.py caught it.

@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Check and install widgets from a terminal.** `rutile-shell widgets check my-widget.json` lists what is wrong,
+  each problem with where it is (`$.root.children[0].label: ...`; `--json` for scripts), and
+  `rutile-shell widgets install my-widget.json --place` checks it, copies it to `~/.config/rutile/widgets` and puts
+  it on the desktop. The preview window lists the same problems. A guide to writing widgets: `docs/widgets.md`.
 - **Widgets fit their space.** Making a desktop widget bigger in edit mode stretches its cards and tiles to fill
   it. A widget without a card is centered in its space with a margin from the edges. Settings > Widgets > "Scale
   text with widget size" (off by default) also makes a bigger widget's text larger, up to twice.

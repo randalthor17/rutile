@@ -26,6 +26,11 @@ Usage:
                                             from Flathub (for this user) and give apps your GTK, Kvantum and KDE
                                             settings, read-only; -y: no questions (Settings, Wallpaper & style)
   rutile-shell flatpak-theming --terminal   the same in a new terminal window
+  rutile-shell widgets check FILE [--json]  check a widget file against the spec (the running shell checks it):
+                                            "FILE: $.where: what" lines, or JSON {"ok", "problems"}; exit 1 if wrong
+  rutile-shell widgets install FILE [--place] [--json]
+                                            check it, then copy it to ~/.config/rutile/widgets (a free name);
+                                            --place also puts it on the desktop; prints the new path (or JSON)
 
 IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diagnostics):
   wallpaper      set PATH          set the wallpaper (absolute path; "" removes it); false if set in Nix
@@ -57,6 +62,8 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  gallery [CATEGORY]  the Widgets app: templates (weather, daily-update, world-clock, finance,
                                    countdown, sports) and your widgets (yours)
                  use TEMPLATE      use a template from the open app, e.g. weather-1
+                 check PATH        a widget file's problems, one per line (rutile-shell widgets check FILE)
+                 checkJson PATH    the same as JSON
                  galleryClose | galleryState
   appcolors      state             colors for other apps (Settings, Wallpaper: off unless switched on)
   polkit         cancel            cancel the open password dialog
@@ -161,6 +168,74 @@ in_terminal() {
     return 1
 }
 
+# `widgets check` and `widgets install` (plan 4.6, D85): the running shell checks the file (the package has no
+# Python); installing is a copy into the user's widget folder under a name not taken yet.
+absolute() {
+    case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *) printf '%s\n' "$PWD/$1" ;;
+    esac
+}
+widgets_check() {
+    file= json=0
+    for a do
+        case "$a" in
+            --json) json=1 ;;
+            -*) echo "rutile-shell: widgets check: unknown option $a" >&2; exit 2 ;;
+            *) file=$(absolute "$a") ;;
+        esac
+    done
+    [ -n "$file" ] || { echo "rutile-shell: widgets check needs a FILE" >&2; exit 2; }
+    if [ "$json" -eq 1 ]; then
+        out=$("$qs" ipc -p "$qml" call widgets checkJson "$file")
+        printf '%s\n' "$out"
+        case "$out" in *'"ok":true'*) exit 0 ;; *) exit 1 ;; esac
+    fi
+    out=$("$qs" ipc -p "$qml" call widgets check "$file")
+    printf '%s\n' "$out"
+    case "$(printf '%s\n' "$out" | tail -n 1)" in ok:*) exit 0 ;; *) exit 1 ;; esac
+}
+widgets_install() {
+    file= json=0 place=0
+    for a do
+        case "$a" in
+            --json) json=1 ;;
+            --place) place=1 ;;
+            -*) echo "rutile-shell: widgets install: unknown option $a" >&2; exit 2 ;;
+            *) file=$(absolute "$a") ;;
+        esac
+    done
+    [ -n "$file" ] || { echo "rutile-shell: widgets install needs a FILE" >&2; exit 2; }
+    result=$("$qs" ipc -p "$qml" call widgets checkJson "$file")
+    case "$result" in
+        *'"ok":true'*) ;;
+        *)
+            if [ "$json" -eq 1 ]; then printf '%s\n' "$result"; else "$qs" ipc -p "$qml" call widgets check "$file" >&2; fi
+            exit 1
+            ;;
+    esac
+    dir=${XDG_CONFIG_HOME:-$HOME/.config}/rutile/widgets
+    stem=$(basename -- "$file" .json)
+    target=$dir/$stem.json
+    n=2
+    while [ -e "$target" ]; do
+        target=$dir/$stem-$n.json
+        n=$((n + 1))
+    done
+    mkdir -p -- "$dir"
+    cp -- "$file" "$target"
+    placed=false
+    if [ "$place" -eq 1 ]; then
+        [ "$("$qs" ipc -p "$qml" call widgets add "$target")" = true ] && placed=true
+    fi
+    if [ "$json" -eq 1 ]; then
+        printf '{"ok":true,"path":"%s","placed":%s}\n' "$target" "$placed"
+    else
+        printf '%s\n' "$target"
+        [ "$place" -eq 0 ] || [ "$placed" = true ] || echo "rutile-shell: no room on the desktop for it" >&2
+    fi
+}
+
 is_target() {
     for t in $TARGETS; do
         [ "$t" = "$1" ] && return 0
@@ -224,6 +299,15 @@ case "$1" in
             # the Settings app's desktop file: open it, on the page it shows (one window, focused if open)
             if [ "$1" = settings ] && [ $# -eq 1 ]; then
                 exec "$qs" ipc -p "$qml" call settings open ""
+            fi
+            if [ "$1" = widgets ] && [ "${2-}" = check ]; then
+                shift 2
+                widgets_check "$@"
+            fi
+            if [ "$1" = widgets ] && [ "${2-}" = install ]; then
+                shift 2
+                widgets_install "$@"
+                exit 0
             fi
             # the Widgets app from its desktop file: the category it shows
             if [ "$1" = widgets ] && [ "${2-}" = gallery ] && [ $# -eq 2 ]; then

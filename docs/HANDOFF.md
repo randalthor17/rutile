@@ -203,7 +203,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/desktop/` | the desktop widget grid (plan 4.4, D81): `DesktopWindow` per screen on the bottom layer, `DesktopWidgets` (EditableGrid and the edit bar), `WidgetLibrary` reads the placed files, `Desktop.js` the saved layouts |
 | `shell/widgetsapp/` | the Widgets app (plan 4.5, D82): `WidgetsWindow` reads `widgets/templates` and the user's widgets, `WidgetsApp` the categories and `WidgetCard`s, `Gallery.js` the rules |
-| `shell/widgethost/` | the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
+| `shell/widgethost/` | the widget check (4.6, D85): `WidgetCheck.js`, the port of `tools/widget_check.py`, and `WidgetChecker` for IPC; the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
 | `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
@@ -224,7 +224,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 Tool inventory (every script has a docstring with usage): `tools/gen_tokens.py` and `tools/gen_components.py`
 generate token JSON from the vendored Kotlin sources; `tools/gen_qml.py` generates the QML singletons; `tools/gen_settings.py` checks `settings/schema.json` and
 generates `shell/services/SettingsSchema.js` from it; `tools/gen_sources.py` generates
-`shell/widgethost/SourceCatalog.js` from `widgets/sources.json` (the widget data sources, D79); `tools/gen_kvantum.py` generates the Kvantum theme templates
+`shell/widgethost/SourceCatalog.js` from `widgets/sources.json` (the widget data sources, D79) and `shell/widgethost/SpecSchema.js` from `widgets/spec.schema.json` (the shell's widget check, D85); `tools/gen_kvantum.py` generates the Kvantum theme templates
 (`theme/apps/kvantum.svg`, `.kvconfig`, D60);
 `tools/palette.py` renders and validates `palette.json` for development (the shell does its own, D53); `tools/qtws.py` builds the Qt workspace and runs
 tests, lint, GPU tests and gallery renders, the Quickshell tests (`test-qs`) and the real shell under a headless

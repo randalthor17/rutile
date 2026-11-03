@@ -2,6 +2,7 @@
 shell/shell.qml's IpcHandlers answer, with their arguments, and each form of the command reaches Quickshell with
 the right arguments (a stand-in quickshell prints what it got). `flatpak-theming` (D66) against a stand-in flatpak
 that logs its calls."""
+import json
 import os
 import re
 import shutil
@@ -233,6 +234,68 @@ class FlatpakTheming(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("Not finished", r.stdout)
         self.assertIn("Press Enter to close", r.stdout)
+
+
+class WidgetCheckAndInstall(unittest.TestCase):
+    """`widgets check` and `widgets install` (plan 4.6, D85) against a stand-in shell that finds a file good when
+    its name has "good" in it, and places what it is asked to."""
+    FAKE = r"""#!/bin/sh
+# ipc -p QML call widgets FUNCTION PATH ($6, $7)
+echo "$*" >> "$LOG"
+fn=$6 path=$7
+case "$fn" in
+    checkJson) case "$path" in *good*) echo '{"ok":true,"problems":[]}' ;; *) echo '{"ok":false,"problems":[{"path":"$.root","message":"missing required field '"'"'label'"'"'"}]}' ;; esac ;;
+    check) case "$path" in *good*) echo "ok: $path" ;; *) printf '%s\n' "$path: \$.root: missing required field 'label'" "FAILED: $path (1 problem(s))" ;; esac ;;
+    add) echo "${ADD:-true}" ;;
+esac
+"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp)
+        fake = self.tmp / "quickshell"
+        fake.write_text(self.FAKE)
+        fake.chmod(0o755)
+        self.config = self.tmp / "config"
+        (self.tmp / "good.json").write_text('{"version": 1}')
+        (self.tmp / "bad.json").write_text('{"version": 1}')
+
+    def cli(self, *args, **env):
+        e = dict(os.environ, RUTILE_QUICKSHELL=str(self.tmp / "quickshell"), RUTILE_SHELL_QML="/s/shell.qml",
+                 XDG_CONFIG_HOME=str(self.config), LOG=str(self.tmp / "log"), **env)
+        return subprocess.run([str(CLI), *args], capture_output=True, text=True, env=e, timeout=10, cwd=self.tmp)
+
+    def test_check(self):
+        r = self.cli("widgets", "check", "good.json")
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, f"ok: {self.tmp}/good.json"), "a relative path made full")
+        r = self.cli("widgets", "check", "bad.json")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("$.root: missing required field 'label'", r.stdout)
+        r = self.cli("widgets", "check", "bad.json", "--json")
+        self.assertEqual(r.returncode, 1)
+        self.assertEqual(json.loads(r.stdout)["problems"][0]["path"], "$.root")
+        self.assertEqual(self.cli("widgets", "check", "good.json", "--json").returncode, 0)
+        self.assertEqual(self.cli("widgets", "check").returncode, 2, "no file")
+        self.assertEqual(self.cli("widgets", "check", "a.json", "--nope").returncode, 2)
+
+    def test_install(self):
+        folder = self.config / "rutile" / "widgets"
+        r = self.cli("widgets", "install", "good.json")
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, str(folder / "good.json")))
+        self.assertEqual((folder / "good.json").read_text(), '{"version": 1}')
+        r = self.cli("widgets", "install", "good.json", "--place", "--json")
+        self.assertEqual(json.loads(r.stdout), {"ok": True, "path": str(folder / "good-2.json"), "placed": True},
+                         "a free name, and placed")
+        self.assertIn(f"call widgets add {folder}/good-2.json", (self.tmp / "log").read_text())
+        r = self.cli("widgets", "install", "good.json", "--place", ADD="false")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("no room on the desktop", r.stderr)
+        r = self.cli("widgets", "install", "bad.json")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("missing required field", r.stderr, "the problems, for a person")
+        self.assertFalse((folder / "bad.json").exists(), "a broken widget is not installed")
+        r = self.cli("widgets", "install", "bad.json", "--json")
+        self.assertEqual((r.returncode, json.loads(r.stdout)["ok"]), (1, False), "or as JSON")
 
 
 class SettingsDesktopFile(unittest.TestCase):

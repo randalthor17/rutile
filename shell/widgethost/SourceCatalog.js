@@ -3,18 +3,54 @@
 .pragma library
 
 var sources = {
-    "battery": {
+    "clock": {
+        "open": false,
         "fields": {
-            "charging": {
-                "type": "boolean"
+            "time": {
+                "type": "text"
             },
-            "fraction": {
+            "seconds": {
+                "type": "number"
+            },
+            "date": {
+                "type": "text"
+            },
+            "weekday": {
+                "type": "text"
+            },
+            "day": {
+                "type": "number"
+            },
+            "month": {
+                "type": "text"
+            },
+            "year": {
+                "type": "number"
+            },
+            "hour": {
+                "type": "number"
+            },
+            "minute": {
+                "type": "number"
+            },
+            "dayProgress": {
                 "type": "fraction"
+            }
+        }
+    },
+    "battery": {
+        "open": false,
+        "fields": {
+            "present": {
+                "type": "boolean"
             },
             "level": {
                 "type": "number"
             },
-            "present": {
+            "fraction": {
+                "type": "fraction"
+            },
+            "charging": {
                 "type": "boolean"
             },
             "status": {
@@ -23,144 +59,10 @@ var sources = {
             "timeLeft": {
                 "type": "text"
             }
-        },
-        "open": false
-    },
-    "calendar": {
-        "fields": {
-            "count": {
-                "type": "number"
-            },
-            "events": {
-                "item": [
-                    "date",
-                    "time",
-                    "title",
-                    "when"
-                ],
-                "type": "list"
-            },
-            "next": {
-                "type": "text"
-            },
-            "nextWhen": {
-                "type": "text"
-            }
-        },
-        "open": false
-    },
-    "clock": {
-        "fields": {
-            "date": {
-                "type": "text"
-            },
-            "day": {
-                "type": "number"
-            },
-            "dayProgress": {
-                "type": "fraction"
-            },
-            "hour": {
-                "type": "number"
-            },
-            "minute": {
-                "type": "number"
-            },
-            "month": {
-                "type": "text"
-            },
-            "seconds": {
-                "type": "number"
-            },
-            "time": {
-                "type": "text"
-            },
-            "weekday": {
-                "type": "text"
-            },
-            "year": {
-                "type": "number"
-            }
-        },
-        "open": false
-    },
-    "countdown": {
-        "fields": {
-            "days": {
-                "type": "number"
-            },
-            "done": {
-                "type": "boolean"
-            },
-            "hours": {
-                "type": "number"
-            },
-            "minutes": {
-                "type": "number"
-            },
-            "progress": {
-                "type": "fraction"
-            },
-            "remaining": {
-                "type": "fraction"
-            },
-            "text": {
-                "type": "text"
-            }
-        },
-        "open": false
-    },
-    "files": {
-        "fields": {
-            "firstLine": {
-                "type": "text"
-            },
-            "json": {
-                "type": "open"
-            },
-            "lines": {
-                "item": [
-                    "text"
-                ],
-                "type": "list"
-            },
-            "text": {
-                "type": "text"
-            }
-        },
-        "open": false
-    },
-    "http": {
-        "fields": {},
-        "open": true
-    },
-    "media": {
-        "fields": {
-            "album": {
-                "type": "text"
-            },
-            "art": {
-                "type": "text"
-            },
-            "artist": {
-                "type": "text"
-            },
-            "player": {
-                "type": "text"
-            },
-            "playing": {
-                "type": "boolean"
-            },
-            "progress": {
-                "type": "fraction"
-            },
-            "title": {
-                "type": "text"
-            }
-        },
-        "open": false
+        }
     },
     "system": {
+        "open": false,
         "fields": {
             "cpu": {
                 "type": "number"
@@ -168,57 +70,155 @@ var sources = {
             "cpuFraction": {
                 "type": "fraction"
             },
-            "load": {
-                "type": "text"
-            },
             "memory": {
                 "type": "number"
             },
             "memoryFraction": {
                 "type": "fraction"
             },
-            "memoryTotal": {
+            "memoryUsed": {
                 "type": "text"
             },
-            "memoryUsed": {
+            "memoryTotal": {
                 "type": "text"
             },
             "uptime": {
                 "type": "text"
+            },
+            "load": {
+                "type": "text"
             }
-        },
-        "open": false
+        }
+    },
+    "countdown": {
+        "open": false,
+        "fields": {
+            "days": {
+                "type": "number"
+            },
+            "hours": {
+                "type": "number"
+            },
+            "minutes": {
+                "type": "number"
+            },
+            "text": {
+                "type": "text"
+            },
+            "done": {
+                "type": "boolean"
+            },
+            "remaining": {
+                "type": "fraction"
+            },
+            "progress": {
+                "type": "fraction"
+            }
+        }
+    },
+    "media": {
+        "open": false,
+        "fields": {
+            "playing": {
+                "type": "boolean"
+            },
+            "title": {
+                "type": "text"
+            },
+            "artist": {
+                "type": "text"
+            },
+            "album": {
+                "type": "text"
+            },
+            "art": {
+                "type": "text"
+            },
+            "progress": {
+                "type": "fraction"
+            },
+            "player": {
+                "type": "text"
+            }
+        }
     },
     "weather": {
+        "open": false,
         "fields": {
+            "temperature": {
+                "type": "number"
+            },
             "apparent": {
                 "type": "number"
             },
-            "condition": {
-                "type": "text"
-            },
             "high": {
-                "type": "number"
-            },
-            "humidity": {
                 "type": "number"
             },
             "low": {
                 "type": "number"
             },
-            "symbol": {
-                "type": "text"
-            },
-            "temperature": {
-                "type": "number"
-            },
             "unit": {
                 "type": "text"
             },
+            "humidity": {
+                "type": "number"
+            },
             "wind": {
                 "type": "text"
+            },
+            "condition": {
+                "type": "text"
+            },
+            "symbol": {
+                "type": "text"
             }
-        },
-        "open": false
+        }
+    },
+    "calendar": {
+        "open": false,
+        "fields": {
+            "events": {
+                "type": "list",
+                "item": [
+                    "title",
+                    "date",
+                    "time",
+                    "when"
+                ]
+            },
+            "next": {
+                "type": "text"
+            },
+            "nextWhen": {
+                "type": "text"
+            },
+            "count": {
+                "type": "number"
+            }
+        }
+    },
+    "http": {
+        "open": true,
+        "fields": {}
+    },
+    "files": {
+        "open": false,
+        "fields": {
+            "text": {
+                "type": "text"
+            },
+            "firstLine": {
+                "type": "text"
+            },
+            "lines": {
+                "type": "list",
+                "item": [
+                    "text"
+                ]
+            },
+            "json": {
+                "type": "open"
+            }
+        }
     }
 };

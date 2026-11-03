@@ -1,11 +1,13 @@
 // A window that shows one widget file with its live data (plan 4.6's preview, D80), until the desktop grid (4.4)
 // shows widgets: `rutile-shell widgets preview FILE`. The file is read again whenever it is saved, so a widget
-// can be written and watched at once; below the widget, what the renderer left out and what its sources said.
+// can be written and watched at once; below the widget, what is wrong with it (the widget check, D85: the spec's
+// rules and the sources' fields, at their paths) and what its sources said.
 import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.common
 import "WidgetSpec.js" as Spec
+import "WidgetCheck.js" as Check
 
 FloatingWindow {
     id: root
@@ -13,7 +15,8 @@ FloatingWindow {
     property string path: ""
     property var spec: null
     property string readError: ""
-    readonly property var problems: readError !== "" ? [readError] : host.problems
+    property var checked: []                // the check's problems, "$.where: what"
+    readonly property var problems: readError !== "" ? [readError] : (checked.length ? checked : host.problems)
     readonly property var sourceErrors: Object.keys(sources.errors).map(n => n + ": " + sources.errors[n])
     readonly property alias values: sources.values
 
@@ -28,6 +31,7 @@ FloatingWindow {
         try {
             spec = JSON.parse(file.text());
             readError = "";
+            checked = Check.check(spec).map(p => p.path + ": " + p.message);
         } catch (e) {
             spec = null;
             readError = "not JSON: " + e.message;

@@ -11,7 +11,8 @@ Rutile's widget system (plan items 4.1 to 4.5).
   --templates` checks them.
 
 Check everything with `python3 tools/widget_check.py` (standard library only); `tests/test_widget_spec.py`
-runs it in `make check`.
+runs it in `make check`. With the shell running, `rutile-shell widgets check FILE` checks one file the same way
+(D85). How to write a widget: `docs/widgets.md`.
 
 The local-model line may own this directory for a task (see `docs/sidework.md` and `tools/ownership.json`):
 while a `local/*` branch is open here, the main line does not edit it, so merges cannot conflict.

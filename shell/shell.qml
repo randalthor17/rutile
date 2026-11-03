@@ -352,8 +352,13 @@ ShellRoot {
             }
         }
     }
+    WidgetChecker { id: widgetChecker }
     IpcHandler {
         target: "widgets"
+        // A widget file checked as tools/widget_check.py would (D85): "PATH: $.where: what" lines, then ok or FAILED
+        function check(path: string): string { return widgetChecker.report(path); }
+        // The same as JSON: {"ok", "problems": [{"path", "message"}]}
+        function checkJson(path: string): string { return JSON.stringify(widgetChecker.check(path)); }
         // An absolute path; false for a relative one. Another file replaces the one shown.
         function preview(path: string): bool {
             if (!path.startsWith("/")) return false;

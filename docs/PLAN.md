@@ -241,9 +241,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   previews it and opens it in the editor (`widgets.editor`). 30 templates in `widgets/templates`, written by Claude
   (`widget_check.py --templates` in `make check`). The desktop's Add menu links to it; `rutile-shell widgets
   gallery`, a desktop file. No prompt box: generating widgets is deferred (4.7 to 4.9).
-- [ ] **4.6** CLI: widget check / preview / install with machine-readable errors. Preview done (D80):
-  `rutile-shell widgets preview FILE`, a window with the widget's live data, read again on save. Started: `tools/widget_check.py`
-  checks a schema against the spec's rules and widgets against the schema (stdlib JSON Schema subset).
+- [x] **4.6** CLI (D80, D85): `rutile-shell widgets preview FILE` (a window with live data, redrawn on save),
+  `widgets check FILE [--json]` (the spec's rules and the sources' fields, at their paths; exit 1 when wrong) and
+  `widgets install FILE [--place] [--json]` (check, copy to `~/.config/rutile/widgets`, put on the desktop). The
+  check runs in the shell (WidgetCheck.js, a port of `tools/widget_check.py`, compared with it on 65 cases), so the
+  package needs no Python. A guide for people: `docs/widgets.md`.
 Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9 stay planned for later, not next.
 
 - [ ] **4.7** (deferred) Ollama bridge: structured output with the schema as format, system prompt from the LLM docs, retry

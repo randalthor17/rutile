@@ -181,6 +181,10 @@ def workspace(tests_dir="qml"):
     for f in sorted((ROOT / "widgets" / "examples").glob("*.json")):
         shutil.copy(f, data / "widgets" / f.name)
     shutil.copytree(ROOT / "widgets" / "templates", data / "widgets" / "templates")
+    # what tools/widget_check.py finds in a set of widgets, for the shell's port of it (D85)
+    sys.path.insert(0, str(ROOT / "tests"))
+    import widget_check_cases
+    (data / "widget_check_cases.json").write_text(json.dumps(widget_check_cases.cases(), ensure_ascii=False))
     shutil.copy(ROOT / "tests" / "fixtures" / "open-meteo.json", data)
     shutil.copy(ROOT / "tokens" / "m3e.json", data)
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", data / "palette.json")
@@ -656,6 +660,17 @@ def run_wayland_smoke(screenshot=None):
                     if ipc("preview", "relative.json", target="widgets") != "false":
                         problems.append("ipc widgets preview of a relative path: accepted")
                     ipc("close", target="widgets")
+                    # the widget check (D85): an example passes; a broken file gets its problem at its path
+                    if ipc("check", stat_path := str(ROOT / "widgets" / "examples" / "stat.json"), target="widgets") != f"ok: {stat_path}":
+                        problems.append("ipc widgets check stat.json: not ok")
+                    broken = comp.runtime / "broken.json"
+                    broken.write_text('{"version": 1, "name": "B", "root": {"type": "chip", "label": "{{battery.volts}}"}}')
+                    try:
+                        cj = json.loads(ipc("checkJson", str(broken), target="widgets"))
+                    except ValueError:
+                        cj = {}
+                    if cj.get("ok") is not False or [p.get("path") for p in cj.get("problems", [])] != ["$.root.label"]:
+                        problems.append(f"ipc widgets checkJson broken.json: {cj}")
                     # the desktop grid (D81): a widget placed over IPC gets a layer on the screen, saved in state.json;
                     # edit mode and back; removed, the screen's layer goes
                     def desktop_layout():
@@ -878,12 +893,13 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc launcher state: loaded {launcher_loaded!r} after closing, expected False")
                     # both toasts have shown and gone (4 s each and the motion), and the window with them
                     toast = {}
-                    while time.time() < toast_sent + 15:
+                    # (asked at least once: the steps before may have taken longer than the toasts)
+                    while True:
                         try:
                             toast = json.loads(ipc("state", target="toast"))
                         except ValueError:
                             toast = {}
-                        if toast.get("loaded") is False:
+                        if toast.get("loaded") is False or time.time() >= toast_sent + 15:
                             break
                         time.sleep(0.2)
                     if toast != {"loaded": False, "open": False, "current": None, "queued": []}:

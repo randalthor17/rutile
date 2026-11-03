@@ -870,3 +870,14 @@ and height ratios, 0.8 to 2 times; paddings stay). By default a widget is stretc
 tile, or a column or row holding one) fills its cells. One that cannot is centered in them. One without its own
 surface (WidgetSpec.surfaced: a card or tile, alone in a column or row too) keeps a Spacing.lg margin. A widget still
 too tall is scaled down to fit, as before. A grid takes no extra height (its cells are fixed rows).
+
+**D85. The widget check runs in the shell.** `rutile-shell widgets check` and `install` (plan 4.6) need the spec's
+check where the package runs, and the package has no Python (adding it would be a new dependency). So
+`tools/widget_check.py`'s rules for one widget are ported to `shell/widgethost/WidgetCheck.js`, against
+`SpecSchema.js` (generated from widgets/spec.schema.json by tools/gen_sources.py) and the source catalog, and the
+CLI asks the running shell over IPC (`check`, `checkJson`). The port must find the same problems at the same paths
+in the same words: tests/widget_check_cases.py has Python write what it finds in 30 broken widgets and every example
+and template, and tst_widget_check.qml compares (it caught Qt counting an emoji as two characters). The Python stays
+the repository's gate (it also checks the schema itself and the templates' rules). `install` is the CLI's own copy
+into the user's folder under a free name; `--place` asks the shell to put it on the desktop. The preview window
+lists the check's problems too. `docs/widgets.md` is the guide for people writing widgets.
