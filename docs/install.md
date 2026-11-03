@@ -92,7 +92,8 @@ fonts (Google Sans Flex, Material Symbols, through its own fontconfig file that 
 - PAM's `login` service, for the lock screen (on NixOS by default).
 - Nothing else for Night light: the package brings wlsunset. Turn off any other gamma program (gammastep,
   wlsunset of your own) or Night light stops with a toast saying the gamma is in use.
-- For Google (and other online) calendars under the clock (D95), in the NixOS configuration:
+- For Google (and other online) calendars under the clock (D95), in the NixOS configuration (a system module such
+  as `configuration.nix`, not a home-manager user's file: these options do not exist there):
 
   ```nix
   services.gnome.evolution-data-server.enable = true;   # keeps the calendars, synced
