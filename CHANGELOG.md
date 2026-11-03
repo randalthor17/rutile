@@ -5,8 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
-- **Taller widgets grow.** Making a desktop widget taller in edit mode now stretches its cards and tiles to fill
-  the space, instead of leaving it empty below.
+- **Widgets fit their space.** Making a desktop widget bigger in edit mode stretches its cards and tiles to fill
+  it. A widget without a card is centered in its space with a margin from the edges. Settings > Widgets > "Scale
+  text with widget size" (off by default) also makes a bigger widget's text larger, up to twice.
 - **Widgets app.** "Rutile Widgets" in your app launcher (or "More widgets…" in the desktop's Add menu, or
   `rutile-shell widgets gallery`) shows 30 ready-made widgets in six categories, live: weather, daily update,
   world clock, finance, countdown and sports. "Use" copies one to `~/.config/rutile/widgets`, puts it on the

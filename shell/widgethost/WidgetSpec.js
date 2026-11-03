@@ -145,6 +145,24 @@ function aspect(text) {
 function camel(role) {
     return role.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });
 }
+// Whether a node uses more height than its content when given it (D83): a card or tile fills it; a column or row
+// does when one of its children does (the column gives it the extra, the row stretches those to its height).
+function stretches(node) {
+    if (!node || typeof node !== "object") return false;
+    if (node.type === "card" || node.type === "tile") return true;
+    if (node.type !== "column" && node.type !== "row") return false;
+    return (list(node.children) || []).some(stretches);
+}
+
+// Whether a node is drawn on a surface of its own (a card or tile, or a column or row holding only one), so it needs
+// no margin around it on the wallpaper (D84).
+function surfaced(node) {
+    if (!node || typeof node !== "object") return false;
+    if (node.type === "card" || node.type === "tile") return true;
+    var kids = list(node.children) || [];
+    return (node.type === "column" || node.type === "row") && kids.length === 1 && surfaced(kids[0]);
+}
+
 function toneColors(tone) {
     var fill = camel(tone || "surface_container");
     if (fill === "background") return { fill: fill, on: "backgroundOn", variant: "surfaceVariantOn", tinted: false };

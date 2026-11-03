@@ -1,8 +1,9 @@
 pragma ComponentBehavior: Bound
 // One node of a widget (plan 4.3, D78), and through a Loader of this same file, its children. The parent sets the
 // width; the height follows the content, unless the parent gives it more (a desktop widget made taller, D83): then a
-// card or tile fills it, a column gives the extra to its last block (card, tile, row, column, grid), and a row
-// stretches its blocks to the same height. A card or a tile sets the colors its children draw with (`colors`,
+// card or tile fills it, a column gives the extra to its last child that stretches (WidgetSpec.stretches), and a row
+// stretches those to the same height. `textScale` sizes its text and icons (a desktop widget bigger than the
+// default, D84). A card or a tile sets the colors its children draw with (`colors`,
 // WidgetSpec.toneColors), so text on a primary tile is primaryOn. Text is never code: bindings are looked up in
 // `values` (WidgetSpec.resolve). Only the drawn node's own component is created.
 import QtQuick
@@ -19,6 +20,7 @@ Item {
     property var values: ({})
     property int depth: 1
     property var colors: Spec.toneColors("surface_container")    // the enclosing card's or tile's
+    property real textScale: 1
     readonly property color onColor: Colors[colors.on]
     readonly property color variantColor: Colors[colors.variant]
 
@@ -28,9 +30,9 @@ Item {
     function gap(name, fallback) {
         return Spacing[name ?? fallback] ?? Spacing[fallback];
     }
-    // the nodes that take extra height (D83)
-    function block(n) {
-        return !!n && ["card", "tile", "row", "column", "grid"].indexOf(n.type) >= 0;
+    // a type style at this widget's text scale
+    function font(style) {
+        return Type.font(Object.assign({}, style, { size: Math.round(style.size * textScale) }));
     }
 
     implicitHeight: body.item ? body.item.implicitHeight : 0
@@ -58,7 +60,7 @@ Item {
                 readonly property var kids: Spec.list(root.node.children) ?? []
                 readonly property int stretch: {
                     for (let i = kids.length - 1; i >= 0; i--)
-                        if (root.block(kids[i])) return i;
+                        if (Spec.stretches(kids[i])) return i;
                     return -1;
                 }
                 width: parent.width
@@ -74,6 +76,7 @@ Item {
                         values: root.values
                         depth: root.depth + 1
                         colors: root.colors
+                        textScale: root.textScale
                     }
                 }
             }
@@ -107,11 +110,12 @@ Item {
                     Layout.minimumWidth: wanted
                     Layout.maximumWidth: wanted
                     Layout.preferredHeight: shown ? shown.implicitHeight : 0
-                    Layout.fillHeight: root.block(modelData)
+                    Layout.fillHeight: Spec.stretches(modelData)
                     Layout.alignment: Qt.AlignTop
                     values: root.values
                     depth: root.depth + 1
                     colors: root.colors
+                    textScale: root.textScale
                     onLoaded: if (chip) Qt.callLater(row.measure)
                     Connections {
                         target: cell.chip ? cell.shown : null
@@ -134,6 +138,7 @@ Item {
                     values: root.values
                     depth: root.depth + 1
                     colors: root.colors
+                    textScale: root.textScale
                 }
             }
         }
@@ -163,6 +168,7 @@ Item {
                         values: root.values
                         depth: root.depth + 1
                         colors: block.toneColors
+                        textScale: root.textScale
                     }
                 }
             }
@@ -179,7 +185,7 @@ Item {
                 visible: !!root.node.icon
                 anchors.verticalCenter: parent.verticalCenter
                 name: root.node.icon ?? ""
-                size: Spacing.xl
+                size: Math.round(Spacing.xl * root.textScale)
                 color: root.onColor
             }
             Text {
@@ -188,7 +194,7 @@ Item {
                 text: root.text(root.node.title)
                 elide: Text.ElideRight
                 color: root.onColor
-                font: Type.font(Type.titleMedium)
+                font: root.font(Type.titleMedium)
             }
         }
     }
@@ -202,7 +208,7 @@ Item {
                 text: root.text(root.node.label)
                 elide: Text.ElideRight
                 color: root.variantColor
-                font: Type.font(Type.labelLarge)
+                font: root.font(Type.labelLarge)
             }
             Row {
                 spacing: Spacing.xs
@@ -213,7 +219,7 @@ Item {
                     text: root.text(root.node.value)
                     elide: Text.ElideRight
                     color: root.onColor
-                    font: Type.font(Type.displaySmall)
+                    font: root.font(Type.displaySmall)
                 }
                 Text {
                     id: unit
@@ -221,7 +227,7 @@ Item {
                     anchors.baseline: statValue.baseline
                     text: root.node.unit ?? ""
                     color: root.variantColor
-                    font: Type.font(Type.titleMedium)
+                    font: root.font(Type.titleMedium)
                 }
             }
         }
@@ -257,7 +263,7 @@ Item {
                         visible: !!root.node.icon
                         anchors.verticalCenter: parent.verticalCenter
                         name: root.node.icon ?? ""
-                        size: Spacing.xl
+                        size: Math.round(Spacing.xl * root.textScale)
                         color: root.variantColor
                     }
                     Column {
@@ -272,7 +278,7 @@ Item {
                             text: Spec.resolve(root.node.title, listRow.modelData)
                             elide: Text.ElideRight
                             color: root.onColor
-                            font: Type.font(Type.bodyLarge)
+                            font: root.font(Type.bodyLarge)
                         }
                         Text {
                             visible: !!root.node.subtitle
@@ -280,7 +286,7 @@ Item {
                             text: Spec.resolve(root.node.subtitle, listRow.modelData)
                             elide: Text.ElideRight
                             color: root.variantColor
-                            font: Type.font(Type.bodyMedium)
+                            font: root.font(Type.bodyMedium)
                         }
                     }
                     Icon {
@@ -289,7 +295,7 @@ Item {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         name: root.node.trailingIcon ?? ""
-                        size: Spacing.xl
+                        size: Math.round(Spacing.xl * root.textScale)
                         color: root.variantColor
                     }
                 }
@@ -319,14 +325,14 @@ Item {
                         visible: !!root.node.icon
                         anchors.verticalCenter: parent.verticalCenter
                         name: root.node.icon ?? ""
-                        size: ControlSpec.chipSpec.assist.iconSize
+                        size: Math.round(ControlSpec.chipSpec.assist.iconSize * root.textScale)
                         color: root.onColor
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.text(root.node.label)
                         color: root.onColor
-                        font: Type.font(Type.labelLarge)
+                        font: root.font(Type.labelLarge)
                     }
                 }
             }
@@ -350,7 +356,7 @@ Item {
                 Icon {
                     anchors.centerIn: parent
                     name: "image"
-                    size: Spacing.xxl
+                    size: Math.round(Spacing.xxl * root.textScale)
                     color: Colors.surfaceVariantOn
                 }
             }

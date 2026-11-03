@@ -17,6 +17,7 @@ Item {
     property var available: []             // [{path, name}], what Add offers
     property bool editMode: false
     property int columns: 12
+    property bool scaleText: false         // text follows a widget's size (widgets.scaleText, D84)
     property var commitHandler: null       // a callback, as EditableGrid's: the whole list after each change
     readonly property alias grid: desktopGrid
     readonly property bool addOpen: addMenu.open
@@ -93,6 +94,10 @@ Item {
         commitHandler: next => root.commit(next)
         delegate: DesktopWidget {
             specs: root.specs
+            scaleText: root.scaleText
+            // a new widget's cells (Desktop.NEW_SIZE): text is drawn at its size there
+            base: Qt.size(Desktop.NEW_SIZE.w * desktopGrid.rowHeight + (Desktop.NEW_SIZE.w - 1) * desktopGrid.gap,
+                          Desktop.NEW_SIZE.h * desktopGrid.rowHeight + (Desktop.NEW_SIZE.h - 1) * desktopGrid.gap)
             editMode: root.editMode
         }
     }

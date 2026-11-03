@@ -170,6 +170,7 @@ ShellRoot {
                 available: widgetLibrary.available
                 editMode: shell.widgetsEditing
                 columns: Settings.value("widgets.columns") ?? 12
+                scaleText: Settings.value("widgets.scaleText") === true
                 commitHandler: next => shell.saveDesktop(desktop.modelData.name, next)
                 onDoneRequested: shell.widgetsEditing = false
                 onAddListRequested: widgetLibrary.scan()

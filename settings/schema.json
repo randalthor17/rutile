@@ -344,6 +344,12 @@
           "title": "Desktop grid columns",
           "description": "How many square cells the desktop's widget grid has across each screen; more makes every widget smaller."
         },
+        "scaleText": {
+          "type": "boolean",
+          "default": false,
+          "title": "Scale text with widget size",
+          "description": "A desktop widget made bigger or smaller than a new one's 4 by 3 cells draws its text and icons bigger or smaller (0.8 to 2 times)."
+        },
         "editor": {
           "type": "string",
           "title": "Open widget files with",

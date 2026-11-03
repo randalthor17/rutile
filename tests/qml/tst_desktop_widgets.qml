@@ -5,6 +5,7 @@ import QtTest
 import qs.common
 import qs.desktop
 import "../qs/desktop/Desktop.js" as Desktop
+import "../qs/widgethost/WidgetSpec.js" as Spec
 
 TestCase {
     id: root
@@ -93,10 +94,54 @@ TestCase {
         const w = widget(d, "tall");
         verify(w.host.implicitHeight > w.height, "taller than its cell");
         verify(w.host.scale < 1);
-        fuzzyCompare(w.host.implicitHeight * w.host.scale, w.height, 0.5, "all of it shows");
+        compare(w.inset, Spacing.lg, "no card at its root: a margin from the cell's edges (D84)");
+        fuzzyCompare(w.host.implicitHeight * w.host.scale, w.height - 2 * w.inset, 0.5, "all of it shows, inside it");
         verify(w.host.x > 0, "narrower then, so centered");
-        compare(w.host.y, 0, "at the top of its cells");
+        fuzzyCompare(w.host.y, w.inset, 0.5, "at the margin");
     }
+    // D84: text scales with the widget's size, what cannot stretch is centered
+    readonly property var bare: ({ version: 1, name: "Bare", root: { type: "row", children: [
+        { type: "stat", value: "2:22" }, { type: "chip", label: "Tue" }] } })
+    function test_centered_and_scaled() {
+        const d = make({ specs: Object.assign({ "/w/bare.json": bare }, specs), items: [
+            { id: "bare", path: "/w/bare.json", w: 4, h: 3, col: 0, row: 0 },
+            { id: "big", path: "/w/card.json", w: 8, h: 6, col: 4, row: 0 },
+            { id: "small", path: "/w/card.json", w: 2, h: 2, col: 0, row: 4 },
+            { id: "wide", path: "/w/bare.json", w: 8, h: 3, col: 0, row: 7 }] });
+        settle(d);
+        compare(widget(d, "big").textScale, 1, "text scaling is off by default: a big widget's text as designed");
+        d.scaleText = true;
+        const b = widget(d, "bare");
+        compare(b.textScale, 1, "a new widget's size: text as designed");
+        verify(!b.host.stretches);
+        fuzzyCompare(b.host.y + b.host.height / 2, b.height / 2, 1, "cannot stretch: centered in its cells");
+        compare(b.host.height, b.host.implicitHeight);
+        const big = widget(d, "big");
+        compare(big.textScale, 2, "twice the size: twice the text");
+        compare(big.inset, 0, "a card brings its own padding");
+        verify(Spec.surfaced({ type: "column", children: [{ type: "row", children: [{ type: "card", children: [] }] }] }),
+               "so does a card alone in a column (the examples)");
+        verify(!Spec.surfaced({ type: "column", children: [{ type: "header", title: "t" }, { type: "card", children: [] }] }),
+               "but not with text beside it");
+        compare(big.host.height, big.height, "and fills its cells");
+        const value = texts(big).find(t => t.text === "42");
+        compare(value.font.pixelSize, Math.round(Type.displaySmall.size * 2));
+        compare(widget(d, "small").textScale, 0.8, "smaller: down to 0.8");
+        compare(widget(d, "wide").textScale, 1, "wider only: the smaller ratio counts");
+        // every container passes the scale on: a column, then a row
+        const nested = { version: 1, name: "N", root: { type: "column", children: [{ type: "row", children: [
+            { type: "stat", value: "7" }] }] } };
+        const e = make({ scaleText: true, specs: { "/w/n.json": nested }, items: [{ id: "n", path: "/w/n.json", w: 8, h: 6 }] });
+        settle(e);
+        compare(texts(widget(e, "n")).find(t => t.text === "7").font.pixelSize, Math.round(Type.displaySmall.size * 2));
+    }
+    function texts(item, out) {
+        out = out ?? [];
+        if (item.text !== undefined && item.font !== undefined) out.push(item);
+        for (const c of item.children) texts(c, out);
+        return out;
+    }
+
     function test_a_file_that_cannot_be_read_shows_only_while_editing() {
         const d = make({ items: [{ id: "broken", path: "/w/broken.json", w: 2, h: 2 },
                                  { id: "gone", path: "/w/gone.json", w: 2, h: 2 }] });

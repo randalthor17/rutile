@@ -14,6 +14,7 @@ PanelWindow {
     property alias available: content.available
     property alias editMode: content.editMode
     property alias columns: content.columns
+    property alias scaleText: content.scaleText
     property alias commitHandler: content.commitHandler
 
     signal doneRequested()

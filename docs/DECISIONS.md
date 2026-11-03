@@ -861,3 +861,12 @@ gives the extra to its last block (card, tile, row, column or grid; with none, t
 stretches its blocks to one height while chips, stats and text keep theirs. Column and row nodes became
 ColumnLayout and RowLayout (Qt Quick Layouts, part of Qt) for this; a widget taller than its cells is still scaled
 down. Previews and the Widgets app's cards give no extra height, so they look as before.
+
+**D84. Desktop widgets combine stretching, centering and text scaling.** After D83 the maintainer found bare text
+too close to the cell's edge, a widget that cannot stretch stuck at the top, and text the same size in a big
+widget. Text scaling did not look right to the maintainer, so it is an option, off by default (`widgets.scaleText`):
+then a desktop widget's text and icons scale with its cells against a new widget's 4 x 3 (the smaller of the width
+and height ratios, 0.8 to 2 times; paddings stay). By default a widget is stretched or centered, never scaled up. A widget that stretches (WidgetSpec.stretches: a card or
+tile, or a column or row holding one) fills its cells. One that cannot is centered in them. One without its own
+surface (WidgetSpec.surfaced: a card or tile, alone in a column or row too) keeps a Spacing.lg margin. A widget still
+too tall is scaled down to fit, as before. A grid takes no extra height (its cells are fixed rows).
