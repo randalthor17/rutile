@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **kitty gets a whole Rutile theme**, the 16 terminal colors included (they were left as they were), in
+  `~/.config/kitty/themes/Rutile.conf`, where `kitten themes` lists it. With home-manager, change
+  `include rutile-colors.conf` to `globinclude themes/Rutile.conf`; the old file is removed.
 - **Keyboard, mouse & touchpad: off means off.** Tap to click and natural scrolling turned off here win over
   your niri config too (niri replaces its touchpad and mouse sections with Rutile's); new: ignore the touchpad
   while typing. niri's animations following the shell's speed also turn them back on over your config's `off`.

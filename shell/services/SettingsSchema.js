@@ -183,7 +183,7 @@ var schema = {
                     "type": "boolean",
                     "default": false,
                     "title": "kitty",
-                    "description": "kitty's background, foreground, selection, cursor and tabs; reloads at once."
+                    "description": "A Rutile kitty theme: the 16 terminal colors, background, text, selection, cursor and tabs; reloads at once."
                 },
                 "ghostty": {
                     "type": "boolean",

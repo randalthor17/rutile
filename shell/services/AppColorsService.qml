@@ -60,7 +60,7 @@ Singleton {
         job.stage = "render";
         job.command = Files.matugenCommand(WallpaperService.matugen, workDir, AppTheme.templates(dirs, job.target),
                                            ["color", "hex", doc.source_color], doc.scheme ?? "scheme-tonal-spot",
-                                           doc.mode ?? WallpaperService.mode, doc.contrast ?? 0);
+                                           doc.mode ?? WallpaperService.mode, doc.contrast ?? 0, [], Files.ANSI);
         job.mode = doc.mode ?? WallpaperService.mode;
         job.running = true;
     }

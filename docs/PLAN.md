@@ -178,7 +178,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (remembered in state.json); the
   lock screen blurs the same file. `ipc call wallpaper set <path>`, `get`, `state`. Colors in other apps (D52,
   **preliminary**: the maintainer will try it with a separate user before it counts as done): a main switch and
-  one per app (GTK, Qt, kitty, Ghostty, btop, Neovim, Firefox through our own Pywalfox host), all off by default,
+  one per app (GTK, Qt, kitty with its 16 terminal colors as a Rutile theme (D76), Ghostty, btop, Neovim, Firefox
+  through our own Pywalfox host), all off by default,
   in Settings > Wallpaper & style; `AppColorsService` (AppTheme.js) themes them from the palette and takes it
   back out exactly; tested in a sandbox HOME only, not yet on real apps. Not yet: per-screen
   wallpapers, fill modes other than crop, a slideshow, KDE's kdeglobals, community templates.

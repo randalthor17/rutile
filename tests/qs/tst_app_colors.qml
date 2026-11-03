@@ -20,7 +20,7 @@ ShellRoot {
     property int stage: 0
     property var files: ({})
     readonly property string home: Quickshell.env("HOME")
-    readonly property var watched: [home + "/config/kitty/kitty.conf", home + "/config/kitty/rutile-colors.conf",
+    readonly property var watched: [home + "/config/kitty/kitty.conf", home + "/config/kitty/themes/Rutile.conf",
                                     home + "/config/gtk-4.0/gtk.css", home + "/config/gtk-4.0/rutile.css",
                                     home + "/.mozilla/native-messaging-hosts/pywalfox.json",
                                     home + "/.mozilla/native-messaging-hosts/pywalfox.json.rutile-backup",
@@ -97,9 +97,10 @@ ShellRoot {
                 t.compare(root.file("/hm-ghostty"), "font-size = 12\n", "the linked config is not changed");
                 t.verify((root.file("/config/ghostty/themes/rutile") ?? "").indexOf("cursor-color = #b2c5ff") >= 0, "Ghostty's theme still comes");
                 t.verify((root.file("/config/niri/rutile-colors.kdl") ?? "").indexOf('active-color "#b2c5ff"') > 0, "niri's colors");
-                const colors = root.file("/config/kitty/rutile-colors.conf") ?? "";
+                const colors = root.file("/config/kitty/themes/Rutile.conf") ?? "";
                 t.verify(colors.indexOf("cursor #b2c5ff") >= 0, "kitty wears the palette's primary: " + colors.slice(0, 200));
-                t.verify((root.file("/config/kitty/kitty.conf") ?? "").indexOf("include rutile-colors.conf") > 0, "kitty includes it");
+                t.verify(/^color1 #[0-9a-f]{6}$/m.test(colors), "the terminal colors, from the custom colors: " + colors.slice(0, 400));
+                t.verify((root.file("/config/kitty/kitty.conf") ?? "").indexOf("include themes/Rutile.conf") > 0, "kitty includes it");
                 t.verify((root.file("/config/gtk-4.0/gtk.css") ?? "").indexOf("@import 'rutile.css';") > 0, "gtk imports it");
                 t.verify((root.file("/config/gtk-4.0/rutile.css") ?? "").indexOf("accent_bg_color #b2c5ff") > 0, "gtk's colors");
                 const manifest = JSON.parse(root.file("/.mozilla/native-messaging-hosts/pywalfox.json") ?? "{}");
@@ -118,7 +119,7 @@ ShellRoot {
                 root.stage = 7;
                 break;
             case 8: {
-                const colors = root.file("/config/kitty/rutile-colors.conf") ?? "";
+                const colors = root.file("/config/kitty/themes/Rutile.conf") ?? "";
                 t.verify(colors.indexOf("cursor #b2c5ff") < 0 && colors.indexOf("cursor #") >= 0,
                          "a new palette: new colors " + colors.slice(0, 200));
                 Settings.set("appColors.enabled", false);

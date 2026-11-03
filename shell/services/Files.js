@@ -139,9 +139,20 @@ function applyCommand(ops) {
     return args;
 }
 
-// templates: [{name, input}]; outputs land in DIR/out/<name>. Returns the config's text.
-function matugenConfig(dir, templates) {
+// The terminal's six hues (D76), as matugen custom colors for the apps' run (not the shell's palette, which takes
+// only its roles): each is harmonized toward the wallpaper's color and comes in the palette's tones (colors.ansi_red
+// is tone 80 in dark mode, 40 in light), so the 16 colors read on the surface. tests/test_app_templates.py reads it.
+var ANSI = { ansi_red: "#e5534b", ansi_green: "#57ab5a", ansi_yellow: "#c69026", ansi_blue: "#539bf5",
+             ansi_magenta: "#b083f0", ansi_cyan: "#39c5cf" };
+
+// templates: [{name, input}]; outputs land in DIR/out/<name>; custom: {name: "#rrggbb"} or nothing. Returns the
+// config's text.
+function matugenConfig(dir, templates, custom) {
     var lines = ["[config]", "version_check = false", "caching = false"];
+    if (custom) {
+        lines.push("[config.custom_colors]");
+        for (var name in custom) lines.push(name + " = " + JSON.stringify(custom[name]));
+    }
     for (var i = 0; i < templates.length; i++) {
         var t = templates[i];
         lines.push("[templates." + t.name.replace(/[^A-Za-z0-9_-]/g, "-") + "]",
@@ -151,9 +162,9 @@ function matugenConfig(dir, templates) {
     return lines.join("\n") + "\n";
 }
 
-// source: ["image", path] or ["color", "hex", "#rrggbb"]; extra: further matugen arguments.
-function matugenCommand(matugen, dir, templates, source, scheme, mode, contrast, extra) {
-    return ["sh", "-c", MATUGEN_SCRIPT, "sh", dir, matugenConfig(dir, templates),
+// source: ["image", path] or ["color", "hex", "#rrggbb"]; extra: further matugen arguments; custom: matugenConfig's.
+function matugenCommand(matugen, dir, templates, source, scheme, mode, contrast, extra, custom) {
+    return ["sh", "-c", MATUGEN_SCRIPT, "sh", dir, matugenConfig(dir, templates, custom),
             matugen, "-q", "-c", dir + "/matugen.toml"].concat(source,
             ["-t", scheme, "-m", mode, "--contrast", String(contrast)], extra || []);
 }

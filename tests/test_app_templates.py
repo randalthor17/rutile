@@ -12,10 +12,17 @@ ROOT = Path(__file__).resolve().parent.parent
 APPS = ROOT / "theme" / "apps"
 
 
+def ansi():
+    """Files.js's ANSI table: the terminal's hues, which the shell passes to matugen as custom colors (D76)"""
+    table = re.search(r"var ANSI = \{(.*?)\};", (ROOT / "shell/services/Files.js").read_text(), re.S).group(1)
+    return dict(re.findall(r'(\w+): "(#[0-9a-f]{6})"', table))
+
+
 def render(mode="dark"):
     """{template name: rendered text}"""
     with tempfile.TemporaryDirectory() as d:
-        conf = ["[config]", "version_check = false", "caching = false"]
+        conf = ["[config]", "version_check = false", "caching = false", "[config.custom_colors]"]
+        conf += [f'{k} = "{v}"' for k, v in ansi().items()]
         for t in sorted(APPS.iterdir()):
             conf += [f"[templates.{re.sub(r'[^A-Za-z0-9_-]', '-', t.name)}]", f'input_path = "{t}"',
                      f'output_path = "{d}/out/{t.name}"']
@@ -50,6 +57,15 @@ def pywalfox_contrasts(colors, mode):
         a, b = sorted((lum(full[roles[t]]), lum(full[roles[g]])), reverse=True)
         out[(t, g)] = (a + 0.05) / (b + 0.05)
     return out
+
+
+def contrast(a, b):
+    def lum(hex_):
+        c = [int(hex_[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+    hi, lo = sorted((lum(a), lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
 
 
 @unittest.skipUnless(shutil.which("matugen"), "SKIPPED: needs matugen")
@@ -112,6 +128,23 @@ class AppTemplates(unittest.TestCase):
             self.assertIn(f"mode {mode}\n", out["pywalfox.conf"])
             for (text, ground), ratio in pywalfox_contrasts([colors[f"color{i}"] for i in range(16)], mode).items():
                 self.assertGreaterEqual(ratio, 4.5, f"{mode}: {text} on {ground}")
+
+    def test_kitty_theme_reads_in_both_modes(self):
+        # a kitty theme (its ## name header, so `kitten themes` lists it), all 16 terminal colors set; on the
+        # background the text and the six hues read (4.5), their bright shades and bright black (color8,
+        # suggestions and comments) at least 3
+        self.assertEqual(len(ansi()), 6)
+        for mode, out in (("dark", self.out), ("light", render("light"))):
+            text = out["kitty.conf"]
+            self.assertTrue(text.startswith("## name: Rutile\n"), text[:40])
+            colors = dict(re.findall(r"^(\w+) (#[0-9a-f]{6})$", text, re.M))
+            self.assertEqual([f"color{i}" for i in range(16) if f"color{i}" not in colors], [], mode)
+            self.assertEqual(len({colors[f"color{i}"] for i in range(16)}), 16, f"{mode}: 16 different colors")
+            ground = colors["background"]
+            for name in ["foreground", "color7", "color15"] + [f"color{i}" for i in range(1, 7)]:
+                self.assertGreaterEqual(contrast(colors[name], ground), 4.5, f"{mode}: {name}")
+            for name in ["color8"] + [f"color{i}" for i in range(9, 15)]:
+                self.assertGreaterEqual(contrast(colors[name], ground), 3, f"{mode}: {name}")
 
     def test_niri_kdl_is_valid(self):
         if not shutil.which("niri"):

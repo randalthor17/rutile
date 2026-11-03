@@ -745,3 +745,20 @@ A KDL parser that copied the user's touchpad, mouse and xkb sections into Rutile
 changed) was weighed and dropped by the maintainer: the input switch is off by default, its description says
 these sections are Rutile's while it is on, and whoever needs a setting Rutile does not offer keeps it off.
 
+
+**D76. kitty gets a whole theme, the 16 terminal colors included (amends D52).** D52 left the terminal's ANSI
+colors to the user, for readability; the maintainer found that kitty then showed only a new background, as most
+text in a terminal is one of those colors, and asked for proper theming through `~/.config/kitty/themes`. The
+shell now writes `~/.config/kitty/themes/Rutile.conf`, a kitty theme (its `## name: Rutile` header, so
+`kitten themes` lists it), and kitty.conf includes that file itself: choosing it in the kitten would copy it into
+current-theme.conf once, and the copy would not follow the next wallpaper. kitty's automatic
+`dark-theme.auto.conf` files were weighed too (they need no include at all), and left: they are one slot shared
+with the user's own kitten choices, which the shell would overwrite. The six hues come from matugen's custom
+colors (Files.js's ANSI table, passed to every app run): harmonized toward the wallpaper's color and given the
+palette's tones (80 in dark mode, 40 in light), with the bright ones `lighten: 6`; black and white are the
+surface and text roles (color0 surface_container_highest, color8 outline, color7 on_surface_variant, color15
+on_surface). A test renders it with the real matugen in both modes and checks the text and hues at 4.5:1 on the
+background, the bright ones and color8 at 3:1; across three seeds the lowest seen were 6.1 and 4.1 in light mode.
+The old rutile-colors.conf is removed on the next run (an app's `formerly` paths, only when the record says the
+shell wrote it); a home-manager config still including it by name logs a missing file until the line is changed.
+Ghostty keeps D52's way for now.

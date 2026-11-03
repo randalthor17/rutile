@@ -43,7 +43,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `appColors.qt` | true or false | false | qt5ct and qt6ct's color scheme |
 | `appColors.kde` | true or false | false | KDE apps (Dolphin, Kate) outside Plasma: the colors into kdeglobals, and a Rutile color scheme |
 | `appColors.folders` | true or false | false | Papirus's folder icons in the accent: an icon theme, Rutile, on top of Papirus-Dark |
-| `appColors.kitty` | true or false | false | kitty's colors (not the 16 terminal colors); reloads at once |
+| `appColors.kitty` | true or false | false | a Rutile kitty theme, the 16 terminal colors included; reloads at once |
 | `appColors.ghostty` | true or false | false | Ghostty's colors (`theme = rutile`) |
 | `appColors.btop` | true or false | false | btop's theme; the previous one comes back when off |
 | `appColors.nvim` | true or false | false | a `rutile` colorscheme for Neovim |

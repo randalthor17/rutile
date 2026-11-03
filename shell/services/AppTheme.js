@@ -48,9 +48,12 @@ function apps(dirs) {
         folders: { title: "Folder icons", files: [], folders: { dir: dirs.data + "/icons/Rutile", from: "folders.colors" } },
         kde: { title: "KDE apps", files: [["kdeglobals.colors", dirs.data + "/color-schemes/Rutile.colors"]],
                ini: { file: c + "/kdeglobals", from: "kdeglobals.colors", skip: ["General|Name"] } },
-        kitty: { title: "kitty", files: [["kitty.conf", c + "/kitty/rutile-colors.conf"]],
-                 blocks: [{ file: c + "/kitty/kitty.conf", comment: ["# ", ""], lines: ["include rutile-colors.conf"],
-                            where: "end", present: /^\s*include\s+\S*rutile-colors\.conf\s*$/m }],
+        // a kitty theme (D76), in the folder `kitten themes` lists; kitty.conf includes the file itself, as the kitten
+        // would copy it once and miss the next wallpaper. `formerly`: where it was written before, taken away.
+        kitty: { title: "kitty", files: [["kitty.conf", c + "/kitty/themes/Rutile.conf"]],
+                 formerly: [c + "/kitty/rutile-colors.conf"],
+                 blocks: [{ file: c + "/kitty/kitty.conf", comment: ["# ", ""], lines: ["include themes/Rutile.conf"],
+                            where: "end", present: /^\s*(glob)?include\s+\S*themes\/Rutile\.conf\s*$/m }],
                  reload: ["USR1", "(^|/)\\.?kitty(-wrapped)?( |$)"] },
         ghostty: { title: "Ghostty", files: [["ghostty", c + "/ghostty/themes/rutile"]],
                    blocks: [{ file: c + "/ghostty/config", comment: ["# ", ""], lines: ["theme = rutile"], where: "end",
@@ -205,6 +208,7 @@ function paths(dirs, names) {
         var a = all[n];
         if (!a) return;
         a.files.forEach(function (f) { add(f[1]); add("^" + f[1]); });
+        (a.formerly || []).forEach(add);
         (a.blocks || []).forEach(function (b) { add(b.file); add("!" + b.file); add("^" + b.file); });
         (a.keys || []).forEach(function (k) { add(k.file); add("!" + k.file); add("^" + k.file); });
         if (a.ini) { add(a.ini.file); add("!" + a.ini.file); add("^" + a.ini.file); }
@@ -348,6 +352,11 @@ function plan(input) {
         record.files = record.files || [];
         record.previous = record.previous || {};
         var changed = false;
+        (a.formerly || []).forEach(function (f) {
+            if (record.files.indexOf(f) < 0) return;
+            changed = remove(f) || changed;
+            record.files.splice(record.files.indexOf(f), 1);
+        });
         a.files.forEach(function (f) {
             if (readOnly(f[1])) return readOnlyError(a, f[1]);
             var source = (input.sources || {})[f[0]];

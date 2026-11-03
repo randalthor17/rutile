@@ -71,7 +71,7 @@ TestCase {
         const original = "font_size 12\ninclude theme.conf\n";
         let r = sync({ [conf]: original }, ["kitty"]);
         verify(r.files[conf].startsWith(original));
-        verify(r.files[conf].endsWith("include rutile-colors.conf\n# <<< rutile colors <<<\n"));
+        verify(r.files[conf].endsWith("include themes/Rutile.conf\n# <<< rutile colors <<<\n"));
         const signals = r.ops.filter(o => o.op === "signal");
         compare(signals.length, 1);
         compare(signals[0].sig, "USR1", "kitty reloads on SIGUSR1");
@@ -81,6 +81,21 @@ TestCase {
         compare(off.ops.filter(o => o.op === "signal").length, 1, "turned off: it reloads its own colors");
     }
 
+    // Before D76 kitty's colors were rutile-colors.conf, included by that name: the next run moves to the theme.
+    function test_kitty_former_file_goes() {
+        const conf = "/h/.config/kitty/kitty.conf", old = "/h/.config/kitty/rutile-colors.conf";
+        verify(AppTheme.paths(dirs, ["kitty"]).indexOf(old) >= 0, "the old file is read, so it can go");
+        const before = { [conf]: "font_size 12\n# >>> rutile colors >>>\ninclude rutile-colors.conf\n# <<< rutile colors <<<\n",
+                         [old]: "background #000000\n" };
+        const r = sync(before, ["kitty"], { kitty: { files: [old], previous: {} } });
+        compare(r.files[old], null, "the old file is gone");
+        compare(r.files[conf], "font_size 12\n# >>> rutile colors >>>\ninclude themes/Rutile.conf\n# <<< rutile colors <<<\n");
+        compare(r.done.kitty.files.join(), "/h/.config/kitty/themes/Rutile.conf");
+        compare(sync({ [old]: "theirs\n" }, ["kitty"]).files[old], "theirs\n", "one we never wrote stays");
+        const off = sync(before, [], { kitty: { files: [old], previous: {} } });
+        compare(off.files[old], null, "switched off before the move: gone too");
+    }
+
     // home-manager's configs are links into the read-only store: replacing one would break the next switch.
     function test_a_linked_config_is_left_alone() {
         const conf = "/h/.config/kitty/kitty.conf", qt6 = "/h/.config/qt6ct/qt6ct.conf";
@@ -88,16 +103,16 @@ TestCase {
         let r = sync({ [conf]: theirs, ["!" + conf]: "", [qt6]: "[Appearance]\n", ["!" + qt6]: "" }, ["kitty", "qt"]);
         compare(r.files[conf], theirs, "not changed");
         compare(r.ops.filter(o => o.path === conf || o.path === qt6).length, 0, "no op touches a link");
-        compare(r.files["/h/.config/kitty/rutile-colors.conf"], rendered["kitty.conf"], "its own file still comes");
+        compare(r.files["/h/.config/kitty/themes/Rutile.conf"], rendered["kitty.conf"], "its own file still comes");
         const errors = r.errors.join("; ");
-        verify(errors.indexOf("kitty: " + conf + " is a link (home-manager?), not changed; add include rutile-colors.conf") === 0, errors);
+        verify(errors.indexOf("kitty: " + conf + " is a link (home-manager?), not changed; add include themes/Rutile.conf") === 0, errors);
         verify(errors.indexOf(qt6 + " is a link (home-manager?), not changed; set [Appearance] color_scheme_path = ") > 0, errors);
         verify(!(qt6 + "|Appearance|color_scheme_path" in r.done.qt.previous), "nothing to put back");
         const off = sync(Object.assign({}, r.files, { ["!" + conf]: "", ["!" + qt6]: "" }), [], r.done);
         compare(off.files[conf], theirs, "turned off: still not touched");
-        compare(off.files["/h/.config/kitty/rutile-colors.conf"], null);
+        compare(off.files["/h/.config/kitty/themes/Rutile.conf"], null);
         // not a link: changed as before
-        verify(sync({ [conf]: theirs, ["!" + conf]: null }, ["kitty"]).files[conf].indexOf("include rutile-colors.conf") > 0);
+        verify(sync({ [conf]: theirs, ["!" + conf]: null }, ["kitty"]).files[conf].indexOf("include themes/Rutile.conf") > 0);
     }
 
     // Themed while a plain file, then home-manager took the file over (keeping our lines in it): turning off does not
@@ -158,7 +173,7 @@ TestCase {
     function test_a_linked_config_that_has_our_line_is_fine() {
         const css = "/h/.config/gtk-4.0/gtk.css", kitty = "/h/.config/kitty/kitty.conf", qt6 = "/h/.config/qt6ct/qt6ct.conf";
         const r = sync({ [css]: '@import url("file:///h/.config/gtk-4.0/rutile.css");\n', ["!" + css]: "",
-                         [kitty]: "font_size 12\ninclude rutile-colors.conf\n", ["!" + kitty]: "",
+                         [kitty]: "font_size 12\ninclude themes/Rutile.conf\n", ["!" + kitty]: "",
                          [qt6]: "[Appearance]\ncolor_scheme_path=/h/.config/qt6ct/colors/rutile.conf\ncustom_palette=true\n", ["!" + qt6]: "" },
                        ["gtk", "kitty", "qt"]);
         const errors = r.errors.join("; ");
@@ -370,8 +385,8 @@ TestCase {
         const copy = p.ops.filter(o => o.op === "copy");
         compare(copy.length, 1);
         compare(copy[0].from, "/run/w/out/kitty.conf");
-        compare(copy[0].path, "/h/.config/kitty/rutile-colors.conf");
-        compare(p.ops.filter(o => o.op === "write" && o.path === "/h/.config/kitty/rutile-colors.conf").length, 0,
+        compare(copy[0].path, "/h/.config/kitty/themes/Rutile.conf");
+        compare(p.ops.filter(o => o.op === "write" && o.path === "/h/.config/kitty/themes/Rutile.conf").length, 0,
                 "not passed as text");
         verify(p.ops.some(o => o.op === "write" && o.path === "/h/.config/kitty/kitty.conf"), "edits still are");
         const files = run({ "/h/.config/kitty/kitty.conf": "x\n" }, p.ops);
@@ -379,7 +394,7 @@ TestCase {
                                       files: Object.assign({ [built]: "" }, files), sources: { "kitty.conf": "/run/w/out/kitty.conf" } });
         compare(again.ops.length, 0, "unchanged: no copy");
         const args = Files.applyCommand(copy);
-        compare(args.slice(4).join("|"), "copy|/run/w/out/kitty.conf|/h/.config/kitty/rutile-colors.conf|644");
+        compare(args.slice(4).join("|"), "copy|/run/w/out/kitty.conf|/h/.config/kitty/themes/Rutile.conf|644");
         let threw = "";
         try { Files.applyCommand([{ op: "write", path: "/p", text: "x".repeat(200000) }]); } catch (e) { threw = e.message; }
         verify(threw.indexOf("too large") >= 0, "an argument over the cap is refused, not a process that never starts");
@@ -408,6 +423,10 @@ TestCase {
                                        ["color", "hex", "#123456"], "scheme-tonal-spot", "dark", 0);
         verify(m[5].indexOf('output_path = "/run/x/out/gtk.css"') > 0, "outputs in the work folder");
         compare(m.slice(6).join(" "), "matugen -q -c /run/x/matugen.toml color hex #123456 -t scheme-tonal-spot -m dark --contrast 0");
+        verify(m[5].indexOf("custom_colors") < 0, "no custom colors unless asked: the shell's palette takes only its roles");
+        const apps = Files.matugenCommand("matugen", "/run/x", [], ["color", "hex", "#123456"], "scheme-tonal-spot", "dark", 0,
+                                          [], Files.ANSI);
+        verify(apps[5].indexOf('[config.custom_colors]\nansi_red = "#e5534b"\n') > 0, apps[5]);
         let threw = false;
         try { Files.applyCommand([{ op: "format" }]); } catch (e) { threw = true; }
         verify(threw, "an unknown op is refused");

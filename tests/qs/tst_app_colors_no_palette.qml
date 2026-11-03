@@ -20,7 +20,7 @@ ShellRoot {
     property string kittyText: ""
     Process {
         id: kitty
-        command: ["cat", root.home + "/config/kitty/rutile-colors.conf"]
+        command: ["cat", root.home + "/config/kitty/themes/Rutile.conf"]
         stdout: StdioCollector { onStreamFinished: root.kittyText = text }
     }
     Timer {

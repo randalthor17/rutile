@@ -140,7 +140,7 @@ is a link into the read-only store: the shell never changes it (that would break
 its log what to add. Add it in your home-manager configuration instead:
 
 ```nix
-programs.kitty.extraConfig = "include rutile-colors.conf";
+programs.kitty.extraConfig = "globinclude themes/Rutile.conf";   # globinclude: no warning while it is off
 programs.ghostty.settings.theme = "rutile";
 programs.btop.settings.color_theme = "rutile";
 gtk.gtk3.extraCss = "@import 'rutile.css';";
