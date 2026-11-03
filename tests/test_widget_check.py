@@ -158,7 +158,8 @@ class SpecRules(unittest.TestCase):
 
 class Bindings(unittest.TestCase):
     def test_allowed_and_refused_bindings(self):
-        good = {"a": "{{weather.temperature}}°", "b": ["{{ clock.time }}", "plain"], "c": {"d": "{{http.data.price}}"}}
+        good = {"a": "{{weather.temperature}}°", "b": ["{{ clock.time }}", "plain"], "c": {"d": "{{http.data.price}}"},
+                "sources": {"http": {"url": "https://example.org/x"}}}
         self.assertEqual(wc.binding_problems(good), [])
         for text in ("{{todo.title}}", "{{weather}}", "{{weather.temp + 1}}", "{{clock.time()}}", "{{ }}"):
             probs = wc.binding_problems({"t": text})

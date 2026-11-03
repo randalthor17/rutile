@@ -23,5 +23,11 @@
         ]
       }
     ]
+  },
+  "sources": {
+    "calendar": {
+      "path": "~/.calendars/personal",
+      "days": 14
+    }
   }
 }

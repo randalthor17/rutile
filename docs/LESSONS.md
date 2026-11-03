@@ -378,3 +378,6 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 - **A new window is resized right after it opens.** niri tiles a new window at once, so anything measured when
   it opens (mapToItem, a row's width) is stale a frame later: the settings app's ring kept the 1100 px width and
   ran past the half-width page. Measure again when the target's or its column's size changes.
+- **A Qt Quick Test function ending in `_data` never runs.** QtTest takes `test_x_data` as the data provider of
+  `test_x`, so `test_widget_with_its_data` was silently skipped (the count of passes was one short). Never end a
+  test's name in `_data`; count the passes when adding tests.

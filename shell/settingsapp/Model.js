@@ -40,6 +40,8 @@ function sections(page, schema, hints) {
                 choices: hint.choices ?? leaf.enum ?? [],
                 filters: hint.filters ?? [],
                 swatches: hint.swatches ?? [],
+                type: leaf.type ?? "",
+                placeholder: hint.placeholder ?? "",
                 button: hint.button ?? "",
                 when: hint.when ?? "",
                 requires: hint.requires ?? ""
@@ -50,6 +52,24 @@ function sections(page, schema, hints) {
     }
     if (advanced.length) out.push({ title: "Advanced", rows: advanced, advanced: true });
     return out;
+}
+
+// A text or list row's typed text as its value: a number for a number, the words (split at commas and spaces)
+// for a list; undefined to unset it when empty; null when it is no value of that type.
+function fromText(row, text) {
+    const t = String(text ?? "").trim();
+    if (t === "") return row.type === "array" ? [] : undefined;
+    if (row.type === "array") return t.split(/[\s,]+/).filter(w => w !== "");
+    if (row.type === "number" || row.type === "integer") {
+        const n = Number(t.replace(",", "."));
+        return isFinite(n) && (row.type === "number" || Number.isInteger(n)) ? n : null;
+    }
+    return t;
+}
+// The value as the field shows it for editing.
+function toText(value) {
+    if (value === undefined || value === null) return "";
+    return Array.isArray(value) ? value.join(", ") : String(value);
 }
 
 // A value as the app shows it.

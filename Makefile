@@ -28,11 +28,13 @@ tokens-check:
 generate:
 	$(PY) tools/gen_qml.py
 	$(PY) tools/gen_settings.py
+	$(PY) tools/gen_sources.py
 	$(PY) tools/gen_kvantum.py
 
 generate-check:
 	$(PY) tools/gen_qml.py --check
 	$(PY) tools/gen_settings.py --check
+	$(PY) tools/gen_sources.py --check
 	$(PY) tools/gen_kvantum.py --check
 
 test:

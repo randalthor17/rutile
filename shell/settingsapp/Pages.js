@@ -5,7 +5,7 @@
 // Nix and the store need). Hints: `kind` (path, list), `choices` (values offered in a menu) with `label(value)`,
 // `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section), `filters` for a
 // path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply),
-// `swatches` (the colors a color setting offers). A key that is no setting can be an action: its hint has
+// `swatches` (the colors a color setting offers), `placeholder` (a typed setting's example, D79). A key that is no setting can be an action: its hint has
 // `kind: "action"`, a `title`, a `description` and the `button`'s text; the app asks for it (actionRequested).
 // A page of its own making (plan 5.2) names its `view` (a QML file under pages/, loaded only while the page is
 // open, after its sections) and may name a `backend` (the Quickshell services it shows, which the window loads
@@ -126,6 +126,14 @@ var pages = [
         ]
     },
     {
+        id: "widgets", title: "Widgets", icon: "widgets", tone: "tertiaryContainer",
+        summary: "Weather place, web data", aliases: ["weather", "location", "http", "data sources"],
+        sections: [
+            { title: "Weather", keys: ["widgets.latitude", "widgets.longitude", "widgets.units"] },
+            { title: "Web data", keys: ["widgets.httpAllow"] }
+        ]
+    },
+    {
         id: "accessibility", title: "Accessibility", icon: "accessibility_new", tone: "primaryContainer",
         summary: "Animations", aliases: ["motion", "animation", "reduce motion"],
         sections: [{ title: "", keys: ["motion.speed", "motion.niri"] }, { title: "", keys: ["notice.niriInclude"] }]
@@ -196,6 +204,13 @@ var hints = {
                           aliases: ["pointer speed", "sensitivity", "dpi"] },
     "input.mouseFlat": { requires: "input.enabled", aliases: ["acceleration", "accel", "raw input", "gaming"] },
     "notifications.sound": { aliases: ["audio", "chime"] },
+    // typed, not a slider: a place is a number to a few decimals
+    "widgets.latitude": { kind: "text", placeholder: "52.52", aliases: ["location", "place", "weather"] },
+    "widgets.longitude": { kind: "text", placeholder: "13.41", aliases: ["location", "place", "weather"] },
+    "widgets.units": {
+        label: v => v === "imperial" ? "°F, mph" : "°C, km/h", aliases: ["fahrenheit", "celsius", "temperature"]
+    },
+    "widgets.httpAllow": { kind: "list", placeholder: "https://api.example.org/", aliases: ["allowlist", "url", "http", "fetch", "api"] },
     "lock.idleMinutes": {
         choices: [0, 1, 2, 5, 10, 15, 30, 60],
         label: v => v === 0 ? "Never" : (v === 1 ? "After 1 minute" : "After " + v + " minutes"),

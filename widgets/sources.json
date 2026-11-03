@@ -1,0 +1,114 @@
+{
+  "_note": "The widget data sources (plan 4.2, D79): what a binding {{source.field}} can read. tools/widget_check.py checks bindings against it; tools/gen_sources.py makes shell/widgethost/SourceCatalog.js from it. A field's type: text, number, fraction (0 to 1, for progress), boolean, list (of items with the fields in `item`; a listRow that binds into one repeats per item), or open (any path below it: the source's own JSON). A source's options go in the widget's `sources` object (widgets/spec.schema.json).",
+  "version": 1,
+  "sources": {
+    "clock": {
+      "description": "The time and date, updated every minute (every second while `seconds` is bound).",
+      "fields": {
+        "time": { "type": "text", "description": "The time in the locale's short format, e.g. 14:05." },
+        "seconds": { "type": "number", "description": "Seconds, 0 to 59." },
+        "date": { "type": "text", "description": "Weekday, month and day, e.g. Tue, Nov 3." },
+        "weekday": { "type": "text", "description": "The weekday's name, e.g. Tuesday." },
+        "day": { "type": "number", "description": "Day of the month." },
+        "month": { "type": "text", "description": "The month's name, e.g. November." },
+        "year": { "type": "number", "description": "The year." },
+        "hour": { "type": "number", "description": "Hour, 0 to 23." },
+        "minute": { "type": "number", "description": "Minute, 0 to 59." },
+        "dayProgress": { "type": "fraction", "description": "How much of the day has passed." }
+      }
+    },
+    "battery": {
+      "description": "The laptop battery (UPower).",
+      "fields": {
+        "present": { "type": "boolean", "description": "Whether there is a battery." },
+        "level": { "type": "number", "description": "Charge in percent, 0 to 100." },
+        "fraction": { "type": "fraction", "description": "Charge, 0 to 1." },
+        "charging": { "type": "boolean", "description": "Whether it is charging." },
+        "status": { "type": "text", "description": "Charging, Discharging, Full or Not charging." },
+        "timeLeft": { "type": "text", "description": "Time to full or to empty, e.g. 2 h 10 min; empty when unknown." }
+      }
+    },
+    "system": {
+      "description": "Processor and memory use, read every 2 seconds.",
+      "fields": {
+        "cpu": { "type": "number", "description": "Processor use in percent." },
+        "cpuFraction": { "type": "fraction", "description": "Processor use, 0 to 1." },
+        "memory": { "type": "number", "description": "Memory in use in percent." },
+        "memoryFraction": { "type": "fraction", "description": "Memory in use, 0 to 1." },
+        "memoryUsed": { "type": "text", "description": "Memory in use, e.g. 5.2 GB." },
+        "memoryTotal": { "type": "text", "description": "All memory, e.g. 16 GB." },
+        "uptime": { "type": "text", "description": "Time since start, e.g. 3 h 12 min." },
+        "load": { "type": "text", "description": "Load average over one minute, e.g. 0.52." }
+      }
+    },
+    "countdown": {
+      "description": "Time left until a moment (options: target, and from for the fractions).",
+      "fields": {
+        "days": { "type": "number", "description": "Whole days left." },
+        "hours": { "type": "number", "description": "Hours left after the days." },
+        "minutes": { "type": "number", "description": "Minutes left after the hours." },
+        "text": { "type": "text", "description": "What is left, e.g. 3 days 4 h, or Now." },
+        "done": { "type": "boolean", "description": "Whether the moment has come." },
+        "remaining": { "type": "fraction", "description": "Share of the time from `from` to `target` still left (0 without `from`)." },
+        "progress": { "type": "fraction", "description": "Share of the time from `from` to `target` gone (1 without `from` once done)." }
+      }
+    },
+    "media": {
+      "description": "What is playing (MPRIS): the player that is playing, or else the first one.",
+      "fields": {
+        "playing": { "type": "boolean", "description": "Whether it is playing." },
+        "title": { "type": "text", "description": "Track title." },
+        "artist": { "type": "text", "description": "Artist." },
+        "album": { "type": "text", "description": "Album." },
+        "art": { "type": "text", "description": "Album art, a URL for heroImage." },
+        "progress": { "type": "fraction", "description": "Position in the track." },
+        "player": { "type": "text", "description": "The player's name, e.g. Firefox." }
+      }
+    },
+    "weather": {
+      "description": "Current weather from Open-Meteo (no key), every 30 minutes; the place from the options or from Settings > Widgets.",
+      "fields": {
+        "temperature": { "type": "number", "description": "Temperature, rounded." },
+        "apparent": { "type": "number", "description": "Feels-like temperature, rounded." },
+        "high": { "type": "number", "description": "Today's high, rounded." },
+        "low": { "type": "number", "description": "Today's low, rounded." },
+        "unit": { "type": "text", "description": "°C or °F." },
+        "humidity": { "type": "number", "description": "Relative humidity in percent." },
+        "wind": { "type": "text", "description": "Wind speed with its unit, e.g. 12 km/h." },
+        "condition": { "type": "text", "description": "e.g. Partly cloudy." },
+        "symbol": { "type": "text", "description": "A Material Symbols name for the condition, e.g. partly_cloudy_day." }
+      }
+    },
+    "calendar": {
+      "description": "Upcoming events from an .ics file or a folder of them (vdirsyncer's); single events only, repeats are not expanded.",
+      "fields": {
+        "events": {
+          "type": "list",
+          "description": "The next events, soonest first, at most 8.",
+          "item": {
+            "title": { "type": "text", "description": "The event's summary." },
+            "date": { "type": "text", "description": "Its day, e.g. Thu, Nov 5, or Today." },
+            "time": { "type": "text", "description": "Its start time, or All day." },
+            "when": { "type": "text", "description": "Day and time together." }
+          }
+        },
+        "next": { "type": "text", "description": "The next event's title, or No events." },
+        "nextWhen": { "type": "text", "description": "When the next event is." },
+        "count": { "type": "number", "description": "How many events are in the coming days." }
+      }
+    },
+    "http": {
+      "description": "A JSON document from a URL that Settings > Widgets allows (option url; every `every` seconds, at least 60). Its fields are read below http, e.g. {{http.rates.EUR}}.",
+      "fields": {}, "open": true
+    },
+    "files": {
+      "description": "A text file (option path; read again when it changes).",
+      "fields": {
+        "text": { "type": "text", "description": "The whole text, up to 2000 characters." },
+        "firstLine": { "type": "text", "description": "The first line." },
+        "lines": { "type": "list", "description": "The lines, at most 50.", "item": { "text": { "type": "text", "description": "One line." } } },
+        "json": { "type": "open", "description": "The file's JSON, when it is JSON, e.g. {{files.json.total}}." }
+      }
+    }
+  }
+}

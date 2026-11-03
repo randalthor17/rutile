@@ -797,3 +797,24 @@ MultiEffect mask, created only while a picture shows), a tinted placeholder befo
 can of a spec that `tools/widget_check.py` would refuse and lists the rest in `problems` (an unknown type, deeper
 than 12 levels); a spec of another version draws nothing. Lists repeated over a source's array (the list
 example's `{{calendar.events.title}}`) wait for 4.2, which defines what a source's array looks like.
+
+**D79. Widget data sources: a catalog, options in the widget, one object per bound source (plan 4.2).** Nine
+sources: clock, battery, system, countdown, media, weather, calendar, http and files. `widgets/sources.json` lists
+each one's fields and their types (text, number, fraction, boolean, a list of items, or an open document); it is
+the one list: `tools/widget_check.py` refuses a binding to a field it does not name (with the fields it has, for a
+model's retry loop), and `tools/gen_sources.py` generates `SourceCatalog.js` for the renderer, whose `problems`
+say the same. What a source needs to know goes in the widget's own `sources` object (a countdown's target, a
+calendar's path, an http url, another place for the weather or the clock): a template then carries everything
+it needs; the schema checks the options, and the checker refuses a binding to a source whose required options
+are missing. `WidgetSources` makes one object of `shell/widgethost/sources/` per source the widget binds and
+nothing else (D31): a weather widget does not read /proc. Each object only gathers its inputs (a Timer, UPower,
+Mpris, a Process reading /proc or an .ics folder, a FileView, an XMLHttpRequest); `Sources.js` works out the
+values as plain functions, tested with fixed inputs. Timers follow what is bound: the clock ticks every second only
+while `seconds` is, media polls its position only while `progress` is. Weather is Open-Meteo (no key; the place
+from the widget or Settings > Widgets, nothing fetched without one) every 30 minutes. The http source fetches only
+addresses whose beginning Settings > Widgets lists, each with a host and a slash (so a listed host cannot be
+extended into another), at least a minute apart; a widget cannot put data into an address (no bindings there),
+so a file it reads never leaves the machine. A calendar reads single events only: repeating ones show at their
+first time (RRULE is not expanded), and a TZID time is taken as local. A listRow that binds into a list repeats
+per item, at most 8. The settings app gained typed fields for this (numbers, text, lists split at commas and
+spaces), as a slider cannot take a latitude.

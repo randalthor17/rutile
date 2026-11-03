@@ -178,6 +178,7 @@ def workspace(tests_dir="qml"):
     (data / "widgets").mkdir()
     for f in sorted((ROOT / "widgets" / "examples").glob("*.json")):
         shutil.copy(f, data / "widgets" / f.name)
+    shutil.copy(ROOT / "tests" / "fixtures" / "open-meteo.json", data)
     shutil.copy(ROOT / "tokens" / "m3e.json", data)
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", data / "palette.json")
     sys.path.insert(0, str(ROOT / "tests"))
@@ -245,14 +246,24 @@ def qs_workspace(test):
     shutil.copytree(ROOT / "tests" / "qs" / "config", ws / "config")
     shutil.copytree(ROOT / "tests" / "qs" / "pam", ws / "pam")
     shutil.copytree(ROOT / "tests" / "qs" / "mime", ws / "mime")
+    shutil.copytree(ROOT / "tests" / "qs" / "www", ws / "www")
+    shutil.copy(ROOT / "tests" / "fixtures" / "open-meteo.json", ws / "www" / "forecast")
     shutil.copy(test, ws / "shell.qml")
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", ws / "palette.json")
     return ws
 
 
+def free_port():
+    """A local TCP port free a moment ago (a test's own web server, the widget data sources)."""
+    import socket
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
 def qs_test_env(test, ws):
     """Offscreen, never the session's compositor. `// env NAME=value` lines in the test add variables;
-    @WS@ is the shell directory and @PATH@ the current PATH. No braces there: a `{` above the imports stops Quickshell resolving qs.*."""
+    @WS@ is the shell directory, @PATH@ the current PATH and @PORT@ a free local port (one per test). No braces there: a `{` above the imports stops Quickshell resolving qs.*."""
     # never the session's compositor or niri
     env = {k: v for k, v in os.environ.items() if k not in ("WAYLAND_DISPLAY", "DISPLAY", "NIRI_SOCKET", "SWAYSOCK")}
     env["QT_QPA_PLATFORM"] = "offscreen"
@@ -265,8 +276,10 @@ def qs_test_env(test, ws):
     env["XDG_DATA_HOME"] = str(ws / "home" / "data")
     # never the user's logind session (the lock screen's triggers and LockedHint act on it)
     env["XDG_SESSION_ID"] = ""
+    port = free_port()
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
-        env[name] = value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
+        env[name] = (value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
+                     .replace("@PORT@", str(port)))
     return env
 
 

@@ -331,6 +331,46 @@
           "description": "The pointer moves the same distance however fast the mouse moves (a flat profile)."
         }
       }
+    },
+    "widgets": {
+      "type": "object",
+      "title": "Widgets",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "title": "Weather place: latitude",
+          "description": "Where weather widgets report from, in degrees north (south below 0), e.g. 52.52; a widget can name its own place."
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180,
+          "title": "Weather place: longitude",
+          "description": "In degrees east (west below 0), e.g. 13.41."
+        },
+        "units": {
+          "type": "string",
+          "enum": [
+            "metric",
+            "imperial"
+          ],
+          "default": "metric",
+          "title": "Weather units",
+          "description": "°C and km/h, or °F and mph."
+        },
+        "httpAllow": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "https?://[^/]+/.*"
+          },
+          "default": [],
+          "title": "Web data widgets may read",
+          "description": "The beginnings of the addresses widgets may fetch JSON from, each with its host and a slash, e.g. https://api.frankfurter.app/; widgets fetch nothing else."
+        }
+      }
     }
   }
 }

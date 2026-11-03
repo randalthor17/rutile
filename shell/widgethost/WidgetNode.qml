@@ -208,49 +208,60 @@ Item {
             stopShown: root.colors.tinted ? root.onColor : Colors[spec.stopColor]
         }
     }
+    // One row, or one per item when it binds into a list (WidgetSpec.rows): each reads its own values.
     Component {
         id: listRowNode
-        Item {
-            implicitHeight: Math.max(listText.implicitHeight, Spacing.xl) + Spacing.sm * 2
-            Icon {
-                id: listIcon
-                visible: !!root.node.icon
-                anchors.verticalCenter: parent.verticalCenter
-                name: root.node.icon ?? ""
-                size: Spacing.xl
-                color: root.variantColor
-            }
-            Column {
-                id: listText
-                anchors.left: listIcon.visible ? listIcon.right : parent.left
-                anchors.leftMargin: listIcon.visible ? Spacing.lg : 0
-                anchors.right: trailing.visible ? trailing.left : parent.right
-                anchors.rightMargin: trailing.visible ? Spacing.lg : 0
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                    width: parent.width
-                    text: root.text(root.node.title)
-                    elide: Text.ElideRight
-                    color: root.onColor
-                    font: Type.font(Type.bodyLarge)
+        Column {
+            Repeater {
+                model: Spec.rows(root.node, root.values)
+                delegate: Item {
+                    id: listRow
+                    required property var modelData
+                    objectName: "widgetListRow"
+                    width: root.width
+                    implicitHeight: Math.max(listText.implicitHeight, Spacing.xl) + Spacing.sm * 2
+                    height: implicitHeight
+                    Icon {
+                        id: listIcon
+                        visible: !!root.node.icon
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: root.node.icon ?? ""
+                        size: Spacing.xl
+                        color: root.variantColor
+                    }
+                    Column {
+                        id: listText
+                        anchors.left: listIcon.visible ? listIcon.right : parent.left
+                        anchors.leftMargin: listIcon.visible ? Spacing.lg : 0
+                        anchors.right: trailing.visible ? trailing.left : parent.right
+                        anchors.rightMargin: trailing.visible ? Spacing.lg : 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        Text {
+                            width: parent.width
+                            text: Spec.resolve(root.node.title, listRow.modelData)
+                            elide: Text.ElideRight
+                            color: root.onColor
+                            font: Type.font(Type.bodyLarge)
+                        }
+                        Text {
+                            visible: !!root.node.subtitle
+                            width: parent.width
+                            text: Spec.resolve(root.node.subtitle, listRow.modelData)
+                            elide: Text.ElideRight
+                            color: root.variantColor
+                            font: Type.font(Type.bodyMedium)
+                        }
+                    }
+                    Icon {
+                        id: trailing
+                        visible: !!root.node.trailingIcon
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: root.node.trailingIcon ?? ""
+                        size: Spacing.xl
+                        color: root.variantColor
+                    }
                 }
-                Text {
-                    visible: !!root.node.subtitle
-                    width: parent.width
-                    text: root.text(root.node.subtitle)
-                    elide: Text.ElideRight
-                    color: root.variantColor
-                    font: Type.font(Type.bodyMedium)
-                }
-            }
-            Icon {
-                id: trailing
-                visible: !!root.node.trailingIcon
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                name: root.node.trailingIcon ?? ""
-                size: Spacing.xl
-                color: root.variantColor
             }
         }
     }

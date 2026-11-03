@@ -15,14 +15,25 @@
           },
           {
             "type": "stat",
-            "label": "Temperature",
+            "label": "High {{weather.high}}° · Low {{weather.low}}°",
             "value": "{{weather.temperature}}",
-            "unit": "°C"
+            "unit": "°"
           },
           {
-            "type": "heroImage",
-            "source": "{{weather.icon}}",
-            "aspect": "16:9"
+            "type": "row",
+            "spacing": "sm",
+            "children": [
+              {
+                "type": "chip",
+                "icon": "partly_cloudy_day",
+                "label": "{{weather.condition}}"
+              },
+              {
+                "type": "chip",
+                "icon": "air",
+                "label": "{{weather.wind}}"
+              }
+            ]
           }
         ]
       }

@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Widget data.** Widgets can show the time (and other places' time), the battery, processor and memory use,
+  a countdown, what is playing, the weather (Open-Meteo, no account; set the place in Settings > Widgets),
+  upcoming events from a calendar file or folder, a text or JSON file, and JSON from web addresses you allow
+  in Settings > Widgets. Settings can now take typed values: numbers, text, and lists of addresses.
 - **Widgets draw.** The widget renderer (plan 4.3) draws a widget spec: cards, tiles, rows, columns, grids,
   headers, stats, progress bars, list rows, chips and pictures, in the wallpaper's colors, with `{{source.field}}`
   filled from data (the data sources are next). Nothing on the desktop yet: that is the widget grid (4.4).

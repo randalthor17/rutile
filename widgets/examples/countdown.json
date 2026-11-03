@@ -14,6 +14,11 @@
             "title": "Countdown"
           },
           {
+            "type": "stat",
+            "label": "Until Christmas",
+            "value": "{{countdown.text}}"
+          },
+          {
             "type": "progress",
             "value": "{{countdown.remaining}}",
             "style": "wavy"
@@ -21,5 +26,11 @@
         ]
       }
     ]
+  },
+  "sources": {
+    "countdown": {
+      "target": "2026-12-25",
+      "from": "2026-12-01"
+    }
   }
 }

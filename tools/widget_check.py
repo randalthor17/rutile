@@ -22,15 +22,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "widgets" / "spec.schema.json"
+SOURCES_FILE = ROOT / "widgets" / "sources.json"
 ROLES = ROOT / "theme" / "roles.json"
 DRAFT = "https://json-schema.org/draft/2020-12/schema"
 MAX_PER_FILE = 15
 
-# The spec's node types and data sources (docs/sidework/tasks/widget-schema.md, plan item 4.1).
+# The spec's node types (docs/sidework/tasks/widget-schema.md, plan item 4.1) and data sources (widgets/sources.json,
+# plan item 4.2: what each binding may read).
 NODE_TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"]
-SOURCES = ["clock", "weather", "calendar", "battery", "system", "countdown", "http", "files"]
+CATALOG = json.loads(SOURCES_FILE.read_text())["sources"]
+SOURCES = sorted(CATALOG)
 BINDING = re.compile(r"\{\{\s*([^{}]*?)\s*\}\}")
 BINDING_OK = re.compile(r"^(%s)\.[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$" % "|".join(SOURCES))
+
+# The options a source cannot do without (the spec's $defs.sources required lists).
+SOURCE_OPTIONS = {k: v.get("required", []) for k, v in
+                  json.loads(SCHEMA.read_text())["$defs"]["sources"]["properties"].items()}
 
 ANNOTATIONS = {"$schema", "$id", "$comment", "title", "description", "examples", "default", "deprecated"}
 SUPPORTED = ANNOTATIONS | {
@@ -198,13 +205,48 @@ def strings(value, path=()):
             yield from strings(item, path + (k,))
 
 
+def field_problem(source, fields):
+    """Why `fields` (the path after the source) names nothing in the catalog, or None."""
+    entry = CATALOG[source]
+    if entry.get("open"):
+        return None
+    known = entry["fields"]
+    name = fields[0]
+    if name not in known:
+        return f"{source} has no field {name!r}; it has: {', '.join(known)}"
+    f = known[name]
+    if f["type"] == "open":
+        return None if len(fields) > 1 else f"{source}.{name} is a document: bind a field below it, e.g. {source}.{name}.x"
+    if f["type"] == "list":
+        if len(fields) == 1:
+            return None
+        if fields[1] not in f["item"] or len(fields) > 2:
+            return f"{source}.{name} is a list; bind one of its items' fields: {', '.join(f['item'])}"
+        return None
+    if len(fields) > 1:
+        return f"{source}.{name} is a {f['type']}, with no fields below it"
+    return None
+
+
 def binding_problems(widget):
     errs = []
-    for path, text in strings(widget):
+    used = set()
+    for path, text in strings({k: v for k, v in widget.items() if k != "sources"} if isinstance(widget, dict) else widget):
         for m in BINDING.finditer(text):
             if not BINDING_OK.match(m.group(1)):
                 errs.append((path, f"binding {m.group(0)!r} must be {{{{source.field}}}} with a source from: "
                                    f"{', '.join(SOURCES)} (no code, no spaces)"))
+                continue
+            source, *fields = m.group(1).split(".")
+            used.add(source)
+            problem = field_problem(source, fields)
+            if problem:
+                errs.append((path, f"binding {m.group(0)!r}: {problem}"))
+    options = widget.get("sources", {}) if isinstance(widget, dict) else {}
+    for source in sorted(used):
+        need = SOURCE_OPTIONS.get(source, [])
+        if need and not isinstance(options.get(source), dict):
+            errs.append((("sources",), f"binds {source} but gives no sources.{source} with {', '.join(need)}"))
     return errs
 
 

@@ -4,12 +4,14 @@
 // tools/widget_check.py would refuse, and says what it left out). No code from a widget ever runs: a binding is
 // a path into `values`, looked up, never evaluated.
 .pragma library
+.import "SourceCatalog.js" as Catalog
 
 var VERSION = 1;
 var TYPES = ["row", "column", "grid", "card", "header", "tile", "heroImage", "stat", "progress", "listRow", "chip"];
 var CONTAINERS = ["row", "column", "grid", "card", "tile"];
 var MAX_DEPTH = 12;                 // deeper nodes are left out (a widget is a few levels; this stops runaway ones)
 var MISSING = "—";                  // what a binding shows while its source has no value
+var MAX_ROWS = 8;                   // a listRow repeated over a list shows at most this many
 var BINDING = /\{\{\s*([a-z]+(?:\.[A-Za-z_][A-Za-z0-9_]*)+)\s*\}\}/g;
 
 // The value at "source.field.sub" in `values` ({source: {field: ...}}), or undefined.
@@ -54,6 +56,73 @@ function bindingsOf(text) {
     return out;
 }
 
+// What is wrong with a binding's path against the source catalog (widgets/sources.json), or "".
+function bindingProblem(path) {
+    var parts = path.split(".");
+    var source = Catalog.sources[parts[0]];
+    if (!source) return "no source " + JSON.stringify(parts[0]);
+    if (source.open) return "";
+    var field = source.fields[parts[1]];
+    if (!field) return parts[0] + " has no field " + JSON.stringify(parts[1]);
+    if (field.type === "open") return parts.length > 2 ? "" : path + " is a document: bind a field below it";
+    if (field.type === "list")
+        return parts.length === 2 || (parts.length === 3 && field.item.indexOf(parts[2]) >= 0) ? ""
+             : path + ": a list's items have " + field.item.join(", ");
+    return parts.length === 2 ? "" : path + " has no fields below it";
+}
+
+// The sources a widget binds, each with the fields it reads: {battery: ["level", "charging"], ...}; only sources the
+// catalog has (WidgetSources loads one object for each).
+function sourcesUsed(spec) {
+    var out = {};
+    function walk(node, depth) {
+        if (!node || typeof node !== "object" || depth > MAX_DEPTH) return;
+        ["title", "subtitle", "label", "value", "source"].forEach(function (k) {
+            bindingsOf(typeof node[k] === "string" ? node[k] : "").forEach(function (b) {
+                var parts = b.split(".");
+                if (!Catalog.sources[parts[0]]) return;
+                var fields = out[parts[0]] || (out[parts[0]] = []);
+                if (fields.indexOf(parts[1]) < 0) fields.push(parts[1]);
+            });
+        });
+        (list(node.children) || []).forEach(function (c) { walk(c, depth + 1); });
+    }
+    if (spec && typeof spec === "object") walk(spec.root, 1);
+    return out;
+}
+// A source's QML file under sources/: clock -> ClockSource.qml
+function sourceFile(name) {
+    return "sources/" + name.charAt(0).toUpperCase() + name.substring(1) + "Source.qml";
+}
+
+// A listRow repeats once per item when a binding of it runs through a list ({{calendar.events.title}}): the
+// values each row reads, the list replaced by that item, at most MAX_ROWS; [values] when it binds no list.
+function rows(node, values) {
+    var texts = [node.title, node.subtitle];
+    for (var t = 0; t < texts.length; t++) {
+        var paths = bindingsOf(texts[t]);
+        for (var p = 0; p < paths.length; p++) {
+            var parts = paths[p].split(".");
+            var v = values;
+            for (var i = 0; i < parts.length - 1; i++) {
+                if (v === null || v === undefined || typeof v !== "object") break;
+                v = v[parts[i]];
+                var items = list(v);
+                if (items && typeof v !== "string")
+                    return items.slice(0, MAX_ROWS).map(function (item) { return replaced(values, parts.slice(0, i + 1), item); });
+            }
+        }
+    }
+    return [values];
+}
+// `values` with the value at `parts` replaced by `item` (copies along the path only).
+function replaced(values, parts, item) {
+    if (parts.length === 0) return item;
+    var copy = Object.assign({}, values);
+    copy[parts[0]] = replaced(values ? values[parts[0]] : undefined, parts.slice(1), item);
+    return copy;
+}
+
 // A progress node's value, 0..1: a number, or a binding whose value is one (a text number too); 0 otherwise.
 function progress(value, values) {
     var v = value;
@@ -95,6 +164,12 @@ function problems(spec) {
         if (depth > MAX_DEPTH) return out.push(where + ": deeper than " + MAX_DEPTH + " levels, left out");
         if (!node || typeof node !== "object" || TYPES.indexOf(node.type) < 0)
             return out.push(where + ": unknown type " + JSON.stringify(node && node.type) + ", left out");
+        ["title", "subtitle", "label", "value", "source"].forEach(function (k) {
+            bindingsOf(typeof node[k] === "string" ? node[k] : "").forEach(function (b) {
+                var problem = bindingProblem(b);
+                if (problem) out.push(where + "." + k + ": " + problem + ", shows " + MISSING);
+            });
+        });
         if (CONTAINERS.indexOf(node.type) >= 0) {
             var children = list(node.children);
             if (!children) return out.push(where + ": no children");

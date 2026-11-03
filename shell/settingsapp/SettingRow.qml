@@ -1,8 +1,8 @@
 // One setting in the settings app (plan 5.1), as a list item built from its row (Model.sections): a switch for a
 // boolean, a slider for a number with limits, a menu of choices, a file for a path (`pickPath`: the app opens the
 // file chooser), swatches for a color (D65), a button for an action (`runAction`, D66), a notice shown while the
-// app's `conditions[when]` holds (D74), or the value as text for a list (its editor comes with its page,
-// 5.2). A setting set in Nix shows its value with a lock and takes no changes (D45). Changes go through `store.set(key, value)`; a slider saves once it has been still for a moment, so
+// app's `conditions[when]` holds (D74), or a field to type a text, a number or a list in (commas or spaces between
+// a list's items; Enter or leaving the field saves it, D79). A setting set in Nix shows its value with a lock and takes no changes (D45). Changes go through `store.set(key, value)`; a slider saves once it has been still for a moment, so
 // a drag does not write the file at every step. A choice asks the app for its menu (`toggleMenu`): the app shows one
 // menu above everything, which a row of its own could not be (later sections are drawn over it).
 pragma ComponentBehavior: Bound
@@ -44,7 +44,7 @@ Item {
         position: root.position
         text: root.row.title
         // what it does, or for a path or a list (nothing beside it) the value
-        readonly property bool valueBelow: root.row.kind === "path" || root.row.kind === "list"
+        readonly property bool valueBelow: root.row.kind === "path" || (root.row.kind === "list" && root.managed)
         supportingText: {
             if (root.managed)
                 return "Set in your Nix configuration" + (root.row.kind === "switch" ? "" : ": " + root.shownValue);
@@ -160,6 +160,54 @@ Item {
                         Accessible.name: swatch.modelData
                         Accessible.checked: swatch.chosen
                     }
+                }
+            }
+        }
+        Loader {
+            active: (root.row.kind === "text" || root.row.kind === "list") && !root.managed
+            visible: active
+            sourceComponent: Rectangle {
+                id: field
+                property bool refused: false
+                // Enter and leaving the field both end the edit; an unchanged value is not saved again
+                function commit() {
+                    const v = Model.fromText(root.row, input.text);
+                    if (v !== null && JSON.stringify(v ?? null) === JSON.stringify(root.current ?? null)) {
+                        refused = false;
+                        return;
+                    }
+                    refused = v === null || !root.store.set(root.row.key, v);
+                    if (!refused) input.text = Qt.binding(() => Model.toText(root.current));
+                }
+                width: root.row.kind === "list" ? 320 : 160
+                height: Spacing.xxl + Spacing.sm
+                radius: height / 2
+                color: Colors.surfaceContainerHighest
+                border.width: refused ? 2 : 0
+                border.color: Colors.error
+                Text {
+                    anchors.left: input.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: input.text === "" && !input.activeFocus
+                    text: root.row.placeholder
+                    color: Colors.surfaceVariantOn
+                    font: Type.font(Type.bodyMedium)
+                }
+                TextInput {
+                    id: input
+                    objectName: "settingField_" + root.row.key
+                    anchors.fill: parent
+                    anchors.leftMargin: Spacing.md
+                    anchors.rightMargin: Spacing.md
+                    verticalAlignment: TextInput.AlignVCenter
+                    clip: true
+                    text: Model.toText(root.current)
+                    color: Colors.surfaceOn
+                    selectionColor: Colors.primary
+                    selectedTextColor: Colors.primaryOn
+                    font: Type.font(Type.bodyMedium)
+                    onTextEdited: field.refused = false
+                    onEditingFinished: field.commit()
                 }
             }
         }

@@ -91,17 +91,21 @@ TestCase {
     // ---- rendering ----
     // The spec's examples draw, with their bindings filled, in the card's colors.
     function test_examples() {
-        const weather = host(readJson("../data/widgets/weather.json"), { weather: { temperature: 21 } });
+        const weather = host(readJson("../data/widgets/weather.json"), { weather: { temperature: 21, high: 23, condition: "Clear" } });
         verify(weather.height > 0);
         compare(weather.problems.join(), "");
-        compare(weather.bindings.join(), "weather.temperature,weather.icon");
+        compare(weather.bindings.join(), "weather.high,weather.low,weather.temperature,weather.condition,weather.wind");
         verify(textOf(weather, "Current Weather"), "the header");
         const value = textOf(weather, "21");
         verify(value, "the stat, filled");
         compare(value.color, Colors.surfaceOn, "on a surface card: surfaceOn");
-        verify(textOf(weather, "°C"));
-        verify(findChild(weather, "widgetImagePlaceholder").visible, "no icon yet: the placeholder");
-        const img = findChild(weather, "widgetImagePlaceholder");
+        verify(textOf(weather, "°"));
+        verify(textOf(weather, "High 23° · Low " + Spec.MISSING + "°"), "a missing value among others");
+        verify(textOf(weather, "Clear"));
+        // a picture: the placeholder until it loads, at its aspect
+        const pic = host(widget({ type: "heroImage", source: "{{media.art}}", aspect: "16:9" }));
+        const img = findChild(pic, "widgetImagePlaceholder");
+        verify(img.visible, "no picture yet: the placeholder");
         fuzzyCompare(img.height, img.width * 9 / 16, 1, "16:9");
 
         const battery = host(readJson("../data/widgets/stat-card.json"), { battery: { level: 64 } });

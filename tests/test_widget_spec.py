@@ -59,5 +59,55 @@ class RealSpec(unittest.TestCase):
             self.assertTrue(problems(widget(root)), name)
 
 
+class Sources(unittest.TestCase):
+    """widgets/sources.json (plan 4.2): bindings name a source's real fields, and a source that needs options has
+    them in the widget's `sources`."""
+    def test_catalog_and_schema_agree(self):
+        catalog = json.loads((ROOT / "widgets" / "sources.json").read_text())["sources"]
+        options = SCHEMA["$defs"]["sources"]["properties"]
+        self.assertTrue(set(options) <= set(catalog), set(options) - set(catalog))
+        for name, entry in catalog.items():
+            self.assertTrue(entry["description"], name)
+            for field, f in entry["fields"].items():
+                self.assertIn(f["type"], ("text", "number", "fraction", "boolean", "list", "open"), f"{name}.{field}")
+                self.assertTrue(f["description"], f"{name}.{field}")
+                if f["type"] == "list":
+                    self.assertTrue(f["item"], f"{name}.{field}")
+
+    def test_bindings_against_the_catalog(self):
+        def chip(label, **extra):
+            return dict(widget({"type": "chip", "label": label}), **extra)
+        good = {
+            "a field": chip("{{battery.level}}%"),
+            "a list's item field": chip("{{calendar.events.title}}", sources={"calendar": {"path": "~/cal"}}),
+            "a whole list": chip("{{files.lines}}", sources={"files": {"path": "/tmp/x"}}),
+            "below an open field": chip("{{files.json.a.b}}", sources={"files": {"path": "/tmp/x"}}),
+            "anything under http": chip("{{http.rates.EUR}}", sources={"http": {"url": "https://example.org/x"}}),
+        }
+        for name, w in good.items():
+            self.assertEqual(problems(w), [], name)
+        bad = {
+            "an unknown field": (chip("{{battery.lvl}}"), "battery has no field 'lvl'"),
+            "below a plain field": (chip("{{battery.level.x}}"), "is a number, with no fields below it"),
+            "a list's unknown item field": (chip("{{calendar.events.place}}", sources={"calendar": {"path": "/c"}}),
+                                            "bind one of its items' fields: title"),
+            "an open field itself": (chip("{{files.json}}", sources={"files": {"path": "/x"}}), "is a document"),
+            "options missing": (chip("{{countdown.text}}"), "gives no sources.countdown with target"),
+        }
+        for name, (w, said) in bad.items():
+            found = " | ".join(m for _, m in problems(w))
+            self.assertIn(said, found, name)
+        refused = {
+            "an option the source has not": {"clock": {"zone": "x"}},
+            "a countdown target not a date": {"countdown": {"target": "Christmas"}},
+            "http not http": {"http": {"url": "file:///etc/passwd"}},
+            "http too often": {"http": {"url": "https://a.b/", "every": 5}},
+            "a relative file": {"files": {"path": "notes.txt"}},
+            "an unknown source": {"todo": {}},
+        }
+        for name, options in refused.items():
+            self.assertTrue(wc.validate(chip("x", sources=options), SCHEMA, SCHEMA), name)
+
+
 if __name__ == "__main__":
     unittest.main()

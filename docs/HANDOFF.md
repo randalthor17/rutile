@@ -202,7 +202,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`), niri; `Settings` (the settings and state files, `docs/settings.md`) |
 | `shell/settingsapp/` | the Settings app (D50): the registry `Pages.js`, `Model.js`, rows, the window; `shell/settingsapp/pages/` holds pages of their own, each a view and maybe a backend (D67) |
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
-| `shell/widgethost/` | the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings from the data sources' values |
+| `shell/widgethost/` | the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
 | `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
@@ -211,7 +211,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
 | `settings/` | `schema.json`: every setting of the shell, read by the shell and the home-manager module (D45) |
 | `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings) |
-| `widgets/` | the widget spec (`spec.schema.json`) and examples; templates come from the local model line |
+| `widgets/` | the widget spec (`spec.schema.json`), the data sources' catalog (`sources.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call; `flatpak-theming` (D66) |
@@ -222,7 +222,8 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 
 Tool inventory (every script has a docstring with usage): `tools/gen_tokens.py` and `tools/gen_components.py`
 generate token JSON from the vendored Kotlin sources; `tools/gen_qml.py` generates the QML singletons; `tools/gen_settings.py` checks `settings/schema.json` and
-generates `shell/services/SettingsSchema.js` from it; `tools/gen_kvantum.py` generates the Kvantum theme templates
+generates `shell/services/SettingsSchema.js` from it; `tools/gen_sources.py` generates
+`shell/widgethost/SourceCatalog.js` from `widgets/sources.json` (the widget data sources, D79); `tools/gen_kvantum.py` generates the Kvantum theme templates
 (`theme/apps/kvantum.svg`, `.kvconfig`, D60);
 `tools/palette.py` renders and validates `palette.json` for development (the shell does its own, D53); `tools/qtws.py` builds the Qt workspace and runs
 tests, lint, GPU tests and gallery renders, the Quickshell tests (`test-qs`) and the real shell under a headless
@@ -273,6 +274,8 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_CLI` | `bin/rutile-shell`, `shell/settingsapp/SettingsWindow.qml` | the `rutile-shell` command itself, which Settings starts for Flatpak apps (D66); the package sets its wrapper, a checkout the script's path |
 | `RUTILE_QUICKSHELL` | `bin/rutile-shell` | the quickshell binary, default `quickshell` on PATH (tests point it at a stand-in) |
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
+| `RUTILE_WEATHER_URL` | `shell/widgethost/sources/WeatherSource.qml` | the weather address instead of Open-Meteo's (tests point it at a local server) |
+| `RUTILE_TEST_PORT` | `tests/qs/tst_widget_sources_live.qml` | tests only: the free local port of the test's own web server (`@PORT@` in a test's `// env` lines) |
 | `RUTILE_PAPIRUS` | `shell/services/Files.js` (folder icons, D64) | Papirus-Dark's folder when it is not in `XDG_DATA_DIRS` (tests) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |
 | `OLLAMA_HOST` | `tools/sidework.py` | Ollama address, default `127.0.0.1:11434` |

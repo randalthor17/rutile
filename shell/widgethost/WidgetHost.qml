@@ -1,5 +1,5 @@
 // A widget drawn from its spec (plan 4.3, D78): `spec` is a widget (widgets/spec.schema.json), `values` the data
-// sources' values that its bindings read ({source: {field: value}}; plan 4.2 fills them). The width is the
+// sources' values that its bindings read (by source, then field; WidgetSources fills them). The width is the
 // host's (the desktop grid's cell, a preview); the height follows the content. `problems` lists what was left out
 // (WidgetSpec.problems): a widget of another version draws nothing. Plain QtQuick, so it tests offscreen.
 import QtQuick

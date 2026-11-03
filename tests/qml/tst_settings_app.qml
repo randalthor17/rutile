@@ -325,6 +325,51 @@ TestCase {
         compare(mAsked.count, 0);
     }
 
+    // Typed settings (D79): a number, a list (commas or spaces between items), empty to unset; refused text marked.
+    function test_text_fields() {
+        const num = { type: "number" }, int = { type: "integer" }, arr = { type: "array" }, str = { type: "string" };
+        compare(Model.fromText(num, " 52.52 "), 52.52);
+        compare(Model.fromText(num, "-13,4"), -13.4, "a decimal comma");
+        compare(Model.fromText(num, "north"), null);
+        compare(Model.fromText(int, "2.5"), null);
+        compare(Model.fromText(num, ""), undefined, "empty: unset");
+        compare(Model.fromText(arr, "https://a.org/, https://b.org/x/\nhttps://c.org/"),
+                ["https://a.org/", "https://b.org/x/", "https://c.org/"]);
+        compare(Model.fromText(arr, " "), []);
+        compare(Model.fromText(str, " x "), "x");
+        compare(Model.toText(["a", "b"]), "a, b");
+        compare(Model.toText(undefined), "");
+        compare(Model.toText(4.5), "4.5");
+
+        const t = make({ values: { "widgets.httpAllow": [], "widgets.units": "metric" } });
+        open(t, "widgets");
+        const lat = findChild(t.a, "settingField_widgets.latitude");
+        verify(lat, "latitude is typed, not a slider");
+        mouseClick(lat);
+        type("52.52");
+        keyClick(Qt.Key_Return);
+        compare(JSON.stringify(t.s.sets[t.s.sets.length - 1]), '["widgets.latitude",52.52]');
+        // not a number: nothing saved, the field marked
+        const lon = findChild(t.a, "settingField_widgets.longitude");
+        mouseClick(lon);
+        type("east");
+        keyClick(Qt.Key_Return);
+        compare(t.s.sets.length, 1, "nothing saved");
+        compare(lon.parent.border.width, 2, "marked");
+        keyClick(Qt.Key_Backspace);
+        compare(lon.parent.border.width, 0, "typing again clears the mark");
+        const allow = findChild(t.a, "settingField_widgets.httpAllow");
+        mouseClick(allow);
+        type("https://api.frankfurter.app/ https://x.org/");
+        keyClick(Qt.Key_Return);
+        compare(JSON.stringify(t.s.sets[t.s.sets.length - 1]),
+                '["widgets.httpAllow",["https://api.frankfurter.app/","https://x.org/"]]');
+        compare(allow.text, "https://api.frankfurter.app/, https://x.org/", "shown back as the store has it");
+        const m = make({ managed: { "widgets.latitude": true }, values: { "widgets.latitude": 1 } });
+        open(m, "widgets");
+        verify(!findChild(m.a, "settingField_widgets.latitude"), "set in Nix: no field");
+    }
+
     // the style (D65): mode and color style as menus, contrast a slider, the color as swatches
     function test_style_rows() {
         const rows = {};

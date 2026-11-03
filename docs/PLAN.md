@@ -216,9 +216,14 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   failing draft and Claude rewrote the schema on main (recursive `$defs`, surface-role `tone` enum, unknown
   fields rejected at every level); its five examples pass `tools/widget_check.py` and `jsonschema`, and
   `tests/test_widget_spec.py` pins what the spec refuses. Node fields are a first cut: the renderer (4.3) may refine them.
-- [ ] **4.2** Data sources: clock, weather (keyless API), calendar, battery, system stats, countdown, HTTP JSON
-  (allowlisted), files; bindings `{{source.field}}` with no arbitrary JS. Types: `SystemClock`, `UPower`,
-  `Mpris`, `FileView`, `Process`.
+- [x] **4.2** Data sources (D79): clock (a world clock with `utcOffset`), battery (UPower), system (/proc),
+  countdown, media (Mpris), weather (Open-Meteo, keyless), calendar (.ics files, single events), http (JSON from
+  addresses Settings > Widgets allows) and files. `widgets/sources.json` lists every field (`widget_check.py`
+  checks bindings against it; generated into QML); a widget's options go in its `sources`; `WidgetSources`
+  creates only the sources a widget binds; a listRow bound into a list repeats per item. Settings > Widgets: the
+  weather place and units, the allowed addresses (typed fields in the settings app). Tested with fixed inputs
+  offscreen, and in Quickshell against /proc, UPower, a file, a calendar folder and a local web server. Not yet:
+  recurring calendar events, a place found by name.
 - [x] **4.3** WidgetHost renderer (D78, `shell/widgethost/`): `WidgetHost { spec; values }` draws every node of
   spec v1 with Loader and Repeater, a node's component created only when drawn; bindings are looked up in
   `values` (`{source: {field}}`, a dash while missing), never evaluated; a card or tile passes its tone's On
