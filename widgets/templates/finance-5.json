@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "name": "Crypto board",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "header",
+        "title": "Crypto in US dollars",
+        "icon": "monitoring"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "tile",
+            "tone": "primary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{http.bitcoin.usd}}",
+                "label": "Bitcoin"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "tertiary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{http.ethereum.usd}}",
+                "label": "Ether"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "secondary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{http.solana.usd}}",
+                "label": "Solana"
+              }
+            ]
+          }
+        ],
+        "spacing": "sm"
+      },
+      {
+        "type": "chip",
+        "label": "From CoinGecko, every 10 minutes",
+        "icon": "update"
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "http": {
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd",
+      "every": 600
+    }
+  }
+}

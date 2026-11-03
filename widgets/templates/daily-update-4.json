@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "name": "Day in numbers",
+  "root": {
+    "type": "grid",
+    "columns": 2,
+    "children": [
+      {
+        "type": "tile",
+        "tone": "primary_container",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{clock.time}}",
+            "label": "{{clock.weekday}}"
+          }
+        ]
+      },
+      {
+        "type": "tile",
+        "tone": "secondary_container",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{weather.temperature}}",
+            "label": "{{weather.condition}}",
+            "unit": "°"
+          }
+        ]
+      },
+      {
+        "type": "tile",
+        "tone": "tertiary_container",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{calendar.count}}",
+            "label": "Events this week"
+          }
+        ]
+      },
+      {
+        "type": "tile",
+        "tone": "surface_container_high",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{system.cpu}}",
+            "label": "Processor",
+            "unit": "%"
+          }
+        ]
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "calendar": {
+      "path": "~/.calendars",
+      "days": 7
+    }
+  }
+}

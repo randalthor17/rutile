@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "name": "Mumbai",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "listRow",
+        "title": "Mumbai {{clock.time}}",
+        "icon": "travel_explore",
+        "subtitle": "{{clock.date}}"
+      },
+      {
+        "type": "chip",
+        "label": "UTC+5:30",
+        "icon": "schedule"
+      },
+      {
+        "type": "progress",
+        "value": "{{clock.dayProgress}}",
+        "style": "wavy"
+      }
+    ],
+    "tone": "surface_container_low"
+  },
+  "sources": {
+    "clock": {
+      "utcOffset": 5.5
+    }
+  }
+}

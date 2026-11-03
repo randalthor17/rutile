@@ -54,6 +54,10 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  add PATH          put a widget file on the focused screen's desktop
                  remove ID         take one off
                  layout            what each screen has, with the ids
+                 gallery [CATEGORY]  the Widgets app: templates (weather, daily-update, world-clock, finance,
+                                   countdown, sports) and your widgets (yours)
+                 use TEMPLATE      use a template from the open app, e.g. weather-1
+                 galleryClose | galleryState
   appcolors      state             colors for other apps (Settings, Wallpaper: off unless switched on)
   polkit         cancel            cancel the open password dialog
                  state
@@ -220,6 +224,10 @@ case "$1" in
             # the Settings app's desktop file: open it, on the page it shows (one window, focused if open)
             if [ "$1" = settings ] && [ $# -eq 1 ]; then
                 exec "$qs" ipc -p "$qml" call settings open ""
+            fi
+            # the Widgets app from its desktop file: the category it shows
+            if [ "$1" = widgets ] && [ "${2-}" = gallery ] && [ $# -eq 2 ]; then
+                exec "$qs" ipc -p "$qml" call widgets gallery ""
             fi
             # a widget file to preview: the shell needs its full path
             if [ "$1" = widgets ] && { [ "${2-}" = preview ] || [ "${2-}" = add ]; } && [ $# -eq 3 ]; then

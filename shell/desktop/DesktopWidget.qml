@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 // One widget on the desktop grid (plan 4.4, D81): its spec (from `specs`, by the item's path) drawn by WidgetHost
-// with its own data sources. The grid sets its size in cells; the widget sits at the top of them, and one taller
-// than that is scaled down to fit, never up, so all of it shows. While editing, an outline shows its cells. A file that cannot be read shows nothing, except while editing: then a card names
+// with its own data sources. The grid sets its size in cells; the widget fills them (its blocks stretch, D83), and
+// one taller than that is scaled down to fit, never up, so all of it shows. While editing, an outline shows its cells. A file that cannot be read shows nothing, except while editing: then a card names
 // it, so it can be found and removed.
 import QtQuick
 import qs.common
@@ -35,6 +35,7 @@ Item {
         id: widgetHost
         objectName: "desktopWidgetHost"
         width: root.width
+        height: root.fit < 1 ? implicitHeight : root.height
         x: (root.width - width * scale) / 2
         transformOrigin: Item.TopLeft
         scale: root.fit

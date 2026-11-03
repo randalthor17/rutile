@@ -34,6 +34,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |
 | `widgets.columns` | 6 to 24 | 12 | square cells across each screen in the desktop widget grid (D81) |
+| `widgets.editor` | a command | unset (xdg-open) | what opens a widget file from the Widgets app; the path goes at the end (D82) |
 | `widgets.latitude`, `widgets.longitude` | degrees | unset | where weather widgets report from (D79); a widget can name its own place; without one, no weather is fetched |
 | `widgets.units` | metric or imperial | metric | weather in °C and km/h, or °F and mph |
 | `widgets.httpAllow` | list of URL beginnings | empty | the addresses widgets may fetch JSON from (`https://host/` and a path start); nothing else is fetched |

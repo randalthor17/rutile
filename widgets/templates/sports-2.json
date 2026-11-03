@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "Premier League results",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "header",
+        "title": "Latest results",
+        "icon": "scoreboard"
+      },
+      {
+        "type": "card",
+        "children": [
+          {
+            "type": "listRow",
+            "title": "{{http.events.strHomeTeam}} {{http.events.intHomeScore}} – {{http.events.intAwayScore}} {{http.events.strAwayTeam}}",
+            "icon": "sports_soccer",
+            "subtitle": "{{http.events.dateEvent}}"
+          }
+        ],
+        "tone": "surface_container_high"
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "http": {
+      "url": "https://www.thesportsdb.com/api/v1/json/123/eventspastleague.php?id=4328",
+      "every": 3600
+    }
+  }
+}

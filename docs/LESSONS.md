@@ -386,3 +386,8 @@ smells familiar. Add to it when you learn something; a lesson recorded is a bug 
 lines, as FINAL properties, so `property bool right` stops the whole file with "Cannot override FINAL property"
 (found when the wallpaper's menu decided which way to open). qmllint does not lint files that import Quickshell,
 so only loading the shell shows it; the smoke test caught it.
+
+**A Loader's `implicitHeight` is read-only, and a hidden item is left out of a layout.** Setting `implicitHeight` on
+a Loader stops the file from loading; give a layout `Layout.preferredHeight` from the item instead. A filler Item
+with `visible: false` takes no space in a ColumnLayout, so it cannot hold the extra; and a visible one adds a
+spacing gap. The renderer's column node sizes its layout itself instead (D83).

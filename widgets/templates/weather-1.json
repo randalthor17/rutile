@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "name": "Weather",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "Weather",
+        "icon": "partly_cloudy_day"
+      },
+      {
+        "type": "stat",
+        "value": "{{weather.temperature}}",
+        "label": "{{weather.condition}}",
+        "unit": "°"
+      },
+      {
+        "type": "chip",
+        "label": "Feels like {{weather.apparent}}°",
+        "icon": "thermostat"
+      }
+    ]
+  }
+}

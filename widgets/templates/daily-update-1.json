@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "name": "Your day",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "{{clock.weekday}}",
+        "icon": "today"
+      },
+      {
+        "type": "stat",
+        "value": "{{clock.time}}",
+        "label": "{{clock.date}}"
+      },
+      {
+        "type": "listRow",
+        "title": "{{calendar.next}}",
+        "icon": "event",
+        "subtitle": "{{calendar.nextWhen}}"
+      }
+    ]
+  },
+  "sources": {
+    "calendar": {
+      "path": "~/.calendars",
+      "days": 7
+    }
+  }
+}

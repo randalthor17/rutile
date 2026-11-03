@@ -1,6 +1,7 @@
 // A widget drawn from its spec (plan 4.3, D78): `spec` is a widget (widgets/spec.schema.json), `values` the data
 // sources' values that its bindings read (by source, then field; WidgetSources fills them). The width is the
-// host's (the desktop grid's cell, a preview); the height follows the content. `problems` lists what was left out
+// host's (the desktop grid's cell, a preview); the height follows the content, or is the host's when that is set
+// taller (the desktop grid, D83): the widget's blocks then stretch to fill it. `problems` lists what was left out
 // (WidgetSpec.problems): a widget of another version draws nothing. Plain QtQuick, so it tests offscreen.
 import QtQuick
 import "WidgetSpec.js" as Spec
@@ -34,6 +35,7 @@ Item {
         id: content
         objectName: "widgetRoot"
         width: root.width
+        height: Math.max(implicitHeight, root.height)
         node: root.readable ? root.spec.root : null
         values: root.values
     }

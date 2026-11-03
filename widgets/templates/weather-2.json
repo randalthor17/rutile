@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "Weather at a glance",
+  "root": {
+    "type": "tile",
+    "tone": "primary_container",
+    "children": [
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{weather.temperature}}",
+            "label": "Now",
+            "unit": "°"
+          },
+          {
+            "type": "column",
+            "children": [
+              {
+                "type": "chip",
+                "label": "{{weather.condition}}",
+                "icon": "cloud"
+              },
+              {
+                "type": "chip",
+                "label": "{{weather.wind}}",
+                "icon": "air"
+              }
+            ],
+            "spacing": "xs"
+          }
+        ],
+        "spacing": "lg"
+      }
+    ]
+  }
+}

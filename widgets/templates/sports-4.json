@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "name": "Match day",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "header",
+        "title": "Match day",
+        "icon": "stadium"
+      },
+      {
+        "type": "tile",
+        "tone": "tertiary_container",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{countdown.text}}",
+            "label": "Kick-off in"
+          }
+        ]
+      },
+      {
+        "type": "chip",
+        "label": "{{countdown.days}} days to go",
+        "icon": "sports"
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "countdown": {
+      "target": "2027-05-22T17:30"
+    }
+  }
+}

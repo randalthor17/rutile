@@ -5,6 +5,13 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Taller widgets grow.** Making a desktop widget taller in edit mode now stretches its cards and tiles to fill
+  the space, instead of leaving it empty below.
+- **Widgets app.** "Rutile Widgets" in your app launcher (or "More widgets…" in the desktop's Add menu, or
+  `rutile-shell widgets gallery`) shows 30 ready-made widgets in six categories, live: weather, daily update,
+  world clock, finance, countdown and sports. "Use" copies one to `~/.config/rutile/widgets`, puts it on the
+  desktop and opens it in your editor (Settings > Widgets > Open widget files with; xdg-open otherwise) beside a
+  live preview, so you can change it. Widgets are JSON files you write; "Your widgets" lists them.
 - **Widgets on the desktop.** Right-click the desktop and choose "Edit widgets" (or run `rutile-shell widgets
   edit`): add widgets from `~/.config/rutile/widgets` or the examples, drag them where you like, resize them from
   their edges, remove them, then Done. Each screen keeps its own, and they come back after a restart. Settings >

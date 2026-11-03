@@ -26,6 +26,11 @@ class RealSpec(unittest.TestCase):
         out = io.StringIO()
         self.assertEqual(wc.main([], out=out), 0, out.getvalue())
 
+    def test_the_templates_pass_their_check(self):
+        # the Widgets app's 30 templates (plan 4.5, D82): written on main now, not by the local model
+        out = io.StringIO()
+        self.assertEqual(wc.main(["--templates"], out=out), 0, out.getvalue())
+
     def test_nodes_nest_to_any_depth(self):
         # The first draft only described two levels.
         w = widget({"type": "card", "tone": "surface_container", "children": [{"type": "column", "children": [

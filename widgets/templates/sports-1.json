@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "name": "Premier League next",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "Premier League",
+        "icon": "sports_soccer"
+      },
+      {
+        "type": "listRow",
+        "title": "{{http.events.strEvent}}",
+        "icon": "event",
+        "subtitle": "{{http.events.dateEvent}} {{http.events.strTime}}",
+        "trailingIcon": "chevron_right"
+      }
+    ]
+  },
+  "sources": {
+    "http": {
+      "url": "https://www.thesportsdb.com/api/v1/json/123/eventsnextleague.php?id=4328",
+      "every": 3600
+    }
+  }
+}

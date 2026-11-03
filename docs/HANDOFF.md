@@ -55,9 +55,8 @@ surfaces), no focus ring. See `docs/components.md`.
    line in `docs/quick-settings.md`, ideally from a keybind) with real Wi-Fi, Bluetooth, audio and backlight, and
    tries the gallery's newer sections. Then Quick Settings' remaining parts (click outside to close, detail
    pages, blur, more tiles), the status pills (2.3), or GeminiGlow once a reference image exists.
-2. Next local-model task with the new gates: `widget-templates` (needs the schema, now on main) or `llm-docs`.
-   `sidework.py start TASK`, `agent TASK`; commits are refused until the brief's check passes; then
-   `sidework.py merge TASK --close`. Judge speed and whether ROCm runs on the card.
+2. Widget generation and the local-model trial are deferred (D82): widgets are hand-written JSON for now. When
+   they return, `llm-docs` is the remaining task (`widget-templates` is retired).
 3. Finish the component kit (plan item 1.5), then Phase 2.
 
 ## 3. Resume in five minutes
@@ -203,6 +202,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/settingsapp/` | the Settings app (D50): the registry `Pages.js`, `Model.js`, rows, the window; `shell/settingsapp/pages/` holds pages of their own, each a view and maybe a backend (D67) |
 | `shell/quicksettings/` | the Quick Settings panel, its backend and window |
 | `shell/desktop/` | the desktop widget grid (plan 4.4, D81): `DesktopWindow` per screen on the bottom layer, `DesktopWidgets` (EditableGrid and the edit bar), `WidgetLibrary` reads the placed files, `Desktop.js` the saved layouts |
+| `shell/widgetsapp/` | the Widgets app (plan 4.5, D82): `WidgetsWindow` reads `widgets/templates` and the user's widgets, `WidgetsApp` the categories and `WidgetCard`s, `Gallery.js` the rules |
 | `shell/widgethost/` | the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |

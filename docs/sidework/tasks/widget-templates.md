@@ -1,5 +1,7 @@
 # Task: widget-templates
 
+**Retired (D82):** Claude wrote the 30 templates on main for the Widgets app (plan 4.5). Do not start this task.
+
 Depends on: `widget-schema` merged first.
 
 ## Goal

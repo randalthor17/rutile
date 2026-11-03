@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "New Year",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "New Year",
+        "icon": "celebration"
+      },
+      {
+        "type": "stat",
+        "value": "{{countdown.days}}",
+        "label": "Days left",
+        "unit": "days"
+      },
+      {
+        "type": "progress",
+        "value": "{{countdown.progress}}"
+      }
+    ]
+  },
+  "sources": {
+    "countdown": {
+      "target": "2027-01-01",
+      "from": "2026-01-01"
+    }
+  }
+}

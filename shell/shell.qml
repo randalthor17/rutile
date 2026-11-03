@@ -27,6 +27,7 @@ import qs.quicksettings
 import qs.services
 import qs.shelf
 import qs.desktop
+import qs.widgetsapp
 import qs.widgethost
 import "quicksettings/Controls.js" as Controls
 import "lock/LockWallpaper.js" as LockWallpaper
@@ -137,6 +138,19 @@ ShellRoot {
     function saveDesktop(screenName, items) {
         Settings.setState("desktop.widgets", Desktop.withScreen(desktopLayouts, screenName, items));
     }
+    // Places an absolute path on the screen niri has focused (the first one without niri); false when it is
+    // relative or there is no room.
+    function addWidget(path) {
+        if (!path.startsWith("/")) return false;
+        const name = NiriService.focusedOutput || (Quickshell.screens[0]?.name ?? "");
+        const items = Desktop.placed(desktopLayouts, name);
+        const d = desktops.instances.find(l => l.modelData.name === name);
+        const grid = d?.item?.content.grid;
+        const size = grid ? grid.fitNew(Desktop.NEW_SIZE) : Desktop.NEW_SIZE;
+        if (!size) return false;
+        saveDesktop(name, Desktop.withAdded(items, path, size));
+        return true;
+    }
     WidgetLibrary {
         id: widgetLibrary
         paths: Desktop.paths(shell.desktopLayouts)
@@ -159,6 +173,10 @@ ShellRoot {
                 commitHandler: next => shell.saveDesktop(desktop.modelData.name, next)
                 onDoneRequested: shell.widgetsEditing = false
                 onAddListRequested: widgetLibrary.scan()
+                onGalleryRequested: {
+                    shell.widgetsEditing = false;
+                    shell.openWidgets("");
+                }
             }
         }
     }
@@ -313,6 +331,26 @@ ShellRoot {
             onFinished: Qt.callLater(() => widgetPreview.active = false)
         }
     }
+    // The Widgets app (plan 4.5, D82): the templates and the user's widgets; one window, created only while open.
+    function openWidgets(category) {
+        const reused = widgetsApp.active;
+        widgetsApp.active = true;
+        const w = widgetsApp.item;
+        if (!w) return false;
+        if (reused) NiriService.focusOwnWindow(w.title);
+        return category === "" || w.app.openCategory(category);
+    }
+    LazyLoader {
+        id: widgetsApp
+        WidgetsWindow {
+            onFinished: Qt.callLater(() => widgetsApp.active = false)
+            onPlaceRequested: path => shell.addWidget(path)
+            onPreviewRequested: path => {
+                shell.widgetPreviewPath = path;
+                widgetPreview.active = true;
+            }
+        }
+    }
     IpcHandler {
         target: "widgets"
         // An absolute path; false for a relative one. Another file replaces the one shown.
@@ -326,19 +364,8 @@ ShellRoot {
         // The desktop grid (D81): edit mode on every screen, and back.
         function edit(): void { shell.widgetsEditing = true; }
         function done(): void { shell.widgetsEditing = false; }
-        // Places an absolute path on the screen niri has focused (the first one without niri); false when it is
-        // relative or there is no room.
-        function add(path: string): bool {
-            if (!path.startsWith("/")) return false;
-            const name = NiriService.focusedOutput || (Quickshell.screens[0]?.name ?? "");
-            const items = Desktop.placed(shell.desktopLayouts, name);
-            const d = desktops.instances.find(l => l.modelData.name === name);
-            const grid = d?.item?.content.grid;
-            const size = grid ? grid.fitNew(Desktop.NEW_SIZE) : Desktop.NEW_SIZE;
-            if (!size) return false;
-            shell.saveDesktop(name, Desktop.withAdded(items, path, size));
-            return true;
-        }
+        // An absolute path, on the focused screen; false for a relative one or no room.
+        function add(path: string): bool { return shell.addWidget(path); }
         function remove(id: string): bool {
             for (const name in shell.desktopLayouts) {
                 const items = Desktop.placed(shell.desktopLayouts, name);
@@ -349,6 +376,22 @@ ShellRoot {
                 }
             }
             return false;
+        }
+        // The Widgets app (D82): one window, brought forward when open; "" for the category it shows.
+        function gallery(category: string): bool { return shell.openWidgets(category); }
+        function galleryClose(): void { widgetsApp.active = false; }
+        // Uses a template by name (weather-1), as its Use button does.
+        function use(template: string): bool {
+            const w = widgetsApp.item;
+            const t = w?.app.templates.find(e => e.path.endsWith("/" + template + ".json"));
+            return !!t && w.use(t.path);
+        }
+        function galleryState(): string {
+            const w = widgetsApp.item;
+            return JSON.stringify({ open: widgetsApp.active, category: w?.app.currentCategory ?? "",
+                                    shown: (w?.app.shown ?? []).map(e => e.path.replace(/^.*\//, "")),
+                                    drawn: (w?.app.shown ?? []).filter(e => w.app.specs[e.path]).length,
+                                    lastCreated: w?.lastCreated ?? "" });
         }
         function layout(): string {
             return JSON.stringify({ editing: shell.widgetsEditing, screens: shell.desktopLayouts,

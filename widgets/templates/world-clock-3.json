@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "name": "London",
+  "root": {
+    "type": "row",
+    "children": [
+      {
+        "type": "stat",
+        "value": "{{clock.time}}"
+      },
+      {
+        "type": "column",
+        "children": [
+          {
+            "type": "header",
+            "title": "London",
+            "icon": "schedule"
+          },
+          {
+            "type": "chip",
+            "label": "{{clock.weekday}}"
+          }
+        ],
+        "spacing": "xs"
+      }
+    ],
+    "spacing": "lg"
+  },
+  "sources": {
+    "clock": {
+      "utcOffset": 0
+    }
+  }
+}

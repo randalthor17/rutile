@@ -235,16 +235,22 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (`widgets.columns`), gravity off, saved in state.json; edit mode from the desktop's right-click menu or
   `rutile-shell widgets edit`, with Add (the user's widgets and the examples), Remove, Done. Not done: keyboard
   moves, moving a widget between screens, a widget's preferred size.
-- [ ] **4.5** Custom widgets app: category list and template cards (weather, daily update, world clock, finance,
-  countdown, sports) plus a "Create a widget" prompt box. Templates are local-model task `widget-templates`.
+- [x] **4.5** Widgets app (D82): widgets are written by hand as JSON, so the app is a gallery and a way into
+  editing. Categories (weather, daily update, world clock, finance, countdown, sports, your widgets) with live
+  cards; Use copies a template to `~/.config/rutile/widgets`, allows the address it reads, puts it on the desktop,
+  previews it and opens it in the editor (`widgets.editor`). 30 templates in `widgets/templates`, written by Claude
+  (`widget_check.py --templates` in `make check`). The desktop's Add menu links to it; `rutile-shell widgets
+  gallery`, a desktop file. No prompt box: generating widgets is deferred (4.7 to 4.9).
 - [ ] **4.6** CLI: widget check / preview / install with machine-readable errors. Preview done (D80):
   `rutile-shell widgets preview FILE`, a window with the widget's live data, read again on save. Started: `tools/widget_check.py`
   checks a schema against the spec's rules and widgets against the schema (stdlib JSON Schema subset).
-- [ ] **4.7** Ollama bridge: structured output with the schema as format, system prompt from the LLM docs, retry
+Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9 stay planned for later, not next.
+
+- [ ] **4.7** (deferred) Ollama bridge: structured output with the schema as format, system prompt from the LLM docs, retry
   loop feeding validator errors back, model configurable (Ollama Cloud now, local on the 9060 XT later).
-- [ ] **4.8** Docs for LLMs: one file with catalog, tokens, data sources, rules and 8+ worked examples, plus the
+- [ ] **4.8** (deferred) Docs for LLMs: one file with catalog, tokens, data sources, rules and 8+ worked examples, plus the
   schema and `llms.txt`. First part is local-model task `llm-docs`.
-- [ ] **4.9** Eval set of about 30 widget prompts; target at least 90% valid widgets within 3 retries on a model
+- [ ] **4.9** (deferred) Eval set of about 30 widget prompts; target at least 90% valid widgets within 3 retries on a model
   that fits 16 GB.
 - [ ] **4.10** (later) QML escape-hatch widgets with a tiny base class.
 
@@ -327,15 +333,15 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   found aider's workflow unusable for agentic work. Moved to opencode 2.x (unreleased): config rewritten
   against the real 2.1.1 schema, `--standalone`, `PWD`, `execute` removed, tested end to end with a scripted model.
   Cleanup in one step: `merge TASK --close`, `close --merged`.
-- [ ] **S2** Trial: run one bounded task on the 9060 XT (suggested `widget-schema`) and judge speed, tool-calling
+- [ ] **S2** (deferred with 4.7 to 4.9, D82) Trial: run one bounded task on the 9060 XT (suggested `widget-schema`) and judge speed, tool-calling
   reliability and output quality. Also confirm ROCm works on the card (`ollama ps` shows 100% GPU).
   First attempt (2026-10-25, qwen3:14b, `local/widget-schema`): the model worked but could not check its output
   and fails the brief (schema not recursive, no `tone` enum, examples rejected). Merged with
   `sidework.py merge --accept-failing` (092d213, the TODO is in the commit) and fixed by Claude (see 4.1). The
   tooling it lacked is now in place, and the acceptance check gates every commit and merge (D30), so this
   cannot recur silently. Still to judge: speed and ROCm, on the next task (`llm-docs` or `widget-templates`).
-- [ ] **S3** Tasks done and merged: `widget-schema` (done, as a draft fixed by Claude), `llm-docs`, then
-  `widget-templates` (now unblocked). Each ends with `sidework.py check --run-checks`, `merge-check`, and a Claude review plus tests.
+- [ ] **S3** (deferred, D82) Tasks done and merged: `widget-schema` (done, as a draft fixed by Claude), `llm-docs`.
+  `widget-templates` was written by Claude on main instead (4.5); its brief is retired. Each ends with `sidework.py check --run-checks`, `merge-check`, and a Claude review plus tests.
 
 ## Handoff and housekeeping
 
@@ -356,4 +362,4 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - Next component batch (1.5), see "Next up" in the handoff.
 - Default seed color and scheme (1.1b).
 - Ripple, elevation shadows, focus ring: build, or leave as the flat look? Decide from the gallery.
-- Whether to start the local-model trial (S2).
+- When to pick up widget generation and the local-model trial again (4.7 to 4.9, S2; deferred by D82).

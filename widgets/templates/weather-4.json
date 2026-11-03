@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "name": "Weather with details",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "tile",
+        "tone": "secondary_container",
+        "children": [
+          {
+            "type": "header",
+            "title": "{{weather.condition}}",
+            "icon": "wb_sunny"
+          },
+          {
+            "type": "stat",
+            "value": "{{weather.temperature}}",
+            "unit": "°"
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "chip",
+            "label": "{{weather.humidity}}%",
+            "icon": "humidity_percentage"
+          },
+          {
+            "type": "chip",
+            "label": "{{weather.wind}}",
+            "icon": "air"
+          }
+        ],
+        "spacing": "sm"
+      }
+    ],
+    "spacing": "sm"
+  }
+}

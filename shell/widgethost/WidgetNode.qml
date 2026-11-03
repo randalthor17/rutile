@@ -1,10 +1,13 @@
 pragma ComponentBehavior: Bound
 // One node of a widget (plan 4.3, D78), and through a Loader of this same file, its children. The parent sets the
-// width; the height follows the content. A card or a tile sets the colors its children draw with (`colors`,
+// width; the height follows the content, unless the parent gives it more (a desktop widget made taller, D83): then a
+// card or tile fills it, a column gives the extra to its last block (card, tile, row, column, grid), and a row
+// stretches its blocks to the same height. A card or a tile sets the colors its children draw with (`colors`,
 // WidgetSpec.toneColors), so text on a primary tile is primaryOn. Text is never code: bindings are looked up in
 // `values` (WidgetSpec.resolve). Only the drawn node's own component is created.
 import QtQuick
 import QtQuick.Effects
+import QtQuick.Layouts
 import qs.common
 import qs.components
 import "WidgetSpec.js" as Spec
@@ -25,6 +28,10 @@ Item {
     function gap(name, fallback) {
         return Spacing[name ?? fallback] ?? Spacing[fallback];
     }
+    // the nodes that take extra height (D83)
+    function block(n) {
+        return !!n && ["card", "tile", "row", "column", "grid"].indexOf(n.type) >= 0;
+    }
 
     implicitHeight: body.item ? body.item.implicitHeight : 0
     implicitWidth: body.item ? body.item.implicitWidth : 0
@@ -32,6 +39,7 @@ Item {
     Loader {
         id: body
         width: root.width
+        height: root.height
         sourceComponent: Spec.drawable(root.node, root.depth) ? ({
             row: rowNode, column: columnNode, grid: gridNode, card: blockNode, tile: blockNode, header: headerNode,
             heroImage: imageNode, stat: statNode, progress: progressNode, listRow: listRowNode, chip: chipNode
@@ -41,15 +49,32 @@ Item {
     // ---- containers: their children are this same file again (WidgetChild.qml) ----
     Component {
         id: columnNode
-        Column {
-            spacing: root.gap(root.node.spacing, "md")
-            Repeater {
-                model: root.node.children
-                delegate: WidgetChild {
-                    width: root.width
-                    values: root.values
-                    depth: root.depth + 1
-                    colors: root.colors
+        // A layout in an item: with a block it fills the height given, and the last block takes the extra; with
+        // none it keeps its content's height, so the space stays below.
+        Item {
+            implicitHeight: column.implicitHeight
+            ColumnLayout {
+                id: column
+                readonly property var kids: Spec.list(root.node.children) ?? []
+                readonly property int stretch: {
+                    for (let i = kids.length - 1; i >= 0; i--)
+                        if (root.block(kids[i])) return i;
+                    return -1;
+                }
+                width: parent.width
+                height: stretch < 0 ? implicitHeight : parent.height
+                spacing: root.gap(root.node.spacing, "md")
+                Repeater {
+                    model: root.node.children
+                    delegate: WidgetChild {
+                        required property int index
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: shown ? shown.implicitHeight : 0
+                        Layout.fillHeight: index === column.stretch
+                        values: root.values
+                        depth: root.depth + 1
+                        colors: root.colors
+                    }
                 }
             }
         }
@@ -57,7 +82,7 @@ Item {
     Component {
         id: rowNode
         // Children share the width equally, except chips, which keep their own (a row of chips packs to the left).
-        Row {
+        RowLayout {
             id: row
             readonly property var kids: Spec.list(root.node.children) ?? []
             readonly property int shared: kids.filter(k => k.type !== "chip").length
@@ -77,7 +102,13 @@ Item {
                 delegate: WidgetChild {
                     id: cell
                     readonly property bool chip: modelData.type === "chip"
-                    width: chip ? Math.min(shown?.implicitWidth ?? 0, root.width) : row.share
+                    readonly property real wanted: chip ? Math.min(shown?.implicitWidth ?? 0, root.width) : row.share
+                    Layout.preferredWidth: wanted
+                    Layout.minimumWidth: wanted
+                    Layout.maximumWidth: wanted
+                    Layout.preferredHeight: shown ? shown.implicitHeight : 0
+                    Layout.fillHeight: root.block(modelData)
+                    Layout.alignment: Qt.AlignTop
                     values: root.values
                     depth: root.depth + 1
                     colors: root.colors

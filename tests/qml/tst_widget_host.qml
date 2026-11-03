@@ -33,6 +33,52 @@ TestCase {
         return out;
     }
     function textOf(item, t) { return texts(item).find(x => x.text === t) ?? null; }
+    // every node of a type under an item (the WidgetNodes drawing it)
+    function nodes(item, type, out) {
+        out = out ?? [];
+        if (item.node !== undefined && item.node?.type === type && item.depth !== undefined) out.push(item);
+        for (const c of item.children) nodes(c, type, out);
+        return out;
+    }
+
+    // ---- more height than the content (a desktop widget made taller, D83) ----
+    function test_a_taller_host_stretches_the_blocks() {
+        const tile = t => ({ type: "tile", tone: "primary_container", children: [{ type: "header", title: t }] });
+        const spec = widget({ type: "column", children: [
+            { type: "header", title: "Top" },
+            { type: "row", children: [tile("a"), { type: "tile", tone: "secondary_container", children: [
+                { type: "header", title: "b" }, { type: "header", title: "b2" }] }, { type: "chip", label: "c" }] },
+            { type: "card", children: [{ type: "header", title: "Card" }] },
+            { type: "chip", label: "End" }] });
+        const h = host(spec);
+        const natural = h.implicitHeight;
+        h.height = natural + 200;
+        waitForRendering(h);
+        const card = nodes(h, "card")[0];
+        fuzzyCompare(card.height, card.implicitHeight + 200, 1, "the last block takes the extra height");
+        const end = textOf(h, "End");
+        fuzzyCompare(end.mapToItem(h, 0, 0).y + end.height, h.height, ControlSpec.chipSpec.impl.contentPadding + 16,
+                     "the chip after it is at the bottom");
+        const tiles = nodes(h, "tile");
+        compare(tiles.length, 2);
+        compare(tiles[0].height, tiles[1].height, "tiles side by side are as tall as each other");
+        verify(tiles[0].height > tiles[0].implicitHeight, "the shorter one stretched");
+        const chip = nodes(h, "chip")[0];
+        compare(chip.height, chip.implicitHeight, "a chip in the row keeps its height");
+        h.height = natural;
+        waitForRendering(h);
+        fuzzyCompare(card.height, card.implicitHeight, 1, "back to its content");
+
+        const plain = host(widget({ type: "column", children: [{ type: "header", title: "x" }, { type: "chip", label: "y" }] }));
+        const before = textOf(plain, "y").mapToItem(plain, 0, 0).y;
+        plain.height = plain.implicitHeight + 100;
+        waitForRendering(plain);
+        compare(textOf(plain, "y").mapToItem(plain, 0, 0).y, before, "no block: nothing moves, the space stays below");
+        const lone = host(widget({ type: "card", children: [{ type: "header", title: "solo" }] }));
+        lone.height = lone.implicitHeight + 50;
+        waitForRendering(lone);
+        fuzzyCompare(nodes(lone, "card")[0].height, lone.height, 1, "a card at the root fills the host");
+    }
 
     // ---- WidgetSpec.js ----
     function test_resolve() {

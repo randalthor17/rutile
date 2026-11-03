@@ -1,7 +1,7 @@
 // The widget files behind the desktop grid (plan 4.4, D81). Each file in `paths` is read once and watched, so every
 // screen shows the same spec and a saved edit shows at once; `specs` holds them (path: spec, or null when it cannot
-// be read or is not JSON). `scan()` lists what Add offers in `available`: the user's own widgets, in
-// $XDG_CONFIG_HOME/rutile/widgets, then the examples that come with the shell.
+// be read or is not JSON). `scan()` lists the widgets in `dirs` in `available`: by default what the desktop's Add
+// offers, the user's own widgets in $XDG_CONFIG_HOME/rutile/widgets, then the examples that come with the shell.
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
@@ -16,10 +16,14 @@ Scope {
     property var specs: ({})
     property var available: []
     readonly property string userDir: Settings.configDir + "/widgets"
-    readonly property string examplesDir: {
+    // the repository's (or the package's) widgets folder, beside the shell's
+    readonly property string widgetsDir: {
         const shellDir = String(Quickshell.shellDir).replace(/\/+$/, "");
-        return shellDir.substring(0, shellDir.lastIndexOf("/")) + "/widgets/examples";
+        return shellDir.substring(0, shellDir.lastIndexOf("/")) + "/widgets";
     }
+    readonly property string examplesDir: widgetsDir + "/examples"
+    readonly property string templatesDir: widgetsDir + "/templates"
+    property var dirs: [userDir, examplesDir]
 
     function put(path, spec) {
         const s = Object.assign({}, specs);
@@ -53,7 +57,7 @@ Scope {
     Process {
         id: lister
         command: ["sh", "-c", 'for d in "$@"; do for f in "$d"/*.json; do [ -f "$f" ] || continue; ' +
-                  'printf "\\036%s\\037" "$f"; cat "$f"; done; done', "sh", root.userDir, root.examplesDir]
+                  'printf "\\036%s\\037" "$f"; cat "$f"; done; done', "sh"].concat(root.dirs)
         stdout: StdioCollector { onStreamFinished: root.available = Desktop.scanned(text) }
     }
 }

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "name": "Launch day",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "header",
+        "title": "Launch day",
+        "icon": "rocket_launch"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "tile",
+            "tone": "primary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{countdown.days}}",
+                "label": "Days"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "secondary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{countdown.hours}}",
+                "label": "Hours"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "surface_container_high",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{countdown.minutes}}",
+                "label": "Minutes"
+              }
+            ]
+          }
+        ],
+        "spacing": "sm"
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "countdown": {
+      "target": "2027-03-01T09:00"
+    }
+  }
+}

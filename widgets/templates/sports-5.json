@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "Team's next game",
+  "root": {
+    "type": "row",
+    "children": [
+      {
+        "type": "tile",
+        "tone": "secondary_container",
+        "children": [
+          {
+            "type": "header",
+            "title": "Arsenal",
+            "icon": "shield"
+          }
+        ]
+      },
+      {
+        "type": "card",
+        "children": [
+          {
+            "type": "listRow",
+            "title": "{{http.events.strEvent}}",
+            "icon": "event_upcoming",
+            "subtitle": "{{http.events.strLeague}} · {{http.events.dateEvent}}"
+          }
+        ]
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "http": {
+      "url": "https://www.thesportsdb.com/api/v1/json/123/eventsnext.php?id=133604",
+      "every": 3600
+    }
+  }
+}

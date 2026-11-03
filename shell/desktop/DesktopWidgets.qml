@@ -23,6 +23,7 @@ Item {
 
     signal doneRequested()
     signal addListRequested()              // Add was opened: the owner lists the widget files again
+    signal galleryRequested()              // "More widgets": the Widgets app
 
     function commit(next) {
         if (commitHandler)
@@ -148,12 +149,17 @@ Item {
         y: bar.y - ((item as Item)?.height ?? 0) - Spacing.sm
         sourceComponent: Menu {
             readonly property bool room: desktopGrid.fitNew(Desktop.NEW_SIZE) !== null
-            items: root.available.length === 0
-                   ? [{ id: "none", text: "No widgets found", icon: "", enabled: false }]
-                   : root.available.map((a, i) => ({ id: String(i), text: a.name, icon: "widgets", enabled: room }))
+            items: (root.available.length === 0
+                    ? [{ id: "none", text: "No widgets found", icon: "", enabled: false }]
+                    : root.available.map((a, i) => ({ id: String(i), text: a.name, icon: "widgets", enabled: room })))
+                   .concat([{ separator: true }, { id: "gallery", text: "More widgets…", icon: "apps" }])
             itemPrefix: "desktopAddItem_"
             onChosen: id => {
                 addMenu.open = false;
+                if (id === "gallery") {
+                    root.galleryRequested();
+                    return;
+                }
                 const entry = root.available[Number(id)];
                 if (entry)
                     root.add(entry.path);

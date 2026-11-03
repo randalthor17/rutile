@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "name": "Birthday",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "listRow",
+        "title": "Birthday in {{countdown.text}}",
+        "icon": "cake",
+        "subtitle": "Every year, the same day",
+        "trailingIcon": "chevron_right"
+      },
+      {
+        "type": "progress",
+        "value": "{{countdown.remaining}}",
+        "style": "wavy"
+      }
+    ],
+    "tone": "secondary_container"
+  },
+  "sources": {
+    "countdown": {
+      "target": "2027-05-14",
+      "from": "2026-05-14"
+    }
+  }
+}

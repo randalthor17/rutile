@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Rutile Widgets
+GenericName=Widgets
+Comment=Widget templates for the desktop, and your own widgets
+Icon=preferences-desktop
+Exec=rutile-shell widgets gallery
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=widgets;desktop;weather;clock;countdown;finance;sports;rutile;
+StartupNotify=false

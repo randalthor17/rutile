@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "name": "Sydney",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "header",
+        "title": "Sydney",
+        "icon": "globe_asia"
+      },
+      {
+        "type": "tile",
+        "tone": "primary_container",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{clock.time}}"
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "chip",
+            "label": "{{clock.weekday}}",
+            "icon": "calendar_today"
+          },
+          {
+            "type": "chip",
+            "label": "{{clock.day}} {{clock.month}}"
+          }
+        ],
+        "spacing": "sm"
+      }
+    ],
+    "spacing": "sm"
+  },
+  "sources": {
+    "clock": {
+      "utcOffset": 11
+    }
+  }
+}

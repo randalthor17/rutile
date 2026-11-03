@@ -18,6 +18,7 @@ PanelWindow {
 
     signal doneRequested()
     signal addListRequested()
+    signal galleryRequested()
 
     anchors.top: true
     anchors.bottom: true
@@ -37,5 +38,6 @@ PanelWindow {
         anchors.fill: parent
         onDoneRequested: root.doneRequested()
         onAddListRequested: root.addListRequested()
+        onGalleryRequested: root.galleryRequested()
     }
 }

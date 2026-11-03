@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "name": "Good day",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "{{clock.weekday}}, {{clock.time}}",
+        "icon": "waving_hand"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "chip",
+            "label": "{{weather.temperature}}° {{weather.condition}}",
+            "icon": "partly_cloudy_day"
+          },
+          {
+            "type": "chip",
+            "label": "{{battery.level}}%",
+            "icon": "battery_full"
+          }
+        ],
+        "spacing": "sm"
+      }
+    ],
+    "tone": "surface_container_high"
+  }
+}

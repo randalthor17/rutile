@@ -9,6 +9,7 @@ WidgetSource {
     id: root
     readonly property string url: options.url ?? ""
     readonly property bool allowed: Sources.allowed(url, Settings.value("widgets.httpAllow") ?? [])
+    property var request: null      // the fetch under way, dropped with the widget (a card in the Widgets app)
 
     function refresh() {
         if (!allowed) {
@@ -17,19 +18,27 @@ WidgetSource {
             return;
         }
         const xhr = new XMLHttpRequest();
+        request = xhr;
         xhr.onreadystatechange = () => {
             if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            root.request = null;
             try {
                 const doc = JSON.parse(xhr.responseText);
                 if (doc === null || typeof doc !== "object") throw new Error("not an object");
-                value = doc;
-                error = "";
+                root.value = doc;
+                root.error = "";
             } catch (e) {
-                error = "no JSON from " + url + " (" + xhr.status + ")";   // the last document stays
+                root.error = "no JSON from " + root.url + " (" + xhr.status + ")";   // the last document stays
             }
         };
         xhr.open("GET", url);
         xhr.send();
+    }
+    Component.onDestruction: {
+        if (request) {
+            request.onreadystatechange = null;
+            request.abort();
+        }
     }
     onUrlChanged: refresh()
     onAllowedChanged: refresh()

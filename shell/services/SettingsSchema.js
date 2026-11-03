@@ -348,6 +348,11 @@ var schema = {
                     "title": "Desktop grid columns",
                     "description": "How many square cells the desktop's widget grid has across each screen; more makes every widget smaller."
                 },
+                "editor": {
+                    "type": "string",
+                    "title": "Open widget files with",
+                    "description": "A command that gets the widget file's path at the end, e.g. kitty -e nvim or gnome-text-editor; unset, the file opens with xdg-open."
+                },
                 "latitude": {
                     "type": "number",
                     "minimum": -90,

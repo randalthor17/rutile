@@ -9,7 +9,7 @@ Loader {
     property int depth: 1
     property var colors: null
     readonly property WidgetNode shown: item as WidgetNode
-    height: shown ? shown.implicitHeight : 0
+    height: shown ? shown.implicitHeight : 0     // in a layout (a column or row node), the layout sets it
     Component.onCompleted: setSource(Qt.resolvedUrl("WidgetNode.qml"),
                                      { node: modelData, values: values, depth: depth, colors: colors, width: width })
     onLoaded: {

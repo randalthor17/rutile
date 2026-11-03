@@ -52,6 +52,7 @@ stdenv.mkDerivation {
       ../shell
       ../share
       ../widgets/examples
+      ../widgets/templates
       ../theme/apps
       ../theme/templates
       ../theme/roles.json
@@ -71,13 +72,15 @@ stdenv.mkDerivation {
     runHook preInstall
     mkdir -p $out/share/rutile/build
     cp -r shell theme $out/share/rutile/
-    mkdir -p $out/share/rutile/widgets && cp -r widgets/examples $out/share/rutile/widgets/
+    mkdir -p $out/share/rutile/widgets && cp -r widgets/examples widgets/templates $out/share/rutile/widgets/
     install -Dm755 build/rutile-pywalfox-host $out/share/rutile/build/rutile-pywalfox-host
     install -Dm755 bin/rutile-shell $out/share/rutile/bin/rutile-shell
-    # the Settings app in app launchers, run by this package's own CLI
-    install -Dm644 share/applications/rutile-settings.desktop $out/share/applications/rutile-settings.desktop
-    substituteInPlace $out/share/applications/rutile-settings.desktop \
-      --replace-fail "Exec=rutile-shell " "Exec=$out/bin/rutile-shell "
+    # the Settings and Widgets apps in app launchers, run by this package's own CLI
+    for app in settings widgets; do
+      install -Dm644 share/applications/rutile-$app.desktop $out/share/applications/rutile-$app.desktop
+      substituteInPlace $out/share/applications/rutile-$app.desktop \
+        --replace-fail "Exec=rutile-shell " "Exec=$out/bin/rutile-shell "
+    done
     makeWrapper $out/share/rutile/bin/rutile-shell $out/bin/rutile-shell \
       --set RUTILE_SHELL_QML $out/share/rutile/shell/shell.qml \
       --set RUTILE_CLI $out/bin/rutile-shell \

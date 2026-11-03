@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "name": "Exchange rates",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "Rates for {{http.date}}",
+        "icon": "query_stats"
+      },
+      {
+        "type": "listRow",
+        "title": "Euro",
+        "icon": "euro",
+        "subtitle": "{{http.rates.EUR}} per dollar"
+      },
+      {
+        "type": "listRow",
+        "title": "Pound",
+        "icon": "currency_pound",
+        "subtitle": "{{http.rates.GBP}} per dollar"
+      },
+      {
+        "type": "listRow",
+        "title": "Franc",
+        "icon": "currency_franc",
+        "subtitle": "{{http.rates.CHF}} per dollar"
+      },
+      {
+        "type": "listRow",
+        "title": "Canadian dollar",
+        "icon": "attach_money",
+        "subtitle": "{{http.rates.CAD}} per dollar"
+      }
+    ]
+  },
+  "sources": {
+    "http": {
+      "url": "https://api.frankfurter.dev/v1/latest?from=USD&to=EUR,GBP,JPY,CHF,CAD",
+      "every": 3600
+    }
+  }
+}

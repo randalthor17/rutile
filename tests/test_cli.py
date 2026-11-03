@@ -104,6 +104,9 @@ class Forwarding(unittest.TestCase):
         r = run("widgets", "add", "w.json")
         self.assertIn(f"[add][{os.getcwd()}/w.json]", r.stdout)
         self.check(["widgets", "edit"], ["ipc", "-p", "/s/shell.qml", "call", "widgets", "edit"])
+        # the Widgets app's desktop file names no category (D82)
+        self.check(["widgets", "gallery"], ["ipc", "-p", "/s/shell.qml", "call", "widgets", "gallery", ""])
+        self.check(["widgets", "gallery", "finance"], ["ipc", "-p", "/s/shell.qml", "call", "widgets", "gallery", "finance"])
         # the Settings app's desktop file runs `rutile-shell settings`
         self.check(["settings"], ["ipc", "-p", "/s/shell.qml", "call", "settings", "open", ""])
         self.check(["settings", "openSetting", "security", "lock.idleMinutes"],
@@ -233,19 +236,22 @@ class FlatpakTheming(unittest.TestCase):
 
 
 class SettingsDesktopFile(unittest.TestCase):
-    """The Settings app in app launchers: a desktop file running `rutile-shell settings`, which the package installs
-    with its own CLI's full path."""
-    def test_desktop_file(self):
-        f = ROOT / "share" / "applications" / "rutile-settings.desktop"
-        entry = dict(l.split("=", 1) for l in f.read_text().splitlines()[1:] if "=" in l)
-        self.assertEqual(f.read_text().splitlines()[0], "[Desktop Entry]")
-        self.assertEqual(entry["Type"], "Application")
-        self.assertEqual(entry["Exec"], "rutile-shell settings")
-        self.assertIn("Settings;", entry["Categories"])
+    """The Settings and Widgets apps in app launchers: desktop files running `rutile-shell settings` and
+    `rutile-shell widgets gallery`, which the package installs with its own CLI's full path."""
+    def test_desktop_files(self):
+        for app, exec_ in (("settings", "rutile-shell settings"), ("widgets", "rutile-shell widgets gallery")):
+            f = ROOT / "share" / "applications" / f"rutile-{app}.desktop"
+            entry = dict(l.split("=", 1) for l in f.read_text().splitlines()[1:] if "=" in l)
+            self.assertEqual(f.read_text().splitlines()[0], "[Desktop Entry]")
+            self.assertEqual(entry["Type"], "Application")
+            self.assertEqual(entry["Exec"], exec_)
+            self.assertIn("Settings;", entry["Categories"])
         package = (ROOT / "nix" / "package.nix").read_text()
         self.assertIn("../share\n", package, "in the package's sources")
-        self.assertIn("$out/share/applications/rutile-settings.desktop", package)
+        self.assertIn("for app in settings widgets; do", package)
+        self.assertIn("$out/share/applications/rutile-$app.desktop", package)
         self.assertIn('"Exec=$out/bin/rutile-shell "', package)
+        self.assertIn("widgets/templates $out/share/rutile/widgets/", package, "the templates are installed")
 
 
 if __name__ == "__main__":

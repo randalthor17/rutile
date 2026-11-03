@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -43,7 +43,9 @@ def no_polkit_agent(config):
     """A test shell must not become the session's polkit agent: that is the system bus, shared with the real session
     (it would take the user's password prompts, or fail beside the real agent)."""
     (config / "rutile").mkdir(parents=True, exist_ok=True)
-    (config / "rutile" / "settings.json").write_text(json.dumps({"polkit": {"agent": False}}))
+    # and opens no editor for a widget file (the Widgets app, D82): `true` takes the path and does nothing
+    (config / "rutile" / "settings.json").write_text(json.dumps({"polkit": {"agent": False},
+                                                                  "widgets": {"editor": "true"}}))
 
 
 def qt_tool(name):
@@ -178,6 +180,7 @@ def workspace(tests_dir="qml"):
     (data / "widgets").mkdir()
     for f in sorted((ROOT / "widgets" / "examples").glob("*.json")):
         shutil.copy(f, data / "widgets" / f.name)
+    shutil.copytree(ROOT / "widgets" / "templates", data / "widgets" / "templates")
     shutil.copy(ROOT / "tests" / "fixtures" / "open-meteo.json", data)
     shutil.copy(ROOT / "tokens" / "m3e.json", data)
     shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", data / "palette.json")
@@ -678,6 +681,53 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc widgets remove stat: layout {desktop_layout()}")
                     if ipc("add", "relative.json", target="widgets") != "false":
                         problems.append("ipc widgets add of a relative path: accepted")
+                    # the Widgets app (D82): a category's templates are drawn; using one copies it to the user's
+                    # folder, allows the address it reads, puts it on the desktop and previews it
+                    def gallery_state():
+                        try:
+                            return json.loads(ipc("galleryState", target="widgets"))
+                        except ValueError:
+                            return {}
+                    if ipc("gallery", "finance", target="widgets") != "true":
+                        problems.append("ipc widgets gallery finance: refused")
+                    deadline = time.time() + 5
+                    while gallery_state().get("drawn") != 5 and time.time() < deadline:
+                        time.sleep(0.2)
+                    gs = gallery_state()
+                    if gs.get("category") != "finance" or gs.get("shown") != [f"finance-{n}.json" for n in range(1, 6)] \
+                            or gs.get("drawn") != 5:
+                        problems.append(f"ipc widgets gallery finance: state {gs}")
+                    if ipc("use", "finance-1", target="widgets") != "true":
+                        problems.append("ipc widgets use finance-1: refused")
+                    deadline = time.time() + 5
+                    while gallery_state().get("lastCreated", "") == "" and time.time() < deadline:
+                        time.sleep(0.2)
+                    made = gallery_state().get("lastCreated", "")
+                    user_widgets = comp.runtime / "config" / "rutile" / "widgets"
+                    if made != str(user_widgets / "dollar-to-euro.json") or not Path(made).is_file():
+                        problems.append(f"ipc widgets use finance-1: made {made!r}")
+                    else:
+                        if json.loads(Path(made).read_text()) != json.loads((ROOT / "widgets" / "templates" / "finance-1.json").read_text()):
+                            problems.append("ipc widgets use finance-1: the copy differs from the template")
+                        settings = json.loads((comp.runtime / "config" / "rutile" / "settings.json").read_text())
+                        if settings.get("widgets", {}).get("httpAllow") != ["https://api.frankfurter.dev/"]:
+                            problems.append(f"ipc widgets use finance-1: allowed {settings.get('widgets')}")
+                        placed = [i["path"] for items in (desktop_layout().get("screens") or {}).values() for i in items]
+                        if placed != [made]:
+                            problems.append(f"ipc widgets use finance-1: on the desktop {placed}")
+                        if json.loads(ipc("state", target="widgets")).get("path") != made:
+                            problems.append("ipc widgets use finance-1: not previewed")
+                        gs = gallery_state()
+                        if gs.get("category") != "yours":
+                            problems.append(f"ipc widgets use finance-1: the app shows {gs}")
+                        ipc("use", "finance-1", target="widgets")      # again: another name
+                        time.sleep(1)
+                        if gallery_state().get("lastCreated") != str(user_widgets / "dollar-to-euro-2.json"):
+                            problems.append(f"ipc widgets use finance-1 twice: {gallery_state()}")
+                    ipc("close", target="widgets")
+                    ipc("galleryClose", target="widgets")
+                    if gallery_state().get("open") is not False:
+                        problems.append("ipc widgets galleryClose: still open")
                     # the launcher: opens over IPC with the fixture apps, ranks a query, closes and unloads
                     for args, want in [(("isOpen",), "false"), (("toggle",), ""), (("isOpen",), "true"),
                                        (("search", "fire"), "firefox"), (("search", "fot"), "foot"),

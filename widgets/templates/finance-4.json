@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "name": "Bitcoin",
+  "root": {
+    "type": "tile",
+    "tone": "secondary_container",
+    "children": [
+      {
+        "type": "header",
+        "title": "Bitcoin",
+        "icon": "currency_bitcoin"
+      },
+      {
+        "type": "stat",
+        "value": "{{http.bitcoin.usd}}",
+        "label": "US dollars",
+        "unit": "$"
+      },
+      {
+        "type": "chip",
+        "label": "CoinGecko",
+        "icon": "show_chart"
+      }
+    ]
+  },
+  "sources": {
+    "http": {
+      "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd",
+      "every": 600
+    }
+  }
+}

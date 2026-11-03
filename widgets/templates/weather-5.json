@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "Weather list",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "Outside",
+        "icon": "nest_eco_leaf"
+      },
+      {
+        "type": "listRow",
+        "title": "{{weather.temperature}}° and {{weather.condition}}",
+        "icon": "device_thermostat",
+        "subtitle": "High {{weather.high}}° · Low {{weather.low}}°"
+      },
+      {
+        "type": "listRow",
+        "title": "Feels like {{weather.apparent}}°",
+        "icon": "thermostat",
+        "subtitle": "Humidity {{weather.humidity}}%"
+      },
+      {
+        "type": "listRow",
+        "title": "Wind",
+        "icon": "air",
+        "subtitle": "{{weather.wind}}"
+      }
+    ],
+    "tone": "tertiary_container"
+  }
+}

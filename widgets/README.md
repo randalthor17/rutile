@@ -7,7 +7,8 @@ Rutile's widget system (plan items 4.1 to 4.5).
   `progress`, `listRow`, `chip`). Text may hold bindings `{{source.field}}`; never code.
 - `examples/`: example widgets. The shell draws a widget with `shell/widgethost/WidgetHost.qml` (plan 4.3, D78);
   `rutile-shell widgets preview FILE` shows one with its live data (D80).
-- `templates/` (to come): the Custom widgets app's templates.
+- `templates/`: the Widgets app's 30 templates, `<category>-<1..5>.json` (plan 4.5, D82); `widget_check.py
+  --templates` checks them.
 
 Check everything with `python3 tools/widget_check.py` (standard library only); `tests/test_widget_spec.py`
 runs it in `make check`.

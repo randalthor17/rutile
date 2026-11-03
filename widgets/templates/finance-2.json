@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "name": "Dollar today",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "1 US dollar",
+        "icon": "payments"
+      },
+      {
+        "type": "grid",
+        "columns": 3,
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{http.rates.EUR}}",
+            "label": "EUR"
+          },
+          {
+            "type": "stat",
+            "value": "{{http.rates.GBP}}",
+            "label": "GBP"
+          },
+          {
+            "type": "stat",
+            "value": "{{http.rates.JPY}}",
+            "label": "JPY"
+          }
+        ],
+        "spacing": "sm"
+      }
+    ],
+    "tone": "surface_container_high"
+  },
+  "sources": {
+    "http": {
+      "url": "https://api.frankfurter.dev/v1/latest?from=USD&to=EUR,GBP,JPY,CHF,CAD",
+      "every": 3600
+    }
+  }
+}

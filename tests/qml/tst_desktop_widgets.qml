@@ -84,6 +84,7 @@ TestCase {
         compare(w.host.scale, 1, "a widget that fits is not scaled");
         verify(w.host.implicitHeight < w.height - 1, "shorter than its cells");
         compare(w.host.y, 0, "and at their top, not centered");
+        compare(w.host.height, w.height, "filling them: made taller, the widget grows down (D83)");
         verify(!findChild(d, "desktopEditBar").visible, "no edit bar outside edit mode");
     }
     function test_a_tall_widget_is_scaled_down_to_fit() {

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "Holiday",
+  "root": {
+    "type": "tile",
+    "tone": "tertiary_container",
+    "children": [
+      {
+        "type": "header",
+        "title": "Holiday",
+        "icon": "beach_access"
+      },
+      {
+        "type": "stat",
+        "value": "{{countdown.text}}"
+      },
+      {
+        "type": "progress",
+        "value": "{{countdown.progress}}",
+        "style": "wavy"
+      }
+    ]
+  },
+  "sources": {
+    "countdown": {
+      "target": "2026-12-20",
+      "from": "2026-11-01"
+    }
+  }
+}

@@ -841,3 +841,23 @@ clicks reach the wallpaper, whose right-click menu opens edit mode (or `rutile-s
 it takes the pointer and the keyboard, and a bar at the bottom adds, removes and finishes (Escape; Delete
 removes), floating over the grid so nothing moves when editing starts. Widgets added over IPC take the focused
 output. Not done: keyboard moves, dragging a widget to another screen, a widget's own preferred size.
+
+**D82. Widgets are written by hand; generating them is deferred (plan 4.5).** The maintainer changed the widget
+plan: people write widgets as JSON (the spec, D18), and the Ollama bridge, the LLM docs, the eval set and the
+local-model trial (4.7 to 4.9, S2, S3) wait. So the Custom widgets app has no prompt box. It is a gallery: the
+categories as in Googlebook, each with templates drawn live, and the user's own widgets. Using a template copies it
+to `$XDG_CONFIG_HOME/rutile/widgets` (named from its title, -2 when taken), adds the address it reads to
+`widgets.httpAllow` (the card says so before), places it on the focused screen, opens the preview and opens the file
+in `widgets.editor` (xdg-open when unset). The 30 templates were the local model's task (`widget-templates`); the
+maintainer had Claude write them on main, and the brief is retired. Live data is real: Open-Meteo, Frankfurter
+(api.frankfurter.dev/v1; .app redirects), CoinGecko and TheSportsDB's public test key 123 (the old key 3 was
+switched off). A world clock is one place per widget, at a fixed offset (no daylight saving), because the clock
+source takes one `utcOffset`. The http source now drops its fetch when its widget goes, since the gallery's cards
+come and go.
+
+**D83. A widget fills the height it is given.** The maintainer found that making a desktop widget taller left it as
+it was, with empty cells below. Now the host's height reaches the root node: a card or tile fills it, a column
+gives the extra to its last block (card, tile, row, column or grid; with none, the space stays below), and a row
+stretches its blocks to one height while chips, stats and text keep theirs. Column and row nodes became
+ColumnLayout and RowLayout (Qt Quick Layouts, part of Qt) for this; a widget taller than its cells is still scaled
+down. Previews and the Widgets app's cards give no extra height, so they look as before.

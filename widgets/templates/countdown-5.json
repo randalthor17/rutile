@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "name": "Deadline",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "Deadline",
+        "icon": "flag"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "chip",
+            "label": "{{countdown.days}} days",
+            "icon": "calendar_month"
+          },
+          {
+            "type": "chip",
+            "label": "{{countdown.hours}} h",
+            "icon": "hourglass_top"
+          }
+        ],
+        "spacing": "sm"
+      },
+      {
+        "type": "progress",
+        "value": "{{countdown.progress}}"
+      }
+    ],
+    "tone": "error_container"
+  },
+  "sources": {
+    "countdown": {
+      "target": "2026-12-01T17:00",
+      "from": "2026-10-01"
+    }
+  }
+}

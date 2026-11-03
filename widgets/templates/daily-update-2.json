@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "name": "Morning glance",
+  "root": {
+    "type": "column",
+    "children": [
+      {
+        "type": "header",
+        "title": "{{clock.date}}",
+        "icon": "wb_twilight"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "tile",
+            "tone": "primary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{weather.temperature}}",
+                "label": "Outside",
+                "unit": "°"
+              }
+            ]
+          },
+          {
+            "type": "tile",
+            "tone": "secondary_container",
+            "children": [
+              {
+                "type": "stat",
+                "value": "{{battery.level}}",
+                "label": "Battery",
+                "unit": "%"
+              }
+            ]
+          }
+        ],
+        "spacing": "sm"
+      },
+      {
+        "type": "progress",
+        "value": "{{clock.dayProgress}}"
+      }
+    ],
+    "spacing": "sm"
+  }
+}

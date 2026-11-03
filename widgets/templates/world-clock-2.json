@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "New York",
+  "root": {
+    "type": "tile",
+    "tone": "tertiary_container",
+    "children": [
+      {
+        "type": "header",
+        "title": "New York",
+        "icon": "location_city"
+      },
+      {
+        "type": "row",
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{clock.time}}"
+          },
+          {
+            "type": "chip",
+            "label": "{{clock.weekday}}"
+          }
+        ],
+        "spacing": "md"
+      },
+      {
+        "type": "progress",
+        "value": "{{clock.dayProgress}}"
+      }
+    ]
+  },
+  "sources": {
+    "clock": {
+      "utcOffset": -5
+    }
+  }
+}

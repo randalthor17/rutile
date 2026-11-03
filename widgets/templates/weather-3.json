@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "name": "Today's range",
+  "root": {
+    "type": "card",
+    "children": [
+      {
+        "type": "header",
+        "title": "Today",
+        "icon": "thermostat"
+      },
+      {
+        "type": "grid",
+        "columns": 2,
+        "children": [
+          {
+            "type": "stat",
+            "value": "{{weather.high}}",
+            "label": "High",
+            "unit": "°"
+          },
+          {
+            "type": "stat",
+            "value": "{{weather.low}}",
+            "label": "Low",
+            "unit": "°"
+          },
+          {
+            "type": "stat",
+            "value": "{{weather.humidity}}",
+            "label": "Humidity",
+            "unit": "%"
+          },
+          {
+            "type": "stat",
+            "value": "{{weather.apparent}}",
+            "label": "Feels like",
+            "unit": "°"
+          }
+        ],
+        "spacing": "md"
+      }
+    ],
+    "tone": "surface_container_high"
+  }
+}
