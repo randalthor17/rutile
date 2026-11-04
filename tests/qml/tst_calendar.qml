@@ -110,6 +110,75 @@ TestCase {
                 "2026-11-02,2026-11-03,2026-11-04");
     }
 
+    // ---- time zones (VTIMEZONE) ----
+    // New York as tzurl.org writes it: the rules before 2007 (until then) and since
+    readonly property string newYork: ["BEGIN:VTIMEZONE", "TZID:America/New_York",
+        "BEGIN:DAYLIGHT", "TZOFFSETFROM:-0500", "TZOFFSETTO:-0400", "DTSTART:19870405T020000",
+        "RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU;UNTIL=20060402T070000Z", "END:DAYLIGHT",
+        "BEGIN:STANDARD", "TZOFFSETFROM:-0400", "TZOFFSETTO:-0500", "DTSTART:19671029T020000",
+        "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU;UNTIL=20061029T060000Z", "END:STANDARD",
+        "BEGIN:DAYLIGHT", "TZOFFSETFROM:-0500", "TZOFFSETTO:-0400", "DTSTART:20070311T020000",
+        "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU", "END:DAYLIGHT",
+        "BEGIN:STANDARD", "TZOFFSETFROM:-0400", "TZOFFSETTO:-0500", "DTSTART:20071104T020000",
+        "RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU", "END:STANDARD", "END:VTIMEZONE"].join("\r\n") + "\r\n"
+    function zoned(zone, ...events) {
+        return ics(...events).replace("BEGIN:VCALENDAR\r\n", "BEGIN:VCALENDAR\r\n" + zone);
+    }
+    function utc(y, m, d, h, min) { return Date.UTC(y, m - 1, d, h, min ?? 0); }
+    function test_tzid_times() {
+        const e = Calendar.icsEvents(zoned(newYork,
+            ["SUMMARY:Summer", "DTSTART;TZID=America/New_York:20260710T090000", "DTEND;TZID=America/New_York:20260710T100000"],
+            ["SUMMARY:Winter", "DTSTART;TZID=\"America/New_York\":20261210T090000"],
+            ["SUMMARY:Late October", "DTSTART;TZID=America/New_York:20261028T090000"],
+            ["SUMMARY:Elsewhere", "DTSTART;TZID=Mars/Olympus:20261210T090000"],
+            ["SUMMARY:Long ago", "DTSTART;TZID=America/New_York:19500601T090000"]));
+        compare(e[0].start.getTime(), utc(2026, 7, 10, 13), "summer: -4");
+        compare(e[0].end.getTime(), utc(2026, 7, 10, 14), "DTEND in the zone too");
+        compare(e[1].start.getTime(), utc(2026, 12, 10, 14), "winter: -5; a quoted TZID");
+        compare(e[2].start.getTime(), utc(2026, 10, 28, 13), "still summer: the old October rule ended in 2006");
+        compare(e[3].start.getTime(), new Date(2026, 11, 10, 9).getTime(), "a TZID the file does not describe is local");
+        compare(e[3].zone, null);
+        compare(e[4].start.getTime(), utc(1950, 6, 1, 13), "before every part: the earliest part's TZOFFSETFROM");
+    }
+    function test_tzid_zone_after_events_and_fixed_zones() {
+        // the VTIMEZONE may come after the events; a zone with one part and no rule is a fixed offset
+        const text = ics(["SUMMARY:Standup", "DTSTART;TZID=Asia/Kolkata:20261105T100000"])
+            .replace("END:VCALENDAR", ["BEGIN:VTIMEZONE", "TZID:Asia/Kolkata", "BEGIN:STANDARD", "TZOFFSETFROM:+0530",
+                                       "TZOFFSETTO:+0530", "DTSTART:19700101T000000", "END:STANDARD", "END:VTIMEZONE",
+                                       "END:VCALENDAR"].join("\r\n"));
+        compare(Calendar.icsEvents(text)[0].start.getTime(), utc(2026, 11, 5, 4, 30));
+        // a rule written the old way: the second Sunday as BYMONTHDAY=8..14 with BYDAY=SU
+        const old = ["BEGIN:VTIMEZONE", "TZID:Old", "BEGIN:STANDARD", "TZOFFSETFROM:+0200", "TZOFFSETTO:+0100",
+                     "DTSTART:19701011T030000", "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=SU;BYMONTHDAY=8,9,10,11,12,13,14",
+                     "END:STANDARD", "BEGIN:DAYLIGHT", "TZOFFSETFROM:+0100", "TZOFFSETTO:+0200",
+                     "DTSTART:19700405T020000", "RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU", "END:DAYLIGHT",
+                     "END:VTIMEZONE"].join("\r\n") + "\r\n";
+        const e = Calendar.icsEvents(zoned(old, ["SUMMARY:A", "DTSTART;TZID=Old:20261010T120000"],
+                                                ["SUMMARY:B", "DTSTART;TZID=Old:20261011T120000"]));
+        compare(e[0].start.getTime(), utc(2026, 10, 10, 10), "before the second Sunday of October: +2");
+        compare(e[1].start.getTime(), utc(2026, 10, 11, 11), "on it: +1");
+        // rules on a date: the part's own day
+        const dated = ["BEGIN:VTIMEZONE", "TZID:Dated", "BEGIN:DAYLIGHT", "TZOFFSETFROM:+0330", "TZOFFSETTO:+0430",
+                       "DTSTART:19700321T000000", "RRULE:FREQ=YEARLY", "END:DAYLIGHT", "BEGIN:STANDARD",
+                       "TZOFFSETFROM:+0430", "TZOFFSETTO:+0330", "DTSTART:19700921T000000",
+                       "RRULE:FREQ=YEARLY;BYMONTH=9;BYMONTHDAY=21", "END:STANDARD", "END:VTIMEZONE"].join("\r\n") + "\r\n";
+        const f = Calendar.icsEvents(zoned(dated, ["SUMMARY:A", "DTSTART;TZID=Dated:20260701T120000"],
+                                                  ["SUMMARY:B", "DTSTART;TZID=Dated:20261001T120000"]));
+        compare(f[0].start.getTime(), utc(2026, 7, 1, 7, 30), "after March 21: +4:30");
+        compare(f[1].start.getTime(), utc(2026, 10, 1, 8, 30), "after September 21: +3:30");
+    }
+    function test_tzid_repeats_on_the_zone_clock() {
+        // 9:00 in New York each Monday, across the change on Nov 1 2026; the EXDATE in the zone leaves Nov 9 out
+        const e = Calendar.icsEvents(zoned(newYork, ["SUMMARY:Sync", "UID:y",
+            "DTSTART;TZID=America/New_York:20261026T090000", "RRULE:FREQ=WEEKLY;COUNT=4",
+            "EXDATE;TZID=America/New_York:20261109T090000"],
+            ["SUMMARY:Sync (moved)", "UID:y", "RECURRENCE-ID;TZID=America/New_York:20261116T090000",
+             "DTSTART;TZID=America/New_York:20261116T110000"]));
+        const o = Calendar.occurrences(e, day(2026, 10, 1), day(2026, 12, 1));
+        compare(o.map(x => x.title + "@" + new Date(x.start).toISOString()).join(","),
+                "Sync@2026-10-26T13:00:00.000Z,Sync@2026-11-02T14:00:00.000Z,Sync (moved)@2026-11-16T16:00:00.000Z");
+    }
+
     // ---- calendar addresses (D94) ----
     function test_feed_addresses() {
         compare(Calendar.feedUrl("webcal://p01-calendars.icloud.com/x.ics"), "https://p01-calendars.icloud.com/x.ics");

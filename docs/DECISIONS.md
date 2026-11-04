@@ -1212,3 +1212,17 @@ greeter):
   maintainer's decision: the project has no other users, and their own NixOS config is updated with
   `nix flake update rutile`. Commit IDs in older commit messages after that point no longer resolve; the ones in the
   docs were updated.
+
+**D105. Time zones in .ics files from their own VTIMEZONE** (plan 2.12, 2026-11-05):
+- **What.** A time with a TZID (`DTSTART;TZID=America/New_York:20261210T090000`) is now that zone's time, not local
+  (D93 took it as local). `Calendar.js` reads the file's VTIMEZONE: each STANDARD and DAYLIGHT part's offsets,
+  DTSTART, RDATEs and yearly RRULE (BYMONTH with one BYDAY like `2SU` or `-1SU`, the old `BYMONTHDAY=8..14;BYDAY=SU`
+  form, or a fixed date; UNTIL ends a rule, so the pre-2007 US rules stop). The offset at a time is the one of the
+  part that began last before it. DTEND, EXDATE and RECURRENCE-ID use the zone too, and a repeating event repeats on
+  its zone's clock (9:00 in New York stays 9:00 there across its DST change, so it moves an hour for the user).
+- **Why the file's own zones.** RFC 5545 requires a VTIMEZONE for every TZID used, and Google, Outlook and tzurl
+  write them. Qt's JavaScript has no Intl time zones, and asking the native helper (libical's zone database) would
+  mean a process per read for the folder and the addresses. A TZID the file does not describe is still taken as
+  local.
+- **Not done.** A wall time in a DST gap takes the offset after the change, and one in an overlap the offset
+  before it; a zone rule with several weekdays uses the first. Events from accounts (D95) were already right: EDS works their zones out.

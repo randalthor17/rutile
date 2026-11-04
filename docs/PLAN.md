@@ -228,8 +228,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   accounts, evolution-data-server syncs them, `rutile-calendar` (native/calendar.c, libecal) reads the shown
   calendars' events with repeats and time zones worked out by EDS, and GNOME Calendar edits them (a click on such
   an event opens it there; "Open Calendar"). Adding an event (D101, v0.11.0): the + beside the day, into an EDS calendar
-  (`rutile-calendar add`). Not yet: time zones for .ics files
-  (TZID times are taken as local), a real Google account tried. Widgets (D102, v0.11.0): the calendar source without a
+  (`rutile-calendar add`). Time zones in .ics files (D105): a TZID time is in that zone, from the file's VTIMEZONE.
+  Not yet: a real Google account tried. Widgets (D102, v0.11.0): the calendar source without a
   `path` shows the same calendars (folder, addresses, accounts); the templates use that. The grid is lighter
   since v0.11.0: one pointer area and shared circles instead of 42 cells' own, 2922 to 1566 KiB (docs/memory.md).
 

@@ -58,8 +58,7 @@ surfaces), no focus ring. See `docs/components.md`.
    The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
 3. Finish the component kit (1.5: GeminiGlow once a reference image exists; the expanded NavRail if something needs
    it) and the gallery review (1.7).
-4. Smaller open parts: time zones in .ics files (TZID times are read as local).
-5. Widget generation and the local-model trial stay deferred (D82).
+4. Widget generation and the local-model trial stay deferred (D82).
 
 ## 3. Resume in five minutes
 

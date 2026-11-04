@@ -5,8 +5,9 @@
 // Repeating events: RRULE with FREQ DAILY, WEEKLY, MONTHLY or YEARLY, INTERVAL, COUNT, UNTIL, BYDAY (weekly: the
 // days of the week; monthly: "2MO", "-1FR" or plain days) and BYMONTHDAY (monthly); EXDATE leaves times out, and an
 // event with a RECURRENCE-ID replaces its series' time. A rule with anything else (BYSETPOS, BYWEEKNO, HOURLY...)
-// shows its first time only. Times repeat in local time, as the clock on the wall does across a DST change; a TZID
-// time is taken as local.
+// shows its first time only. Times repeat in local time, as the clock on the wall does across a DST change. A TZID time
+// is a time in that zone (the file's VTIMEZONE, its STANDARD and DAYLIGHT parts) and repeats on that zone's clock; a
+// TZID the file does not describe is taken as local.
 .pragma library
 
 var DAY = 86400000;
@@ -17,14 +18,128 @@ function unfold(text) {
 function unescapeText(v) {
     return v.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1");
 }
-// "20261105T100000Z", "20261105T100000" (local, or in a TZID taken as local) or a date; {date, allDay} or null
-function icsDate(value, params) {
+// "20261105T100000Z", "20261105T100000" (local, or in the head's TZID when `zones` describes it) or a date;
+// {date, allDay, zone} or null. `zone` is the TZID's observances for a time in one (see icsZones), else null.
+function icsDate(value, params, zones) {
     var m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(value || "");
     if (!m) return null;
-    if (!m[4]) return { date: new Date(+m[1], +m[2] - 1, +m[3]), allDay: true };
-    if (m[7]) return { date: new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])), allDay: false };
-    return { date: new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]), allDay: /VALUE=DATE(;|$)/.test(params || "") };
+    if (!m[4]) return { date: new Date(+m[1], +m[2] - 1, +m[3]), allDay: true, zone: null };
+    if (m[7]) return { date: new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])), allDay: false, zone: null };
+    var zone = (zones || {})[tzid(params)] || null;
+    if (zone) return { date: zoneTime(zone, Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])), allDay: false, zone: zone };
+    return { date: new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]), allDay: /VALUE=DATE(;|$)/.test(params || ""),
+             zone: null };
 }
+
+// ---- time zones (VTIMEZONE) ----
+// Wall-clock times here are written as if in UTC ("floating"): Date.UTC of the fields a clock in the zone shows.
+// The TZID in a property's head ("DTSTART;TZID=Europe/Berlin", quoted or not); "" without one.
+function tzid(head) {
+    var m = /;TZID=(?:"([^"]*)"|([^;:]*))/i.exec(head || "");
+    return m ? (m[1] !== undefined ? m[1] : m[2]) : "";
+}
+// "+0530", "-0800", "+010000" in milliseconds; null for anything else
+function icsOffset(value) {
+    var m = /^([+-])(\d{2})(\d{2})(\d{2})?$/.exec(String(value || "").trim());
+    if (!m) return null;
+    var ms = ((+m[2] * 60 + +m[3]) * 60 + +(m[4] || 0)) * 1000;
+    return m[1] === "-" ? -ms : ms;
+}
+// a local DTSTART or RDATE as a floating time; null when it is not one
+function floating(value) {
+    var m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2}))?$/.exec(value || "");
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) : null;
+}
+// The VTIMEZONEs in unfolded lines as {TZID: [{offset, before, start, rule, rdates}]}: one entry per STANDARD or
+// DAYLIGHT part; `offset` is TZOFFSETTO and `before` TZOFFSETFROM (ms), `start` and `rdates` floating times, `rule` the
+// yearly RRULE's {month, byDay: [{n, day}], byMonthDay: [], until (ms or null)} or null.
+function icsZones(lines) {
+    var zones = {};
+    var id = null, list = null, cur = null;
+    lines.forEach(function (line) {
+        if (line === "BEGIN:VTIMEZONE") { id = ""; list = []; return; }
+        if (line === "END:VTIMEZONE") {
+            if (id && list.length) zones[id] = list;
+            id = list = cur = null;
+            return;
+        }
+        if (list === null) return;
+        if (line === "BEGIN:STANDARD" || line === "BEGIN:DAYLIGHT") { cur = { rdates: [] }; return; }
+        if (line === "END:STANDARD" || line === "END:DAYLIGHT") {
+            if (cur && cur.offset !== null && cur.offset !== undefined && cur.start !== null && cur.start !== undefined)
+                list.push({ offset: cur.offset, before: cur.before ?? cur.offset, start: cur.start,
+                            rule: cur.rrule ? zoneRule(cur.rrule, cur.start) : null, rdates: cur.rdates });
+            cur = null;
+            return;
+        }
+        var colon = line.indexOf(":");
+        if (colon < 0) return;
+        var name = line.substring(0, colon).split(";")[0].toUpperCase(), value = line.substring(colon + 1);
+        if (!cur) {
+            if (name === "TZID") id = value;
+            return;
+        }
+        if (name === "DTSTART") cur.start = floating(value);
+        else if (name === "TZOFFSETTO") cur.offset = icsOffset(value);
+        else if (name === "TZOFFSETFROM") cur.before = icsOffset(value);
+        else if (name === "RRULE") cur.rrule = value;
+        else if (name === "RDATE") value.split(",").forEach(function (v) {
+            var t = floating(v);
+            if (t !== null) cur.rdates.push(t);
+        });
+    });
+    return zones;
+}
+// A zone part's RRULE ("FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU"), on the part's DTSTART's month and day when it names none;
+// null when it is not yearly.
+function zoneRule(value, start) {
+    var r = rule(value.split(";").filter(function (p) { return !/^BYMONTH=/i.test(p); }).join(";"));
+    var month = /(?:^|;)BYMONTH=(\d+)/i.exec(value);
+    if (!r || r.freq !== "YEARLY") return null;
+    var s = new Date(start);
+    return { month: month ? +month[1] - 1 : s.getUTCMonth(), day: s.getUTCDate(), byDay: r.byDay,
+             byMonthDay: r.byMonthDay, until: r.until ? r.until.date.getTime() : null };
+}
+// When a zone part's rule starts in `year`, as a floating time (at its DTSTART's time of day); null when it does not.
+function zoneOnset(part, year) {
+    var r = part.rule, s = new Date(part.start);
+    var length = new Date(Date.UTC(year, r.month + 1, 0)).getUTCDate();
+    var days = [];
+    for (var d = 1; d <= length; d++) days.push(d);
+    if (r.byMonthDay.length) days = days.filter(function (d) {
+        return r.byMonthDay.some(function (md) { return md === d || length + md + 1 === d; });
+    });
+    var pick = r.day <= length ? r.day : undefined;    // DTSTART is on its rule (RFC 5545)
+    if (r.byDay.length) {               // one weekday: a zone changes once a year
+        var b = r.byDay[0];
+        var matches = days.filter(function (d) { return new Date(Date.UTC(year, r.month, d)).getUTCDay() === b.day; });
+        pick = b.n === 0 ? matches[0] : b.n > 0 ? matches[b.n - 1] : matches[matches.length + b.n];
+    }
+    if (pick === undefined) return null;
+    var t = Date.UTC(year, r.month, pick, s.getUTCHours(), s.getUTCMinutes(), s.getUTCSeconds());
+    return t < part.start || (r.until !== null && t - part.before > r.until) ? null : t;
+}
+// The UTC offset (ms) in a zone at a floating time: the offset of the part that began last before it (its DTSTART,
+// an RDATE, or its rule this year or last); before them all, the earliest part's TZOFFSETFROM.
+function zoneOffset(zone, wall) {
+    var best = null, offset = null;
+    var year = new Date(wall).getUTCFullYear();
+    zone.forEach(function (part) {
+        var onsets = [part.start].concat(part.rdates);
+        if (part.rule) onsets.push(zoneOnset(part, year), zoneOnset(part, year - 1));
+        onsets.forEach(function (t) {
+            if (t !== null && t <= wall && (best === null || t > best)) { best = t; offset = part.offset; }
+        });
+    });
+    if (offset !== null) return offset;
+    var first = zone.reduce(function (a, b) { return b.start < a.start ? b : a; });
+    return first.before;
+}
+// a floating time in a zone as a Date
+function zoneTime(zone, wall) {
+    return new Date(wall - zoneOffset(zone, wall));
+}
+
 // "PT1H30M", "P1D", "-PT15M" in milliseconds; 0 for anything else
 function icsDuration(value) {
     var m = /^([+-])?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(value || "");
@@ -62,11 +177,14 @@ function rule(value) {
 }
 
 // The VEVENTs as [{title, start: Date, end: Date, allDay, rule (or null), exdates: [ms], uid, recurrenceId (ms or
-// null)}]. `end` is DTEND, or DTSTART plus DURATION, or for an event with neither its start (a day for an all-day one).
+// null), zone (its DTSTART's, or null)}]. `end` is DTEND, or DTSTART plus DURATION, or for an event with neither its
+// start (a day for an all-day one).
 function icsEvents(text) {
     var out = [];
     var cur = null;
-    unfold(text).split("\n").forEach(function (line) {
+    var lines = unfold(text).split("\n");
+    var zones = icsZones(lines);
+    lines.forEach(function (line) {
         if (line === "BEGIN:VEVENT") { cur = { exdates: [] }; return; }
         if (line === "END:VEVENT") {
             if (cur && cur.start) {
@@ -75,7 +193,8 @@ function icsEvents(text) {
                         : new Date(start.getTime() + (allDay ? DAY : 0));
                 if (end < start) end = start;
                 out.push({ title: cur.title || "Event", start: start, end: end, allDay: allDay, rule: rule(cur.rrule),
-                           exdates: cur.exdates, uid: cur.uid || "", recurrenceId: cur.recurrenceId ?? null });
+                           exdates: cur.exdates, uid: cur.uid || "", recurrenceId: cur.recurrenceId ?? null,
+                           zone: cur.start.zone });
             }
             cur = null;
             return;
@@ -86,16 +205,16 @@ function icsEvents(text) {
         var head = line.substring(0, colon), value = line.substring(colon + 1);
         var name = head.split(";")[0].toUpperCase();
         if (name === "SUMMARY") cur.title = unescapeText(value);
-        else if (name === "DTSTART") cur.start = icsDate(value, head);
-        else if (name === "DTEND") cur.end = icsDate(value, head);
+        else if (name === "DTSTART") cur.start = icsDate(value, head, zones);
+        else if (name === "DTEND") cur.end = icsDate(value, head, zones);
         else if (name === "DURATION") cur.duration = icsDuration(value);
         else if (name === "RRULE") cur.rrule = value;
         else if (name === "UID") cur.uid = value;
         else if (name === "RECURRENCE-ID") {
-            var r = icsDate(value, head);
+            var r = icsDate(value, head, zones);
             if (r) cur.recurrenceId = r.date.getTime();
         } else if (name === "EXDATE") value.split(",").forEach(function (v) {
-            var d = icsDate(v, head);
+            var d = icsDate(v, head, zones);
             if (d) cur.exdates.push(d.date.getTime());
         });
     });
@@ -107,10 +226,21 @@ function at(start, y, m, d) {
     var t = new Date(y, m, d, start.getHours(), start.getMinutes(), start.getSeconds());
     return t.getDate() === d && t.getMonth() === ((m % 12) + 12) % 12 ? t : null;
 }
+// A Date as a zone's clock shows it, made a local Date with those fields; and back (a local Date's fields read on the
+// zone's clock).
+function wallClock(zone, date) {
+    var w = new Date(date.getTime() + zoneOffset(zone, date.getTime() + zoneOffset(zone, date.getTime())));
+    return new Date(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate(), w.getUTCHours(), w.getUTCMinutes(), w.getUTCSeconds());
+}
+function inZone(zone, local) {
+    return zoneTime(zone, Date.UTC(local.getFullYear(), local.getMonth(), local.getDate(), local.getHours(),
+                                   local.getMinutes(), local.getSeconds()));
+}
 // The start times a rule makes, in order, while `more(time)`. Without a COUNT it skips the periods that end before
 // `from`; a cap ends a rule that has gone wrong.
+// An event in a zone repeats on that zone's clock: the times are made from its wall-clock start, then placed in the zone.
 function ruleTimes(e, from, more) {
-    var r = e.rule, s = e.start, out = [];
+    var r = e.rule, s = e.zone ? wallClock(e.zone, e.start) : e.start, out = [];
     var y = s.getFullYear(), mo = s.getMonth(), d = s.getDate();
     var made = 0;
     var skip = 0;
@@ -124,8 +254,8 @@ function ruleTimes(e, from, more) {
     function take(list) {
         list.sort(function (a, b) { return a - b; });
         for (var i = 0; i < list.length; i++) {
-            var t = list[i];
-            if (t < s) continue;
+            var t = e.zone ? inZone(e.zone, list[i]) : list[i];
+            if (t < e.start) continue;
             if ((until && t > until) || (r.count && made >= r.count) || !more(t)) return false;
             made++;
             out.push(t);
