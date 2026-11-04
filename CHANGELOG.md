@@ -10,6 +10,7 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   choice. It remembers who signed in last and the session they used. Turn it on with the flake's
   `nixosModules.greeter` (see the install guide). It shows each person's own wallpaper and colors, as their desktop
   has them, and always shows the session you will sign in to.
+- **A lighter calendar.** The calendar under the clock takes about half the memory it did while open.
 - **Hidden Wi-Fi networks.** Quick Settings' Wi-Fi page joins a network that does not show its name: choose
   "Hidden network", type its name and password.
 - **Your picture.** The lock and sign-in screens show your picture above your name: `~/.face`, or the one GNOME

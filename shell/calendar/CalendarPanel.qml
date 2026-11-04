@@ -29,6 +29,10 @@ Rectangle {
     readonly property int maxRows: 4
     readonly property var days: Calendar.monthDays(month, locale.firstDayOfWeek)
     readonly property var busy: Calendar.busyDays(events, days)
+    // where a date is in `days` (0 to 41), or -1 when this month's page does not show it
+    function dayIndex(date) {
+        return days.findIndex(d => Calendar.sameDay(d, date));
+    }
     readonly property var dayEvents: Calendar.dayEvents(events, selected, use24h, locale, ClockText.time)
     readonly property bool onToday: Calendar.sameDay(selected, now)
     readonly property real rowHeight: ControlSpec.listSpec.itemTwoLineContainerHeight
@@ -152,58 +156,106 @@ Rectangle {
                 }
             }
         }
-        Grid {
-            id: grid
-            columns: 7
-            Repeater {
-                model: root.days
-                delegate: Item {
-                    id: day
-                    required property date modelData
-                    readonly property bool inMonth: modelData.getMonth() === root.month.getMonth()
-                    readonly property bool today: Calendar.sameDay(modelData, root.now)
-                    readonly property bool chosen: Calendar.sameDay(modelData, root.selected)
-                    readonly property bool busy: root.busy[Calendar.dayKey(modelData)] === true
-                    objectName: "calendarDay_" + Calendar.dayKey(modelData)
-                    width: root.cell
-                    height: root.cell
-                    Accessible.role: Accessible.Button
-                    Accessible.name: root.locale.toString(modelData, "dddd, MMMM d") + (busy ? ", events" : "")
-
-                    Rectangle {
-                        id: circle
-                        anchors.centerIn: parent
-                        width: root.cell - Spacing.xs
-                        height: width
-                        radius: width / 2
-                        color: day.today ? Colors.primary : day.chosen ? Colors.secondaryContainer : "transparent"
-                        Behavior on color { EffectsColor {} }
-                    }
-                    Text {
-                        anchors.centerIn: parent
-                        text: day.modelData.getDate()
-                        color: day.today ? Colors.primaryOn : day.chosen ? Colors.secondaryContainerOn
-                             : day.inMonth ? Colors.surfaceOn : Colors.outline
+        // The 42 days as bare numbers, with one pointer area, one hover circle and the two filled circles moved to
+        // their day: a circle, a dot and a StateLayer in each cell cost about 1.3 MB more while the calendar was
+        // open (docs/memory.md, D31).
+        Item {
+            width: grid.width
+            height: grid.height
+            // today's circle and the chosen day's, under the numbers: two circles moved to their day, not one in each
+            // of the 42 cells
+            Rectangle {
+                objectName: "calendarChosenCircle"
+                readonly property int index: root.dayIndex(root.selected)
+                visible: index >= 0 && index !== root.dayIndex(root.now)
+                x: (index % 7) * root.cell + Spacing.xs / 2
+                y: Math.floor(index / 7) * root.cell + Spacing.xs / 2
+                width: root.cell - Spacing.xs
+                height: width
+                radius: width / 2
+                color: Colors.secondaryContainer
+            }
+            Rectangle {
+                objectName: "calendarTodayCircle"
+                readonly property int index: root.dayIndex(root.now)
+                visible: index >= 0
+                x: (index % 7) * root.cell + Spacing.xs / 2
+                y: Math.floor(index / 7) * root.cell + Spacing.xs / 2
+                width: root.cell - Spacing.xs
+                height: width
+                radius: width / 2
+                color: Colors.primary
+            }
+            Grid {
+                id: grid
+                columns: 7
+                Repeater {
+                    model: root.days
+                    delegate: Text {
+                        id: day
+                        required property date modelData
+                        readonly property bool inMonth: modelData.getMonth() === root.month.getMonth()
+                        readonly property bool today: Calendar.sameDay(modelData, root.now)
+                        readonly property bool chosen: Calendar.sameDay(modelData, root.selected)
+                        readonly property bool busy: root.busy[Calendar.dayKey(modelData)] === true
+                        objectName: "calendarDay_" + Calendar.dayKey(modelData)
+                        width: root.cell
+                        height: root.cell
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        text: modelData.getDate()
+                        color: today ? Colors.primaryOn : chosen ? Colors.secondaryContainerOn
+                             : inMonth ? Colors.surfaceOn : Colors.outline
                         font: Type.font(Type.bodyMedium)
-                    }
-                    Rectangle {
-                        objectName: "calendarDot"
-                        visible: day.busy
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: circle.bottom
-                        anchors.bottomMargin: Spacing.xs
-                        width: Spacing.xs
-                        height: width
-                        radius: width / 2
-                        color: day.today ? Colors.primaryOn : Colors.primary
-                    }
-                    StateLayer {
-                        anchors.fill: circle
-                        radius: circle.radius
-                        stateColor: day.today ? Colors.primaryOn : Colors.surfaceOn
-                        onClicked: root.select(day.modelData)
+                        Accessible.role: Accessible.Button
+                        Accessible.name: root.locale.toString(modelData, "dddd, MMMM d") + (busy ? ", events" : "")
                     }
                 }
+            }
+            // a dot under each day with events: only those days have one
+            Repeater {
+                model: root.days.map((d, i) => root.busy[Calendar.dayKey(d)] === true ? i : -1).filter(i => i >= 0)
+                delegate: Rectangle {
+                    required property int modelData
+                    objectName: "calendarDot"
+                    x: (modelData % 7 + 0.5) * root.cell - width / 2
+                    y: (Math.floor(modelData / 7) + 1) * root.cell - Spacing.xs / 2 - Spacing.xs - height
+                    width: Spacing.xs
+                    height: width
+                    radius: width / 2
+                    color: Calendar.sameDay(root.days[modelData], root.now) ? Colors.primaryOn : Colors.primary
+                }
+            }
+            MouseArea {
+                id: dayPointer
+                objectName: "calendarDays"
+                anchors.fill: grid
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                readonly property int column: Math.floor(mouseX / root.cell)
+                readonly property int row: Math.floor(mouseY / root.cell)
+                // the day at a point, as an index into root.days; -1 when none
+                function at(x, y) {
+                    const c = Math.floor(x / root.cell), r = Math.floor(y / root.cell);
+                    return c >= 0 && c < 7 && r >= 0 && 7 * r + c < root.days.length ? 7 * r + c : -1;
+                }
+                // the one under the pointer (the click's own point: a click may come without a hover first)
+                readonly property int index: containsMouse || pressed ? at(mouseX, mouseY) : -1
+                onClicked: mouse => {
+                    const i = at(mouse.x, mouse.y);
+                    if (i >= 0) root.select(root.days[i]);
+                }
+            }
+            StateLayer {
+                objectName: "calendarHover"
+                input: dayPointer
+                x: dayPointer.column * root.cell + Spacing.xs / 2
+                y: dayPointer.row * root.cell + Spacing.xs / 2
+                width: root.cell - Spacing.xs
+                height: width
+                radius: width / 2
+                stateColor: dayPointer.index >= 0 && Calendar.sameDay(root.days[dayPointer.index], root.now)
+                            ? Colors.primaryOn : Colors.surfaceOn
             }
             WheelHandler {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad

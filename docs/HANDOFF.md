@@ -57,8 +57,7 @@ surfaces), no focus ring. See `docs/components.md`.
 2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97).
    The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
 3. Finish the component kit (1.5: NavRail, GeminiGlow once a reference image exists) and the gallery review (1.7).
-4. Smaller open parts: adding events from the popup, calendar addresses and evolution-data-server for widgets,
-   the calendar popup's memory (one MouseArea for the grid).
+4. Smaller open parts: adding events from the popup, calendar addresses and evolution-data-server for widgets.
 5. Widget generation and the local-model trial stay deferred (D82).
 
 ## 3. Resume in five minutes

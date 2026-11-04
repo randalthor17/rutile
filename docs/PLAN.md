@@ -227,7 +227,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   accounts, evolution-data-server syncs them, `rutile-calendar` (native/calendar.c, libecal) reads the shown
   calendars' events with repeats and time zones worked out by EDS, and GNOME Calendar edits them (a click on such
   an event opens it there; "Open Calendar"). Not yet: adding events from the popup, time zones for .ics files
-  (TZID times are taken as local), addresses and EDS for widgets, a real Google account tried.
+  (TZID times are taken as local), addresses and EDS for widgets, a real Google account tried. The grid is lighter
+  since 2026-11-05: one pointer area and shared circles instead of 42 cells' own, 2922 to 1566 KiB (docs/memory.md).
 
 ## Phase 3: windows on niri
 

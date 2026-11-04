@@ -81,7 +81,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | Fab | | 83.2 | container, icon, state layer and press spring |
 | Card | | 29.7 | a Rectangle and its state layer; the content is the caller's |
 | TitleBar | | 160.4 | icon, title, maximize and close IconButtons, the drag area; one per app window, only while it is open |
-| CalendarPanel | | 2882, 3094 with an event and the app button | 42 day cells, each with its circle, number, dot and a StateLayer (about 60 each, 2.5 MB together), the header's 3 IconButtons, the event list. Only while the calendar is open (LazyLoader). The cells' StateLayers are the cost: one MouseArea and one hover circle for the grid would cut most of it |
+| CalendarPanel | | 1566 (2922 before the grid was cut) | 42 day numbers as bare Texts; one MouseArea, one hover circle, today's and the chosen day's circles moved to their day, and a dot only under days with events (a circle, dot and StateLayer in every cell had cost 1.3 MB more); the header's 3 IconButtons, the event list. Only while the calendar is open (LazyLoader) |
 
 Not measured: QuickSettingsDetails (it needs a live backend; only while a detail page is open) and AppFrame
 (a window's frame around its content).

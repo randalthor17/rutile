@@ -444,6 +444,12 @@ response") and its answers then go to the wrong questions. Wait a moment (300 ms
 fails with "nope", which looks like a bug in the greeter. It never exits on its own either: stop it once the greeter
 has.
 
+**A test click at an item lands on whatever is at that point.** With one MouseArea for the calendar's whole grid,
+a click right after a month change hit the wrong day: the Grid places the new days only at its next polish, and
+until then they sit at (0, 0). Per-cell mouse areas had hidden this, as the item clicked was its own target. Wait
+for `waitForItemPolished` on the grid first; also, a synthetic click comes without a hover, so pick the target from
+the click's own position, not `containsMouse`.
+
 **A Quickshell Process's `running` turns true only once it has started.** NetworkService's "joining" read
 `running` just after setting it and saw false, so a second join was not refused. Keep a flag of your own, set
 with the request and cleared in `onExited`.

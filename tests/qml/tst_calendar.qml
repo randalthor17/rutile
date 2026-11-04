@@ -200,6 +200,32 @@ TestCase {
         verify(!findChild(p, "calendarDay_2026-11-12").busy);
         verify(findChild(p, "calendarDay_2026-11-04").today);
         verify(!findChild(p, "calendarEmpty").visible);
+        // one circle each for today and the chosen day, and a dot only under days with events
+        const today = findChild(p, "calendarTodayCircle"), day = findChild(p, "calendarDay_2026-11-04");
+        verify(today.visible);
+        compare(today.mapToItem(p, today.width / 2, 0).x, day.mapToItem(p, day.width / 2, 0).x, "today's circle on today");
+        verify(!findChild(p, "calendarChosenCircle").visible, "today chosen: its own circle only");
+        const busyDays = p.days.filter(d => p.busy[Calendar.dayKey(d)] === true).map(d => Calendar.dayKey(d));
+        const dots = today.parent.children.filter(c => c.objectName === "calendarDot");
+        verify(busyDays.length > 0);
+        compare(dots.length, busyDays.length, "a dot for each day with events, none for the rest");
+        const busy = findChild(p, "calendarDay_" + busyDays[0]);
+        verify(dots.some(dot => Math.abs(dot.mapToItem(p, dot.width / 2, 0).x - busy.mapToItem(p, busy.width / 2, 0).x) < 1
+                         && dot.mapToItem(p, 0, 0).y > busy.mapToItem(p, 0, 0).y
+                         && dot.mapToItem(p, 0, 0).y < busy.mapToItem(p, 0, busy.height).y), "under its day");
+    }
+    function test_panel_hover_and_chosen_circle() {
+        const p = panel({ events: Calendar.icsEvents(sample) });
+        const d = findChild(p, "calendarDay_2026-11-12"), hover = findChild(p, "calendarHover");
+        mouseMove(d, d.width / 2, d.height / 2);
+        tryVerify(() => hover.opacityNow > 0, 2000, "the hover circle shows");
+        compare(hover.mapToItem(p, hover.width / 2, 0).x, d.mapToItem(p, d.width / 2, 0).x, "on the day under the pointer");
+        compare(hover.mapToItem(p, 0, hover.height / 2).y, d.mapToItem(p, 0, d.height / 2).y);
+        mouseClick(d);
+        const chosen = findChild(p, "calendarChosenCircle");
+        verify(chosen.visible, "another day chosen: its circle");
+        compare(chosen.mapToItem(p, chosen.width / 2, 0).x, d.mapToItem(p, d.width / 2, 0).x);
+        compare(chosen.mapToItem(p, 0, chosen.height / 2).y, d.mapToItem(p, 0, d.height / 2).y);
     }
     function test_panel_click_day_and_months() {
         const p = panel({ events: Calendar.icsEvents(sample) });
@@ -217,7 +243,9 @@ TestCase {
         compare(Calendar.dayKey(p.selected), "2026-12-01", "another month: its 1st");
         mouseClick(findChild(p, "calendarPrevious"));
         compare(Calendar.dayKey(p.selected), "2026-11-04", "back to this month: today");
-        // a day of the next month shown in this one's last week moves to that month
+        // a day of the next month shown in this one's last week moves to that month (once the grid has placed the
+        // new month's days: the click goes to the day at that point)
+        waitForItemPolished(findChild(p, "calendarDay_2026-12-02").parent);
         mouseClick(findChild(p, "calendarDay_2026-12-02"));
         compare(findChild(p, "calendarMonth").text, "December 2026");
     }
