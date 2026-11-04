@@ -23,7 +23,7 @@ Noctalia. Both are MIT, so logic may be ported with attribution. Caelestia is GP
 
 ## 2. State right now
 
-Last tagged release: **v0.10.0** (2026-11-04). v0.6.0 to v0.9.0 were tagged the same day at the earlier
+Last tagged release: **v0.11.0** (2026-11-05). v0.6.0 to v0.9.0 were tagged on 2026-11-04 at the earlier
 milestones they mark (`CHANGELOG.md` says which commit each is). Work after the latest tag goes under Unreleased.
 The shell runs as a whole desktop on niri; `docs/PLAN.md` has each part's state and what is left.
 

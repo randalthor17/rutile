@@ -5,6 +5,13 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.11.0
+
+2026-11-05: the sign-in screen, your picture and Rutile's own wallpaper, hidden Wi-Fi, adding calendar events, your
+calendars in widgets, a lighter calendar, the navigation rail.
+
 - **A sign-in screen.** Rutile now has its own greeter for greetd, in the shell's look: the time, your name and a
   password field over the wallpaper, Shut down and Restart, and who signs in to which session when there is a
   choice. It remembers who signed in last and the session they used. Turn it on with the flake's

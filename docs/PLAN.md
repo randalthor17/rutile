@@ -61,7 +61,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   small to large, primary or secondary, extended with a label that collapses to the icon; elevated, filled and
   outlined cards, clickable when `interactive`; in the gallery. No shadows yet.
 - [ ] **1.5** Component kit, remaining: GeminiGlow gradient border (needs a reference image). NavRail done
-  (D103, 2026-11-05): the collapsed rail from the vendored rail tokens, in the gallery; not the expanded one.
+  (D103, v0.11.0): the collapsed rail from the vendored rail tokens, in the gallery; not the expanded one.
   and the 1.5c leftovers when something needs them. Likely next: GeminiGlow, or what Quick Settings (2.6) needs
   first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
@@ -124,7 +124,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
   button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Not done:
   detail pages for the other
-  tiles. Forgetting a saved network: done. Hidden networks (D100): by name and password through nmcli, checked in a
+  tiles. Forgetting a saved network: done. Hidden networks (D100, v0.11.0): by name and password through nmcli, checked in a
   NixOS VM with a simulated radio (`checks.x86_64-linux.hidden-wifi`). Night light (D91): wlsunset,
   warmth and a sunset-to-sunrise schedule (the weather place's sun, or set times) in Settings > Display; not
   verified on a real screen (nested niri has no gamma control). Not verified: Wi-Fi and Bluetooth on real hardware (none active on
@@ -227,11 +227,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Signing in (D95, the maintainer's choice): GNOME Online Accounts adds Google (and Microsoft, Nextcloud...)
   accounts, evolution-data-server syncs them, `rutile-calendar` (native/calendar.c, libecal) reads the shown
   calendars' events with repeats and time zones worked out by EDS, and GNOME Calendar edits them (a click on such
-  an event opens it there; "Open Calendar"). Adding an event (D101): the + beside the day, into an EDS calendar
+  an event opens it there; "Open Calendar"). Adding an event (D101, v0.11.0): the + beside the day, into an EDS calendar
   (`rutile-calendar add`). Not yet: time zones for .ics files
-  (TZID times are taken as local), a real Google account tried. Widgets (D102): the calendar source without a
+  (TZID times are taken as local), a real Google account tried. Widgets (D102, v0.11.0): the calendar source without a
   `path` shows the same calendars (folder, addresses, accounts); the templates use that. The grid is lighter
-  since 2026-11-05: one pointer area and shared circles instead of 42 cells' own, 2922 to 1566 KiB (docs/memory.md).
+  since v0.11.0: one pointer area and shared circles instead of 42 cells' own, 2922 to 1566 KiB (docs/memory.md).
 
 ## Phase 3: windows on niri
 
@@ -352,7 +352,7 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   the wallpaper (D64); Flatpak apps through `rutile-shell flatpak-theming` and a Settings action row, Java apps'
 `_JAVA_AWT_WM_NONREPARENTING` (D66). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
   config beyond the settings' defaults.
-- [ ] **6.2** Started (D97, `shell/greeter/`, `shell/greeter.qml`, `nix/greeter.nix`): the greetd greeter in the
+- [ ] **6.2** Started (D97, v0.11.0, `shell/greeter/`, `shell/greeter.qml`, `nix/greeter.nix`): the greetd greeter in the
   shell's look. The lock screen's face (LockPanel: time, name, the field, the blurred wallpaper) with a bottom row as
   ChromeOS's sign-in screen: Shut down, Restart, the person and the session (menus when there is a choice).
   `GreeterSession` drives Quickshell's `Greetd`: greetd's questions as the field's prompt (secret or visible), a failed
@@ -361,9 +361,9 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   remembered. `nixosModules.greeter`: greetd runs a niri of its own (log to the journal) that starts
   `rutile-shell greeter` and quits after it. Tested offscreen, against greetd's fakegreet (Quickshell test and a
   headless sway run), and in a NixOS VM against real greetd and PAM (`checks.x86_64-linux.greeter`; under sway: niri
-  cannot draw in a VM). Since D98: the session button always shows; Rutile's own wallpaper when none is set (desktop,
+  cannot draw in a VM). Since D98 (v0.11.0): the session button always shows; Rutile's own wallpaper when none is set (desktop,
   lock screen, greeter); each person's shell shares its wallpaper and colors with the greeter through
-  /var/lib/rutile-greeter/users/<name>. Since D99: the person's picture (`~/.face`, else GNOME Settings', else
+  /var/lib/rutile-greeter/users/<name>. Since D99 (v0.11.0): the person's picture (`~/.face`, else GNOME Settings', else
   their initial) on the lock screen and the greeter. Not yet: a real machine.
 - [ ] **6.3** Installer ISO. Postponed by the maintainer (2026-11-04).
 
