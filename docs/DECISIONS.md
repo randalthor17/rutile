@@ -1054,8 +1054,8 @@ gnome-online-accounts, evolution-data-server, gnome-calendar and gnome-online-ac
 (2026-11-04) to tag the milestones they passed rather than one release for everything:
 - v0.6.0 at 367085a: the component kit;
 - v0.7.0 at c0f8cc0: the shell core;
-- v0.8.0 at a634bc3: the Settings app and the Nix package, the first real install;
-- v0.9.0 at 7a1b09e: theming, app indicators, Settings pages, widgets;
+- v0.8.0 at 813615e: the Settings app and the Nix package, the first real install;
+- v0.9.0 at 776217b: theming, app indicators, Settings pages, widgets;
 - v0.10.0 at the commit that split the changelog.
 Each older commit passed `make check` in a worktree of its own before it was tagged. The cut first proposed for
 v0.7.0, 9287215, failed there: a plan-only commit naming D50 and `shell/settingsapp/` before they existed. The
@@ -1206,7 +1206,7 @@ greeter):
   release in CHANGELOG.md, and `tests/test_handoff.py` fails when they do not; the release protocol in the handoff
   sets it.
 - The maintainer asked for the tagged commits to carry their own versions, so the history from the package's first
-  commit (0b27b73, 2026-10-27) on was rewritten (`git filter-branch`): each commit's version is the release at or
+  commit (94e3673, 2026-10-27) on was rewritten (`git filter-branch`): each commit's version is the release at or
   before it (0.7.0 until 0.8.0, and so on), and v0.8.0 to v0.11.0 were moved to the rewritten commits and
   force-pushed. Nothing else in any tree changed. This breaks the rule of never moving a pushed tag, once, by the
   maintainer's decision: the project has no other users, and their own NixOS config is updated with

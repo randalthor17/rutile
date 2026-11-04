@@ -70,7 +70,7 @@ Tagged afterwards, on 2026-11-04, at this commit (2026-11-03 to 11-04): windows 
 
 ## 0.9.0
 
-Tagged afterwards, on 2026-11-04, at commit 7a1b09e (2026-10-27 to 11-03): app theming, app indicators, the Settings pages, the widget system.
+Tagged afterwards, on 2026-11-04, at commit 776217b (2026-10-27 to 11-03): app theming, app indicators, the Settings pages, the widget system.
 
 - **System monitor widgets and charts.** Widgets can show the processor (overall, per core, frequency), memory and
   swap, the disk, the network, the graphics card (use, video memory, temperatures, power, fan, clock; AMD, and NVIDIA
@@ -177,7 +177,7 @@ Tagged afterwards, on 2026-11-04, at commit 7a1b09e (2026-10-27 to 11-03): app t
 
 ## 0.8.0
 
-Tagged afterwards, on 2026-11-04, at commit a634bc3 (2026-10-27 to 10-28): the Settings app, colors in other apps, the Nix package and home-manager module.
+Tagged afterwards, on 2026-11-04, at commit 813615e (2026-10-27 to 10-28): the Settings app, colors in other apps, the Nix package and home-manager module.
 
 - **Fixes from the first real install:** the power menu (and every popup) is gone as soon as it has faded, not
   300 ms later, and popups now fade in as they open. `rutile-shell --help` explains the command and lists every
