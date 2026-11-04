@@ -128,6 +128,7 @@ Scope {
                 error: root.error
                 message: root.message
                 wallpaper: WallpaperService.path
+                avatar: WallpaperService.avatar
                 progress: root.progress
                 onBackgroundReadyChanged: if (backgroundReady) root.started = true
                 Component.onCompleted: if (backgroundReady) root.started = true

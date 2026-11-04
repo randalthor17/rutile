@@ -181,7 +181,15 @@ var GREETER_SHARE_SCRIPT = 'd=$1\n' +
     '[ -d "$d" ] && [ -w "$d" ] || exit 0\n' +
     'put() { [ -f "$1" ] || return 0; cmp -s -- "$1" "$d/$2" && return 0; ' +
     'cp -f -- "$1" "$d/.$2.new" && chmod 644 "$d/.$2.new" && mv -f -- "$d/.$2.new" "$d/$2"; }\n' +
-    'put "$2" wallpaper && put "$3" palette.json\n';
-function greeterShareCommand(dir, wallpaper, palette) {
-    return ["sh", "-c", GREETER_SHARE_SCRIPT, "sh", dir, wallpaper, palette];
+    'put "$2" wallpaper && put "$3" palette.json || exit 1\n' +
+    'if [ -f "$4" ]; then put "$4" avatar; else rm -f -- "$d/avatar"; fi\n';
+function greeterShareCommand(dir, wallpaper, palette, avatar) {
+    return ["sh", "-c", GREETER_SHARE_SCRIPT, "sh", dir, wallpaper, palette, avatar || ""];
+}
+
+// The command that prints the first of `paths` that can be read ("" when none): the greeter's choice of a person's
+// own wallpaper, colors or picture over the system's (D98), the shell's of ~/.face (D99).
+function firstReadableCommand(paths) {
+    return ["sh", "-c", 'for f do [ -n "$f" ] && [ -r "$f" ] && { printf "%s" "$f"; exit 0; }; done; exit 0', "sh"]
+        .concat(paths);
 }

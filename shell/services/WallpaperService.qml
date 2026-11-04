@@ -41,6 +41,16 @@ Singleton {
     // what the sign-in screen shows for this person (D98): RUTILE_GREETER_USER_DIR replaces it in the tests
     readonly property string greeterDir: Quickshell.env("RUTILE_GREETER_USER_DIR")
         || ("/var/lib/rutile-greeter/users/" + (Quickshell.env("USER") || "nobody"))
+    // the person's picture (D99): ~/.face, as GDM and SDDM read it; shared with the greeter too (gone: unshared)
+    readonly property string avatarPath: Quickshell.env("RUTILE_AVATAR") || (Quickshell.env("HOME") + "/.face")
+    // what the lock screen shows: that, else the one GNOME's Settings keeps for them, else "" (their initial)
+    property string avatar: ""
+    Process {
+        id: avatarPick
+        command: Files.firstReadableCommand([root.avatarPath, "/var/lib/AccountsService/icons/"
+                                             + (Quickshell.env("USER") || "nobody")])
+        stdout: StdioCollector { onStreamFinished: root.avatar = text }
+    }
     property bool shareAgain: false
     function shareWithGreeter() {
         if (sharer.running) shareAgain = true;
@@ -49,7 +59,7 @@ Singleton {
     onPathChanged: Qt.callLater(shareWithGreeter)
     Process {
         id: sharer
-        command: Files.greeterShareCommand(root.greeterDir, root.path, root.palettePath)
+        command: Files.greeterShareCommand(root.greeterDir, root.path, root.palettePath, root.avatarPath)
         onExited: {
             if (!root.shareAgain) return;
             root.shareAgain = false;
@@ -75,6 +85,7 @@ Singleton {
     }
     onWantedChanged: Qt.callLater(renderPalette)
     Component.onCompleted: {
+        avatarPick.running = true;
         Qt.callLater(renderPalette);
         Qt.callLater(shareWithGreeter);
     }

@@ -24,6 +24,7 @@ Item {
     property string error: ""
     property string info: ""
     property string wallpaper: ""
+    property string avatar: ""              // the person's picture file; "": their initial
     property real progress: 1
 
     readonly property var userEntry: users.find(u => u.name === user) ?? null
@@ -48,6 +49,7 @@ Item {
         secret: root.secret
         placeholder: root.promptText.placeholder
         wallpaper: root.wallpaper
+        avatar: root.avatar
         progress: root.progress
         onSubmitted: text => root.submitted(text)
         onEdited: root.edited()

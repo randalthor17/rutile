@@ -358,7 +358,8 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   headless sway run), and in a NixOS VM against real greetd and PAM (`checks.x86_64-linux.greeter`; under sway: niri
   cannot draw in a VM). Since D98: the session button always shows; Rutile's own wallpaper when none is set (desktop,
   lock screen, greeter); each person's shell shares its wallpaper and colors with the greeter through
-  /var/lib/rutile-greeter/users/<name>. Not yet: avatars, a real machine.
+  /var/lib/rutile-greeter/users/<name>. Since D99: the person's picture (`~/.face`, else GNOME Settings', else
+  their initial) on the lock screen and the greeter. Not yet: a real machine.
 - [ ] **6.3** Installer ISO.
 
 ## Phase 7: QA for v1

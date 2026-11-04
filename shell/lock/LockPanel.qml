@@ -3,8 +3,8 @@
 // there is no wallpaper). Enter sends the password (`submitted`); while `busy` the field takes no typing; `error`
 // shows under the field and the field shakes. `progress` (0 to 1, from LockScreen's spring) is the lock's motion:
 // at 0 the wallpaper is sharp and nothing is on it, at 1 it is blurred and the clock and field have risen into
-// place; unlocking runs it back to 0. Plain QtQuick, so it tests offscreen: LockScreen gives it the time, the user,
-// the wallpaper and the state.
+// place; unlocking runs it back to 0. Above the name, the person's picture in a circle, else their initial (D99).
+// Plain QtQuick, so it tests offscreen: LockScreen gives it the time, the user, the wallpaper and the state.
 import QtQuick
 import QtQuick.Effects
 import qs.common
@@ -24,6 +24,7 @@ Rectangle {
     property string placeholder: "Password"
     property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
     property string wallpaper: ""        // an image file's path; "" for none
+    property string avatar: ""           // the person's picture file (~/.face); "" or unreadable: their initial
     property real progress: 1            // the lock's motion, see above; may overshoot 1 a little (a spring)
 
     readonly property real shown: Math.max(0, Math.min(1, progress))
@@ -128,6 +129,53 @@ Rectangle {
             font: Type.font(Type.titleMedium)
         }
         Item { width: 1; height: Spacing.xl }
+        Item {
+            id: avatar
+            objectName: "lockAvatar"
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 96
+            height: 96
+            readonly property bool hasPicture: picture.status === Image.Ready
+
+            Rectangle {
+                anchors.fill: parent
+                visible: !avatar.hasPicture
+                radius: Shapes.full
+                color: Colors.primaryContainer
+                Text {
+                    objectName: "lockInitial"
+                    anchors.centerIn: parent
+                    text: root.user.charAt(0).toUpperCase()
+                    color: Colors.primaryContainerOn
+                    font: Type.font(Type.headlineLarge)
+                }
+            }
+            Image {
+                id: picture
+                anchors.fill: parent
+                visible: false                   // drawn through the round mask below
+                source: root.avatar !== "" ? "file://" + root.avatar : ""
+                sourceSize: Qt.size(2 * width, 2 * height)
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: false                     // a picture changed under the same name shows the new one
+            }
+            Rectangle {
+                id: avatarMask
+                anchors.fill: parent
+                radius: Shapes.full
+                layer.enabled: true
+                visible: false
+            }
+            MultiEffect {
+                objectName: "lockAvatarPicture"
+                anchors.fill: parent
+                visible: avatar.hasPicture
+                source: picture
+                maskEnabled: true
+                maskSource: avatarMask
+            }
+        }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.user

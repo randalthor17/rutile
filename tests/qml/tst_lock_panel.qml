@@ -70,6 +70,21 @@ TestCase {
         compare(edited.count, 1, "no error: nothing to clear");
     }
 
+    function file(name) { return Qt.resolvedUrl("../data/" + name).toString().replace("file://", ""); }
+
+    function test_avatar() {
+        const p = createTemporaryObject(panelComp, root);
+        const picture = findChild(p, "lockAvatarPicture");
+        compare(findChild(p, "lockInitial").text, "R", "no picture: the initial");
+        verify(findChild(p, "lockInitial").visible);
+        verify(!picture.visible);
+        p.avatar = file("red.png");
+        tryVerify(() => picture.visible, 3000, "their picture, in a circle");
+        verify(!findChild(p, "lockInitial").visible, "a picture hides the initial");
+        p.avatar = "";
+        tryVerify(() => !picture.visible && findChild(p, "lockInitial").visible, 3000, "none: the initial again");
+    }
+
     function test_motion() {
         const p = createTemporaryObject(panelComp, root, { progress: 0 });
         const content = findChild(p, "lockContent");

@@ -1117,3 +1117,15 @@ greeter):
 - **Alternatives.**
   - A system service copying from homes: it reads every home as root.
   - AccountsService, which keeps a background per user only for GNOME's greeter: another daemon and no colors.
+
+**D99. The person's picture on the lock and sign-in screens** (plan 6.2, 2026-11-04):
+- **Where it comes from.** `~/.face`, the file GDM, SDDM and LightDM read, else the picture GNOME Settings keeps for the
+  person (`/var/lib/AccountsService/icons/<name>`), else their initial on a circle in the primary container color.
+- **Shown** above the name in a circle (LockPanel's `avatar`), on the lock screen and the greeter alike.
+- **Shared** as the wallpaper is (D98): the shell copies `~/.face` to the greeter's folder as `avatar` when it starts,
+  and removes it there when `~/.face` is gone. The greeter tries that copy, then AccountsService's. The shell and
+  the greeter look the file up once with `Files.firstReadableCommand`, so a missing file never reaches an Image
+  (Qt warns on each one).
+- **Costs.** A new `~/.face` shows at the next start of the shell, not at once. Anyone on the machine can read the copy.
+- **Alternatives.** AccountsService's D-Bus API: another daemon for one picture, and GNOME Settings' files are read
+  anyway when they are there. A picture setting in Settings: later, if `~/.face` proves awkward.

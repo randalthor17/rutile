@@ -191,6 +191,8 @@ choice is remembered in `/var/lib/rutile-greeter/greeter/state.json`. Its log: `
 The sign-in screen shows each person's wallpaper and colors as their desktop has them (D98). Each person's Rutile Shell
 copies them to `/var/lib/rutile-greeter/users/<name>`, which the module makes for every normal user, so they appear
 after that person has signed in once. Before that it shows the wallpaper and colors above, or Rutile's own.
+The person's picture comes the same way from `~/.face` (copied when their shell starts), else from GNOME Settings'
+picture for them, else their initial (D99).
 
 ## App indicators
 

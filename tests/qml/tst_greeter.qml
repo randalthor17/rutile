@@ -3,6 +3,7 @@ import QtTest
 import qs.common
 import qs.greeter
 import "../qs/greeter/Greeter.js" as Greeter
+import "../qs/services/Files.js" as Files
 
 TestCase {
     id: root
@@ -81,7 +82,7 @@ TestCase {
     }
 
     function test_first_readable() {
-        const cmd = Greeter.firstReadableCommand(["/u/alice/wallpaper", "", "/builtin.jpg"]);
+        const cmd = Files.firstReadableCommand(["/u/alice/wallpaper", "", "/builtin.jpg"]);
         compare(cmd.slice(0, 2).join(" "), "sh -c");
         compare(cmd.slice(-3).join(","), "/u/alice/wallpaper,,/builtin.jpg", "in order; an empty one skipped by the script");
     }
@@ -114,6 +115,9 @@ TestCase {
         compare(p.face.message, "");
         compare(findChild(p, "greeterUser").text, "Rand Al'Thor");
         compare(findChild(p, "greeterSession").text, "Niri");
+        compare(findChild(p, "lockInitial").text, "R", "the person's initial without a picture");
+        p.avatar = Qt.resolvedUrl("../data/red.png").toString().replace("file://", "");
+        tryVerify(() => findChild(p, "lockAvatarPicture").visible, 3000, "their picture");
         p.prompt = "7 + 2:";
         p.secret = false;
         compare(p.face.field.echoMode, TextInput.Normal, "a visible question shows its answer");

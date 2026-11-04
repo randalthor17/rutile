@@ -14,6 +14,7 @@ import Quickshell.Io
 import qs.common
 import qs.greeter
 import "greeter/Greeter.js" as Greeter
+import "services/Files.js" as Files
 
 ShellRoot {
     id: greeter
@@ -21,6 +22,9 @@ ShellRoot {
     readonly property string statePath: Quickshell.env("RUTILE_GREETER_STATE")
         || "/var/lib/rutile-greeter/greeter/state.json"
     readonly property string usersDir: Quickshell.env("RUTILE_GREETER_USERS") || "/var/lib/rutile-greeter/users"
+    // GNOME Settings' pictures (AccountsService), after the one each person's shell shares (D99)
+    readonly property string accountsIcons: Quickshell.env("RUTILE_ACCOUNTS_ICONS") || "/var/lib/AccountsService/icons"
+    property string avatar: ""
     readonly property string builtinWallpaper: Quickshell.shellDir + "/../theme/wallpapers/rutile-default.jpg"
     // the chosen person's, else the system's (D98)
     property string wallpaper: ""
@@ -60,30 +64,39 @@ ShellRoot {
     // a person chosen while the last one's are still being looked up: look again after
     property bool lookAgain: false
     function pickLooks() {
-        if (wallpaperPick.running || palettePick.running) {
+        if (wallpaperPick.running || palettePick.running || avatarPick.running) {
             lookAgain = true;
             return;
         }
         wallpaperPick.running = true;
         palettePick.running = true;
+        avatarPick.running = true;
     }
     function looked() {
-        if (wallpaperPick.running || palettePick.running || !lookAgain) return;
+        if (wallpaperPick.running || palettePick.running || avatarPick.running || !lookAgain) return;
         lookAgain = false;
         pickLooks();
     }
     Process {
         id: wallpaperPick
-        command: Greeter.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/wallpaper",
+        command: Files.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/wallpaper",
                                                Quickshell.env("RUTILE_GREETER_WALLPAPER"), greeter.builtinWallpaper])
         stdout: StdioCollector { onStreamFinished: greeter.wallpaper = text }
         onExited: greeter.looked()
     }
     Process {
         id: palettePick
-        command: Greeter.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/palette.json",
+        command: Files.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/palette.json",
                                                Quickshell.env("RUTILE_PALETTE")])
         stdout: StdioCollector { onStreamFinished: if (text !== "") greeter.palette = text }
+        onExited: greeter.looked()
+    }
+    // their picture (D99): the ~/.face their shell shared, else GNOME Settings' one, else their initial ("")
+    Process {
+        id: avatarPick
+        command: Files.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/avatar",
+                                             greeter.accountsIcons + "/" + greeter.user])
+        stdout: StdioCollector { onStreamFinished: greeter.avatar = text }
         onExited: greeter.looked()
     }
 
@@ -185,6 +198,7 @@ ShellRoot {
                 error: auth.error
                 info: auth.info
                 wallpaper: greeter.wallpaper
+                avatar: greeter.avatar
                 progress: motion.value
                 onSubmitted: text => auth.answer(text)
                 onEdited: auth.error = ""
@@ -204,6 +218,7 @@ ShellRoot {
                                     phase: auth.phase, prompt: auth.prompt, secret: auth.secret, error: auth.error,
                                     available: auth.available, leaving: greeter.leaving, progress: motion.value,
                                     settled: motion.settled, wallpaper: greeter.wallpaper, palette: greeter.palette,
+                                    avatar: greeter.avatar,
                                     saved: greeter.saved });
         }
         // as typing it and pressing Enter

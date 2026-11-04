@@ -468,6 +468,8 @@ def run_wayland_smoke(screenshot=None):
             "RUTILE_CALENDAR_APP": str(ROOT / "tests" / "qs" / "bin" / "fake-app"),
             # the greeter's folder for this person (D98): the shell shares its wallpaper and colors there
             "RUTILE_GREETER_USER_DIR": str(comp.runtime / "greeter-share"),
+            # the person's picture (D99), never the user's ~/.face
+            "RUTILE_AVATAR": str(comp.runtime / "face.png"),
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         no_polkit_agent(comp.runtime / "config")
@@ -475,6 +477,7 @@ def run_wayland_smoke(screenshot=None):
         calendars = comp.runtime / "calendars"
         (calendars / "personal").mkdir(parents=True)
         (comp.runtime / "greeter-share").mkdir()           # as the greeter module makes it (D98)
+        shutil.copy(ROOT / "theme" / "wallpapers" / "rutile-default.jpg", comp.runtime / "face.png")
         today = datetime.date.today()
         (calendars / "personal" / "a.ics").write_text(
             "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Smoke standup\r\n"
@@ -640,6 +643,8 @@ def run_wayland_smoke(screenshot=None):
                         problems.append("greeter share: the wallpaper was not copied to the greeter's folder")
                     if not (share / "palette.json").exists():
                         problems.append("greeter share: the palette was not copied to the greeter's folder")
+                    if not (share / "avatar").exists():
+                        problems.append("greeter share: the picture (RUTILE_AVATAR) was not copied to the greeter's folder")
                     # the wallpaper: an absolute path only; set, it shows on the screen and the palette follows it
                     sys.path.insert(0, str(ROOT / "tests"))
                     import test_palette
@@ -1267,8 +1272,10 @@ def run_greeter_smoke(screenshot=None):
         (users / "alice").mkdir()
         shutil.copy(ROOT / "theme" / "wallpapers" / "rutile-default.jpg", users / "user" / "wallpaper")
         shutil.copy(rt / "palette.json", users / "user" / "palette.json")
+        shutil.copy(ROOT / "theme" / "wallpapers" / "rutile-default.jpg", users / "user" / "avatar")
+        (rt / "icons").mkdir()                              # no GNOME Settings pictures (D99)
         env = comp.env({"RUTILE_PASSWD": str(rt / "passwd"), "RUTILE_SESSION_DIRS": str(rt / "data"),
-                        "RUTILE_GREETER_USERS": str(users),
+                        "RUTILE_GREETER_USERS": str(users), "RUTILE_ACCOUNTS_ICONS": str(rt / "icons"),
                         "RUTILE_GREETER_STATE": str(rt / "greeter-state.json"), "RUTILE_GREETER_NO_QUIT": "1",
                         "RUTILE_PALETTE": str(rt / "palette.json")})
         log_path = rt / "greeter.log"
@@ -1302,9 +1309,9 @@ def run_greeter_smoke(screenshot=None):
             if (st.get("users") != ["alice", "user"] or st.get("user") != "alice" or st.get("sessions") != ["niri", "sway"]
                     or st.get("session") != "niri" or st.get("prompt") != "Password:" or not st.get("available")
                     or not st.get("wallpaper", "").endswith("/theme/wallpapers/rutile-default.jpg")
-                    or st.get("palette") != str(rt / "palette.json")):
+                    or st.get("palette") != str(rt / "palette.json") or st.get("avatar") != ""):
                 problems.append(f"greeter start: {st}, expected alice and niri first, both people and sessions, "
-                                "greetd asking for the password, Rutile's own wallpaper and the system's colors")
+                                "greetd asking for the password, Rutile's own wallpaper, the system's colors, no picture")
             if screenshot and shutil.which("grim"):
                 time.sleep(1)
                 subprocess.run([shutil.which("grim"), str(screenshot)], env=comp.env(), timeout=10)
@@ -1313,8 +1320,10 @@ def run_greeter_smoke(screenshot=None):
                 problems.append("greeter chooseUser/chooseSession: expected an unknown person refused, the rest taken")
             st = wait(lambda s: s.get("user") == "user" and s.get("phase") == "prompt"
                       and s.get("wallpaper") == str(users / "user" / "wallpaper"))
-            if st.get("wallpaper") != str(users / "user" / "wallpaper") or st.get("palette") != str(users / "user" / "palette.json"):
-                problems.append(f"greeter user's looks: {st}, expected the wallpaper and colors their shell shared")
+            st = wait(lambda s: s.get("avatar") == str(users / "user" / "avatar"), 5)
+            if (st.get("wallpaper") != str(users / "user" / "wallpaper") or st.get("palette") != str(users / "user" / "palette.json")
+                    or st.get("avatar") != str(users / "user" / "avatar")):
+                problems.append(f"greeter user's looks: {st}, expected the wallpaper, colors and picture their shell shared")
             ipc("answer", "password")
             st = wait(lambda s: s.get("prompt") == "7 + 2:")
             if st.get("secret") is not False:
