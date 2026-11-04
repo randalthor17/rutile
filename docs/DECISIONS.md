@@ -1129,3 +1129,26 @@ greeter):
 - **Costs.** A new `~/.face` shows at the next start of the shell, not at once. Anyone on the machine can read the copy.
 - **Alternatives.** AccountsService's D-Bus API: another daemon for one picture, and GNOME Settings' files are read
   anyway when they are there. A picture setting in Settings: later, if `~/.face` proves awkward.
+
+**D100. Hidden Wi-Fi networks through nmcli** (plan 2.6, 2026-11-04):
+- **What.** Under the Wi-Fi page's list, "Hidden network" asks for a network's name and its password (left empty for
+  an open one) and joins it. While it does, the row says "Joining <name>…"; a failure shows a toast ("Couldn't join
+  <name>"); a success shows as the network connected in the list.
+- **How.** Quickshell's Networking only joins networks a scan has found, and a hidden one is never in a scan.
+  `shell/services/hidden-wifi.sh NAME open|psk` asks NetworkManager through `nmcli` (part of NetworkManager, which
+  Wi-Fi needs anyway; nothing new to install): it reuses a saved connection of that name (marking it hidden) or adds
+  one as hidden, then brings it up, and removes a connection it added when joining fails, so a mistyped name or
+  password leaves nothing behind. The password goes to the script on stdin and on to nmcli as its `passwd-file`
+  through a pipe (`printf` is the shell's own), so it never appears in any process's arguments, which every user
+  can read, nor on the disk. NetworkManager keeps it with the connection, as for a visible network.
+- **Checked** in a NixOS VM with a simulated radio (`nix build .#checks.x86_64-linux.hidden-wifi`, not in
+  `make check`): hostapd offers a hidden WPA2 network and a hidden open one, NetworkManager is the client, and the
+  script joins both; a wrong password and an unknown name leave no connection; the saved password (with quotes,
+  `$`, `;` and spaces) joins again without asking; joining again reuses the connection. The QML side runs the real
+  script against a stand-in nmcli (`tests/qs/tst_hidden_wifi.qml`).
+- **Costs.** A wrong password fails only after nmcli's 90 seconds (NetworkManager keeps retrying with the same
+  password), so the row says "Joining…" that long. Finding a hidden network takes an active scan of every channel
+  (about 15 seconds in the VM). Not tried with real hardware. Enterprise (802.1X) hidden networks are not offered.
+- **Alternatives.** NetworkManager's D-Bus API directly (AddAndActivateConnection with the secrets): no stand-in
+  as simple as a fake nmcli for the tests, and more code for the same result. `nmcli device wifi connect ... hidden
+  yes password ...`: puts the password in the arguments.

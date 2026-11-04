@@ -2,7 +2,8 @@ pragma ComponentBehavior: Bound
 // A Quick Settings tile's detail page (plan 2.6), as Googlebook opens one in place of the tiles: back, the name and
 // its switch, then the list. "wifi" lists the networks (Details.js orders them): a click connects, disconnects, or
 // first asks for the password, typed in a field under that network (Enter connects, Escape cancels).
-// A saved network has a button to forget it. "bluetooth" lists the adapter's devices: a click connects (pairing first) or disconnects. The page asks the
+// A saved network has a button to forget it. Under the list, "Hidden network" asks for a network's name and its
+// password (none for an open one) and joins it (D100). "bluetooth" lists the adapter's devices: a click connects (pairing first) or disconnects. The page asks the
 // backend to scan or discover while it is shown. Plain QtQuick, through the panel's backend.
 import QtQuick
 import qs.common
@@ -16,6 +17,7 @@ Column {
     required property var backend
     property string page: ""                // "wifi" | "bluetooth"
     property string askingFor: ""           // the network whose password is being typed
+    property bool askingHidden: false       // a hidden network's name and password are being typed
     readonly property var live: Controls.state(page, backend)
     readonly property bool isWifi: page === "wifi"
     readonly property var rows: isWifi ? Details.networks(backend?.wifiNetworks)
@@ -30,6 +32,7 @@ Column {
             if (action === "disconnect") backend.disconnectWifi(row.name);
             else if (action === "connect") backend.connectWifi(row.name, "");
             else if (action === "password") {
+                askingHidden = false;
                 askingFor = askingFor === row.name ? "" : row.name;
                 return;
             }
@@ -44,6 +47,15 @@ Column {
         if (text === "") return;
         backend.connectWifi(askingFor, text);
         askingFor = "";
+    }
+    function joinHidden() {
+        const name = hiddenName.text.trim();
+        if (name === "") {
+            hiddenName.input.forceActiveFocus();
+            return;
+        }
+        backend.joinHiddenWifi(name, hiddenPassword.text);
+        askingHidden = false;
     }
     function scan(on) {
         if (!backend) return;
@@ -160,6 +172,54 @@ Column {
                     }
                 }
             }
+        }
+    }
+
+    // ---- a hidden network (D100) ----
+    ListItem {
+        objectName: "qsHiddenNetwork"
+        visible: root.isWifi && root.live.active
+        width: parent.width
+        tone: Colors.surfaceContainerHigh
+        iconName: "add"
+        text: "Hidden network"
+        supportingText: root.backend?.hiddenJoining ? "Joining " + root.backend.hiddenName + "…" : "Join a network by its name"
+        onClicked: {
+            root.askingFor = "";
+            root.askingHidden = !root.askingHidden;
+        }
+    }
+    TextField {
+        id: hiddenName
+        objectName: "qsHiddenName"
+        visible: root.isWifi && root.askingHidden
+        width: parent.width
+        label: "Network name"
+        backgroundColor: Colors.surfaceContainer
+        onVisibleChanged: if (visible) { text = ""; input.forceActiveFocus(); }
+        onAccepted: text => { if (text.trim() !== "") hiddenPassword.input.forceActiveFocus(); }
+        Keys.onEscapePressed: event => {
+            root.askingHidden = false;
+            event.accepted = true;
+        }
+    }
+    TextField {
+        id: hiddenPassword
+        property bool shown: false
+        objectName: "qsHiddenPassword"
+        visible: hiddenName.visible
+        width: parent.width
+        label: "Password"
+        supportingText: "Leave empty for an open network"
+        password: !shown
+        trailingIconName: shown ? "visibility_off" : "visibility"
+        backgroundColor: Colors.surfaceContainer
+        onTrailingClicked: shown = !shown
+        onVisibleChanged: if (visible) { text = ""; shown = false; }
+        onAccepted: root.joinHidden()
+        Keys.onEscapePressed: event => {
+            root.askingHidden = false;
+            event.accepted = true;
         }
     }
 }

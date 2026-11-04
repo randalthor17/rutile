@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# A stand-in for nmcli in tests (tests/qs/tst_hidden_wifi.qml), so no real network is joined or saved. Each call
+# appends its arguments to $FAKE_NMCLI_LOG as one line, and what it reads for a `passwd-file /dev/stdin` as a
+# "stdin: " line. `connection show id NAME` finds only names listed in $FAKE_NMCLI_LOG.known; `connection up`
+# fails for the network "nowhere", as for a name no access point has.
+echo "$*" >> "$FAKE_NMCLI_LOG"
+args=" $* "
+case $args in
+    *" connection show id "*)
+        grep -Fxq -- "${*: -1}" "$FAKE_NMCLI_LOG.known" 2>/dev/null; exit ;;
+    *" connection up id "*)
+        [[ $args == *" passwd-file /dev/stdin "* ]] && echo "stdin: $(cat)" >> "$FAKE_NMCLI_LOG"
+        [[ $args == *" id nowhere "* ]] && { echo "Error: Connection activation failed: No network with SSID 'nowhere' found." >&2; exit 4; }
+        exit 0 ;;
+esac
+exit 0

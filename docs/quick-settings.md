@@ -123,7 +123,8 @@ Detail pages (D89): the Wi-Fi or Bluetooth tile's body replaces the panel's cont
 its name and switch, and a list. Wi-Fi lists the networks the device sees (one row per name, the connected first,
 then saved ones, then by signal); a click connects, disconnects, or asks for the password in a field under the
 network (Enter connects, Escape cancels; NetworkManager keeps the password with the connection); a saved network has a
-button to forget it. A network that needs
+button to forget it. "Hidden network" under the list asks for a network's name and password (empty for an open one)
+and joins it through nmcli (D100); a failure shows a toast. A network that needs
 more than a password (enterprise sign-in) does nothing. Bluetooth lists the adapter's devices (connected, then
 paired, then by name): a click connects or disconnects; one not paired is trusted and paired, then connected once
 BlueZ says it is paired. While a page is open NetworkManager scans and BlueZ discovers. `ipc call quicksettings
@@ -156,7 +157,7 @@ window (`niri msg action focus-column-right`) closed the panel.
 
 ## Not done yet
 
-- Closing on a click on another program's bar (D90 covers the shell's own desktop, shelf and clock). Detail pages for the other tiles; hidden networks.
+- Closing on a click on another program's bar (D90 covers the shell's own desktop, shelf and clock). Detail pages for the other tiles.
 - Blur behind the panel (`BackgroundEffect`, D38): the panel is opaque like Googlebook's for now.
 - **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path
   live), several screens; the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real

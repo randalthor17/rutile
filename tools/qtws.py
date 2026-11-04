@@ -361,8 +361,9 @@ def under_fakegreet(cmd, env, ws, timeout):
     exits by itself, so it is stopped once the greeter has. A CompletedProcess like subprocess.run's."""
     out, rc = ws / "greeter.out", ws / "greeter.rc"
     script = f"{shlex.join(cmd)} > {shlex.quote(str(out))} 2>&1; echo $? > {shlex.quote(str(rc))}"
+    # cwd: fakegreet makes its greetd.sock in the current directory (a stray socket in the repo breaks `nix develop`)
     proc = subprocess.Popen([shutil.which("fakegreet"), script], env=env, stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL, start_new_session=True)
+                            stderr=subprocess.DEVNULL, start_new_session=True, cwd=ws)
     deadline = time.time() + timeout
     try:
         while not rc.exists() and time.time() < deadline:
@@ -1280,7 +1281,8 @@ def run_greeter_smoke(screenshot=None):
                         "RUTILE_PALETTE": str(rt / "palette.json")})
         log_path = rt / "greeter.log"
         proc = subprocess.Popen([fake, f"{shlex.join([qs, '-p', str(greeter)])} > {shlex.quote(str(log_path))} 2>&1"],
-                                env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                                env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+                                cwd=rt)                     # its greetd.sock there, not in the repo
 
         def ipc(*args):
             r = subprocess.run([qs, "-p", str(greeter), "ipc", "call", "greeter", *args], env=env,

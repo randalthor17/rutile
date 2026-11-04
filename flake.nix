@@ -32,6 +32,10 @@
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         greeterModule = self.nixosModules.greeter;
       };
+      # Joining a hidden Wi-Fi network with a simulated radio (needs KVM): nix build .#checks.x86_64-linux.hidden-wifi -L
+      checks.x86_64-linux.hidden-wifi = import ./nix/tests/hidden-wifi.nix {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      };
 
       # programs.rutile: the shell as a user service, its niri rules and binds, and its settings (D45, D55,
       # nix/home-manager.nix). The package defaults to this flake's.

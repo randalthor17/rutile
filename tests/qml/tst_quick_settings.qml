@@ -67,6 +67,9 @@ TestCase {
             function disconnectWifi(n) { log("disconnectWifi " + n); }
             function forgetWifi(n) { log("forgetWifi " + n); }
             function setWifiScanning(b) { log("wifiScanning " + b); }
+            property bool hiddenJoining: false
+            property string hiddenName: ""
+            function joinHiddenWifi(n, p) { log("joinHiddenWifi " + n + (p ? " " + p : "")); }
             function connectBluetooth(a) { log("connectBluetooth " + a); }
             function disconnectBluetooth(a) { log("disconnectBluetooth " + a); }
             function setBluetoothDiscovering(b) { log("discovering " + b); }
@@ -232,6 +235,46 @@ TestCase {
         compare(t.panel.details, "");
         compare(t.backend.calls[t.backend.calls.length - 1], "wifiScanning false");
         verify(findChild(t.panel, "qsBrightness").visible);
+    }
+
+    function test_wifi_hidden_network() {
+        var t = make();
+        openDetails(t, "wifi");
+        var item = findChild(t.panel, "qsHiddenNetwork");
+        var name = findChild(t.panel, "qsHiddenName");
+        var password = findChild(t.panel, "qsHiddenPassword");
+        verify(item.visible);
+        verify(!name.visible && !password.visible, "asks nothing until chosen");
+        clickItem(row(t.panel, "Neighbour"));
+        clickItem(item);
+        verify(name.visible && password.visible);
+        verify(!findChild(t.panel, "qsPassword_Neighbour").visible, "one question at a time");
+        tryVerify(() => name.focused, 1000, "the name takes the keys");
+        var n = t.backend.calls.length;
+        keyClick(Qt.Key_Return);
+        compare(t.backend.calls.length, n, "no name: nothing joined");
+        for (const c of "Lab 5") keyClick(c);
+        keyClick(Qt.Key_Return);
+        tryVerify(() => password.focused, 1000, "Enter goes on to the password");
+        for (const c of "pw") keyClick(c);
+        keyClick(Qt.Key_Return);
+        compare(t.backend.calls[t.backend.calls.length - 1], "joinHiddenWifi Lab 5 pw");
+        verify(!name.visible, "the form closes");
+        // an open one: no password; Escape cancels
+        clickItem(item);
+        compare(name.text, "", "a fresh form");
+        for (const c of "Open") keyClick(c);
+        keyClick(Qt.Key_Return);
+        keyClick(Qt.Key_Return);
+        compare(t.backend.calls[t.backend.calls.length - 1], "joinHiddenWifi Open");
+        clickItem(item);
+        keyClick(Qt.Key_Escape);
+        verify(!name.visible, "Escape cancels");
+        t.backend.hiddenJoining = true;
+        t.backend.hiddenName = "Lab 5";
+        compare(item.supportingText, "Joining Lab 5…");
+        t.backend.wifiEnabled = false;
+        verify(!item.visible, "Wi-Fi off: nothing to join");
     }
 
     function test_wifi_switch_and_empty_page() {

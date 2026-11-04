@@ -444,5 +444,15 @@ response") and its answers then go to the wrong questions. Wait a moment (300 ms
 fails with "nope", which looks like a bug in the greeter. It never exits on its own either: stop it once the greeter
 has.
 
+**A Quickshell Process's `running` turns true only once it has started.** NetworkService's "joining" read
+`running` just after setting it and saw false, so a second join was not refused. Keep a flag of your own, set
+with the request and cleared in `onExited`.
+
+**Wi-Fi in a NixOS VM test** (mac80211_hwsim, hostapd on wlan0, NetworkManager on wlan1): qemu-vm.nix turns
+`networking.wireless` off with mkVMOverride, which also stops NetworkManager's wpa_supplicant ("Failed to D-Bus
+activate wpa_supplicant service"): set it back with `lib.mkOverride 0 true`. The firewall drops DHCP to a dnsmasq
+on the access point's side, so NetworkManager waits in ip-config until its timeout: trust those interfaces.
+NixOS's NetworkManager logs only warnings; `networking.networkmanager.logLevel = "INFO"` shows each state.
+
 **niri cannot draw in a QEMU VM without a 3D GPU** ("no allocator available for device"), and has no software
 renderer; sway can (`WLR_RENDERER=pixman`). A VM test of anything niri hosts runs it under sway.

@@ -123,7 +123,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
   button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Not done:
   detail pages for the other
-  tiles, hidden networks. Forgetting a saved network: done. Night light (D91): wlsunset,
+  tiles. Forgetting a saved network: done. Hidden networks (D100): by name and password through nmcli, checked in a
+  NixOS VM with a simulated radio (`checks.x86_64-linux.hidden-wifi`). Night light (D91): wlsunset,
   warmth and a sunset-to-sunrise schedule (the weather place's sun, or set times) in Settings > Display; not
   verified on a real screen (nested niri has no gamma control). Not verified: Wi-Fi and Bluetooth on real hardware (none active on
   the maintainer's machine).
@@ -360,7 +361,7 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   lock screen, greeter); each person's shell shares its wallpaper and colors with the greeter through
   /var/lib/rutile-greeter/users/<name>. Since D99: the person's picture (`~/.face`, else GNOME Settings', else
   their initial) on the lock screen and the greeter. Not yet: a real machine.
-- [ ] **6.3** Installer ISO.
+- [ ] **6.3** Installer ISO. Postponed by the maintainer (2026-11-04).
 
 ## Phase 7: QA for v1
 

@@ -54,11 +54,11 @@ surfaces), no focus ring. See `docs/components.md`.
 1. The maintainer tries the shell on the real session with the features together (Quick Settings with real Wi-Fi,
    Bluetooth and Night light; Settings > Windows (D88) with a real pointer; the calendar with a Google account after
    the NixOS services in `docs/install.md`, D95) and reports what looks or works wrong.
-2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97);
-   then the installer ISO (6.3).
+2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97).
+   The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
 3. Finish the component kit (1.5: NavRail, GeminiGlow once a reference image exists) and the gallery review (1.7).
-4. Smaller open parts: hidden Wi-Fi networks (2.6), adding events from the popup, calendar addresses and
-   evolution-data-server for widgets.
+4. Smaller open parts: adding events from the popup, calendar addresses and evolution-data-server for widgets,
+   the calendar popup's memory (one MouseArea for the grid).
 5. Widget generation and the local-model trial stay deferred (D82).
 
 ## 3. Resume in five minutes
@@ -216,7 +216,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
 | `settings/` | `schema.json`: every setting of the shell, read by the shell and the home-manager module (D45) |
-| `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings), `greeter.nix` (`nixosModules.greeter`, D97), `nix/tests/greeter.nix` (its VM test) |
+| `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings), `greeter.nix` (`nixosModules.greeter`, D97), `nix/tests/greeter.nix` (its VM test), `nix/tests/hidden-wifi.nix` (hidden Wi-Fi with a simulated radio, D100) |
 | `widgets/` | the widget spec (`spec.schema.json`), the data sources' catalog (`sources.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |

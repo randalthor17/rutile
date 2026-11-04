@@ -63,6 +63,9 @@ QtObject {
     function disconnectWifi(name) { NetworkService.disconnectWifi(name); }
     function forgetWifi(name) { NetworkService.forgetWifi(name); }
     function setWifiScanning(on) { NetworkService.setWifiScanning(on); }
+    readonly property bool hiddenJoining: NetworkService.hiddenJoining
+    readonly property string hiddenName: NetworkService.hiddenName
+    function joinHiddenWifi(name, password) { NetworkService.joinHiddenWifi(name, password); }
     function connectBluetooth(address) { BluetoothService.connectDevice(address); }
     function disconnectBluetooth(address) { BluetoothService.disconnectDevice(address); }
     function setBluetoothDiscovering(on) { BluetoothService.setDiscovering(on); }
