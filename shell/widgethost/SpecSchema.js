@@ -726,16 +726,13 @@ var schema = {
                 "calendar": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": [
-                        "path"
-                    ],
                     "properties": {
                         "path": {
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 300,
                             "pattern": "^(/|~/)",
-                            "description": "An .ics file or a folder of them, absolute or from ~/."
+                            "description": "An .ics file or a folder of them, absolute or from ~/. Missing: the user's own calendars, as the calendar under the clock shows them (Settings > Calendar and the accounts)."
                         },
                         "days": {
                             "type": "integer",

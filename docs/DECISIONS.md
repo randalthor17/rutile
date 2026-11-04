@@ -1172,3 +1172,18 @@ greeter):
   reminders, a location, guests.
 - **Alternatives.** Opening GNOME Calendar to add it: a whole app for a title and a time. Writing an .ics into the
   calendar folder: vdirsyncer users only, and nothing reaches Google until their next sync.
+
+**D102. The widgets' calendar source shows the user's own calendars** (plan 4.2 and 2.12, 2026-11-05):
+- **What.** The calendar source's `path` is optional now. Without it a widget shows what the calendar under the
+  clock shows: Settings > Calendar's folder, its addresses (fetched every 30 minutes, their saved copies at once)
+  and the accounts' calendars in evolution-data-server (Google through GNOME Online Accounts), read every 5
+  minutes for today and the `days` ahead. With a path it reads only that, as before, and starts nothing else. The
+  Daily update templates dropped their `~/.calendars` path, so they show Google without the user typing anything.
+- **How.** CalendarSource loads CalendarFeeds (only when there are addresses) and EdsCalendar (without listing
+  calendars to add to) in Loaders that are active only without a path (D31). The source is only made for a widget
+  that binds `calendar` (D79).
+- **Checked** in Quickshell with a fake rutile-calendar and a folder from Settings: both calendars' events
+  together, soonest first; the data server asked for the widget's days; a widget with a path never asks it. The
+  addresses part is the popup's CalendarFeeds, tested there, not again here.
+- **Costs.** Each such widget runs the helper every 5 minutes (about a second; no process stays). Two widgets
+  read twice: no sharing between widgets yet.

@@ -228,7 +228,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   calendars' events with repeats and time zones worked out by EDS, and GNOME Calendar edits them (a click on such
   an event opens it there; "Open Calendar"). Adding an event (D101): the + beside the day, into an EDS calendar
   (`rutile-calendar add`). Not yet: time zones for .ics files
-  (TZID times are taken as local), addresses and EDS for widgets, a real Google account tried. The grid is lighter
+  (TZID times are taken as local), a real Google account tried. Widgets (D102): the calendar source without a
+  `path` shows the same calendars (folder, addresses, accounts); the templates use that. The grid is lighter
   since 2026-11-05: one pointer area and shared circles instead of 42 cells' own, 2922 to 1566 KiB (docs/memory.md).
 
 ## Phase 3: windows on niri

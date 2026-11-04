@@ -10,6 +10,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   choice. It remembers who signed in last and the session they used. Turn it on with the flake's
   `nixosModules.greeter` (see the install guide). It shows each person's own wallpaper and colors, as their desktop
   has them, and always shows the session you will sign in to.
+- **Your calendars in widgets.** A calendar widget without a file of its own shows the same calendars as the
+  calendar under the clock, your Google account's included; the Daily update templates do.
 - **Add events from the calendar.** The + beside the day in the calendar under the clock adds an event to your
   Google (or other) calendar: a title, all day or from and to, and which calendar.
 - **A lighter calendar.** The calendar under the clock takes about half the memory it did while open.

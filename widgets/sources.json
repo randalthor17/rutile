@@ -146,7 +146,7 @@
       }
     },
     "calendar": {
-      "description": "Upcoming events from an .ics file or a folder of them and the folders right in it (vdirsyncer's), repeating events at each time.",
+      "description": "Upcoming events, repeating ones at each time: the user's own calendars (Settings > Calendar and the Google or other accounts), or with option path an .ics file or a folder of them and the folders right in it (vdirsyncer's).",
       "fields": {
         "events": {
           "type": "list",

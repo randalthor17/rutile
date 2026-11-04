@@ -444,6 +444,12 @@ response") and its answers then go to the wrong questions. Wait a moment (300 ms
 fails with "nope", which looks like a bug in the greeter. It never exits on its own either: stop it once the greeter
 has.
 
+**A file in one qs module cannot rely on `import qs.<other>`.** Quickshell makes only the qs modules that the root
+file (or what it loads) imports something to import: the widgets' calendar source importing `qs.calendar` loaded in
+the shell, whose shell.qml imports it, and failed in a test root without it ("module qs.calendar is not
+installed"). A directory import (`import "../../calendar"`) does not find the types either. Load the other module's
+file with a Loader and `Qt.resolvedUrl`, setting its properties in `setSource` and `onLoaded`.
+
 **A test click at an item lands on whatever is at that point.** With one MouseArea for the calendar's whole grid,
 a click right after a month change hit the wrong day: the Grid places the new days only at its next polish, and
 until then they sit at (0, 0). Per-cell mouse areas had hidden this, as the item clicked was its own target. Wait

@@ -24,7 +24,6 @@
   },
   "sources": {
     "calendar": {
-      "path": "~/.calendars",
       "days": 7
     }
   }

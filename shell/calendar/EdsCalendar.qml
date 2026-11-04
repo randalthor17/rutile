@@ -22,6 +22,7 @@ Scope {
     property bool synced: false             // the sync has been asked for
     property bool again: false
     property var calendars: []              // Calendar.edsCalendars
+    property bool listCalendars: true       // read `calendars` (the popup adds events to them; a widget does not)
     property bool adding: false
     signal added(bool ok, string error)
 
@@ -56,7 +57,7 @@ Scope {
             } else if (code === 0 && !root.synced) {
                 root.synced = true;
                 sync.running = true;
-                lister.running = true;
+                lister.running = root.listCalendars;
             }
         }
     }
