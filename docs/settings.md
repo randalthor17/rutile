@@ -29,7 +29,7 @@ not parse, the shell keeps the last good values and changes nothing until it is 
 | `motion.speed` | number, 0 to 4 | 1 | how fast every animation runs (D43): 2 twice as fast, 0 no motion |
 | `motion.niri` | true or false | false | niri's own animations at the same speed (0: none), through rutile-settings.kdl (D74) |
 | `notifications.sound` | true or false | true | a sound when a notification pops up (pw-play): the sender's, or the sound theme's message sound; none in Do not disturb, except for critical ones |
-| `wallpaper.path` | file path | unset | the wallpaper image on every screen, also blurred on the lock screen (unset: a plain surface) |
+| `wallpaper.path` | file path | unset | the wallpaper image on every screen, also blurred on the lock screen (unset: Rutile's own, `theme/wallpapers/rutile-default.jpg`, D98) |
 | `wallpaper.palette` | true or false | true | render the palette from the wallpaper whenever it changes |
 | `lock.idleMinutes` | integer, 0 to 240 | 10 | lock after this many minutes without input; 0 never; idle inhibitors (a playing video) hold it off |
 | `lock.beforeSleep` | true or false | true | lock when the computer suspends or hibernates |

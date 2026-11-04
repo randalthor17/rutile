@@ -61,7 +61,7 @@ var schema = {
                 "path": {
                     "type": "string",
                     "title": "Wallpaper image",
-                    "description": "The wallpaper's image file (absolute path), shown on every screen; the lock screen shows it blurred. Unset: a plain surface."
+                    "description": "The wallpaper's image file (absolute path), shown on every screen; the lock screen shows it blurred. Unset: Rutile's own."
                 },
                 "palette": {
                     "type": "boolean",

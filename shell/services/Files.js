@@ -173,3 +173,15 @@ function dirname(path) {
     var i = path.lastIndexOf("/");
     return i <= 0 ? "/" : path.substring(0, i);
 }
+
+// The sign-in screen shows each person's wallpaper and colors (D98): the shell copies them into the folder the greeter
+// module made for this person (owned by them, readable by the greeter), only what changed, each replaced whole (a
+// copy beside it, then a rename). Nothing when there is no such folder or it is not ours to write.
+var GREETER_SHARE_SCRIPT = 'd=$1\n' +
+    '[ -d "$d" ] && [ -w "$d" ] || exit 0\n' +
+    'put() { [ -f "$1" ] || return 0; cmp -s -- "$1" "$d/$2" && return 0; ' +
+    'cp -f -- "$1" "$d/.$2.new" && chmod 644 "$d/.$2.new" && mv -f -- "$d/.$2.new" "$d/$2"; }\n' +
+    'put "$2" wallpaper && put "$3" palette.json\n';
+function greeterShareCommand(dir, wallpaper, palette) {
+    return ["sh", "-c", GREETER_SHARE_SCRIPT, "sh", dir, wallpaper, palette];
+}

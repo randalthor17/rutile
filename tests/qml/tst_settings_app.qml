@@ -143,7 +143,7 @@ TestCase {
         compare(Model.valueText("lock.idleMinutes", 15, Pages.hints), "After 15 minutes");
         compare(Model.valueText("motion.speed", 0, Pages.hints), "Off");
         compare(Model.valueText("motion.speed", 1.5, Pages.hints), "1.5×");
-        compare(Model.valueText("wallpaper.path", undefined, Pages.hints), "None");
+        compare(Model.valueText("wallpaper.path", undefined, Pages.hints), "Rutile's own", "unset: the built-in one (D98)");
         compare(Model.valueText("shelf.pins", ["a", "b"], Pages.hints), "a, b");
         compare(Model.valueText("shelf.pins", [], Pages.hints), "None");
         compare(Model.valueText("shelf.pins", undefined, Pages.hints), "Not set");

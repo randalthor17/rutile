@@ -2,8 +2,10 @@
 // Rutile's greeter (plan 6.2, D97): the sign-in screen greetd shows, in the shell's look. Run by greetd inside a niri
 // of its own (nixosModules.greeter):   rutile-shell greeter   (quickshell -p shell/greeter.qml)
 // It reads the people from /etc/passwd, the sessions from the data directories' wayland-sessions, and remembers who
-// signed in last, into which session, in /var/lib/rutile-greeter/state.json (RUTILE_GREETER_STATE). The wallpaper
-// is RUTILE_GREETER_WALLPAPER (the greeter cannot read anyone's home); the colors, RUTILE_PALETTE as the shell's.
+// signed in last, into which session, in /var/lib/rutile-greeter/greeter/state.json (RUTILE_GREETER_STATE). It shows
+// the chosen person's wallpaper and colors, which their shell copies to /var/lib/rutile-greeter/users/<name>
+// (RUTILE_GREETER_USERS; it cannot read anyone's home, D98); without them, RUTILE_GREETER_WALLPAPER and RUTILE_PALETTE
+// (the system's), else Rutile's own wallpaper.
 // For the tests: RUTILE_PASSWD replaces /etc/passwd, RUTILE_SESSION_DIRS (colon-separated) the data directories,
 // RUTILE_GREETER_NO_QUIT keeps it running after a launch.
 import QtQuick
@@ -16,7 +18,13 @@ import "greeter/Greeter.js" as Greeter
 ShellRoot {
     id: greeter
 
-    readonly property string statePath: Quickshell.env("RUTILE_GREETER_STATE") || "/var/lib/rutile-greeter/state.json"
+    readonly property string statePath: Quickshell.env("RUTILE_GREETER_STATE")
+        || "/var/lib/rutile-greeter/greeter/state.json"
+    readonly property string usersDir: Quickshell.env("RUTILE_GREETER_USERS") || "/var/lib/rutile-greeter/users"
+    readonly property string builtinWallpaper: Quickshell.shellDir + "/../theme/wallpapers/rutile-default.jpg"
+    // the chosen person's, else the system's (D98)
+    property string wallpaper: ""
+    property string palette: Quickshell.env("RUTILE_PALETTE")
     readonly property var dataDirs: (Quickshell.env("RUTILE_SESSION_DIRS")
                                      || [Quickshell.env("XDG_DATA_DIRS"), "/run/current-system/sw/share",
                                          "/usr/local/share", "/usr/share"].filter(d => !!d).join(":"))
@@ -44,7 +52,40 @@ ShellRoot {
         return true;
     }
 
-    PaletteWatcher {}
+    PaletteWatcher {
+        path: greeter.palette
+    }
+    // later: the commands' bindings take the new person after this handler (LESSONS)
+    onUserChanged: Qt.callLater(pickLooks)
+    // a person chosen while the last one's are still being looked up: look again after
+    property bool lookAgain: false
+    function pickLooks() {
+        if (wallpaperPick.running || palettePick.running) {
+            lookAgain = true;
+            return;
+        }
+        wallpaperPick.running = true;
+        palettePick.running = true;
+    }
+    function looked() {
+        if (wallpaperPick.running || palettePick.running || !lookAgain) return;
+        lookAgain = false;
+        pickLooks();
+    }
+    Process {
+        id: wallpaperPick
+        command: Greeter.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/wallpaper",
+                                               Quickshell.env("RUTILE_GREETER_WALLPAPER"), greeter.builtinWallpaper])
+        stdout: StdioCollector { onStreamFinished: greeter.wallpaper = text }
+        onExited: greeter.looked()
+    }
+    Process {
+        id: palettePick
+        command: Greeter.firstReadableCommand([greeter.usersDir + "/" + greeter.user + "/palette.json",
+                                               Quickshell.env("RUTILE_PALETTE")])
+        stdout: StdioCollector { onStreamFinished: if (text !== "") greeter.palette = text }
+        onExited: greeter.looked()
+    }
 
     FileView {
         id: passwd
@@ -143,7 +184,7 @@ ShellRoot {
                 busy: auth.phase === "waiting" || auth.phase === "ready" || auth.phase === "launching"
                 error: auth.error
                 info: auth.info
-                wallpaper: Quickshell.env("RUTILE_GREETER_WALLPAPER") || ""
+                wallpaper: greeter.wallpaper
                 progress: motion.value
                 onSubmitted: text => auth.answer(text)
                 onEdited: auth.error = ""
@@ -162,7 +203,7 @@ ShellRoot {
                                     sessions: greeter.sessions.map(s => s.id), session: greeter.sessionId,
                                     phase: auth.phase, prompt: auth.prompt, secret: auth.secret, error: auth.error,
                                     available: auth.available, leaving: greeter.leaving, progress: motion.value,
-                                    settled: motion.settled,
+                                    settled: motion.settled, wallpaper: greeter.wallpaper, palette: greeter.palette,
                                     saved: greeter.saved });
         }
         // as typing it and pressing Enter

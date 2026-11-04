@@ -466,12 +466,15 @@ def run_wayland_smoke(screenshot=None):
             "FAKE_CALENDAR_LOG": str(comp.runtime / "calendar.log"),
             "FAKE_CALENDAR_EVENTS": str(comp.runtime / "calendar-events.jsonl"),
             "RUTILE_CALENDAR_APP": str(ROOT / "tests" / "qs" / "bin" / "fake-app"),
+            # the greeter's folder for this person (D98): the shell shares its wallpaper and colors there
+            "RUTILE_GREETER_USER_DIR": str(comp.runtime / "greeter-share"),
         })
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", comp.runtime / "palette.json")
         no_polkit_agent(comp.runtime / "config")
         # the calendar's folder (D93), never the user's: a calendar in a folder of its own, as vdirsyncer keeps it
         calendars = comp.runtime / "calendars"
         (calendars / "personal").mkdir(parents=True)
+        (comp.runtime / "greeter-share").mkdir()           # as the greeter module makes it (D98)
         today = datetime.date.today()
         (calendars / "personal" / "a.ics").write_text(
             "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Smoke standup\r\n"
@@ -620,6 +623,23 @@ def run_wayland_smoke(screenshot=None):
                     if toast != want or again != first or second == first:
                         problems.append(f"ipc toast: ids {first}, {second}, {again}; state {toast}, expected {want}")
                     toast_sent = time.time()
+                    # Rutile's own wallpaper while none is set (D98), shared with the greeter's folder with the colors
+                    share = comp.runtime / "greeter-share"
+                    builtin = ROOT / "theme" / "wallpapers" / "rutile-default.jpg"
+                    for _ in range(50):
+                        if (share / "wallpaper").exists() and (share / "palette.json").exists():
+                            break
+                        time.sleep(0.1)
+                    try:
+                        start_wall = json.loads(ipc("state", target="wallpaper")).get("path", "")
+                    except ValueError:
+                        start_wall = ""
+                    if not start_wall.endswith("/theme/wallpapers/rutile-default.jpg"):
+                        problems.append(f"wallpaper with none set: {start_wall!r}, expected Rutile's own")
+                    if not (share / "wallpaper").exists() or (share / "wallpaper").read_bytes() != builtin.read_bytes():
+                        problems.append("greeter share: the wallpaper was not copied to the greeter's folder")
+                    if not (share / "palette.json").exists():
+                        problems.append("greeter share: the palette was not copied to the greeter's folder")
                     # the wallpaper: an absolute path only; set, it shows on the screen and the palette follows it
                     sys.path.insert(0, str(ROOT / "tests"))
                     import test_palette
@@ -635,7 +655,9 @@ def run_wayland_smoke(screenshot=None):
                             wall = json.loads(ipc("state", target="wallpaper"))
                         except ValueError:
                             wall = {}
-                        if wall.get("paletteFrom") == str(green) and wall.get("ready") == [True]:
+                        # (shown: after the crossfade from Rutile's own, D98)
+                        if (wall.get("paletteFrom") == str(green) and wall.get("ready") == [True]
+                                and wall.get("shown") == [f"file://{green}"]):
                             break
                         time.sleep(0.1)
                     if wall != {"path": str(green), "error": "", "paletteFrom": str(green),
@@ -648,6 +670,14 @@ def run_wayland_smoke(screenshot=None):
                     rgb = [int(primary[i:i + 2], 16) for i in (1, 3, 5)] if primary.startswith("#") else [0, 0, 0]
                     if max(range(3), key=lambda i: rgb[i]) != 1:
                         problems.append(f"palette after a green wallpaper: primary {primary}, expected green")
+                    for _ in range(50):
+                        shared = share / "palette.json"
+                        if ((share / "wallpaper").read_bytes() == green.read_bytes() and shared.exists()
+                                and shared.read_bytes() == (comp.runtime / "palette.json").read_bytes()):
+                            break
+                        time.sleep(0.1)
+                    else:
+                        problems.append("greeter share: the new wallpaper and its palette did not reach the greeter's folder")
                     # the power menu: opens full-screen, refuses an unknown choice, closes and unloads
                     def power_state():
                         try:
@@ -1231,7 +1261,14 @@ def run_greeter_smoke(screenshot=None):
         (sessions / "niri.desktop").write_text("[Desktop Entry]\nName=Niri\nExec=niri-session\nDesktopNames=niri\n")
         (sessions / "sway.desktop").write_text("[Desktop Entry]\nName=Sway\nExec=sway\n")
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", rt / "palette.json")
+        # "user" has shared their wallpaper and colors (D98); alice has not
+        users = rt / "users"
+        (users / "user").mkdir(parents=True)
+        (users / "alice").mkdir()
+        shutil.copy(ROOT / "theme" / "wallpapers" / "rutile-default.jpg", users / "user" / "wallpaper")
+        shutil.copy(rt / "palette.json", users / "user" / "palette.json")
         env = comp.env({"RUTILE_PASSWD": str(rt / "passwd"), "RUTILE_SESSION_DIRS": str(rt / "data"),
+                        "RUTILE_GREETER_USERS": str(users),
                         "RUTILE_GREETER_STATE": str(rt / "greeter-state.json"), "RUTILE_GREETER_NO_QUIT": "1",
                         "RUTILE_PALETTE": str(rt / "palette.json")})
         log_path = rt / "greeter.log"
@@ -1261,17 +1298,23 @@ def run_greeter_smoke(screenshot=None):
 
         try:
             st = wait(lambda s: s.get("phase") == "prompt")
+            st = wait(lambda s: s.get("wallpaper", "") != "")
             if (st.get("users") != ["alice", "user"] or st.get("user") != "alice" or st.get("sessions") != ["niri", "sway"]
-                    or st.get("session") != "niri" or st.get("prompt") != "Password:" or not st.get("available")):
+                    or st.get("session") != "niri" or st.get("prompt") != "Password:" or not st.get("available")
+                    or not st.get("wallpaper", "").endswith("/theme/wallpapers/rutile-default.jpg")
+                    or st.get("palette") != str(rt / "palette.json")):
                 problems.append(f"greeter start: {st}, expected alice and niri first, both people and sessions, "
-                                "greetd asking for the password")
+                                "greetd asking for the password, Rutile's own wallpaper and the system's colors")
             if screenshot and shutil.which("grim"):
                 time.sleep(1)
                 subprocess.run([shutil.which("grim"), str(screenshot)], env=comp.env(), timeout=10)
                 notes.append(f"screenshot: {screenshot}")
             if (ipc("chooseUser", "nobody"), ipc("chooseUser", "user"), ipc("chooseSession", "sway")) != ("false", "true", "true"):
                 problems.append("greeter chooseUser/chooseSession: expected an unknown person refused, the rest taken")
-            st = wait(lambda s: s.get("user") == "user" and s.get("phase") == "prompt")
+            st = wait(lambda s: s.get("user") == "user" and s.get("phase") == "prompt"
+                      and s.get("wallpaper") == str(users / "user" / "wallpaper"))
+            if st.get("wallpaper") != str(users / "user" / "wallpaper") or st.get("palette") != str(users / "user" / "palette.json"):
+                problems.append(f"greeter user's looks: {st}, expected the wallpaper and colors their shell shared")
             ipc("answer", "password")
             st = wait(lambda s: s.get("prompt") == "7 + 2:")
             if st.get("secret") is not False:

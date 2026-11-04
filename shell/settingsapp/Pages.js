@@ -163,7 +163,7 @@ var pages = [
 
 var hints = {
     "wallpaper.path": {
-        kind: "path", aliases: ["image", "picture"],
+        kind: "path", aliases: ["image", "picture"], emptyText: "Rutile's own",
         filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },

@@ -80,6 +80,12 @@ TestCase {
         compare(Greeter.parseState(JSON.stringify(st)).lastUser, "b");
     }
 
+    function test_first_readable() {
+        const cmd = Greeter.firstReadableCommand(["/u/alice/wallpaper", "", "/builtin.jpg"]);
+        compare(cmd.slice(0, 2).join(" "), "sh -c");
+        compare(cmd.slice(-3).join(","), "/u/alice/wallpaper,,/builtin.jpg", "in order; an empty one skipped by the script");
+    }
+
     function test_prompt_text() {
         compare(JSON.stringify(Greeter.promptText("Password: ", true)), '{"placeholder":"Password","message":""}');
         compare(JSON.stringify(Greeter.promptText("", true)), '{"placeholder":"Password","message":""}');
@@ -115,7 +121,8 @@ TestCase {
         const alone = panel({ users: [{ name: "rand", realName: "Rand", uid: 1000 }],
                               sessions: [{ id: "niri", name: "Niri", command: [], desktop: "niri" }] });
         verify(!findChild(alone, "greeterUser").visible, "one person: no choice");
-        verify(!findChild(alone, "greeterSession").visible, "one session: no choice");
+        verify(findChild(alone, "greeterSession").visible, "the session is always shown, one or several");
+        compare(findChild(alone, "greeterSession").text, "Niri");
     }
 
     function test_panel_answers_and_power() {

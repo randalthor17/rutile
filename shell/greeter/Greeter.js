@@ -126,3 +126,10 @@ function launchCommand(session) {
         return /^[A-Za-z0-9_\/.,:=@%+-]+$/.test(w) ? w : "'" + w.replace(/'/g, "'\\''") + "'";
     });
 }
+
+// The command that prints the first of `paths` that can be read ("" when none): the chosen person's own wallpaper or
+// colors (their shell copies them to the greeter's folder, D98), else the system's.
+function firstReadableCommand(paths) {
+    return ["sh", "-c", 'for f do [ -n "$f" ] && [ -r "$f" ] && { printf "%s" "$f"; exit 0; }; done; exit 0', "sh"]
+        .concat(paths);
+}

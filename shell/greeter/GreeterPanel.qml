@@ -1,8 +1,8 @@
 pragma ComponentBehavior: Bound
 // What the greeter shows on each screen (plan 6.2, D97): the lock screen's face (LockPanel: the time, the person's
 // name, the field greetd's questions are answered in, over the blurred wallpaper), and along the bottom, as on
-// ChromeOS's sign-in screen, Shut down and Restart, then who signs in and into which session when there is a choice
-// (each a menu). Plain QtQuick: greeter.qml gives it the people, sessions, greetd's state and the motion, so it tests
+// ChromeOS's sign-in screen, Shut down and Restart, who signs in (a menu when there are several) and into which
+// session (always shown, a menu). Plain QtQuick: greeter.qml gives it the people, sessions, greetd's state and the motion, so it tests
 // offscreen.
 import QtQuick
 import qs.common
@@ -88,7 +88,7 @@ Item {
         Button {
             id: sessionButton
             objectName: "greeterSession"
-            visible: root.sessions.length > 1
+            visible: root.sessions.length > 0
             type: "tonal"
             iconName: "desktop_windows"
             text: root.sessionEntry?.name ?? root.session

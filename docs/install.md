@@ -179,14 +179,18 @@ Rutile's greeter replaces the text login (or another display manager) with a sig
 imports = [ inputs.rutile.nixosModules.greeter ];
 programs.niri.enable = true;                         # the greeter runs in a niri of its own; niri's session is offered
 services.displayManager.rutile-greeter.enable = true;               # turns on greetd with the greeter as its default session
-services.displayManager.rutile-greeter.wallpaper = ./wallpaper.jpg; # optional: the greeter cannot read anyone's home
-# services.displayManager.rutile-greeter.palette = ./palette.json;  # optional: your colors (a copy of ~/.cache/rutile/palette.json)
+# services.displayManager.rutile-greeter.wallpaper = ./wallpaper.jpg; # optional: before anyone has signed in
+# services.displayManager.rutile-greeter.palette = ./palette.json;    # optional: the same for the colors
 ```
 
 Turn off any other display manager (GDM, SDDM, `services.greetd` set up for another greeter) first. The screen shows
 the time, the person who signed in last (a menu when there are several) and the session they used (a menu when there
 are several), Shut down and Restart. What greetd asks (the password, or a second factor) is answered in the field. The
-choice is remembered in `/var/lib/rutile-greeter/state.json`. Its log: `journalctl -t rutile-greeter`.
+choice is remembered in `/var/lib/rutile-greeter/greeter/state.json`. Its log: `journalctl -t rutile-greeter`.
+
+The sign-in screen shows each person's wallpaper and colors as their desktop has them (D98). Each person's Rutile Shell
+copies them to `/var/lib/rutile-greeter/users/<name>`, which the module makes for every normal user, so they appear
+after that person has signed in once. Before that it shows the wallpaper and colors above, or Rutile's own.
 
 ## App indicators
 

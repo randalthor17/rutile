@@ -3,10 +3,12 @@
 #
 #   imports = [ inputs.rutile.nixosModules.greeter ];
 #   services.displayManager.rutile-greeter.enable = true;
-#   services.displayManager.rutile-greeter.wallpaper = ./wall.jpg;     # optional; the greeter cannot read anyone's home
+#   services.displayManager.rutile-greeter.wallpaper = ./wall.jpg;     # optional: before anyone has signed in
 #
-# The sessions offered are the system's (services.displayManager: niri's, with programs.niri.enable). Who signed in
-# last, into which session, is kept in /var/lib/rutile-greeter.
+# The sessions offered are the system's (services.displayManager: niri's, with programs.niri.enable). Each normal
+# user gets /var/lib/rutile-greeter/users/<name>, theirs and readable by the greeter: their Rutile Shell copies its
+# wallpaper and colors there, and the greeter shows them for that person (D98). The greeter's own state (who signed
+# in last, into which session) is in /var/lib/rutile-greeter/greeter.
 {
   config,
   lib,
@@ -17,11 +19,13 @@ let
   cfg = config.services.displayManager.rutile-greeter;
   niri = cfg.niriPackage;
   stateDir = "/var/lib/rutile-greeter";
+  people = lib.filterAttrs (_: u: u.isNormalUser) config.users.users;
   greeter = pkgs.writeShellScript "rutile-greeter" ''
-    export RUTILE_GREETER_STATE=${stateDir}/state.json
+    export RUTILE_GREETER_STATE=${stateDir}/greeter/state.json
+    export RUTILE_GREETER_USERS=${stateDir}/users
     export RUTILE_SESSION_DIRS=${config.services.displayManager.sessionData.desktops}/share
     export RUTILE_PALETTE=${cfg.palette}
-    export XDG_CACHE_HOME=${stateDir}/cache
+    export XDG_CACHE_HOME=${stateDir}/greeter/cache
     ${lib.optionalString (cfg.wallpaper != null) "export RUTILE_GREETER_WALLPAPER=${cfg.wallpaper}"}
     ${lib.getExe cfg.package} greeter
     ${lib.getExe niri} msg action quit --skip-confirmation
@@ -50,7 +54,7 @@ in
     wallpaper = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "The image behind the sign-in screen (copied to the Nix store, where the greeter can read it); null: a plain surface.";
+      description = "The image behind the sign-in screen until someone has signed in with Rutile Shell (theirs shows after); null: Rutile's own.";
     };
     script = lib.mkOption {
       type = lib.types.package;
@@ -63,7 +67,7 @@ in
       type = lib.types.path;
       default = "${cfg.package}/share/rutile/theme/fixtures/palette-134aae-tonal-spot-dark.json";
       defaultText = lib.literalExpression ''"''${package}/share/rutile/theme/fixtures/palette-134aae-tonal-spot-dark.json"'';
-      description = "The colors (a palette.json, as the shell's in ~/.cache/rutile; copy yours to match your desktop).";
+      description = "The colors until someone has signed in with Rutile Shell (theirs show after): a palette.json.";
     };
   };
 
@@ -76,9 +80,13 @@ in
         command = "${pkgs.systemd}/bin/systemd-cat -t rutile-greeter ${lib.getExe niri} -c ${niriConfig}";
       };
     };
+    # the greeter's own, and one folder per person that their shell writes and the greeter reads
     systemd.tmpfiles.rules = [
-      "d ${stateDir} 0750 greeter greeter - -"
-      "d ${stateDir}/cache 0750 greeter greeter - -"
-    ];
+      "d ${stateDir} 0755 root root - -"
+      "d ${stateDir}/greeter 0750 greeter greeter - -"
+      "d ${stateDir}/greeter/cache 0750 greeter greeter - -"
+      "d ${stateDir}/users 0755 root root - -"
+    ]
+    ++ lib.mapAttrsToList (name: u: "d ${stateDir}/users/${name} 0755 ${name} ${if u.group != "" then u.group else "users"} - -") people;
   };
 }

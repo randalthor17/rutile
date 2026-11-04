@@ -75,7 +75,8 @@ function toText(value) {
 // A value as the app shows it.
 function valueText(key, value, hints) {
     const hint = hints[key] ?? {};
-    if (value === undefined || value === null || value === "") return hint.kind === "path" ? "None" : "Not set";
+    if (value === undefined || value === null || value === "")
+        return hint.emptyText ?? (hint.kind === "path" ? "None" : "Not set");
     if (hint.label) return hint.label(value);
     if (Array.isArray(value)) return value.length === 0 ? "None" : value.join(", ");
     if (typeof value === "boolean") return value ? "On" : "Off";

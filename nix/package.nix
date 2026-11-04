@@ -70,6 +70,7 @@ stdenv.mkDerivation {
       ../theme/templates
       ../theme/roles.json
       ../theme/fixtures/palette-134aae-tonal-spot-dark.json # the greeter's colors by default (D97)
+      ../theme/wallpapers/rutile-default.jpg # the wallpaper when none is set, and the greeter's (D98)
     ];
   };
 

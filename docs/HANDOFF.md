@@ -287,6 +287,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_CALENDAR_APP` | `shell/calendar/CalendarWindow.qml`, `shell/settingsapp/SettingsWindow.qml` | the calendar app instead of `gnome-calendar` (tests: a stand-in) |
 | `FAKE_CALENDAR_LOG`, `FAKE_CALENDAR_EVENTS` | `tests/qs/bin/fake-rutile-calendar` | tests only: where the stand-in logs its calls, and the events it prints |
 | `RUTILE_GREETER_STATE`, `RUTILE_GREETER_WALLPAPER` | `shell/greeter.qml` | the greeter's remembered choice (default /var/lib/rutile-greeter/state.json) and its wallpaper; `nix/greeter.nix` sets them (D97) |
+| `RUTILE_GREETER_USERS`, `RUTILE_GREETER_USER_DIR` | `shell/greeter.qml`, `shell/services/WallpaperService.qml` | the folder of each person's shared wallpaper and colors (default /var/lib/rutile-greeter/users), and this person's (the shell copies into it, D98; tests point both at temporary folders) |
 | `RUTILE_PASSWD`, `RUTILE_SESSION_DIRS`, `RUTILE_GREETER_NO_QUIT` | `shell/greeter.qml` | the people's file instead of /etc/passwd, the data directories with wayland-sessions (the module sets the system's), and staying up after a launch (tests) |
 | `RUTILE_TEST_PORT` | `tests/qs/tst_widget_sources_live.qml` | tests only: the free local port of the test's own web server (`@PORT@` in a test's `// env` lines) |
 | `RUTILE_PAPIRUS` | `shell/services/Files.js` (folder icons, D64) | Papirus-Dark's folder when it is not in `XDG_DATA_DIRS` (tests) |

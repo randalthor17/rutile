@@ -8,7 +8,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 - **A sign-in screen.** Rutile now has its own greeter for greetd, in the shell's look: the time, your name and a
   password field over the wallpaper, Shut down and Restart, and who signs in to which session when there is a
   choice. It remembers who signed in last and the session they used. Turn it on with the flake's
-  `nixosModules.greeter` (see the install guide).
+  `nixosModules.greeter` (see the install guide). It shows each person's own wallpaper and colors, as their desktop
+  has them, and always shows the session you will sign in to.
+- **A wallpaper of Rutile's own.** Until you choose one, the desktop, the lock screen and the sign-in screen show
+  Rutile's default wallpaper instead of a plain color.
 
 ## 0.10.0
 

@@ -1096,3 +1096,24 @@ tag at each milestone when it lands.
     runs the greeter under sway with pixman instead of niri.
 - **Not done.** Avatars, the user's own wallpaper and colors without copying them into the configuration, keyboard
   layout choice, and a run on a real machine.
+
+**D98. A built-in wallpaper, shared with the sign-in screen** (the maintainer's request, 2026-11-04, after trying the
+greeter):
+- **The session button always shows**, even with one session, so the session is visible before signing in.
+- **Rutile's own wallpaper.** `theme/wallpapers/rutile-default.jpg` is rendered from `rutile-default.svg`: soft shapes
+  in the default seed's blue, drawn for the project, MIT. The desktop, lock screen and greeter use it while nothing
+  else is set. Settings > Wallpaper says "Rutile's own". The palette keeps coming from the seed color while it shows:
+  the image is drawn in the seed's colors, and every app's colors stay what they were without a wallpaper.
+- **Sharing with the greeter.** The greeter runs as `greeter` and cannot read anyone's home. The module makes
+  `/var/lib/rutile-greeter/users/<name>` for each normal user, owned by them, 0755. That person's shell copies its
+  wallpaper and `palette.json` there whenever either changes (WallpaperService, `Files.greeterShareCommand`): only
+  what changed, each written beside and renamed over, nothing when the folder is missing or not writable. The greeter
+  shows the chosen person's wallpaper and colors, falling back to the module's `wallpaper` and `palette`, then to
+  Rutile's own.
+- **Costs.**
+  - Anyone on the machine can read a person's wallpaper and colors, as anyone can see them on the sign-in screen.
+  - Nothing is shared until that person's shell has run once.
+  - A person added later gets a folder at the next rebuild.
+- **Alternatives.**
+  - A system service copying from homes: it reads every home as root.
+  - AccountsService, which keeps a background per user only for GNOME's greeter: another daemon and no colors.

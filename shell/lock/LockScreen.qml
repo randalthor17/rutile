@@ -127,7 +127,7 @@ Scope {
                 busy: root.busy
                 error: root.error
                 message: root.message
-                wallpaper: Settings.value("wallpaper.path") ?? ""
+                wallpaper: WallpaperService.path
                 progress: root.progress
                 onBackgroundReadyChanged: if (backgroundReady) root.started = true
                 Component.onCompleted: if (backgroundReady) root.started = true

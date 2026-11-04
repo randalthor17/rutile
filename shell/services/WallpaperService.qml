@@ -15,7 +15,9 @@ import "Palette.js" as Palette
 Singleton {
     id: root
 
-    readonly property string path: Settings.value("wallpaper.path") ?? ""
+    // the wallpaper.path setting, or Rutile's own when it is unset (D98)
+    readonly property string defaultPath: Quickshell.shellDir + "/../theme/wallpapers/rutile-default.jpg"
+    readonly property string path: (Settings.value("wallpaper.path") ?? "") || defaultPath
     readonly property bool paletteFollows: Settings.value("wallpaper.palette") === true
     readonly property string palettePath: Quickshell.env("RUTILE_PALETTE")
         || ((Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache")) + "/rutile/palette.json")
@@ -29,11 +31,31 @@ Singleton {
     readonly property string mode: Settings.value("style.mode")
     readonly property real contrast: Settings.value("style.contrast")
     readonly property string seed: Settings.value("style.seed")
-    // the image the palette comes from, or "" for the seed color
-    readonly property string source: paletteFollows ? path : ""
+    // the image the palette comes from, or "" for the seed color; Rutile's own wallpaper is drawn in the seed's
+    // blue, so with it the palette stays the seed's (D98)
+    readonly property string source: paletteFollows && (Settings.value("wallpaper.path") ?? "") !== "" ? path : ""
     // what a render makes: a new one when this changes
     readonly property string wanted: JSON.stringify([source || seed, scheme, mode, contrast])
     property string lastError: ""
+
+    // what the sign-in screen shows for this person (D98): RUTILE_GREETER_USER_DIR replaces it in the tests
+    readonly property string greeterDir: Quickshell.env("RUTILE_GREETER_USER_DIR")
+        || ("/var/lib/rutile-greeter/users/" + (Quickshell.env("USER") || "nobody"))
+    property bool shareAgain: false
+    function shareWithGreeter() {
+        if (sharer.running) shareAgain = true;
+        else sharer.running = true;
+    }
+    onPathChanged: Qt.callLater(shareWithGreeter)
+    Process {
+        id: sharer
+        command: Files.greeterShareCommand(root.greeterDir, root.path, root.palettePath)
+        onExited: {
+            if (!root.shareAgain) return;
+            root.shareAgain = false;
+            running = true;
+        }
+    }
 
     // false when the path is not absolute or the setting is set in Nix
     function set(p) {
@@ -52,7 +74,10 @@ Singleton {
         renderer.running = true;
     }
     onWantedChanged: Qt.callLater(renderPalette)
-    Component.onCompleted: Qt.callLater(renderPalette)
+    Component.onCompleted: {
+        Qt.callLater(renderPalette);
+        Qt.callLater(shareWithGreeter);
+    }
 
     function failed(message) {
         lastError = message;
@@ -102,6 +127,7 @@ Singleton {
             root.lastError = "";
             Settings.setState("wallpaper.paletteFrom", from);
             Settings.setState("wallpaper.paletteKey", target);
+            root.shareWithGreeter();
             if (target !== root.wanted) root.renderPalette();
         }
     }

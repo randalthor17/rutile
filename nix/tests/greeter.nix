@@ -29,7 +29,7 @@ pkgs.testers.runNixOSTest {
       services.displayManager.sessionPackages = [ marker ];
       # alice's last session, as the greeter remembers it
       systemd.tmpfiles.rules = [
-        ''f /var/lib/rutile-greeter/state.json 0640 greeter greeter - {"lastUser":"alice","sessions":{"alice":"marker"}}''
+        ''f /var/lib/rutile-greeter/greeter/state.json 0640 greeter greeter - {"lastUser":"alice","sessions":{"alice":"marker"}}''
       ];
       services.greetd.settings.default_session.command = lib.mkForce (
         "${pkgs.systemd}/bin/systemd-cat -t rutile-greeter ${pkgs.sway}/bin/sway -c ${pkgs.writeText "greeter-sway.conf" ''
@@ -44,6 +44,23 @@ pkgs.testers.runNixOSTest {
   testScript = ''
     machine.wait_for_unit("greetd.service")
     machine.wait_until_succeeds("pgrep -u greeter -f greeter.qml", timeout=120)
+    # alice's folder for her shell to share her wallpaper and colors (D98): hers, readable by the greeter
+    machine.succeed("test \"$(stat -c '%U %a' /var/lib/rutile-greeter/users/alice)\" = 'alice 755'")
+
+    # the greeter's IPC, as the greeter, on its display (Quickshell lists only the caller's display's instances)
+    ipc = ("uid=$(id -u greeter); cli=$(ls /nix/store/*-rutile-shell-*/bin/rutile-shell | head -1); "
+           "runuser -u greeter -- env -u DISPLAY WAYLAND_DISPLAY=wayland-1 XDG_RUNTIME_DIR=/run/user/$uid "
+           "$cli greeter ipc call greeter state")
+    machine.wait_until_succeeds(ipc + " | grep -q rutile-default.jpg", timeout=30)
+    import json
+    st = json.loads(machine.succeed(ipc))
+    assert st["user"] == "alice" and st["sessions"] == ["marker", "niri"], st
+    # what alice's shell shares when her wallpaper changes, then a fresh greeter shows it
+    machine.succeed("runuser -u alice -- cp $(ls /nix/store/*-rutile-shell-*/share/rutile/theme/wallpapers/rutile-default.jpg | head -1) "
+                    "/var/lib/rutile-greeter/users/alice/wallpaper")
+    machine.succeed("systemctl restart greetd")
+    machine.wait_until_succeeds("pgrep -u greeter -f greeter.qml", timeout=120)
+    machine.wait_until_succeeds(ipc + " | grep -q /var/lib/rutile-greeter/users/alice/wallpaper", timeout=30)
     machine.sleep(5)
     machine.screenshot("greeter")
     # a wrong password first: greetd says no, and the greeter asks again
@@ -55,7 +72,7 @@ pkgs.testers.runNixOSTest {
     machine.send_chars("wonderland\n")
     machine.wait_until_succeeds("test -e /var/tmp/session-user", timeout=60)
     machine.succeed("grep -qx alice /var/tmp/session-user")
-    machine.succeed("grep -q '\"alice\":\"marker\"' /var/lib/rutile-greeter/state.json")
+    machine.succeed("grep -q '\"alice\":\"marker\"' /var/lib/rutile-greeter/greeter/state.json")
     machine.succeed("! pgrep -u greeter -f greeter.qml")
   '';
 }

@@ -534,7 +534,7 @@ ShellRoot {
     // The lock screen's wallpaper, kept decoded (small, about 0.5 MB) so locking shows it at once (LockWallpaper.js).
     Image {
         visible: false
-        source: LockWallpaper.url(Settings.value("wallpaper.path") ?? "")
+        source: LockWallpaper.url(WallpaperService.path)
         sourceSize: LockWallpaper.size
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
