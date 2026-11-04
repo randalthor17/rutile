@@ -126,6 +126,9 @@ class CalendarHelper(unittest.TestCase):
         self.assertIs(rows["hidden"]["selected"], False)
         self.assertNotIn("off", rows, "a calendar switched off is not listed")
         self.assertEqual(rows["shown"]["color"], "#3465a4")
+        # EDS's own "Personal" calendar is the default until the user picks another; Birthdays is made from contacts
+        self.assertEqual([k for k, v in rows.items() if v["default"]], ["system-calendar"])
+        self.assertEqual(rows["birthdays"]["backend"], "contacts")
 
     def test_events_expanded_in_their_zones(self):
         # Dhaka is UTC+6 all year: Nov 4 2026 local midnight is Nov 3 18:00 UTC
@@ -151,6 +154,37 @@ class CalendarHelper(unittest.TestCase):
     def test_range_leaves_out_other_times(self):
         r = self.run_helper("events", str(self.at(2026, 11, 10)), str(self.at(2026, 11, 12)))
         self.assertEqual([json.loads(l)["uid"] for l in r.stdout.splitlines()], ["weekly"])
+
+    def test_add_puts_an_event_in_the_calendar(self):
+        # December, away from the other tests' ranges; Dhaka is UTC+6
+        dhaka = lambda h=0: self.at(2026, 12, 15, h) - 6 * 3600
+        r = self.run_helper("add", "shown", "timed", str(dhaka(10)), str(dhaka(11)), 'Dentist "Dr. Rahman", room 2')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        uid = r.stdout.strip()
+        self.assertTrue(uid, "its uid printed")
+        r = self.run_helper("add", "shown", "allday", str(dhaka() + 86400), str(dhaka() + 2 * 86400), "Trip")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        r = self.run_helper("events", str(dhaka()), str(dhaka() + 3 * 86400))
+        events = {e["title"]: e for e in map(json.loads, r.stdout.splitlines())}
+        dentist = events['Dentist "Dr. Rahman", room 2']
+        self.assertEqual((dentist["uid"], dentist["source"]), (uid, "shown"))
+        self.assertEqual((dentist["start"], dentist["end"]), (dhaka(10), dhaka(11)), "10:00 to 11:00 local")
+        self.assertIs(dentist["allDay"], False)
+        trip = events["Trip"]
+        self.assertIs(trip["allDay"], True)
+        self.assertEqual((trip["start"], trip["end"]), (dhaka() + 86400, dhaka() + 2 * 86400), "the 16th, all day")
+        saved = (self.tmp / "home" / "data" / "evolution" / "calendar" / "shown" / "calendar.ics").read_text()
+        self.assertIn("TZID=/freeassociation.sourceforge.net/Asia/Dhaka", saved.replace("\r\n ", ""),
+                      "kept in the local time zone, not UTC")
+        self.assertIn("DTSTART;VALUE=DATE:20261216", saved)
+
+    def test_add_refuses_what_it_cannot_do(self):
+        r = self.run_helper("add", "nowhere", "timed", "100", "200", "x")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("no calendar nowhere", r.stderr)
+        for args in [("add", "shown", "timed", "200", "100", "x"), ("add", "shown", "sometimes", "100", "200", "x"),
+                     ("add", "shown", "timed", "100", "200", ""), ("add", "shown", "timed", "100", "200")]:
+            self.assertEqual(self.run_helper(*args).returncode, 1, args)
 
     def test_refresh_and_bad_command_lines(self):
         self.assertEqual(self.run_helper("refresh").returncode, 0)

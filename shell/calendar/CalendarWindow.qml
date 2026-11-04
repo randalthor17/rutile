@@ -4,7 +4,7 @@
 // it opens it reads the calendar folder and fetches the calendar addresses (Settings > Calendar: Google Calendar's
 // secret address and the like, D94) and reads evolution-data-server's calendars (Google accounts added in GNOME
 // Online Accounts, D95), and no more: nothing runs while it is closed. GNOME Calendar edits those: a click on such an
-// event opens it there, and "Open Calendar" opens the app.
+// event opens it there, and "Open Calendar" opens the app. The + beside the day adds an event to one of them (D101).
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -74,6 +74,7 @@ PanelWindow {
     }
     EdsCalendar {
         id: eds
+        onAdded: (ok, error) => panel.addFinished(ok, error)
         // the six weeks the month shows
         from: panel.days[0]
         to: new Date(panel.days[41].getFullYear(), panel.days[41].getMonth(), panel.days[41].getDate() + 1)
@@ -96,6 +97,9 @@ PanelWindow {
         events: Calendar.icsEvents(root.folderText + "\n" + feeds.text).concat(Calendar.edsEvents(eds.text))
         hasFolder: (root.folder !== "" && root.hasFolder) || feeds.addresses.length > 0 || eds.available
         hasApp: root.hasApp
+        calendars: eds.available ? eds.calendars : []
+        saving: eds.adding
+        onAddRequested: (source, allDay, start, end, title) => eds.add(source, allDay, start, end, title)
         onEventOpened: uuid => root.openApp(["--uuid", uuid])
         onAppRequested: root.openApp([])
         note: feeds.failed.length === 0 ? "" : feeds.failed.length === 1 ? "A calendar could not be refreshed: showing its saved events."

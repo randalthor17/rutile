@@ -1152,3 +1152,23 @@ greeter):
 - **Alternatives.** NetworkManager's D-Bus API directly (AddAndActivateConnection with the secrets): no stand-in
   as simple as a fake nmcli for the tests, and more code for the same result. `nmcli device wifi connect ... hidden
   yes password ...`: puts the password in the arguments.
+
+**D101. Adding an event from the calendar popup** (plan 2.12, the maintainer's list, 2026-11-05):
+- **What.** A + beside the chosen day's title opens a form in place of its events: the title, All day or a start and
+  an end time (typed as 9:30, 21:30, 9pm...; the next full hour today, else 9:00, an hour long), and which calendar
+  when there is more than one. Save adds it; the form stays with the reason when that fails (a read-only calendar,
+  the server). Enter in a field saves, Escape closes the form (not the calendar), and the arrows move the day only
+  while the form is closed.
+- **Where it goes.** Only to evolution-data-server's calendars (Google and the other GNOME Online Accounts ones, and
+  local ones): `rutile-calendar add SOURCE timed|allday START END TITLE` creates the event with libecal, in the
+  local time zone (its VTIMEZONE added to the calendar), or as dates for an all-day one; EDS sends it to Google with
+  its next sync. `sources` now marks the data server's default calendar, which the form chooses first; calendars
+  made from contacts (Birthdays) and weather are not offered. The calendar folder and the iCal addresses are
+  read-only copies and take no events; without EDS calendars the + is not shown.
+- **Checked** with a real evolution-data-server on a private bus (an event and an all-day one added and read back,
+  the time zone kept, refusals' exit codes), the QML side with a fake helper, the form offscreen. Not tried with a
+  real Google account.
+- **Not done.** Editing and deleting (GNOME Calendar does them; a click on an event opens it there), repeats,
+  reminders, a location, guests.
+- **Alternatives.** Opening GNOME Calendar to add it: a whole app for a title and a time. Writing an .ics into the
+  calendar folder: vdirsyncer users only, and nothing reaches Google until their next sync.

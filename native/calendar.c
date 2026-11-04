@@ -12,12 +12,17 @@
  *                                    events' own time zones; all-day events from local midnight to local midnight
  *   rutile-calendar refresh          asks every calendar that can to sync with its server now
  *   rutile-calendar sources          the calendars, one JSON object a line: {"source", "name", "color", "backend",
- *                                    "selected"}
+ *                                    "selected", "default" (the one new events go to unless another is chosen)}
+ *   rutile-calendar add SOURCE timed|allday START END TITLE
+ *                                    adds an event to that calendar (D101) and prints its uid: START and END in Unix
+ *                                    seconds, in the local time zone; an all-day one's START and END are local
+ *                                    midnights (END the day after its last day)
  *
  * Each calendar is read on a thread of its own, its lines printed together, in the data server's order.
  * Only enabled calendars that are selected (shown, in GNOME Calendar's terms) are read. A calendar that cannot be
  * opened (offline, a sign-in to renew) is skipped with a line on stderr; the others still print.
- * Exit status: 0; 1 for a wrong command line; 2 when evolution-data-server cannot be reached.
+ * Exit status: 0; 1 for a wrong command line; 2 when evolution-data-server cannot be reached; 3 when an event cannot
+ * be added (no such calendar, a read-only one, or the server said no; why on stderr).
  */
 #define _POSIX_C_SOURCE 200809L
 
@@ -182,6 +187,57 @@ static gpointer work(gpointer data) {
     return NULL;
 }
 
+/* A local time as iCalendar's: a date for an all-day event, else a time in the local zone (UTC when unknown). */
+static ICalTime *ical_time(time_t t, gboolean date, ICalTimezone *local) {
+    ICalTime *it = i_cal_time_new_from_timet_with_zone(t, date, local != NULL ? local : i_cal_timezone_get_utc_timezone());
+    if (!date) i_cal_time_set_timezone(it, local != NULL ? local : i_cal_timezone_get_utc_timezone());
+    return it;
+}
+
+/* `add`: the event into the calendar `source_uid`; its uid on stdout. */
+static int add_event(ESourceRegistry *registry, ICalTimezone *local, const char *source_uid, gboolean all_day,
+                     time_t start, time_t end, const char *title) {
+    ESource *source = e_source_registry_ref_source(registry, source_uid);
+    if (source == NULL || !e_source_has_extension(source, E_SOURCE_EXTENSION_CALENDAR)) {
+        fprintf(stderr, "rutile-calendar: no calendar %s\n", source_uid);
+        if (source != NULL) g_object_unref(source);
+        return 3;
+    }
+    ECalClient *client = open_calendar(source, local);
+    g_object_unref(source);
+    if (client == NULL) return 3;
+    int status = 0;
+    if (e_client_is_readonly(E_CLIENT(client))) {
+        fprintf(stderr, "rutile-calendar: %s is read-only\n", source_uid);
+        status = 3;
+    } else {
+        GError *error = NULL;
+        if (local != NULL && !all_day && !e_cal_client_add_timezone_sync(client, local, NULL, &error)) {
+            fprintf(stderr, "rutile-calendar: time zone: %s\n", error->message);   /* the event still goes in */
+            g_clear_error(&error);
+        }
+        ICalComponent *event = i_cal_component_new_vevent();
+        i_cal_component_set_summary(event, title);
+        ICalTime *s = ical_time(start, all_day, local), *e = ical_time(end, all_day, local);
+        i_cal_component_set_dtstart(event, s);
+        i_cal_component_set_dtend(event, e);
+        g_object_unref(s);
+        g_object_unref(e);
+        gchar *uid = NULL;
+        if (e_cal_client_create_object_sync(client, event, E_CAL_OPERATION_FLAG_NONE, &uid, NULL, &error)) {
+            printf("%s\n", uid != NULL ? uid : "");
+            g_free(uid);
+        } else {
+            fprintf(stderr, "rutile-calendar: %s\n", error != NULL ? error->message : "cannot add the event");
+            g_clear_error(&error);
+            status = 3;
+        }
+        g_object_unref(event);
+    }
+    g_object_unref(client);
+    return status;
+}
+
 static gboolean parse_time(const char *s, time_t *out) {
     char *end = NULL;
     errno = 0;
@@ -192,7 +248,8 @@ static gboolean parse_time(const char *s, time_t *out) {
 }
 
 static int usage(void) {
-    fputs("usage: rutile-calendar events FROM TO | refresh | sources\n", stderr);
+    fputs("usage: rutile-calendar events FROM TO | refresh | sources | add SOURCE timed|allday START END TITLE\n",
+          stderr);
     return 1;
 }
 
@@ -202,6 +259,10 @@ int main(int argc, char **argv) {
     time_t from = 0, to = 0;
     if (strcmp(cmd, "events") == 0) {
         if (argc != 4 || !parse_time(argv[2], &from) || !parse_time(argv[3], &to) || to <= from) return usage();
+    } else if (strcmp(cmd, "add") == 0) {
+        if (argc != 7 || (strcmp(argv[3], "timed") != 0 && strcmp(argv[3], "allday") != 0)
+            || !parse_time(argv[4], &from) || !parse_time(argv[5], &to) || to <= from || argv[6][0] == '\0')
+            return usage();
     } else if ((strcmp(cmd, "refresh") != 0 && strcmp(cmd, "sources") != 0) || argc != 2) {
         return usage();
     }
@@ -214,6 +275,13 @@ int main(int argc, char **argv) {
         return 2;
     }
     ICalTimezone *local = local_zone();
+    if (strcmp(cmd, "add") == 0) {
+        int status = add_event(registry, local, argv[2], strcmp(argv[3], "allday") == 0, from, to, argv[6]);
+        g_object_unref(registry);
+        fflush(stdout);
+        return status;
+    }
+    ESource *fallback = e_source_registry_ref_default_calendar(registry);
     GList *sources = e_source_registry_list_enabled(registry, E_SOURCE_EXTENSION_CALENDAR);
     GPtrArray *calendars = g_ptr_array_new();
     GString *out = g_string_new("");
@@ -227,7 +295,8 @@ int main(int argc, char **argv) {
             put_field(line, "name", e_source_get_display_name(source), FALSE);
             put_field(line, "color", color, FALSE);
             put_field(line, "backend", e_source_backend_get_backend_name(backend), FALSE);
-            g_string_append_printf(line, ",\"selected\":%s}", selected(source) ? "true" : "false");
+            g_string_append_printf(line, ",\"selected\":%s,\"default\":%s}", selected(source) ? "true" : "false",
+                                   fallback != NULL && e_source_equal(source, fallback) ? "true" : "false");
             emit(out, line);
             g_string_free(line, TRUE);
             g_free(color);
@@ -256,6 +325,7 @@ int main(int argc, char **argv) {
     fwrite(out->str, 1, out->len, stdout);
     g_string_free(out, TRUE);
     g_list_free_full(sources, g_object_unref);
+    if (fallback != NULL) g_object_unref(fallback);
     g_object_unref(registry);
     fflush(stdout);
     return 0;

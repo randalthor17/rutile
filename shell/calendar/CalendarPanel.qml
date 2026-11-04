@@ -5,6 +5,9 @@ pragma ComponentBehavior: Bound
 // the arrow keys move the chosen day and Home goes back to today. It grows in from the top left with the shared
 // popup motion (D43) and closes when another window takes the keyboard, as the notification list (D41). Plain QtQuick
 // on `events` (Calendar.icsEvents' data) and `now`, so it tests offscreen with fixed dates.
+// With `calendars` (evolution-data-server's that take events, D101), a + beside the day's title opens a form in place
+// of its events: the title, all day or from and to, and which calendar; Save asks for it (`addRequested`), and the
+// owner says how it went (`addFinished`).
 import QtQuick
 import qs.common
 import qs.components
@@ -24,6 +27,11 @@ Rectangle {
     property var locale: Qt.locale()
     property date selected: Calendar.startOfDay(now)
     property date month: new Date(now.getFullYear(), now.getMonth(), 1)
+    property var calendars: []              // Calendar.edsCalendars: where a new event can go
+    property bool saving: false             // the owner is adding one
+    property bool composing: false          // the form is open
+    property string composeCalendar: ""     // its calendar's source
+    property string composeError: ""
 
     readonly property real cell: Spacing.xxl + Spacing.sm
     readonly property int maxRows: 4
@@ -46,6 +54,7 @@ Rectangle {
     signal eventOpened(string uuid)          // an evolution-data-server event clicked: GNOME Calendar opens it (D95)
     signal appRequested()                    // "Open Calendar"
     signal windowFocusLost()
+    signal addRequested(string source, bool allDay, date start, date end, string title)
     signal hidden()
 
     function select(day) {
@@ -58,6 +67,43 @@ Rectangle {
         month = m;
         selected = m.getMonth() === now.getMonth() && m.getFullYear() === now.getFullYear() ? Calendar.startOfDay(now) : m;
     }
+    function compose() {
+        if (calendars.length === 0) return;
+        const start = Calendar.suggestedStart(selected, now);
+        titleField.text = "";
+        startField.text = Calendar.clockText(start, use24h);
+        endField.text = Calendar.clockText(start + 60, use24h);
+        allDaySwitch.checked = false;
+        if (!calendars.some(c => c.source === composeCalendar)) composeCalendar = calendars[0].source;
+        composeError = "";
+        composing = true;
+        titleField.input.forceActiveFocus();
+    }
+    function cancelCompose() {
+        composing = false;
+        root.forceActiveFocus();
+    }
+    function save() {
+        if (saving) return;
+        const title = titleField.text.trim();
+        if (title === "") {
+            composeError = "Give it a title";
+            titleField.input.forceActiveFocus();
+            return;
+        }
+        const times = Calendar.newEventTimes(selected, allDaySwitch.checked, startField.text, endField.text);
+        if (times.error) {
+            composeError = times.error;
+            return;
+        }
+        composeError = "";
+        addRequested(composeCalendar, allDaySwitch.checked, times.start, times.end, title);
+    }
+    // the owner's answer to addRequested: added (the form closes), or why not (it stays, to try again)
+    function addFinished(ok, error) {
+        if (ok) cancelCompose();
+        else composeError = error || "The event could not be added";
+    }
     function moveDay(step) {
         select(new Date(selected.getFullYear(), selected.getMonth(), selected.getDate() + step));
     }
@@ -69,12 +115,16 @@ Rectangle {
         else if (hadWindowFocus) windowFocusLost();
     }
 
-    Keys.onLeftPressed: moveDay(-1)
-    Keys.onRightPressed: moveDay(1)
-    Keys.onUpPressed: moveDay(-7)
-    Keys.onDownPressed: moveDay(7)
+    // the arrows move the day, except while the form is open (its fields' keys that they do not use come here)
     Keys.onPressed: event => {
-        if (event.key === Qt.Key_PageUp) moveMonth(-1);
+        if (composing) {
+            if (event.key === Qt.Key_Escape) cancelCompose();
+            else return;
+        } else if (event.key === Qt.Key_Left) moveDay(-1);
+        else if (event.key === Qt.Key_Right) moveDay(1);
+        else if (event.key === Qt.Key_Up) moveDay(-7);
+        else if (event.key === Qt.Key_Down) moveDay(7);
+        else if (event.key === Qt.Key_PageUp) moveMonth(-1);
         else if (event.key === Qt.Key_PageDown) moveMonth(1);
         else if (event.key === Qt.Key_Home) select(now);
         else return;
@@ -266,18 +316,142 @@ Rectangle {
         }
 
         // ---- the chosen day's events ----
-        Text {
-            id: dayTitle
-            objectName: "calendarDayTitle"
-            leftPadding: Spacing.sm
-            topPadding: Spacing.xs
-            text: root.locale.toString(root.selected, "dddd, MMMM d")
-            color: Colors.surfaceOn
-            font: Type.font(Type.titleSmall)
+        Item {
+            width: parent.width
+            height: dayTitle.height
+            Text {
+                id: dayTitle
+                objectName: "calendarDayTitle"
+                leftPadding: Spacing.sm
+                topPadding: Spacing.xs
+                text: root.locale.toString(root.selected, "dddd, MMMM d")
+                color: Colors.surfaceOn
+                font: Type.font(Type.titleSmall)
+            }
+            IconButton {
+                objectName: "calendarAdd"
+                visible: root.calendars.length > 0 && !root.composing
+                anchors.right: parent.right
+                anchors.verticalCenter: dayTitle.verticalCenter
+                anchors.verticalCenterOffset: Spacing.xs / 2
+                size: "xs"
+                iconName: "add"
+                Accessible.name: "Add an event"
+                onClicked: root.compose()
+            }
+        }
+        // ---- a new event (D101), in place of the day's events ----
+        Column {
+            id: composeForm
+            objectName: "calendarCompose"
+            visible: root.composing
+            width: parent.width
+            spacing: Spacing.sm
+            TextField {
+                id: titleField
+                objectName: "calendarTitleField"
+                width: parent.width
+                label: "Title"
+                backgroundColor: Colors.surfaceContainer
+                enabled: !root.saving
+                onAccepted: root.save()
+            }
+            Item {
+                width: parent.width
+                height: chooser.height
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Spacing.sm
+                    Switch {
+                        id: allDaySwitch
+                        objectName: "calendarAllDay"
+                        anchors.verticalCenter: parent.verticalCenter
+                        enabled: !root.saving
+                    }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "All day"
+                        color: Colors.surfaceOn
+                        font: Type.font(Type.bodyMedium)
+                    }
+                }
+                // which calendar, when there is a choice
+                Button {
+                    id: chooser
+                    objectName: "calendarChoose"
+                    anchors.right: parent.right
+                    visible: root.calendars.length > 1
+                    type: "text"
+                    size: "xs"
+                    iconName: "calendar_month"
+                    text: root.calendars.find(c => c.source === root.composeCalendar)?.name ?? ""
+                    enabled: !root.saving
+                    onClicked: calendarMenu.open = !calendarMenu.open
+                }
+            }
+            Row {
+                visible: !allDaySwitch.checked
+                width: parent.width
+                spacing: Spacing.sm
+                TextField {
+                    id: startField
+                    objectName: "calendarStartField"
+                    width: (parent.width - parent.spacing) / 2
+                    label: "Starts"
+                    backgroundColor: Colors.surfaceContainer
+                    enabled: !root.saving
+                    onAccepted: root.save()
+                }
+                TextField {
+                    id: endField
+                    objectName: "calendarEndField"
+                    width: (parent.width - parent.spacing) / 2
+                    label: "Ends"
+                    backgroundColor: Colors.surfaceContainer
+                    enabled: !root.saving
+                    onAccepted: root.save()
+                }
+            }
+            Item {
+                width: parent.width
+                height: saveButton.height
+                Text {
+                    objectName: "calendarComposeError"
+                    anchors.left: parent.left
+                    anchors.right: buttons.left
+                    anchors.leftMargin: Spacing.sm
+                    anchors.verticalCenter: parent.verticalCenter
+                    elide: Text.ElideRight
+                    text: root.composeError
+                    color: Colors.error
+                    font: Type.font(Type.bodySmall)
+                }
+                Row {
+                    id: buttons
+                    anchors.right: parent.right
+                    spacing: Spacing.xs
+                    Button {
+                        objectName: "calendarCancel"
+                        type: "text"
+                        size: "xs"
+                        text: "Cancel"
+                        onClicked: root.cancelCompose()
+                    }
+                    Button {
+                        id: saveButton
+                        objectName: "calendarSave"
+                        type: "filled"
+                        size: "xs"
+                        text: root.saving ? "Saving…" : "Save"
+                        enabled: !root.saving
+                        onClicked: root.save()
+                    }
+                }
+            }
         }
         Text {
             objectName: "calendarEmpty"
-            visible: root.dayEvents.length === 0
+            visible: root.dayEvents.length === 0 && !root.composing
             leftPadding: Spacing.sm
             width: parent.width
             wrapMode: Text.Wrap
@@ -295,7 +469,7 @@ Rectangle {
         }
         Flickable {
             id: flick
-            visible: root.dayEvents.length > 0
+            visible: root.dayEvents.length > 0 && !root.composing
             width: parent.width
             height: Math.min(list.implicitHeight, root.maxRows * (root.rowHeight + ControlSpec.listSpec.segmentedGap))
             contentHeight: list.implicitHeight
@@ -344,6 +518,22 @@ Rectangle {
             iconName: "edit_calendar"
             text: "Open Calendar"
             onClicked: root.appRequested()
+        }
+    }
+
+    PopupLoader {
+        id: calendarMenu
+        origin: Item.Top
+        x: column.x + composeForm.x + composeForm.width - ((item as Item)?.width ?? 0)
+        y: column.y + composeForm.y + chooser.parent.y + chooser.height
+        sourceComponent: Menu {
+            itemPrefix: "calendarChoice_"
+            items: root.calendars.map(c => ({ id: c.source, text: c.name, icon: "calendar_month", check: "radio",
+                                              checked: c.source === root.composeCalendar }))
+            onChosen: id => {
+                calendarMenu.open = false;
+                root.composeCalendar = id;
+            }
         }
     }
 }

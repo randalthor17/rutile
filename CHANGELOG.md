@@ -10,6 +10,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   choice. It remembers who signed in last and the session they used. Turn it on with the flake's
   `nixosModules.greeter` (see the install guide). It shows each person's own wallpaper and colors, as their desktop
   has them, and always shows the session you will sign in to.
+- **Add events from the calendar.** The + beside the day in the calendar under the clock adds an event to your
+  Google (or other) calendar: a title, all day or from and to, and which calendar.
 - **A lighter calendar.** The calendar under the clock takes about half the memory it did while open.
 - **Hidden Wi-Fi networks.** Quick Settings' Wi-Fi page joins a network that does not show its name: choose
   "Hidden network", type its name and password.

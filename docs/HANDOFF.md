@@ -57,7 +57,7 @@ surfaces), no focus ring. See `docs/components.md`.
 2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97).
    The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
 3. Finish the component kit (1.5: NavRail, GeminiGlow once a reference image exists) and the gallery review (1.7).
-4. Smaller open parts: adding events from the popup, calendar addresses and evolution-data-server for widgets.
+4. Smaller open parts: calendar addresses and evolution-data-server for widgets.
 5. Widget generation and the local-model trial stay deferred (D82).
 
 ## 3. Resume in five minutes
@@ -208,7 +208,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/widgethost/` | charts (D87): `ChartNode.qml`; the widget check (4.6, D85): `WidgetCheck.js`, the port of `tools/widget_check.py`, and `WidgetChecker` for IPC; the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the top bar: the clock (opens the calendar), the status pill (opens Quick Settings), the bell, app indicators, and their windows |
 | `shell/greeter/`, `shell/greeter.qml` | the greetd greeter (D97): `Greeter.js` (people, sessions, the remembered choice, the launch command), `GreeterSession` (Quickshell's Greetd), `GreeterPanel`, `GreeterWindow`; `nix/greeter.nix` is its NixOS module, `nix/tests/greeter.nix` its VM test |
-| `shell/calendar/` | the calendar under the clock (D93 to D95): `Calendar.js` (iCalendar, repeats, the month), the panel and window, `CalendarFeeds` (calendar addresses), `EdsCalendar` (evolution-data-server through `build/rutile-calendar`) |
+| `shell/calendar/` | the calendar under the clock (D93 to D95, D101): `Calendar.js` (iCalendar, repeats, the month, a new event), the panel and window, `CalendarFeeds` (calendar addresses), `EdsCalendar` (evolution-data-server through `build/rutile-calendar`) |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
 | `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
@@ -220,7 +220,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call; `flatpak-theming` (D66) |
-| `native/` | the C programs: the Firefox colors' host (D54) and the calendar's evolution-data-server reader (D95); `make native` builds `build/rutile-pywalfox-host` and `build/rutile-calendar` |
+| `native/` | the C programs: the Firefox colors' host (D54) and the calendar's evolution-data-server reader and writer (D95, D101); `make native` builds `build/rutile-pywalfox-host` and `build/rutile-calendar` |
 | `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
 | `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`, `settings.md`) |
 | `flake.nix` | dev shells (`default`, and x86_64-only `local-ai`), the font package, the NixOS module, the home-manager module |

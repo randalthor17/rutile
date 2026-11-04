@@ -82,7 +82,9 @@ ShellRoot {
                 readLog.running = true;
                 root.stage = 30;
             } else if (root.stage === 30 && !readLog.running && logText.text !== "") {
-                t.compare(logText.text.trim().split("\n").join("|"),
+                const log = logText.text.trim().split("\n");
+                t.compare(log.filter(l => l === "sources").length, 1, "the calendars listed once, for adding (D101)");
+                t.compare(log.filter(l => l !== "sources").join("|"),
                           "events 1793700000 1794000000|refresh|events 1793700000 1794000000|events 1795000000 1796000000",
                           "read, sync, read, then the new range once");
                 down.running = true;

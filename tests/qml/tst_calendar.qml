@@ -339,6 +339,131 @@ TestCase {
     }
     Component { id: spyComp; SignalSpy {} }
 
+    // ---- adding an event (D101) ----
+    function test_add_helpers() {
+        compare(Calendar.parseClock("9"), 540);
+        compare(Calendar.parseClock("09:30"), 570);
+        compare(Calendar.parseClock("9.30"), 570);
+        compare(Calendar.parseClock("930"), 570);
+        compare(Calendar.parseClock("21:05"), 1265);
+        compare(Calendar.parseClock("9pm"), 1260);
+        compare(Calendar.parseClock("12 AM"), 0);
+        compare(Calendar.parseClock("12:15 p.m."), 735);
+        compare(Calendar.parseClock("9:30 PM"), 1290);
+        for (const bad of ["", "25", "9:60", "13pm", "noon", "9:3"])
+            compare(Calendar.parseClock(bad), -1, bad);
+        compare(Calendar.clockText(570, true), "9:30");
+        compare(Calendar.clockText(1290, false), "9:30 PM");
+        compare(Calendar.clockText(0, false), "12:00 AM");
+        const now = new Date(2026, 10, 4, 9, 30);
+        compare(Calendar.suggestedStart(now, now), 600, "today: the next full hour");
+        compare(Calendar.suggestedStart(new Date(2026, 10, 4, 23, 30), new Date(2026, 10, 4, 23, 30)), 1380, "never past 23:00");
+        compare(Calendar.suggestedStart(new Date(2026, 10, 5), now), 540, "another day: 9:00");
+        const day = new Date(2026, 10, 12);
+        let t = Calendar.newEventTimes(day, false, "9:30", "10:15");
+        compare(t.start.getTime(), new Date(2026, 10, 12, 9, 30).getTime());
+        compare(t.end.getTime(), new Date(2026, 10, 12, 10, 15).getTime());
+        t = Calendar.newEventTimes(day, false, "23:00", "0:00");
+        compare(t.end.getTime(), new Date(2026, 10, 13).getTime(), "midnight: the end of the day");
+        compare(Calendar.newEventTimes(day, false, "10", "9").error, "It ends before it starts");
+        compare(Calendar.newEventTimes(day, false, "x", "9").error, "Type a start time, like 9:30");
+        compare(Calendar.newEventTimes(day, false, "9", "").error, "Type an end time, like 10:30");
+        t = Calendar.newEventTimes(day, true, "x", "y");
+        compare([t.start.getTime(), t.end.getTime()].join(), [new Date(2026, 10, 12).getTime(), new Date(2026, 10, 13).getTime()].join(),
+                "all day: the day, to the next one's start; the times not read");
+        compare(Calendar.addCommand("h", "src", false, new Date(1793800000000), new Date(1793803600000), "A b").join("|"),
+                "h|add|src|timed|1793800000|1793803600|A b");
+        const cals = Calendar.edsCalendars([
+            '{"source":"birthdays","name":"Birthdays","backend":"contacts","default":false}',
+            '{"source":"w","name":"Work","color":"#f00","backend":"caldav","default":false}', "not json",
+            '{"source":"p","name":"Personal","backend":"local","default":true}'].join("\n"));
+        compare(cals.map(c => c.source).join(), "p,w", "the default first; Birthdays left out");
+    }
+
+    readonly property var twoCalendars: [{ source: "p", name: "Personal", color: "", isDefault: true },
+                                         { source: "w", name: "Work", color: "#f00", isDefault: false }]
+    function test_add_form() {
+        const none = panel();
+        verify(!findChild(none, "calendarAdd").visible, "no calendar that takes events: no +");
+        const p = panel({ calendars: twoCalendars });
+        const asked = createTemporaryObject(spyComp, root, { target: p, signalName: "addRequested" });
+        p.forceActiveFocus();
+        mouseClick(findChild(p, "calendarDay_2026-11-12"));
+        const add = findChild(p, "calendarAdd");
+        verify(add.visible);
+        mouseClick(add);
+        verify(p.composing);
+        verify(findChild(p, "calendarCompose").visible);
+        verify(!findChild(p, "calendarEmpty").visible, "the form in place of the day's events");
+        verify(!add.visible);
+        const title = findChild(p, "calendarTitleField");
+        tryVerify(() => title.focused, 1000, "the title takes the keys");
+        compare(findChild(p, "calendarStartField").text, "9:00", "another day: 9:00");
+        compare(findChild(p, "calendarEndField").text, "10:00", "an hour long");
+        compare(findChild(p, "calendarChoose").text, "Personal", "the default calendar");
+        verify(p.height <= p.maxHeight + 0.5, "the form fits the window: " + p.height + " within " + p.maxHeight);
+        // keys go to the field, not to the days
+        keyClick(Qt.Key_Down);
+        compare(Calendar.dayKey(p.selected), "2026-11-12");
+        keyClick(Qt.Key_Return);
+        compare(asked.count, 0, "no title: nothing asked");
+        compare(findChild(p, "calendarComposeError").text, "Give it a title");
+        for (const c of "Dentist") keyClick(c);
+        const end = findChild(p, "calendarEndField");
+        end.text = "8:00";
+        keyClick(Qt.Key_Return);
+        compare(asked.count, 0);
+        compare(findChild(p, "calendarComposeError").text, "It ends before it starts");
+        end.text = "10:30";
+        // another calendar, from the menu
+        mouseClick(findChild(p, "calendarChoose"));
+        tryVerify(() => findChild(p, "calendarChoice_w") !== null);
+        const work = findChild(p, "calendarChoice_w");
+        tryCompare(work, "opacity", 1);
+        mouseClick(work);
+        compare(findChild(p, "calendarChoose").text, "Work");
+        mouseClick(findChild(p, "calendarSave"));
+        compare(asked.count, 1);
+        const a = asked.signalArguments[0];
+        compare([a[0], a[1], a[4]].join(), "w,false,Dentist");
+        compare(a[2].getTime(), new Date(2026, 10, 12, 9).getTime());
+        compare(a[3].getTime(), new Date(2026, 10, 12, 10, 30).getTime());
+        // the owner's answer: a failure keeps the form, with why
+        p.saving = true;
+        compare(findChild(p, "calendarSave").text, "Saving…");
+        p.saving = false;
+        p.addFinished(false, "w is read-only");
+        verify(p.composing);
+        compare(findChild(p, "calendarComposeError").text, "w is read-only");
+        p.addFinished(true, "");
+        verify(!p.composing, "added: the form closes");
+        verify(findChild(p, "calendarEmpty").visible);
+        // all day, and Escape cancels
+        mouseClick(add);
+        compare(title.text, "", "a fresh form");
+        compare(findChild(p, "calendarChoose").text, "Work", "the calendar chosen last");
+        mouseClick(findChild(p, "calendarAllDay"));
+        verify(!findChild(p, "calendarStartField").visible, "all day: no times");
+        title.input.forceActiveFocus();
+        for (const c of "Trip") keyClick(c);
+        keyClick(Qt.Key_Return);
+        compare(asked.count, 2);
+        const b = asked.signalArguments[1];
+        compare(b[1], true);
+        compare(b[2].getTime(), new Date(2026, 10, 12).getTime());
+        compare(b[3].getTime(), new Date(2026, 10, 13).getTime());
+        keyClick(Qt.Key_Escape);
+        verify(!p.composing, "Escape closes the form, not the calendar");
+        keyClick(Qt.Key_Right);
+        compare(Calendar.dayKey(p.selected), "2026-11-13", "the arrows move the day again");
+    }
+    function test_add_one_calendar() {
+        const p = panel({ calendars: [twoCalendars[1]] });
+        mouseClick(findChild(p, "calendarAdd"));
+        verify(!findChild(p, "calendarChoose").visible, "one calendar: no choice to show");
+        compare(findChild(p, "calendarStartField").text, "10:00", "today: the next full hour");
+    }
+
     // ---- the clock's open look ----
     Component { id: pillComp; ClockPill {} }
     function test_clock_open() {

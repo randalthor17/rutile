@@ -252,6 +252,64 @@ function eventUuid(e) {
     return e.source && e.uid ? e.source + ":" + e.uid : "";
 }
 
+// ---- adding an event (D101) ----
+// The calendars an event can go to, from `rutile-calendar sources`: [{source, name, color, isDefault}], the
+// data server's default first. Birthdays (made from contacts) and weather calendars are read-only and left out.
+function edsCalendars(text) {
+    var out = [];
+    String(text || "").split("\n").forEach(function (line) {
+        var o;
+        try { o = JSON.parse(line); } catch (e) { return; }
+        if (!o || !o.source || o.backend === "contacts" || o.backend === "weather") return;
+        out.push({ source: o.source, name: o.name || o.source, color: o.color || "", isDefault: o.default === true });
+    });
+    return out.sort(function (a, b) { return (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0); });
+}
+// A time of day as typed ("9", "09:30", "9.30", "930", "21:30", "9pm", "9:30 AM") as minutes after midnight; -1
+// when it is not one.
+function parseClock(text) {
+    var m = /^\s*(\d{1,2})(?:[:.]?(\d{2}))?\s*([ap])?\.?\s*m?\.?\s*$/i.exec(String(text || ""));
+    if (!m) return -1;
+    var h = parseInt(m[1], 10), min = m[2] !== undefined ? parseInt(m[2], 10) : 0;
+    if (min > 59) return -1;
+    if (m[3]) {
+        if (h < 1 || h > 12) return -1;
+        h = h % 12 + (m[3].toLowerCase() === "p" ? 12 : 0);
+    } else if (h > 23) {
+        return -1;
+    }
+    return h * 60 + min;
+}
+// Minutes after midnight as the clock shows them ("9:30", "21:30" or "9:30 PM").
+function clockText(minutes, use24h) {
+    var h = Math.floor(minutes / 60) % 24, m = minutes % 60, mm = (m < 10 ? "0" : "") + m;
+    if (use24h) return h + ":" + mm;
+    return ((h + 11) % 12 + 1) + ":" + mm + (h < 12 ? " AM" : " PM");
+}
+// When a new event on `day` starts unless changed: the next full hour today (at most 23:00), else 9:00.
+function suggestedStart(day, now) {
+    if (!sameDay(day, now)) return 9 * 60;
+    return Math.min(23, now.getHours() + 1) * 60;
+}
+// The new event's times from the form: {start, end} (Dates) or {error}. All day: that day, to the next day's start.
+// An end before the start is an error; an end at midnight ("0:00") is the end of the day.
+function newEventTimes(day, allDay, startText, endText) {
+    var d = startOfDay(day);
+    if (allDay) return { start: d, end: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1) };
+    var s = parseClock(startText), e = parseClock(endText);
+    if (s < 0) return { error: "Type a start time, like 9:30" };
+    if (e < 0) return { error: "Type an end time, like 10:30" };
+    if (e === 0) e = 24 * 60;
+    if (e <= s) return { error: "It ends before it starts" };
+    return { start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, s),
+             end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, e) };
+}
+// The command that adds it (rutile-calendar add).
+function addCommand(helper, source, allDay, start, end, title) {
+    return [helper, "add", source, allDay ? "allday" : "timed", String(Math.round(start.getTime() / 1000)),
+            String(Math.round(end.getTime() / 1000)), title];
+}
+
 // ---- the popup ----
 function sameDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
