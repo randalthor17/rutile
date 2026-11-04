@@ -69,6 +69,7 @@ stdenv.mkDerivation {
       ../theme/apps
       ../theme/templates
       ../theme/roles.json
+      ../theme/fixtures/palette-134aae-tonal-spot-dark.json # the greeter's colors by default (D97)
     ];
   };
 

@@ -20,6 +20,8 @@ Rectangle {
     property bool busy: false
     property string error: ""
     property string message: ""          // what PAM asks or tells, when it is not just the password
+    property bool secret: true           // false: the answer shows as typed (a greeter's visible question, D97)
+    property string placeholder: "Password"
     property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
     property string wallpaper: ""        // an image file's path; "" for none
     property real progress: 1            // the lock's motion, see above; may overshoot 1 a little (a spring)
@@ -163,7 +165,7 @@ Rectangle {
                 focus: true
                 clip: true
                 readOnly: root.busy
-                echoMode: TextInput.Password
+                echoMode: root.secret ? TextInput.Password : TextInput.Normal
                 passwordCharacter: "•"
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
                 color: Colors.surfaceOn
@@ -178,7 +180,7 @@ Rectangle {
                     anchors.fill: parent
                     verticalAlignment: Text.AlignVCenter
                     visible: passwordInput.text === ""
-                    text: root.busy ? "Checking…" : "Password"
+                    text: root.busy ? "Checking…" : root.placeholder
                     color: Colors.surfaceVariantOn
                     font: passwordInput.font
                 }

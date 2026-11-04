@@ -25,7 +25,9 @@ import datetime
 import json
 import os
 import re
+import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -35,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -320,7 +322,7 @@ def run_qs_tests(timeout=60, only=None):
     qs = shutil.which("quickshell")
     if not qs:
         return SKIPPED, "quickshell not found", None
-    passed, failed, out = 0, 0, []
+    passed, failed, out, skipped = 0, 0, [], []
     tests = sorted((ROOT / "tests" / "qs").glob("tst_*.qml"))
     if only:
         tests = [t for t in tests if t.stem == only.removesuffix(".qml")]
@@ -331,8 +333,14 @@ def run_qs_tests(timeout=60, only=None):
         try:
             with PrivateBus() as bus:
                 env = dict(qs_test_env(test, ws), DBUS_SESSION_BUS_ADDRESS=bus.address)
-                r = subprocess.run([qs, "-p", str(ws / "shell.qml")], env=env,
-                                   capture_output=True, text=True, timeout=timeout)
+                cmd = [qs, "-p", str(ws / "shell.qml")]
+                if "\n// under fakegreet\n" in test.read_text():
+                    if not shutil.which("fakegreet"):
+                        skipped.append(f"{test.name}: SKIPPED, needs fakegreet (greetd)")
+                        continue
+                    r = under_fakegreet(cmd, env, ws, timeout)
+                else:
+                    r = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=timeout)
             text = r.stdout + r.stderr
         except subprocess.TimeoutExpired as e:
             text, r = f"timed out after {timeout} s\n{e.stdout or ''}", None
@@ -345,7 +353,26 @@ def run_qs_tests(timeout=60, only=None):
             failed += 1
             lines = [l for l in text.splitlines() if "QSTEST" in l or "ERROR" in l or "WARN" in l]
             out.append(f"FAIL {test.name}:\n" + "\n".join(lines[-20:] or text.splitlines()[-20:]))
-    return (1 if failed else 0), "\n".join(out), (passed, failed)
+    return (1 if failed else 0), "\n".join(out + skipped), (passed, failed)
+
+
+def under_fakegreet(cmd, env, ws, timeout):
+    """Run `cmd` as greetd's fake (`fakegreet`, which ships with greetd) runs a greeter, with GREETD_SOCK set; it never
+    exits by itself, so it is stopped once the greeter has. A CompletedProcess like subprocess.run's."""
+    out, rc = ws / "greeter.out", ws / "greeter.rc"
+    script = f"{shlex.join(cmd)} > {shlex.quote(str(out))} 2>&1; echo $? > {shlex.quote(str(rc))}"
+    proc = subprocess.Popen([shutil.which("fakegreet"), script], env=env, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL, start_new_session=True)
+    deadline = time.time() + timeout
+    try:
+        while not rc.exists() and time.time() < deadline:
+            time.sleep(0.1)
+    finally:
+        os.killpg(proc.pid, signal.SIGTERM)
+        proc.wait(10)
+    if not rc.exists():
+        raise subprocess.TimeoutExpired(cmd, timeout, output=out.read_text() if out.exists() else "")
+    return subprocess.CompletedProcess(cmd, int(rc.read_text().strip() or 1), out.read_text(), "")
 
 
 class HeadlessSway:
@@ -1186,6 +1213,97 @@ def layer_surface_requests(text):
     return out
 
 
+def run_greeter_smoke(screenshot=None):
+    """Run shell/greeter.qml under headless sway with greetd's stand-in (fakegreet: only "user", "password" and then
+    "9" sign in) and fixture people and sessions; sign in over IPC, a wrong answer first, and check what it saves.
+    (code, report); SKIPPED without quickshell, sway or fakegreet."""
+    qs, sway, fake = shutil.which("quickshell"), shutil.which("sway"), shutil.which("fakegreet")
+    if not qs or not sway or not fake:
+        return SKIPPED, "needs quickshell, sway and fakegreet (greetd)"
+    greeter = ROOT / "shell" / "greeter.qml"
+    problems, notes = [], []
+    with HeadlessSway() as comp:
+        rt = comp.runtime
+        (rt / "passwd").write_text("root:x:0:0::/root:/bin/sh\nalice:x:1000:100:Alice Liddell:/home/alice:/bin/sh\n"
+                                   "user:x:1001:100:Test User:/home/user:/bin/sh\n")
+        sessions = rt / "data" / "wayland-sessions"
+        sessions.mkdir(parents=True)
+        (sessions / "niri.desktop").write_text("[Desktop Entry]\nName=Niri\nExec=niri-session\nDesktopNames=niri\n")
+        (sessions / "sway.desktop").write_text("[Desktop Entry]\nName=Sway\nExec=sway\n")
+        shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", rt / "palette.json")
+        env = comp.env({"RUTILE_PASSWD": str(rt / "passwd"), "RUTILE_SESSION_DIRS": str(rt / "data"),
+                        "RUTILE_GREETER_STATE": str(rt / "greeter-state.json"), "RUTILE_GREETER_NO_QUIT": "1",
+                        "RUTILE_PALETTE": str(rt / "palette.json")})
+        log_path = rt / "greeter.log"
+        proc = subprocess.Popen([fake, f"{shlex.join([qs, '-p', str(greeter)])} > {shlex.quote(str(log_path))} 2>&1"],
+                                env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+        def ipc(*args):
+            r = subprocess.run([qs, "-p", str(greeter), "ipc", "call", "greeter", *args], env=env,
+                               capture_output=True, text=True, timeout=10)
+            return (r.stdout + r.stderr).strip()
+
+        def state():
+            try:
+                return json.loads(ipc("state"))
+            except ValueError:
+                return {}
+
+        def wait(check, seconds=10):
+            st = {}
+            deadline = time.time() + seconds
+            while time.time() < deadline:
+                st = state()
+                if check(st):
+                    return st
+                time.sleep(0.1)
+            return st
+
+        try:
+            st = wait(lambda s: s.get("phase") == "prompt")
+            if (st.get("users") != ["alice", "user"] or st.get("user") != "alice" or st.get("sessions") != ["niri", "sway"]
+                    or st.get("session") != "niri" or st.get("prompt") != "Password:" or not st.get("available")):
+                problems.append(f"greeter start: {st}, expected alice and niri first, both people and sessions, "
+                                "greetd asking for the password")
+            if screenshot and shutil.which("grim"):
+                time.sleep(1)
+                subprocess.run([shutil.which("grim"), str(screenshot)], env=comp.env(), timeout=10)
+                notes.append(f"screenshot: {screenshot}")
+            if (ipc("chooseUser", "nobody"), ipc("chooseUser", "user"), ipc("chooseSession", "sway")) != ("false", "true", "true"):
+                problems.append("greeter chooseUser/chooseSession: expected an unknown person refused, the rest taken")
+            st = wait(lambda s: s.get("user") == "user" and s.get("phase") == "prompt")
+            ipc("answer", "password")
+            st = wait(lambda s: s.get("prompt") == "7 + 2:")
+            if st.get("secret") is not False:
+                problems.append(f"greeter second question: {st}, expected a visible one")
+            ipc("answer", "1")
+            st = wait(lambda s: s.get("error") == "Wrong password. Try again." and s.get("prompt") == "Password:"
+                      and s.get("phase") == "prompt")
+            if st.get("error") != "Wrong password. Try again.":
+                problems.append(f"greeter wrong answer: {st}, expected greetd's error and the password asked again")
+            ipc("answer", "password")
+            wait(lambda s: s.get("prompt") == "7 + 2:")
+            ipc("answer", "9")
+            st = wait(lambda s: s.get("phase") == "launching")
+            saved = {}
+            try:
+                saved = json.loads((rt / "greeter-state.json").read_text())
+            except (OSError, ValueError):
+                pass
+            if st.get("phase") != "launching" or not st.get("leaving"):
+                problems.append(f"greeter signed in: {st}, expected it to leave and launch")
+            if saved != {"lastUser": "user", "sessions": {"user": "sway"}}:
+                problems.append(f"greeter state file: {saved}, expected user and sway remembered")
+        finally:
+            os.killpg(proc.pid, signal.SIGTERM)
+            proc.wait(10)
+        text = log_path.read_text() if log_path.exists() else ""
+    for line in text.splitlines():
+        if re.search(r"(ERROR|WARN).*(@|file://).*\.qml|TypeError|ReferenceError|is not defined|Unable to assign", line):
+            problems.append(line.strip())
+    return (1 if problems else 0), "\n".join(problems + notes)
+
+
 def run_wayland_surfaces():
     """Start the shell under headless sway with WAYLAND_DEBUG=1, pop up three notifications, open the list and
     Quick Settings, and check what the shell asked of their surfaces: the popups' surface is resized only as
@@ -1384,6 +1502,14 @@ def main(argv):
             return code
         print(out2 if out2 else "wayland surfaces test passed")
         return code or code2
+    if argv and argv[0] == "test-greeter":
+        shot = argv[argv.index("--screenshot") + 1] if "--screenshot" in argv else None
+        code, out = run_greeter_smoke(shot)
+        if code == SKIPPED:
+            print(f"greeter smoke test: SKIPPED, {out}")
+            return 0
+        print(out if out else "greeter smoke test passed")
+        return code
     if argv and argv[0] == "test-qs":
         code, out, counts = run_qs_tests(only=argv[1] if len(argv) > 1 else None)
         if code == SKIPPED:

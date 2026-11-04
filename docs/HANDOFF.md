@@ -54,7 +54,8 @@ surfaces), no focus ring. See `docs/components.md`.
 1. The maintainer tries the shell on the real session with the features together (Quick Settings with real Wi-Fi,
    Bluetooth and Night light; Settings > Windows (D88) with a real pointer; the calendar with a Google account after
    the NixOS services in `docs/install.md`, D95) and reports what looks or works wrong.
-2. Phase 6: the greetd greeter in the shell's style (6.2, Quickshell's `Greetd`), then the installer ISO (6.3).
+2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97);
+   then the installer ISO (6.3).
 3. Finish the component kit (1.5: NavRail, GeminiGlow once a reference image exists) and the gallery review (1.7).
 4. Smaller open parts: hidden Wi-Fi networks (2.6), adding events from the popup, calendar addresses and
    evolution-data-server for widgets.
@@ -207,6 +208,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/widgetsapp/` | the Widgets app (plan 4.5, D82): `WidgetsWindow` reads `widgets/templates` and the user's widgets, `WidgetsApp` the categories and `WidgetCard`s, `Gallery.js` the rules |
 | `shell/widgethost/` | charts (D87): `ChartNode.qml`; the widget check (4.6, D85): `WidgetCheck.js`, the port of `tools/widget_check.py`, and `WidgetChecker` for IPC; the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
 | `shell/bar/` | the top bar: the clock (opens the calendar), the status pill (opens Quick Settings), the bell, app indicators, and their windows |
+| `shell/greeter/`, `shell/greeter.qml` | the greetd greeter (D97): `Greeter.js` (people, sessions, the remembered choice, the launch command), `GreeterSession` (Quickshell's Greetd), `GreeterPanel`, `GreeterWindow`; `nix/greeter.nix` is its NixOS module, `nix/tests/greeter.nix` its VM test |
 | `shell/calendar/` | the calendar under the clock (D93 to D95): `Calendar.js` (iCalendar, repeats, the month), the panel and window, `CalendarFeeds` (calendar addresses), `EdsCalendar` (evolution-data-server through `build/rutile-calendar`) |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
 | `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
@@ -214,7 +216,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tokens/` | vendored Compose Material3 token sources with checksums, generated `m3e.json` and `components.json` |
 | `theme/` | matugen config and template, required color roles, golden palette, `fonts.json` |
 | `settings/` | `schema.json`: every setting of the shell, read by the shell and the home-manager module (D45) |
-| `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings) |
+| `nix/` | `package.nix` (the shell's package, D55), `googlesans-flex.nix` (our font package), `local-ai-module.nix` (Ollama as a NixOS service), `home-manager.nix` (`programs.rutile`: the service, niri's part, the settings), `greeter.nix` (`nixosModules.greeter`, D97), `nix/tests/greeter.nix` (its VM test) |
 | `widgets/` | the widget spec (`spec.schema.json`), the data sources' catalog (`sources.json`) and examples; templates come from the local model line |
 | `tools/` | generators, `palette.py`, `qtws.py` (Qt test workspace), `fontconf.py`, `otinfo.py`, `sidework.py`, `lint_hardcoded.py` |
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
@@ -284,6 +286,8 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_CALENDAR` | `shell/calendar/EdsCalendar.qml` | the evolution-data-server reader when it is not `build/rutile-calendar` beside the shell (D95; tests point it at a stand-in) |
 | `RUTILE_CALENDAR_APP` | `shell/calendar/CalendarWindow.qml`, `shell/settingsapp/SettingsWindow.qml` | the calendar app instead of `gnome-calendar` (tests: a stand-in) |
 | `FAKE_CALENDAR_LOG`, `FAKE_CALENDAR_EVENTS` | `tests/qs/bin/fake-rutile-calendar` | tests only: where the stand-in logs its calls, and the events it prints |
+| `RUTILE_GREETER_STATE`, `RUTILE_GREETER_WALLPAPER` | `shell/greeter.qml` | the greeter's remembered choice (default /var/lib/rutile-greeter/state.json) and its wallpaper; `nix/greeter.nix` sets them (D97) |
+| `RUTILE_PASSWD`, `RUTILE_SESSION_DIRS`, `RUTILE_GREETER_NO_QUIT` | `shell/greeter.qml` | the people's file instead of /etc/passwd, the data directories with wayland-sessions (the module sets the system's), and staying up after a launch (tests) |
 | `RUTILE_TEST_PORT` | `tests/qs/tst_widget_sources_live.qml` | tests only: the free local port of the test's own web server (`@PORT@` in a test's `// env` lines) |
 | `RUTILE_PAPIRUS` | `shell/services/Files.js` (folder icons, D64) | Papirus-Dark's folder when it is not in `XDG_DATA_DIRS` (tests) |
 | `RUTILE_SANDBOX` | `tools/dev/setup_sandbox.sh` | where the setup script downloads to |

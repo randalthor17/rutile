@@ -22,6 +22,7 @@ Usage:
   rutile-shell kill                         stop the running shell
   rutile-shell -h | --help | help           this help
   rutile-shell quickshell-help              Quickshell's own options (for run)
+  rutile-shell greeter [QUICKSHELL OPTIONS] the sign-in screen, as greetd runs it (nixosModules.greeter, D97)
   rutile-shell flatpak-theming [-y]         let Flatpak apps wear the shell's look: install adw-gtk3 and Kvantum
                                             from Flathub (for this user) and give apps your GTK, Kvantum and KDE
                                             settings, read-only; -y: no questions (Settings, Wallpaper & style)
@@ -262,6 +263,10 @@ case "$1" in
         ;;
     quickshell-help)
         exec "$qs" --help
+        ;;
+    greeter)
+        shift
+        exec "$qs" -p "$(dirname -- "$qml")/greeter.qml" "$@"
         ;;
     flatpak-theming)
         shift

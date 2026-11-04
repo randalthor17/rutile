@@ -170,6 +170,24 @@ remove the line. Neovim needs `:colorscheme rutile` (or `vim.cmd.colorscheme("ru
 Firefox needs the Pywalfox extension; Rutile is its backend. Qt apps follow qt6ct only with
 `QT_QPA_PLATFORMTHEME=qt6ct`.
 
+## The sign-in screen (greeter)
+
+Rutile's greeter replaces the text login (or another display manager) with a sign-in screen in the shell's look
+(D97). In the NixOS configuration (a system module, not a home-manager user's file):
+
+```nix
+imports = [ inputs.rutile.nixosModules.greeter ];
+programs.niri.enable = true;                         # the greeter runs in a niri of its own; niri's session is offered
+programs.rutile.greeter.enable = true;               # turns on greetd with the greeter as its default session
+programs.rutile.greeter.wallpaper = ./wallpaper.jpg; # optional: the greeter cannot read anyone's home
+# programs.rutile.greeter.palette = ./palette.json;  # optional: your colors (a copy of ~/.cache/rutile/palette.json)
+```
+
+Turn off any other display manager (GDM, SDDM, `services.greetd` set up for another greeter) first. The screen shows
+the time, the person who signed in last (a menu when there are several) and the session they used (a menu when there
+are several), Shut down and Restart. What greetd asks (the password, or a second factor) is answered in the field. The
+choice is remembered in `/var/lib/rutile-greeter/state.json`. Its log: `journalctl -t rutile-greeter`.
+
 ## App indicators
 
 `rutile-shell tray state` shows what the shell sees, each item's icon included; `rutile-shell tray iconPath steam`

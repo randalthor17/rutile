@@ -1062,3 +1062,35 @@ v0.7.0, 9287215, failed there: a plan-only commit naming D50 and `shell/settings
 commit before it was tagged instead. CHANGELOG's Unreleased entries went to the version whose range holds the
 commit that added them (`git blame`). Each section says it was tagged afterwards and at which commit. From here on,
 tag at each milestone when it lands.
+
+**D97. The greeter (plan 6.2).** A sign-in screen in the shell's look on greetd, with Quickshell's `Greetd`.
+- **Where it runs.** greetd's default session is a niri of its own that starts `rutile-shell greeter` and quits after
+  it (`nixosModules.greeter`). niri is the compositor the user already has, so outputs, input and scaling behave as in
+  the session; cage or sway would be a second compositor to configure. niri's log goes to the journal
+  (`systemd-cat -t rutile-greeter`), not over the console it starts on.
+- **What it shows.** The lock screen's face (LockPanel gained `secret` and `placeholder` for greetd's other questions)
+  and a bottom row as ChromeOS's sign-in screen: Shut down, Restart, then the person and the session as menus when
+  there is a choice. People: /etc/passwd, uid 1000 to 59999 with a login shell. Sessions: the system's
+  wayland-sessions (`services.displayManager.sessionData.desktops`). The last person and each person's last session
+  are kept in /var/lib/rutile-greeter/state.json. The greeter runs as `greeter` and cannot read anyone's home, so its
+  wallpaper and palette are module options (a store path), the palette defaulting to the golden one.
+- **Talking to greetd.** `GreeterSession` asks greetd for a session and answers its questions. A failed sign-in, or
+  another person chosen mid-way, cancels and begins again only after a pause (300 ms): Quickshell is Inactive at once
+  after a cancel, and a session created before greetd's reply to the cancel takes that reply for its own, after which
+  its answers are out of step with greetd's questions (seen against fakegreet, and as a stuck second sign-in). A
+  failure shows "Wrong password. Try again." (PAM's "AUTH_ERR" goes to the log), and greetd's connection error just
+  after a failure is not shown.
+- **Starting the session.** greetd joins the command's words with spaces and runs them with /bin/sh after reading
+  /etc/profile, so the session's own Exec words are sent, each shell-quoted when needed. A first version wrapped them
+  in `sh -l -c 'exec "$@"'`; greetd's joining lost the quotes and every session ended at once. Only the VM test,
+  which really starts a session, could show it: fakegreet never runs the command.
+- **Tests.**
+  - Offscreen: the parsing, choices, prompts and the panel.
+  - Quickshell against greetd's fakegreet (`// under fakegreet`): the questions, a failure and the launch.
+  - The real greeter under headless sway with fakegreet (`qtws.py test-greeter`, in `make check`): choosing, a wrong
+    answer, signing in, what is saved.
+  - A NixOS VM with real greetd and PAM (`nix build .#checks.x86_64-linux.greeter`, not in `make check`): a wrong
+    password, then the right one starts alice's remembered session as alice. niri cannot draw without a GPU, so the VM
+    runs the greeter under sway with pixman instead of niri.
+- **Not done.** Avatars, the user's own wallpaper and colors without copying them into the configuration, keyboard
+  layout choice, and a run on a real machine.

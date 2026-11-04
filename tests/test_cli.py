@@ -117,6 +117,11 @@ class Forwarding(unittest.TestCase):
         self.check(["ipc"], ["ipc", "-p", "/s/shell.qml", "show"])
         self.check(["ipc", "call", "osd", "volumeUp"], ["ipc", "-p", "/s/shell.qml", "call", "osd", "volumeUp"])
 
+    def test_greeter(self):
+        # the sign-in screen beside the shell (D97)
+        self.check(["greeter"], ["-p", "/s/greeter.qml"])
+        self.check(["greeter", "-d"], ["-p", "/s/greeter.qml", "-d"])
+
     def test_log_and_kill(self):
         self.check(["log", "-f"], ["log", "-p", "/s/shell.qml", "-f"])
         self.check(["kill"], ["kill", "-p", "/s/shell.qml"])

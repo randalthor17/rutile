@@ -12,7 +12,7 @@ Status: **0.10.0** (`CHANGELOG.md`; 0.6.0 to 0.10.0 were tagged afterwards at th
 whole desktop on niri: a top bar (clock with a calendar, status pill, notification bell, app indicators), Quick
 Settings, the shelf and launcher, notifications, OSD and toasts, the lock screen, power menu and polkit agent, the
 wallpaper with its palette, desktop widgets, and the Settings and Widgets apps. It installs from the flake as a
-package and a home-manager module (`docs/install.md`). Still to come: a greetd greeter and an installer ISO
+package and a home-manager module, with a greetd sign-in screen (`docs/install.md`). Still to come: an installer ISO
 (`docs/PLAN.md`).
 
 ## Layout
@@ -26,6 +26,7 @@ package and a home-manager module (`docs/install.md`). Still to come: a greetd g
 | `shell/quicksettings/`, `shell/shelf/`, `shell/launcher/` | Quick Settings (`docs/quick-settings.md`), the shelf, the launcher |
 | `shell/notifications/`, `shell/osd/`, `shell/toast/` | notifications, the volume and brightness OSD, toasts |
 | `shell/lock/`, `shell/power/`, `shell/polkit/`, `shell/wallpaper/` | the lock screen, power menu, polkit agent, wallpaper |
+| `shell/greeter.qml`, `shell/greeter/` | the sign-in screen on greetd (`nixosModules.greeter`) |
 | `shell/settingsapp/`, `shell/widgetsapp/` | the Settings app (`docs/settings.md`) and the Widgets app |
 | `shell/widgethost/`, `shell/desktop/` | the widget renderer and data sources, the desktop widget grid (`docs/widgets.md`) |
 | `shell/services/` | Quickshell service wrappers (audio, network, Bluetooth, niri...) and the settings store |

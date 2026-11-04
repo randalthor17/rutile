@@ -430,3 +430,19 @@ calendar's Today button, "Open Calendar") hit whatever was there before, here th
 **A private dbus-daemon config needs `allow receive_sender` as well as `send_destination`.** With only send and own
 rules, every reply was rejected ("Rejected receive message, 0 matched rules") and clients timed out. The socket's
 path must also stay under 108 bytes, which a session scratch directory can exceed ("Socket name too long").
+
+**greetd joins `start_session`'s command into one shell line.** It runs `cmd` with /bin/sh after reading /etc/profile,
+the words joined by spaces, so quoting inside the words is lost: `["sh", "-c", "exec \"$@\"", ...]` became a bare
+`exec` and every session ended the moment it began. Send the session's own words, shell-quoted where needed. greetd's
+fakegreet never runs the command, so only a real greetd (the NixOS VM test) shows this.
+
+**Quickshell's Greetd is Inactive before greetd has answered a cancel.** A session created at once after a cancel
+(its own, after a failed sign-in, or ours) receives the cancel's "success" as its reply ("Received unexpected greetd
+response") and its answers then go to the wrong questions. Wait a moment (300 ms) before creating it.
+
+**fakegreet signs in only the user named "user"** (password "password", then "7 + 2:" answered "9"); any other name
+fails with "nope", which looks like a bug in the greeter. It never exits on its own either: stop it once the greeter
+has.
+
+**niri cannot draw in a QEMU VM without a 3D GPU** ("no allocator available for device"), and has no software
+renderer; sway can (`WLR_RENDERER=pixman`). A VM test of anything niri hosts runs it under sway.

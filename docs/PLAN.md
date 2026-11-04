@@ -347,7 +347,16 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   the wallpaper (D64); Flatpak apps through `rutile-shell flatpak-theming` and a Settings action row, Java apps'
 `_JAVA_AWT_WM_NONREPARENTING` (D66). Not done: a NixOS module (portal, services; the niri NixOS module covers most), widgets, a default
   config beyond the settings' defaults.
-- [ ] **6.2** Custom greetd greeter in the same style. Types: `Greetd`.
+- [ ] **6.2** Started (D97, `shell/greeter/`, `shell/greeter.qml`, `nix/greeter.nix`): the greetd greeter in the
+  shell's look. The lock screen's face (LockPanel: time, name, the field, the blurred wallpaper) with a bottom row as
+  ChromeOS's sign-in screen: Shut down, Restart, the person and the session (menus when there is a choice).
+  `GreeterSession` drives Quickshell's `Greetd`: greetd's questions as the field's prompt (secret or visible), a failed
+  sign-in begins again, ready plays the motion out, then launches the session through a login shell. People from
+  /etc/passwd (uid 1000 up with a login shell), sessions from the system's wayland-sessions, the last choice
+  remembered. `nixosModules.greeter`: greetd runs a niri of its own (log to the journal) that starts
+  `rutile-shell greeter` and quits after it. Tested offscreen, against greetd's fakegreet (Quickshell test and a
+  headless sway run), and in a NixOS VM against real greetd and PAM (`checks.x86_64-linux.greeter`; under sway: niri
+  cannot draw in a VM). Not yet: avatars, the user's own wallpaper and colors without copying them, a real machine.
 - [ ] **6.3** Installer ISO.
 
 ## Phase 7: QA for v1
