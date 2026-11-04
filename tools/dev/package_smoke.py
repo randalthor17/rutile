@@ -3,7 +3,7 @@
 it starts, IPC works through `rutile-shell`, the palette renders from a wallpaper inside the store copy (so
 matugen is on its PATH and ../theme resolves), and its fonts are visible through its own fontconfig file.
 
-    tools/dev/package_smoke.py /nix/store/...-rutile-shell-0.1.0     (make package-check builds and runs it)
+    tools/dev/package_smoke.py /nix/store/...-rutile-shell-0.11.0     (make package-check builds and runs it)
 """
 import json
 import os

@@ -167,6 +167,7 @@ ext-workspace-v1, which is immature, and niri's implementation of it is basic: d
 ### Release protocol
 
 ```
+# CHANGELOG: Unreleased becomes "## X.Y.Z"; the version in nix/package.nix and flake.nix becomes X.Y.Z (a test checks)
 make check
 git add -A && git -c user.name=claude -c user.email=claude@anthropic.com commit -m "..."
 git tag -a vX.Y.Z -m "..."                                  # tag-worthy only

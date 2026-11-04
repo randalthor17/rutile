@@ -166,6 +166,14 @@ class DocsMatchTheRepository(unittest.TestCase):
         for tag in tags.stdout.split():
             self.assertIn(f"## {tag[1:]}", text, f"{tag} has no CHANGELOG section")
 
+    def test_the_packages_carry_the_latest_release(self):
+        latest = re.search(r"^## (\d+\.\d+\.\d+)$", read("CHANGELOG.md"), re.M).group(1)
+        for rel, pattern in [("nix/package.nix", r'^  version = "([^"]+)";'),
+                             ("flake.nix", r'pname = "rutile-pywalfox-host";\s*version = "([^"]+)";')]:
+            m = re.search(pattern, read(rel), re.M)
+            self.assertIsNotNone(m, f"{rel}: no version")
+            self.assertEqual(m.group(1), latest, f"{rel} says {m.group(1)}, CHANGELOG's latest release is {latest}")
+
     def test_changelog_has_an_unreleased_section(self):
         self.assertIn("## Unreleased", read("CHANGELOG.md"))
 

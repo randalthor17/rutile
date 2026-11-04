@@ -54,7 +54,7 @@ let
 in
 stdenv.mkDerivation {
   pname = "rutile-shell";
-  version = "0.11.0";
+  version = "0.11.0";                     # the latest release in CHANGELOG.md (a test checks)
 
   src = lib.fileset.toSource {
     root = ../.;

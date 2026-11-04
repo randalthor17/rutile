@@ -1199,3 +1199,16 @@ greeter):
 - **Not done.** The expanded rail and the collapsed-to-expanded morph; badges; arrow keys. Nothing in the shell uses
   the rail yet; Settings keeps its list of pages (5.1, D50), which is what ChromeOS's Settings shows.
 - **Cost.** About 80 KiB per destination (docs/memory.md).
+
+**D104. The package's version is the release's; history rewritten once to make it so** (the maintainer's request,
+2026-11-05):
+- `nix/package.nix` and the Firefox host in `flake.nix` said `0.1.0` at every release. They now carry the latest
+  release in CHANGELOG.md, and `tests/test_handoff.py` fails when they do not; the release protocol in the handoff
+  sets it.
+- The maintainer asked for the tagged commits to carry their own versions, so the history from the package's first
+  commit (0b27b73, 2026-10-27) on was rewritten (`git filter-branch`): each commit's version is the release at or
+  before it (0.7.0 until 0.8.0, and so on), and v0.8.0 to v0.11.0 were moved to the rewritten commits and
+  force-pushed. Nothing else in any tree changed. This breaks the rule of never moving a pushed tag, once, by the
+  maintainer's decision: the project has no other users, and their own NixOS config is updated with
+  `nix flake update rutile`. Commit IDs in older commit messages after that point no longer resolve; the ones in the
+  docs were updated.
