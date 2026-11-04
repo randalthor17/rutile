@@ -13,7 +13,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **0.1** Name Rutile Shell, MIT license.
 - [ ] **0.2** Collect references in `docs/reference/`: the four supplied Googlebook images, the DMS and Noctalia
   screenshots (received: quick settings, launcher, settings). Googlebook Quick Settings (with edit mode),
-  Settings and the desktop are in, with notes per part in `docs/reference/README.md` (unreleased). Still
+  Settings and the desktop are in, with notes per part in `docs/reference/README.md` (v0.6.0). Still
   missing: the Googlebook launcher.
 - [x] **0.3** M3E values into tokens JSON (v0.1.0): `tools/gen_tokens.py` parses vendored androidx Compose
   Material3 sources, sha256-pinned: shape corners, springs, durations, easings, elevation, type scale.
@@ -36,28 +36,28 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **1.5a** First components (v0.5.0, fixed in v0.5.1): Surface, StateLayer, Icon, Button (5 types x 5 sizes),
   IconButton, SpringColor, specs from the Compose tokens (XS button corrected per `Button.kt`), and the gallery.
   The gallery opens in real Quickshell. Not done: ripple, elevation shadow, focus ring.
-- [x] **1.5b** Filled-icon glitch fixed (unreleased): `Icon` uses `Text.NativeRendering`; GPU-path regression
+- [x] **1.5b** Filled-icon glitch fixed (v0.6.0): `Icon` uses `Text.NativeRendering`; GPU-path regression
   test in `tests/qml_gpu/` (`make check-gpu`).
-- [x] **1.5c** Switch, Slider, ProgressBar (unreleased): specs from the vendored Compose token files plus the few
+- [x] **1.5c** Switch, Slider, ProgressBar (v0.6.0): specs from the vendored Compose token files plus the few
   values Compose hardcodes (parsed from `Slider.kt`, `ProgressIndicator.kt`, `WavyProgressIndicator.kt`), in the
   gallery. Slider is horizontal; ProgressBar is linear and determinate (flat or wavy). Not done: vertical and
   range sliders, the slider value label, indeterminate and circular progress.
-- [x] **1.5d** Tile, Chip, ListItem (unreleased): Tile after Android 16 SystemUI (D32), Chip (assist, filter) and
+- [x] **1.5d** Tile, Chip, ListItem (v0.6.0): Tile after Android 16 SystemUI (D32), Chip (assist, filter) and
   the expressive segmented ListItem from the Compose tokens; in the gallery. Not done: input and suggestion
   chips, three-line and avatar/image list items, the tile focus border. The Googlebook references show the
   same tile (D32). Switch, Tile and filter Chip have a `controlled` mode: they change only when the applied
-  setting does (D33, unreleased).
-- [x] **1.5e** Expressive slider sizes and track icons (unreleased, D36): `size` xs, s, m, l, xl from Material
+  setting does (D33, v0.6.0).
+- [x] **1.5e** Expressive slider sizes and track icons (v0.6.0, D36): `size` xs, s, m, l, xl from Material
   Components Android's tokens, `startIcon`/`endIcon` inside the track on m and up (the end icon moves beside the
   handle near full, as in Android 17), corners that shrink on a short part, right to left. In the gallery as Quick Settings' brightness and volume rows. Not done: vertical, range,
   centered, the value label, the other two icon slots.
-- [x] **1.5f** ShapeMorph (unreleased, D37): the 35 shapes of Compose's `MaterialShapes` and morphing between
+- [x] **1.5f** ShapeMorph (v0.6.0, D37): the 35 shapes of Compose's `MaterialShapes` and morphing between
   them, ported from androidx graphics-shapes and checked against an independent Python port; in the gallery.
   Not done: a picture clipped to a shape, rotation while morphing, outlines.
-- [x] **1.5g** TextField and Dialog (unreleased): from the vendored Compose text field and dialog tokens; outlined
+- [x] **1.5g** TextField and Dialog (v0.10.0): from the vendored Compose text field and dialog tokens; outlined
   and filled fields with a floating label, icons, supporting text, error and password; a basic dialog with icon,
   headline, actions, Enter and Escape; in the gallery; Quick Settings' Wi-Fi password uses the field.
-- [x] **1.5h** FAB and Card (unreleased): from the vendored Compose FAB, extended FAB and card tokens; FAB sizes
+- [x] **1.5h** FAB and Card (v0.10.0): from the vendored Compose FAB, extended FAB and card tokens; FAB sizes
   small to large, primary or secondary, extended with a label that collapses to the icon; elevated, filled and
   outlined cards, clickable when `interactive`; in the gallery. No shadows yet.
 - [ ] **1.5** Component kit, remaining: NavRail, GeminiGlow gradient border,
@@ -65,7 +65,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
   sizes clamped to columns/rows, edit mode; used by both Quick Settings tiles and the desktop widget grid
-  (unreleased). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that
+  (v0.6.0). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that
   shrink before they move (D34), `maxRows`, gravity that leaves no gaps (D35), right to left, commits through the
   owner; in the gallery as
   Googlebook's "Edit tiles". Not done: keyboard editing, drag in from outside.
@@ -110,7 +110,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   install the shell
   (needs the package, 6.1). The whole item: declarative registry like DMS `SettingsTabs` (id, text, icon, hint,
   aliases, children, advanced/hidden flags), JSON-schema-backed config store, settings search service.
-- [ ] **2.6a** Done (unreleased, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
+- [ ] **2.6a** Done (v0.7.0, D40): `shell/shell.qml` runs Quick Settings in a layer-shell window created only
   while open, toggled with `quickshell -p shell/shell.qml ipc call quicksettings toggle`: header, brightness and
   volume, Wi-Fi, Bluetooth, Microphone, Dark theme and Airplane mode tiles, edit mode (remove, rearrange, resize).
   Tested offscreen with a fake backend and as the real shell under a headless sway. Since then: opens from the
@@ -118,7 +118,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `docs/quick-settings.md`.
 - [ ] **2.6** Status tray and Quick Settings on the shared EditableGrid: tiles as saved data (id + size),
   per-tile detail pages, Add Widget sheet, sliders. Types: `PopupWindow` or `PanelWindow` in a `LazyLoader`,
-  the 2.1 services, `SystemTray` with `QsMenuOpener`. Since D89 (unreleased): the layout in state.json, edit mode's
+  the 2.1 services, `SystemTray` with `QsMenuOpener`. Since D89 (v0.10.0): the layout in state.json, edit mode's
   chips to add the tiles not shown, Do not disturb and Power saver tiles, Wi-Fi and Bluetooth detail pages (networks
   with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
   button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Not done:
@@ -230,7 +230,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 ## Phase 3: windows on niri
 
-- [x] **3.1** Googlebook-like windows (D88, unreleased): Settings > Windows writes one niri window rule after the
+- [x] **3.1** Googlebook-like windows (D88, v0.10.0): Settings > Windows writes one niri window rule after the
   user's (floating when opened, corner radius with clipping, niri's shadow, no focus ring or border; each its own
   switch, the main one off by default) into rutile-settings.kdl. Our own windows (Settings, Widgets, the widget
   preview) turn Qt's decorations off and draw an M3E title bar (AppFrame, TitleBar): icon and name, maximize and
@@ -241,7 +241,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 ## Phase 4: widget system (the core feature)
 
 - [x] **4.1** Widget spec v1 (JSON, versioned) with primitives card, header, tile, hero image, stat, progress,
-  list row, chip, row/column/grid, and a JSON Schema (unreleased). The local model's draft was merged as a known
+  list row, chip, row/column/grid, and a JSON Schema (v0.6.0). The local model's draft was merged as a known
   failing draft and Claude rewrote the schema on main (recursive `$defs`, surface-role `tone` enum, unknown
   fields rejected at every level); its five examples pass `tools/widget_check.py` and `jsonschema`, and
   `tests/test_widget_spec.py` pins what the spec refuses. Node fields are a first cut: the renderer (4.3) may refine them.
@@ -363,9 +363,9 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
 
 ## Side work with a local model
 
-- [x] **S1** Tooling (unreleased): `tools/sidework.py`, commit-time guard, flake `local-ai` shell and NixOS module,
+- [x] **S1** Tooling (v0.6.0): `tools/sidework.py`, commit-time guard, flake `local-ai` shell and NixOS module,
   `docs/sidework.md`, conventions and three task briefs. Switched from aider to opencode after the maintainer
-  found aider's workflow unusable for agentic work. Moved to opencode 2.x (unreleased): config rewritten
+  found aider's workflow unusable for agentic work. Moved to opencode 2.x (v0.6.0): config rewritten
   against the real 2.1.1 schema, `--standalone`, `PWD`, `execute` removed, tested end to end with a scripted model.
   Cleanup in one step: `merge TASK --close`, `close --merged`.
 - [ ] **S2** (deferred with 4.7 to 4.9, D82) Trial: run one bounded task on the 9060 XT (suggested `widget-schema`) and judge speed, tool-calling
@@ -380,7 +380,7 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
 
 ## Handoff and housekeeping
 
-- [x] **H1** Handoff docs (unreleased): `docs/HANDOFF.md`, this plan, `docs/DECISIONS.md`, `docs/LESSONS.md`,
+- [x] **H1** Handoff docs (v0.6.0): `docs/HANDOFF.md`, this plan, `docs/DECISIONS.md`, `docs/LESSONS.md`,
   `CHANGELOG.md`, `AGENTS.md`, and reproducible dev tools in `tools/dev/`.
 - [ ] **H2** Standing rule: keep this file, `CHANGELOG.md` and memory in step with every change.
 - [ ] **H5** Standing rule: Quickshell first. Check the Quickshell docs for the installed version before building

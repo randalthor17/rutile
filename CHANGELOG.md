@@ -5,6 +5,12 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.10.0
+
+Tagged afterwards, on 2026-11-04, at this commit (2026-11-03 to 11-04): windows like Googlebook's, Quick Settings pages, Night light, text fields, dialogs, FABs and cards, the calendar with Google.
+
 - **A calendar under the clock.** Click the clock for a month calendar: today is marked, days with events have a
   dot, and the chosen day's events are listed below. It reads .ics files from a folder (Settings > Calendar,
   `~/.calendars` by default, the layout vdirsyncer syncs Google or CalDAV calendars into). Repeating events now show
@@ -15,7 +21,6 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   install guide). Without an account, paste a calendar's "Secret address in iCal format" (Google Calendar, Settings,
   the calendar, Integrate calendar) into Settings > Calendar instead: read only, fetched each time the calendar
   opens and kept for when you are offline. Outlook, iCloud, Proton and Nextcloud addresses work the same way.
-
 - **Settings asks in a dialog.** A setting with choices (lock after, grid columns, a screen's resolution...) opens a
   dialog like Googlebook's: the choices with the current one checked, then Done or Cancel.
 - **Floating action buttons and cards** join the shell's Material 3 building blocks (in the gallery).
@@ -39,6 +44,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   corners, a soft shadow and no focus ring; each part has its own switch, and they win over niri's own window
   rules. Settings, Widgets and the widget preview have a new title bar: the app's icon and name, maximize and close;
   drag it to move the window, double-click it to maximize, drag an edge to resize.
+
+## 0.9.0
+
+Tagged afterwards, on 2026-11-04, at commit 7a1b09e (2026-10-27 to 11-03): app theming, app indicators, the Settings pages, the widget system.
+
 - **System monitor widgets and charts.** Widgets can show the processor (overall, per core, frequency), memory and
   swap, the disk, the network, the graphics card (use, video memory, temperatures, power, fan, clock; AMD, and NVIDIA
   through nvidia-smi) and every temperature sensor, read every second. New charts draw them: line, area, bar, pie,
@@ -141,6 +151,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   the shell's colors and Google Sans Flex, with
   Adwaita icons for GTK and Breeze Dark for Qt and KDE; checked by screenshotting real apps (`make theming-check`). New switch in Settings: KDE apps
   (kdeglobals). See `docs/install.md`.
+
+## 0.8.0
+
+Tagged afterwards, on 2026-11-04, at commit a634bc3 (2026-10-27 to 10-28): the Settings app, colors in other apps, the Nix package and home-manager module.
+
 - **Fixes from the first real install:** the power menu (and every popup) is gone as soon as it has faded, not
   300 ms later, and popups now fade in as they open. `rutile-shell --help` explains the command and lists every
   call the shell answers (`rutile-shell lock lock`, `rutile-shell osd volumeUp`, ...). Colors in other apps now work
@@ -166,6 +181,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   there: wallpaper colors, notification sounds, screen lock, the polkit agent, animation speed. Choose… on the
   wallpaper opens your desktop's file chooser (the portal; restart the shell once for it); the shelf's pins show
   their value for now. Settings set in Nix show a lock.
+
+## 0.7.0
+
+Tagged afterwards, on 2026-11-04, at commit c0f8cc0 (2026-10-26 to 10-27): the shell core: Quick Settings, the top bar, shelf, launcher, notifications, OSD, toasts, lock screen, power menu, wallpaper, polkit agent.
+
 - **Password prompts** (plan 2.8): the shell is now the polkit agent, so `pkexec`, disk mounts and installs ask
   for your password in a card over the blurred desktop (Enter to send, Escape to cancel; a wrong password shakes).
   Run one agent per session: turn off another one (Noctalia's `polkit_agent`), or set `polkit.agent: false` to
@@ -338,6 +358,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   `tools/qtws.py test-qs` runs `tests/qs/tst_*.qml` as shells under `quickshell`, offscreen, and `make check`
   runs it. `PaletteWatcher`, untested until now, is covered (load, reload when the file changes, missing file).
   The components stay plain QtQuick: Quickshell has no controls to replace them.
+
+## 0.6.0
+
+Tagged afterwards, on 2026-11-04, at commit 367085a (2026-10-13 to 10-26): the component kit, EditableGrid, ShapeMorph and the local-model side work.
+
 - **ShapeMorph and the M3 Expressive shape library** (plan 1.5f, D37): `ShapeMorph { shape: "cookie9Sided" }`
   draws any of the 35 shapes of Compose's `MaterialShapes` (circle, cookies, bursts, clovers, pixel shapes,
   heart and the rest), and changing `shape` morphs to the new one on the fast spatial spring. The shape
@@ -435,7 +460,6 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   `AGENTS.md`, so the project can resume from the bundle alone. Drift guards in `tests/test_handoff.py`.
 - **Dev tools** (`tools/dev/`): `pyside_qml.py` (run the QML tests or render the gallery on a modern Qt via PySide6,
   optionally through the real OpenGL scene graph), `eval_flake.sh`, `setup_sandbox.sh`.
-
 - **Side work cleanup:** `sidework.py merge TASK --close` merges and closes in one step; `close --merged` closes
   every `local/*` branch already in main. Neither deletes uncommitted worktree files without `--force`.
 - **opencode 2.x** for the local agent (the maintainer's switch, c62dbf8, finished): the generated config follows

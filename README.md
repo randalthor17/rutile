@@ -8,7 +8,7 @@ A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
 
-Status: **0.5.1+** (about 130 commits since the tag, under Unreleased in `CHANGELOG.md`). The shell runs as a
+Status: **0.10.0** (`CHANGELOG.md`; 0.6.0 to 0.10.0 were tagged afterwards at their milestones). The shell runs as a
 whole desktop on niri: a top bar (clock with a calendar, status pill, notification bell, app indicators), Quick
 Settings, the shelf and launcher, notifications, OSD and toasts, the lock screen, power menu and polkit agent, the
 wallpaper with its palette, desktop widgets, and the Settings and Widgets apps. It installs from the flake as a

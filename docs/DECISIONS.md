@@ -1049,3 +1049,16 @@ gnome-online-accounts, evolution-data-server, gnome-calendar and gnome-online-ac
 - **Tests.** tests/test_calendar_helper.py runs a real data server on a private bus with calendars in a temporary
   home. tests/qs/tst_eds_calendar.qml and the wayland smoke use a fake helper. Signing in to Google itself was not
   tried.
+
+**D96. Releases tagged afterwards.** 132 commits had gone untagged since v0.5.1 (2026-10-11). The maintainer chose
+(2026-11-04) to tag the milestones they passed rather than one release for everything:
+- v0.6.0 at 367085a: the component kit;
+- v0.7.0 at c0f8cc0: the shell core;
+- v0.8.0 at a634bc3: the Settings app and the Nix package, the first real install;
+- v0.9.0 at 7a1b09e: theming, app indicators, Settings pages, widgets;
+- v0.10.0 at the commit that split the changelog.
+Each older commit passed `make check` in a worktree of its own before it was tagged. The cut first proposed for
+v0.7.0, 9287215, failed there: a plan-only commit naming D50 and `shell/settingsapp/` before they existed. The
+commit before it was tagged instead. CHANGELOG's Unreleased entries went to the version whose range holds the
+commit that added them (`git blame`). Each section says it was tagged afterwards and at which commit. From here on,
+tag at each milestone when it lands.
