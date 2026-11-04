@@ -1068,6 +1068,8 @@ tag at each milestone when it lands.
   it (`nixosModules.greeter`). niri is the compositor the user already has, so outputs, input and scaling behave as in
   the session; cage or sway would be a second compositor to configure. niri's log goes to the journal
   (`systemd-cat -t rutile-greeter`), not over the console it starts on.
+  The option is `services.displayManager.rutile-greeter` (the maintainer's choice, before the first release with
+  it): where NixOS keeps sign-in screens (GDM, SDDM, Noctalia's greeter), not `programs.rutile` as first named.
 - **What it shows.** The lock screen's face (LockPanel gained `secret` and `placeholder` for greetd's other questions)
   and a bottom row as ChromeOS's sign-in screen: Shut down, Restart, then the person and the session as menus when
   there is a choice. People: /etc/passwd, uid 1000 to 59999 with a login shell. Sessions: the system's

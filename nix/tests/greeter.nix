@@ -19,7 +19,7 @@ pkgs.testers.runNixOSTest {
     {
       imports = [ greeterModule ];
       programs.niri.enable = true;
-      programs.rutile.greeter.enable = true;
+      services.displayManager.rutile-greeter.enable = true;
       users.users.alice = {
         isNormalUser = true;
         description = "Alice Liddell";
@@ -33,7 +33,7 @@ pkgs.testers.runNixOSTest {
       ];
       services.greetd.settings.default_session.command = lib.mkForce (
         "${pkgs.systemd}/bin/systemd-cat -t rutile-greeter ${pkgs.sway}/bin/sway -c ${pkgs.writeText "greeter-sway.conf" ''
-          exec "${config.programs.rutile.greeter.script}; ${pkgs.sway}/bin/swaymsg exit"
+          exec "${config.services.displayManager.rutile-greeter.script}; ${pkgs.sway}/bin/swaymsg exit"
         ''}"
       );
       environment.sessionVariables.WLR_RENDERER = "pixman";

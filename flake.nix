@@ -18,13 +18,13 @@
       # Ollama as a NixOS service on the AMD GPU (see nix/local-ai-module.nix and docs/sidework.md).
       nixosModules.local-ai = import ./nix/local-ai-module.nix;
 
-      # programs.rutile.greeter: the sign-in screen on greetd, in a niri of its own (plan 6.2, D97,
+      # services.displayManager.rutile-greeter: the sign-in screen on greetd, in a niri of its own (plan 6.2, D97,
       # nix/greeter.nix). The package defaults to this flake's.
       nixosModules.greeter =
         { lib, pkgs, ... }:
         {
           imports = [ ./nix/greeter.nix ];
-          programs.rutile.greeter.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+          services.displayManager.rutile-greeter.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };
 
       # The greeter in a NixOS VM (needs KVM): nix build .#checks.x86_64-linux.greeter -L

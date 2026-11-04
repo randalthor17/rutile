@@ -2,8 +2,8 @@
 # start `rutile-shell greeter` and quit when it does; greetd then starts the session that was chosen.
 #
 #   imports = [ inputs.rutile.nixosModules.greeter ];
-#   programs.rutile.greeter.enable = true;
-#   programs.rutile.greeter.wallpaper = ./wall.jpg;     # optional; the greeter cannot read anyone's home
+#   services.displayManager.rutile-greeter.enable = true;
+#   services.displayManager.rutile-greeter.wallpaper = ./wall.jpg;     # optional; the greeter cannot read anyone's home
 #
 # The sessions offered are the system's (services.displayManager: niri's, with programs.niri.enable). Who signed in
 # last, into which session, is kept in /var/lib/rutile-greeter.
@@ -14,7 +14,7 @@
   ...
 }:
 let
-  cfg = config.programs.rutile.greeter;
+  cfg = config.services.displayManager.rutile-greeter;
   niri = cfg.niriPackage;
   stateDir = "/var/lib/rutile-greeter";
   greeter = pkgs.writeShellScript "rutile-greeter" ''
@@ -35,7 +35,7 @@ let
   '';
 in
 {
-  options.programs.rutile.greeter = {
+  options.services.displayManager.rutile-greeter = {
     enable = lib.mkEnableOption "Rutile's greeter on greetd, in a niri of its own, as the sign-in screen";
     package = lib.mkOption {
       type = lib.types.package;

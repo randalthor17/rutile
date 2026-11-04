@@ -178,9 +178,9 @@ Rutile's greeter replaces the text login (or another display manager) with a sig
 ```nix
 imports = [ inputs.rutile.nixosModules.greeter ];
 programs.niri.enable = true;                         # the greeter runs in a niri of its own; niri's session is offered
-programs.rutile.greeter.enable = true;               # turns on greetd with the greeter as its default session
-programs.rutile.greeter.wallpaper = ./wallpaper.jpg; # optional: the greeter cannot read anyone's home
-# programs.rutile.greeter.palette = ./palette.json;  # optional: your colors (a copy of ~/.cache/rutile/palette.json)
+services.displayManager.rutile-greeter.enable = true;               # turns on greetd with the greeter as its default session
+services.displayManager.rutile-greeter.wallpaper = ./wallpaper.jpg; # optional: the greeter cannot read anyone's home
+# services.displayManager.rutile-greeter.palette = ./palette.json;  # optional: your colors (a copy of ~/.cache/rutile/palette.json)
 ```
 
 Turn off any other display manager (GDM, SDDM, `services.greetd` set up for another greeter) first. The screen shows
