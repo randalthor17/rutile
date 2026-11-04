@@ -23,48 +23,41 @@ Noctalia. Both are MIT, so logic may be ported with attribution. Caelestia is GP
 
 ## 2. State right now
 
-Last tagged release: **v0.5.1**. Untagged commits sit on top of it; `CHANGELOG.md` lists them under
-Unreleased. There is no shell UI yet: what exists is the foundation and the first components.
+Last tagged release: **v0.5.1**. About 130 untagged commits sit on top of it; `CHANGELOG.md` lists them under
+Unreleased. The shell runs as a whole desktop on niri; `docs/PLAN.md` has each part's state and what is left.
 
 | Area | State |
 |---|---|
-| Design tokens (shape, motion, type, elevation, component specs) | done, generated from vendored Compose Material3 sources |
-| Palette pipeline (matugen to `palette.json`) | done; matugen's 2021-era color spec is accepted for now |
-| QML singletons: Colors, Shapes, Motion, Type, Fonts, Elevation, Spacing, Spring; EffectsColor/EffectsNumber | done |
-| Fonts: Google Sans Flex (text), Material Symbols Rounded (icons) | done |
-| Components: Surface, StateLayer, Icon, Button, IconButton, Switch, Slider, ProgressBar, Tile, Chip, ListItem, ShapeMorph | done, in the gallery |
-| Component gallery (`quickshell -p shell/gallery.qml`, offscreen render tool) | done; opens in real Quickshell |
-| Shell entry (`shell/shell.qml`) with the status pill and Quick Settings: tiles, brightness and volume, IPC toggle | first version; tested under a headless sway, and opened on the maintainer's niri (volume live; no Wi-Fi, Bluetooth or backlight there) (`docs/quick-settings.md`) |
-| Remaining components, rest of the shell, widget renderer, settings, distro | not started (see plan) |
-| Local-model side-work tooling (opencode 2.x on Ollama, ownership guard) | built; tested end to end against the real opencode 2.1.1 with a scripted model |
-| `tools/widget_check.py` (widget schema and widget checker, stdlib) | done; the acceptance check of the widget tasks |
-| Widget spec v1 (`widgets/spec.schema.json`, examples) | done: local-model draft merged as failing, rewritten by Claude (plan 4.1, S2) |
+| Tokens, palette (matugen), QML singletons, fonts | done (Phase 0 and 1) |
+| Components (`shell/components/`): buttons, icon buttons, switch, slider, progress, tile, chip, list item, ShapeMorph, EditableGrid, menu, text field, dialog, FAB, card, title bar | done, in the gallery; NavRail and GeminiGlow left (1.5) |
+| Top bar: clock with its calendar (D93 to D95), status pill, notification bell, app indicators | working; tested headless and in nested niri |
+| Quick Settings: saved tiles, Wi-Fi and Bluetooth pages, Night light (wlsunset), Power saver, Do not disturb | working; real Wi-Fi, Bluetooth and Night light not tried |
+| Shelf, launcher, notifications, OSD, toasts, lock screen, power menu, polkit agent, wallpaper | working (Phase 2) |
+| Settings app (D50, D92), Widgets app, desktop widgets and their renderer and data sources | working (Phase 4, 5) |
+| Windows like Googlebook's (niri window rule, D88) | working, off by default |
+| Package, home-manager module, app theming (Phase 6.1) | working; greeter (6.2) and installer ISO (6.3) not started |
+| Local-model side work, widget generation | deferred (D82) |
 
-Verified, and where: logic and rendering are tested offscreen on Qt 6.12 (the dev shell's Qt, the one the flake's
-Quickshell 0.3.2 is built on; Qt 6.7 is the minimum, D31), plus the real OpenGL scene graph under Xvfb and Mesa. The maintainer's machine (NixOS, Qt 6.11.2)
-ran the suite and the gallery, and (October 2026) the opencode 2.1.1 checks and the first local-model trial.
-**Not verified:** how the gallery looks in a real session to the maintainer, whether the trial ran fully on the GPU
-(ROCm), the opencode TUI (only `opencode run` is driven by tests), and every Phase 2 onward item.
+Verified, and where: logic and rendering offscreen on Qt 6.12 (the dev shell's, the one the flake's Quickshell 0.3.2
+is built on; Qt 6.7 is the minimum, D31); Quickshell tests offscreen (`tests/qs/`); the whole shell under a
+headless sway (`qtws.py test-wayland`) and in nested niri; the package built and run headless (`make
+package-check`); the calendar's reader against a real evolution-data-server on a private bus.
+**Not verified:** real Wi-Fi, Bluetooth, backlight and Night light; real pointer drags on title bars; a real Google
+account (D95); how the shell looks to the maintainer next to the references.
 
 Known visual gaps in the components: no ripple, no elevation shadow (elevated buttons are faint on dark
 surfaces), no focus ring. See `docs/components.md`.
 
 ### Next up
 
-1. The maintainer runs the shell on niri (`quickshell -p shell/shell.qml`, then the `ipc call quicksettings toggle`
-   line in `docs/quick-settings.md`, ideally from a keybind) with real Wi-Fi, Bluetooth, audio and backlight, and
-   tries the gallery's newer sections. Then Quick Settings' remaining parts (click outside to close, detail
-   pages, blur, more tiles), the status pills (2.3), or GeminiGlow once a reference image exists.
-2. Widget generation and the local-model trial are deferred (D82): widgets are hand-written JSON for now. When
-   they return, `llm-docs` is the remaining task (`widget-templates` is retired).
-3. Finish the component kit (plan item 1.5), then Phase 2.
-4. The maintainer tries Settings > Windows (3.1, D88) on the real session: floating, corners, shadow, and the new
-   title bars on Settings and Widgets (move, maximize, resize with a real pointer, which the nested tests could not
-   do).
-5. The maintainer turns on the NixOS services in docs/install.md (evolution-data-server, gnome-online-accounts,
-   gnome-keyring, dconf), signs in to Google from Settings > Calendar > Online accounts (D95), and checks the
-   calendar under the clock: events, a click opening GNOME Calendar on the event, and how soon edits show. None of
-   this was tried with a real Google account.
+1. The maintainer tries the shell on the real session with the features together (Quick Settings with real Wi-Fi,
+   Bluetooth and Night light; Settings > Windows (D88) with a real pointer; the calendar with a Google account after
+   the NixOS services in `docs/install.md`, D95) and reports what looks or works wrong.
+2. Phase 6: the greetd greeter in the shell's style (6.2, Quickshell's `Greetd`), then the installer ISO (6.3).
+3. Finish the component kit (1.5: NavRail, GeminiGlow once a reference image exists) and the gallery review (1.7).
+4. Smaller open parts: hidden Wi-Fi networks (2.6), adding events from the popup, calendar addresses and
+   evolution-data-server for widgets.
+5. Widget generation and the local-model trial stay deferred (D82).
 
 ## 3. Resume in five minutes
 
@@ -207,11 +200,12 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `shell/shell.qml` | the shell's entry point (`quickshell -p shell/shell.qml`): palette watcher, Quick Settings, IPC |
 | `shell/services/` | Quickshell service wrappers: audio, network, Bluetooth, brightness (`docs/quick-settings.md`), niri; `Settings` (the settings and state files, `docs/settings.md`) |
 | `shell/settingsapp/` | the Settings app (D50): the registry `Pages.js`, `Model.js`, rows, the window; `shell/settingsapp/pages/` holds pages of their own, each a view and maybe a backend (D67) |
-| `shell/quicksettings/` | the Quick Settings panel, its backend and window |
+| `shell/quicksettings/` | the Quick Settings panel, its tiles (`Controls.js`), the Wi-Fi and Bluetooth pages (`Details.js`), its backend and window |
 | `shell/desktop/` | the desktop widget grid (plan 4.4, D81): `DesktopWindow` per screen on the bottom layer, `DesktopWidgets` (EditableGrid and the edit bar), `WidgetLibrary` reads the placed files, `Desktop.js` the saved layouts |
 | `shell/widgetsapp/` | the Widgets app (plan 4.5, D82): `WidgetsWindow` reads `widgets/templates` and the user's widgets, `WidgetsApp` the categories and `WidgetCard`s, `Gallery.js` the rules |
 | `shell/widgethost/` | charts (D87): `ChartNode.qml`; the widget check (4.6, D85): `WidgetCheck.js`, the port of `tools/widget_check.py`, and `WidgetChecker` for IPC; the widget renderer (plan 4.3, D78): `WidgetHost` draws a spec from `widgets/`, `WidgetSpec.js` fills bindings; the data sources (4.2, D79): `WidgetSources` loads the ones a widget binds from `shell/widgethost/sources/`, `Sources.js` works out their values |
-| `shell/bar/` | the status pill (top right; opens Quick Settings) and its window |
+| `shell/bar/` | the top bar: the clock (opens the calendar), the status pill (opens Quick Settings), the bell, app indicators, and their windows |
+| `shell/calendar/` | the calendar under the clock (D93 to D95): `Calendar.js` (iCalendar, repeats, the month), the panel and window, `CalendarFeeds` (calendar addresses), `EdsCalendar` (evolution-data-server through `build/rutile-calendar`) |
 | `shell/notifications/` | notification cards, the popup stack, the list panel and their windows (D47); the server is `shell/services/NotificationService.qml`, the bell `shell/bar/NotificationBell.qml` |
 | `shell/osd/`, `shell/toast/`, `shell/lock/`, `shell/wallpaper/`, `shell/power/` | the volume and brightness OSD, toasts (`ToastService`), the lock screen (WlSessionLock and PAM), the wallpaper (`WallpaperService`), the full-screen power menu |
 | `shell/gallery.qml`, `shell/gallery/` | the component gallery (window and content) |
@@ -304,10 +298,10 @@ A different AI or person can use the same instruction. Everything needed is in t
 
 ## 9. Open questions for the maintainer
 
-- How does the gallery look in a real session, compared with the Googlebook references? (Ripple, shadows and the
+- How does the shell look and feel in the real session, next to the Googlebook references? (Ripple, shadows and the
   focus ring are deliberately not done yet.)
-- Which component batch next: Switch/Slider/ProgressBar, or ShapeMorph/GeminiGlow?
-- After the `widget-schema` rerun: is the local line worth keeping, and on which tier? ROCm on the 9060 XT still
-  needs checking (`ollama ps` while a model is loaded).
-- Plan item 0.2: Googlebook screenshots of Quick Settings, the launcher and Settings are still missing.
+- Does GNOME Calendar open the clicked event (`--uuid <calendar>:<event>`, D95), and how soon do Google edits show?
+- Plan item 0.2: Googlebook screenshots of Quick Settings, the launcher and Settings are still missing; GeminiGlow
+  needs one too.
 - Plan item 1.1b: default seed color and scheme type, chosen against the references.
+- When widget generation returns (D82): is the local-model line worth keeping, and on which tier?

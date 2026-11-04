@@ -390,7 +390,7 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   migrating: Quickshell has no controls, and their `Loader`s are small in-item parts, not windows.
 - [ ] **H4** Standing rule (D31): light on memory. Lazy-load everything not on screen, measure new components
   with `tools/dev/memcost.py`, follow `docs/memory.md`. First pass done: components 26-64% smaller.
-- [ ] **H3** First `nix develop` on the maintainer's machine writes `flake.lock`; commit it.
+- [x] **H3** First `nix develop` on the maintainer's machine writes `flake.lock`; commit it (committed).
 
 ## Decisions waiting for the maintainer
 
