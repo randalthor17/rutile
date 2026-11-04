@@ -1649,6 +1649,48 @@
       }
     }
   },
+  "nav_rail": {
+    "collapsed": {
+      "container_color": "surface",
+      "container_elevation": 0,
+      "container_shape": 0,
+      "container_width": 96,
+      "item_vertical_space": 4,
+      "narrow_container_width": 80,
+      "top_space": 44
+    },
+    "colors": {
+      "item_active_focused_state_layer_color": "on_secondary_container",
+      "item_active_hovered_state_layer_color": "on_secondary_container",
+      "item_active_icon_color": "on_secondary_container",
+      "item_active_indicator_color": "secondary_container",
+      "item_active_label_text_color": "secondary",
+      "item_active_pressed_state_layer_color": "on_secondary_container",
+      "item_inactive_focused_state_layer_color": "on_secondary_container",
+      "item_inactive_hovered_state_layer_color": "on_secondary_container",
+      "item_inactive_icon_color": "on_surface_variant",
+      "item_inactive_label_text_color": "on_surface_variant",
+      "item_inactive_pressed_state_layer_color": "on_secondary_container"
+    },
+    "expanded": {
+      "container_elevation": 0,
+      "container_shape": 0,
+      "container_width_maximum": 360,
+      "container_width_minimum": 220,
+      "modal_container_color": "surface_container",
+      "modal_container_elevation": 2,
+      "modal_container_shape": 16,
+      "top_space": 44
+    },
+    "item": {
+      "active_indicator_height": 32,
+      "active_indicator_width": 56,
+      "icon_label_space": 4,
+      "label_text_font": "label_medium",
+      "leading_space": 16,
+      "trailing_space": 16
+    }
+  },
   "progress": {
     "active_indicator_color": "primary",
     "active_shape": "full",

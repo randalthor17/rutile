@@ -21,6 +21,7 @@ directory containing the entry file, so run things from `shell/`.
 | `Dialog` | M3 basic dialog card: `iconName`, `headline`, `supportingText`, a default slot, `actions` [{id, text, type}], `acceptId` (Enter), `dismissId` (Escape); `chosen(id)`; 280 to 560 px wide; shown by the caller over a scrim with a `PopupLoader` |
 | `Fab` | M3 Expressive FAB: `size` small, baseline, medium, large; `variant` primary or secondary; `iconName`; with `text` an extended FAB (not small), `expanded` false collapses it to the icon; `clicked()` |
 | `Card` | M3 card, `type` elevated, filled or outlined; a default slot laid out by the caller; `interactive` for hover, press and `clicked()` |
+| `NavRail` | M3 Expressive collapsed navigation rail (D103): `items` [{id, text, icon}], `currentId` (the owner sets it on `chosen(id)`), the active indicator growing from its middle, `narrow` for 80 px; the default slot is the header (a menu button, a FAB) |
 | `ListItem` | `text`, `supportingText`, `iconName`, `trailingText`, a trailing slot for a control, `selected`, `position` in a segmented group |
 | `ShapeMorph` | a shape from the M3 Expressive shape library (`MaterialShapes.names`: `circle`, `cookie9Sided`, `softBurst`, ... 35 in all), filled with `color`; changing `shape` morphs to it; `morphing`, `progress` |
 | `PopupMotion` | the open and close motion every popup, dropdown and menu uses (D43): `target`, `shown`, `origin` (an `Item.TransformOrigin`); `hidden()` after closing |
@@ -120,6 +121,9 @@ FAB and card tokens (the `Fab*`, `ExtendedFab*` and `*CardTokens.kt` files) were
 FAB's and medium extended FAB's `ContainerShape` is commented out upstream until `CornerLargeIncreased` exists in
 ShapeKeyTokens; the generator uses that corner (20) and fails once the TODO goes. The extended FAB's label style is
 Compose's (`ExtendedFloatingActionButton`: titleMedium, titleLarge, headlineSmall), not a token.
+The navigation rail's tokens (`NavigationRailCollapsedTokens.kt`, `NavigationRailExpandedTokens.kt`,
+`NavigationRailColorTokens.kt`, `NavigationRailVerticalItemTokens.kt`) were vendored 2026-11-05. The color file
+names its tokens without the usual "Color" ending; the generator adds it so they come out as Colors' names.
 
 ## Not done yet
 
@@ -127,6 +131,8 @@ Compose's (`ExtendedFloatingActionButton`: titleMedium, titleLarge, headlineSmal
   other two track slots (end of the active part, start of the inactive part) that MDC also offers.
 - **TextField:** prefix and suffix, a character counter, multi-line; the label's notch is drawn over
   `backgroundColor`, not cut out of the outline. **Dialog:** full-screen dialogs, a scrim of its own.
+- **NavRail:** the expanded rail (labels beside the icons, 220 to 360 px, a modal one over the content) and the
+  morph between collapsed and expanded; badges; keyboard arrows between destinations (Tab moves).
 - **FAB and card:** no shadows (their elevation is the container color, as `elevated` buttons), no FAB menu, no
   tertiary FAB (Compose has no tertiary container token file).
 - **ShapeMorph:** filling a shape with an image (the cookie-shaped picture in Googlebook's "Up next" widget),

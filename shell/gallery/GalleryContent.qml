@@ -557,6 +557,41 @@ Rectangle {
                 }
             }
 
+            GallerySection {
+                title: "Navigation rail"
+                width: parent.width
+                Row {
+                    spacing: Spacing.xl
+                    NavRail {
+                        id: galleryRail
+                        objectName: "galleryRail"
+                        color: Colors.surfaceContainer
+                        currentId: "network"
+                        items: [{ id: "network", text: "Network", icon: "wifi" },
+                                { id: "bluetooth", text: "Bluetooth", icon: "bluetooth" },
+                                { id: "display", text: "Display", icon: "desktop_windows" },
+                                { id: "about", text: "About this device", icon: "info" }]
+                        onChosen: id => currentId = id
+                        IconButton { iconName: "menu" }
+                    }
+                    NavRail {
+                        narrow: true
+                        color: Colors.surfaceContainer
+                        currentId: galleryRail.currentId
+                        items: galleryRail.items
+                        onChosen: id => galleryRail.currentId = id
+                        Fab { size: "small"; iconName: "edit" }
+                    }
+                    Text {
+                        width: 240
+                        wrapMode: Text.Wrap
+                        text: "Collapsed rails, 96 and 80 px: click a destination; its indicator grows from the middle."
+                        color: Colors.surfaceVariantOn
+                        font: Type.font(Type.bodySmall)
+                    }
+                }
+            }
+
             // ---- editable grid: Quick Settings tiles ----
             GallerySection {
                 title: "Quick Settings panel"

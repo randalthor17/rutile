@@ -679,6 +679,14 @@ def build():
         "fab": fab_spec(corners),
         "card": {kind: token_table(f"{kind.capitalize()}CardTokens.kt", corners)
                  for kind in ("elevated", "filled", "outlined")},
+        "nav_rail": {
+            "collapsed": token_table("NavigationRailCollapsedTokens.kt", corners),
+            "expanded": token_table("NavigationRailExpandedTokens.kt", corners),
+            # every token here is a color, named without the "Color" the other files end with; the suffix makes
+            # gen_qml.py give them as Colors' names
+            "colors": {f"{k}_color": v for k, v in token_table("NavigationRailColorTokens.kt", corners).items()},
+            "item": token_table("NavigationRailVerticalItemTokens.kt", corners),
+        },
         "material_shapes": material_shapes(),
     }
 

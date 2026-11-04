@@ -30,7 +30,7 @@ The shell runs as a whole desktop on niri; `docs/PLAN.md` has each part's state 
 | Area | State |
 |---|---|
 | Tokens, palette (matugen), QML singletons, fonts | done (Phase 0 and 1) |
-| Components (`shell/components/`): buttons, icon buttons, switch, slider, progress, tile, chip, list item, ShapeMorph, EditableGrid, menu, text field, dialog, FAB, card, title bar | done, in the gallery; NavRail and GeminiGlow left (1.5) |
+| Components (`shell/components/`): buttons, icon buttons, switch, slider, progress, tile, chip, list item, ShapeMorph, EditableGrid, menu, text field, dialog, FAB, card, title bar | done, in the gallery; NavRail collapsed only (D103); GeminiGlow left (1.5) |
 | Top bar: clock with its calendar (D93 to D95), status pill, notification bell, app indicators | working; tested headless and in nested niri |
 | Quick Settings: saved tiles, Wi-Fi and Bluetooth pages, Night light (wlsunset), Power saver, Do not disturb | working; real Wi-Fi, Bluetooth and Night light not tried |
 | Shelf, launcher, notifications, OSD, toasts, lock screen, power menu, polkit agent, wallpaper | working (Phase 2) |
@@ -56,7 +56,8 @@ surfaces), no focus ring. See `docs/components.md`.
    the NixOS services in `docs/install.md`, D95) and reports what looks or works wrong.
 2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97).
    The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
-3. Finish the component kit (1.5: NavRail, GeminiGlow once a reference image exists) and the gallery review (1.7).
+3. Finish the component kit (1.5: GeminiGlow once a reference image exists; the expanded NavRail if something needs
+   it) and the gallery review (1.7).
 4. Smaller open parts: time zones in .ics files (TZID times are read as local).
 5. Widget generation and the local-model trial stay deferred (D82).
 

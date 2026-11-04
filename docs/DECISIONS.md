@@ -1187,3 +1187,15 @@ greeter):
   addresses part is the popup's CalendarFeeds, tested there, not again here.
 - **Costs.** Each such widget runs the helper every 5 minutes (about a second; no process stays). Two widgets
   read twice: no sharing between widgets yet.
+
+**D103. NavRail: the collapsed M3 Expressive rail** (plan 1.5, 2026-11-05):
+- **What.** A column of destinations (icon in a 56 x 32 pill indicator over a labelMedium label), 96 px or 80 px
+  (`narrow`), a header slot at the top for a menu button or FAB, the first destination the rail's top space (44)
+  down. The active one has the secondary container indicator, grown from its middle on the fast spatial spring (as
+  Compose animates the indicator's width), a filled icon and a secondary label. It reports `chosen(id)` and never
+  changes `currentId` itself, like Switch's controlled mode (D33).
+- **Tokens.** Compose's expressive rail files (the "WideNavigationRail" ones, vendored today): collapsed, expanded,
+  colors, vertical item. The old M3 `NavigationRailTokens.kt` is gone upstream.
+- **Not done.** The expanded rail and the collapsed-to-expanded morph; badges; arrow keys. Nothing in the shell uses
+  the rail yet; Settings keeps its list of pages (5.1, D50), which is what ChromeOS's Settings shows.
+- **Cost.** About 80 KiB per destination (docs/memory.md).

@@ -60,7 +60,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **1.5h** FAB and Card (v0.10.0): from the vendored Compose FAB, extended FAB and card tokens; FAB sizes
   small to large, primary or secondary, extended with a label that collapses to the icon; elevated, filled and
   outlined cards, clickable when `interactive`; in the gallery. No shadows yet.
-- [ ] **1.5** Component kit, remaining: NavRail, GeminiGlow gradient border,
+- [ ] **1.5** Component kit, remaining: GeminiGlow gradient border (needs a reference image). NavRail done
+  (D103, 2026-11-05): the collapsed rail from the vendored rail tokens, in the gallery; not the expanded one.
   and the 1.5c leftovers when something needs them. Likely next: GeminiGlow, or what Quick Settings (2.6) needs
   first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
