@@ -126,36 +126,37 @@ skip means that tool was missing, not that the behavior was checked.
 
 ### Quickshell types and where they go
 
-Quickshell 0.3.2. Checked against the docs in October 2026; "in use" is what the repo uses today.
+Quickshell 0.3.2. Checked against the docs in October 2026; "in use" checked against the code on 2026-11-04.
 
 | Need | Quickshell type | Plan |
 |---|---|---|
-| Shell root, windows | `ShellRoot`, `FloatingWindow` (in use: gallery), `PanelWindow` (in use: Quick Settings), `PopupWindow`, `PopupAnchor`, `QsWindow` | 2.3 to 2.8 |
-| Layer-shell surfaces (desktop, shelf, panels) | `WlrLayershell`, `WlrLayer`, `ExclusionMode`, `WlrKeyboardFocus` (in use: status pill, Quick Settings) | 2.3, 2.4, 2.6 |
+| Shell root, windows | `ShellRoot`; `PanelWindow` (in use: every bar, popup and panel); `FloatingWindow` (in use: Settings, Widgets, the widget preview, the gallery); `PopupWindow`, `PopupAnchor`, `QsWindow` (not used) | 2.3 to 2.8 |
+| Layer-shell surfaces (desktop, shelf, panels) | `WlrLayershell`, `WlrLayer`, `ExclusionMode`, `WlrKeyboardFocus` (in use throughout) | 2.3, 2.4, 2.6 |
 | Keep windows clear of shell UI | `PanelWindow.exclusiveZone` on a 1 px click-through surface (`mask: Region {}`) (in use: `shell/bar/EdgeExclusion.qml`, D42) | 2.3, 2.4 |
-| One surface per monitor | `Variants` over `Quickshell.screens`, `ShellScreen` | 2.3, 2.4 |
-| Load windows and popups only while open (D31) | `LazyLoader` (in use: Quick Settings; windows and popups; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
-| Files and config, watched | `FileView` (in use: PaletteWatcher, Settings); `JsonAdapter` drops unknown keys, not used for settings (D45) | 2.5, 4.2 |
-| Commands, sockets | `Process` (in use: brightnessctl), `StdioCollector`, `SplitParser`, `Socket` | 4.2; 2.2 only as the fallback (D38) |
-| Shell IPC and keybinds | `IpcHandler` (in use: `quicksettings`; `quickshell -p ... ipc call` from niri binds) | 2.2 |
-| State kept across config reloads | `PersistentProperties` | 2.x |
-| Clock | `SystemClock` | 2.3, 4.2 |
-| Apps | `DesktopEntries`, `DesktopEntry`, `IconImage` | 2.4, 2.7 |
-| Running windows, workspaces | `Quickshell.Niri` once PR #949 merges (D38); `ToplevelManager`, `Toplevel` (wlr-foreign-toplevel) | 2.2, 2.4 |
-| Sound | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` (in use: AudioService) | 2.1, 2.6 |
-| Network | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork` (NetworkManager backend; in use: NetworkService) | 2.1, 2.6, 5.2 |
-| Bluetooth | `Bluetooth`, `BluetoothAdapter`, `BluetoothDevice` (in use: BluetoothService) | 2.1, 2.6, 5.2 |
-| Battery, power profiles | `UPower`, `UPowerDevice`, `PowerProfiles` | 2.1, 2.6, 4.2 |
-| Media | `Mpris`, `MprisPlayer` | 2.1, 2.3 (media pill), 4.2 |
-| Notifications | `NotificationServer`, `Notification` | 2.8 |
+| One surface per monitor | `Variants` over `Quickshell.screens`, `ShellScreen` (in use: bars, shelf, wallpaper, desktop) | 2.3, 2.4 |
+| Load windows and popups only while open (D31) | `LazyLoader` (in use: every popup and app window; small in-item parts keep Qt's `Loader`) | 2.4 to 2.8 |
+| Files and config, watched | `FileView` (in use: Settings, PaletteWatcher, widgets, the calendar's saved addresses); `JsonAdapter` drops unknown keys, not used for settings (D45) | 2.5, 4.2 |
+| Commands, sockets | `Process`, `StdioCollector`, `SplitParser` (in use widely); `Socket` (in use: niri's event stream, NiriService, D44) | 2.2, 4.2 |
+| Shell IPC and keybinds | `IpcHandler` (in use: every target in `shell/shell.qml`; `rutile-shell --help` lists them) | 2.2 |
+| State kept across config reloads | `PersistentProperties` (not used: state.json instead, D45) | 2.x |
+| Clock | `SystemClock` (in use: the clock, the calendar, the lock screen) | 2.3, 4.2 |
+| Apps | `DesktopEntries`, `DesktopEntry` (in use: shelf, launcher); `IconImage` (not used) | 2.4, 2.7 |
+| Running windows, workspaces | niri's own socket (D44); `ToplevelManager` (in use: the shelf); `Quickshell.Niri` once PR #949 merges (D38) | 2.2, 2.4 |
+| Sound | `Pipewire`, `PwNode`, `PwNodeAudio`, `PwObjectTracker` (in use: AudioService, Settings > Sound) | 2.1, 2.6 |
+| Network | `Networking`, `NetworkDevice`, `WifiDevice`, `WifiNetwork` (in use: NetworkService, Settings > Network) | 2.1, 2.6, 5.2 |
+| Bluetooth | `Bluetooth`, `BluetoothAdapter`, `BluetoothDevice` (in use: BluetoothService, Settings > Bluetooth) | 2.1, 2.6, 5.2 |
+| Battery, power profiles | `UPower`, `UPowerDevice`, `PowerProfiles` (in use: Quick Settings, Settings > Power, the battery widget) | 2.1, 2.6, 4.2 |
+| Media | `Mpris`, `MprisPlayer` (in use: the media widget source) | 2.1, 4.2 |
+| Notifications | `NotificationServer`, `Notification` (in use: NotificationService) | 2.8 |
 | Icon theme | `//@ pragma IconTheme`, `Quickshell.iconPath` (in use: Papirus-Dark, D62) | 2.10 |
 | Tray and its menus | `SystemTray`, `SystemTrayItem`, `QsMenuOpener` (in use: app indicators, D61); `QsMenuAnchor` (not: the platform menu is not our style) | 2.10 |
-| Lock screen, idle | `WlSessionLock`, `WlSessionLockSurface`, `PamContext`, `IdleMonitor`, `IdleInhibitor` | 2.8 |
-| Greeter, polkit | `Greetd`, `PolkitAgent` | 6.2, 2.8 |
-| Rounded clipping of children (cards, pictures) | `ClippingRectangle` (rectangles only; a cookie needs ShapeMorph) | 2.3, 4.3 |
-| Wallpaper colors | `ColorQuantizer` (dominant colors only; matugen still makes the scheme) | 1.1b |
-| Blur behind a surface | `BackgroundEffect` (`ext-background-effect-v1`, which niri supports; D38) | 2.3 to 2.8, 3.1 |
-| Screen preview | `ScreencopyView` | later |
+| Lock screen, idle | `WlSessionLock`, `WlSessionLockSurface`, `PamContext`, `IdleMonitor` (in use); `IdleInhibitor` (not used) | 2.8 |
+| Greeter, polkit | `PolkitAgent` (in use, D49); `Greetd` (6.2, not started) | 6.2, 2.8 |
+| Rounded clipping of children (cards, pictures) | `ClippingRectangle` (not used yet; rectangles only, a cookie needs ShapeMorph) | 2.3, 4.3 |
+| Wallpaper colors | `ColorQuantizer` (not used: matugen makes the scheme) | 1.1b |
+| Blur behind a surface | `BackgroundEffect` (in use: the power menu and polkit dialog; `ext-background-effect-v1`, D38) | 2.3 to 2.8, 3.1 |
+| Screen preview | `ScreencopyView` (not used) | later |
+| D-Bus | none in Quickshell for arbitrary services: `busctl` through `Process`, or a small helper (`native/calendar.c`, D95) | 2.x |
 
 Not in Quickshell, so ours: the M3E controls and shapes (`shell/components/`), the widget renderer, settings
 registry and search. niri IPC: wait for `Quickshell.Niri` (D38). `Quickshell.WindowManager` only speaks
@@ -239,10 +240,11 @@ the LLM reference documents (task `llm-docs`) against the QML source.
 
 ### The maintainer's machine
 
-NixOS (unstable), Qt 6.11.2 system-wide (the flake's dev shell has Qt 6.12 and Quickshell 0.3.2), matugen 4.2.0,
-niri, Quickshell 0.3.1 (from nixpkgs), a Radeon RX 9060 XT with 16 GB,
-Ollama Cloud for LLM work today and local Ollama intended. The repo lives in a `nix-shell`/`nix develop`
-checkout; the first `nix develop` writes `flake.lock`, which should be committed.
+NixOS (unstable; looked at on 2026-11-04): niri 26.04, Qt 6.12, Quickshell 0.3.2 (the only one in the store;
+Noctalia runs on it in the main session), the same as the flake's dev shell; matugen 4.2.0 comes from the dev shell.
+A Radeon RX 9060 XT with 16 GB; Ollama Cloud for LLM work today and local Ollama intended. The system's
+configuration is `~/nixos-config` (read only for Claude); a second user, `rand-test`, runs Rutile through the
+home-manager module. The repo lives in a `nix develop` checkout with `flake.lock` committed.
 
 ### Recreating Claude's sandbox
 

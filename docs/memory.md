@@ -76,6 +76,15 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | SettingsApp, on its first page | | 1232 | the sidebar (search, 6 pages as ListItems with icon circles) and a page of SettingRows; its window (a FloatingWindow) only while open (LazyLoader). The open setting's menu is one PopupLoader, loaded only while it shows |
 | QuickSettingsPanel, open | | 1421 | 5 tiles, 2 sliders, the grid, 4 icon buttons; exists only while open (LazyLoader) |
 | EditableGrid, 9 tiles | | 1256 | 9 tiles (114 each in that measurement) plus about 25 per slot; edit mode adds about 11 per slot (handles only on the selected item), only while editing |
+| TextField (November 2026) | | 147.2 | the box, label, input, placeholder and supporting text, an IconButton for the trailing icon (loaded always, hidden when unused), three Behaviors |
+| Dialog, headline, a line and two actions | | 232.0 | the card, two Texts with TextMetrics, two text Buttons; 64.4 bare. Only inside a PopupLoader while open |
+| Fab | | 83.2 | container, icon, state layer and press spring |
+| Card | | 29.7 | a Rectangle and its state layer; the content is the caller's |
+| TitleBar | | 160.4 | icon, title, maximize and close IconButtons, the drag area; one per app window, only while it is open |
+| CalendarPanel | | 2882, 3094 with an event and the app button | 42 day cells, each with its circle, number, dot and a StateLayer (about 60 each, 2.5 MB together), the header's 3 IconButtons, the event list. Only while the calendar is open (LazyLoader). The cells' StateLayers are the cost: one MouseArea and one hover circle for the grid would cut most of it |
+
+Not measured: QuickSettingsDetails (it needs a live backend; only while a detail page is open) and AppFrame
+(a window's frame around its content).
 
 For scale: an empty `Item` is about 3 KiB, a `Rectangle` 2, a `Text` 6, a `MouseArea` 2, a `Behavior` with
 its animation 2, a `Spring` about 7 and a JavaScript binding about 0.3 (0.7 for a color expression).

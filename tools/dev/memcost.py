@@ -35,6 +35,7 @@ import qs.wallpaper
 import qs.power
 import qs.polkit
 import qs.settingsapp
+import qs.calendar
 
 Window {
     width: 1200; height: 900; visible: true

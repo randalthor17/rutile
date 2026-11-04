@@ -8,25 +8,36 @@ A Quickshell-based desktop shell for niri that recreates the Googlebook /
 ChromeOS look using Material 3 Expressive, with a settings app and desktop
 widgets that a local LLM (Ollama / Gemma) can create from a documented spec.
 
-Status: **0.5.1+.** Design tokens, the matugen palette pipeline, the QML singletons, fonts,
-a nix devshell, the first M3E components (Surface, StateLayer, Icon, Button, IconButton)
-and a component gallery, with the checks every later commit has to pass. No shell UI yet.
+Status: **0.5.1+** (about 130 commits since the tag, under Unreleased in `CHANGELOG.md`). The shell runs as a
+whole desktop on niri: a top bar (clock with a calendar, status pill, notification bell, app indicators), Quick
+Settings, the shelf and launcher, notifications, OSD and toasts, the lock screen, power menu and polkit agent, the
+wallpaper with its palette, desktop widgets, and the Settings and Widgets apps. It installs from the flake as a
+package and a home-manager module (`docs/install.md`). Still to come: a greetd greeter and an installer ISO
+(`docs/PLAN.md`).
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
-| `tokens/` | M3E tokens: vendored sources, checksums, generated `m3e.json` |
-| `theme/` | matugen config + template, role list, golden palette, `fonts.json` |
-| `tools/` | `gen_tokens.py`, `gen_components.py`, `gen_qml.py`, `palette.py`, `qtws.py`, `fontconf.py`, `otinfo.py`, `lint_hardcoded.py` |
-| `native/` | the Firefox colors' host, the one C program (`make native`) |
-| `tests/` | unit tests (stdlib `unittest`) |
+| `shell/shell.qml` | the shell's entry point: every window, popup and IPC target |
 | `shell/common/` | QML singletons (mostly generated), `Spring`, `EffectsColor`, `EffectsNumber`, `PaletteWatcher` |
-| `shell/components/` | M3E components: Surface, StateLayer, Icon, Button, IconButton |
-| `shell/gallery.qml`, `shell/gallery/` | component gallery (window + content) |
-| `tests/qml/` | QML tests, run offscreen by `tools/qtws.py` (`tests/qml_optional/`: need real fonts; `tests/qml_gpu/`: need a display; `tests/qml_render/`: gallery renderer) |
-| `nix/` | `googlesans-flex.nix`, our Google Sans Flex package |
-| `settings/` `widgets/` | empty for now, see roadmap |
+| `shell/components/` | the M3E kit: buttons, switch, slider, progress, tile, chip, list item, menu, text field, dialog, FAB, card, ShapeMorph, EditableGrid, title bar (`docs/components.md`) |
+| `shell/bar/`, `shell/calendar/` | the top bar, and the calendar under the clock |
+| `shell/quicksettings/`, `shell/shelf/`, `shell/launcher/` | Quick Settings (`docs/quick-settings.md`), the shelf, the launcher |
+| `shell/notifications/`, `shell/osd/`, `shell/toast/` | notifications, the volume and brightness OSD, toasts |
+| `shell/lock/`, `shell/power/`, `shell/polkit/`, `shell/wallpaper/` | the lock screen, power menu, polkit agent, wallpaper |
+| `shell/settingsapp/`, `shell/widgetsapp/` | the Settings app (`docs/settings.md`) and the Widgets app |
+| `shell/widgethost/`, `shell/desktop/` | the widget renderer and data sources, the desktop widget grid (`docs/widgets.md`) |
+| `shell/services/` | Quickshell service wrappers (audio, network, Bluetooth, niri...) and the settings store |
+| `shell/gallery.qml`, `shell/gallery/` | the component gallery |
+| `settings/schema.json` | every setting, read by the shell and the home-manager module |
+| `widgets/` | the widget spec, the data sources' catalog, examples and templates |
+| `tokens/`, `theme/` | M3E tokens (vendored sources, generated JSON); matugen config, templates, roles, fonts |
+| `native/` | the C programs: the Firefox colors' host and the calendar's evolution-data-server reader (`make native`) |
+| `bin/rutile-shell` | the command: runs the shell and calls it over IPC (`rutile-shell --help`) |
+| `nix/` | the package, the home-manager module, the Google Sans Flex package, the local-AI NixOS module |
+| `tools/` | generators, `qtws.py` (tests, lint, renders, headless runs), `widget_check.py`, `lint_hardcoded.py` |
+| `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests under Quickshell |
 
 ## Checks
 
@@ -56,7 +67,7 @@ MIT, see `LICENSE`. Third-party notices are in `NOTICE`.
 
 ## Development
 
-    nix develop      # git, make, python (+ materialyoucolor), matugen, qtdeclarative, quickshell
+    nix develop      # git, make, python, matugen, Qt's QML tools, quickshell, the runtime tools, libecal
     make check
 
 The dev shell exists because a bare `qtdeclarative` in a nix shell leaves Qt's
@@ -65,18 +76,19 @@ It exports `QML2_IMPORT_PATH` from nixpkgs' own prefix. It deliberately does not
 set `QT_QPA_PLATFORM`, so Quickshell launched from it opens real windows; the
 test tool sets offscreen itself.
 
-Flakes only see git-tracked files. The first `nix develop` writes `flake.lock`;
-commit it so everyone shares one nixpkgs. `make flake-check` evaluates the flake.
+Flakes only see git-tracked files. `flake.lock` is committed, so everyone shares one nixpkgs. `make flake-check` evaluates the flake.
 Outside nix, `tools/qtws.py` also derives the QML import path from the Qt tool's
 install prefix; override with `RUTILE_QML_IMPORT` if your layout is unusual.
 
 ## Try it
 
     nix develop
-    quickshell -p shell/gallery.qml                            # the gallery window
-    python3 tools/qtws.py render --out render --mode light     # or render PNGs offscreen
+    make native                                                # the C helpers the shell runs
+    quickshell -p shell/shell.qml                              # the shell, on niri (one instance at a time)
+    quickshell -p shell/gallery.qml                            # the component gallery
+    python3 tools/qtws.py test-wayland                         # the whole shell under a headless sway
 
-See `docs/components.md`.
+See `docs/install.md` to install it, `docs/components.md` for the kit.
 
 ## Side work with a local model
 

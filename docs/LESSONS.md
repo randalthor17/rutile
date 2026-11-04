@@ -403,3 +403,30 @@ last change. It showed as a test failing one run in four. Ask again after the ru
 (`_again`), and keep only from a read that started after the last change. A fake that answers late
 (`FAKE_NIRI_READ_DELAY`) makes such a race fail every run instead of now and then.
 
+
+**evolution-data-server closes a calendar as soon as the client that opened it leaves.** `OpenCalendar` returns a
+calendar object on a subprocess, and the object is gone once the caller's D-Bus connection closes, so one-shot
+`busctl` calls (open, then query) can never read a calendar. The shell reads through a small libecal program that
+keeps one connection for the whole read (`native/calendar.c`, D95).
+
+**evolution-data-server's local calendars never report "online".** `e_cal_client_connect_sync` waits the whole
+`wait_for_connected_seconds` for each local calendar (10 s each at first, 20 s for a read), then answers from its
+copy anyway. Wait briefly (1 s) and open the calendars side by side. Found by timing each calendar's open in an
+instrumented copy.
+
+**In a property's change handler, bindings on that property may not have caught up.** EdsCalendar's
+`onFromChanged` started the Process at once, and the Process ran the command bound to the old range. Start it
+with `Qt.callLater` (which also merges a change of both ends into one run). The fake helper's log of its
+arguments showed it.
+
+**A Repeater makes new delegates when its model changes.** A test that held a day cell, changed the month and then
+used the same cell got "window not shown" from `mouseWheel`: the cell had been destroyed. Find the item again
+after anything that changes the model.
+
+**A Row or Column places a newly shown child only at the next polish.** Clicking a button just made visible (the
+calendar's Today button, "Open Calendar") hit whatever was there before, here the Previous month button. Call
+`waitForItemPolished` on the layout before clicking.
+
+**A private dbus-daemon config needs `allow receive_sender` as well as `send_destination`.** With only send and own
+rules, every reply was rejected ("Rejected receive message, 0 matched rules") and clients timed out. The socket's
+path must also stay under 108 bytes, which a session scratch directory can exceed ("Socket name too long").

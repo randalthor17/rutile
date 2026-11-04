@@ -65,7 +65,7 @@ over the blurred desktop (namespace `rutile-polkit`, so the layer rule above nee
 `ipc call polkit state` (never the password) and `cancel`.
 
 The gear at the panel's top left opens the settings app (`shell/settingsapp/`, D50) and closes the panel.
-`ipc call settings open <page>` (wallpaper, network, bluetooth, display, sound, power, input, apps, notifications, security, shelf, accessibility, about; "" for the one
+`ipc call settings open <page>` (wallpaper, network, bluetooth, display, sound, power, input, windows, apps, notifications, calendar, security, shelf, widgets, accessibility, about; "" for the one
 showing), `openSetting <page> <key>` (the page with that setting ringed, the ring fading), `close`, `toggle`,
 `isOpen`, `search <text>` (as typing would), `state`. There is one Settings window: opened again from anywhere
 (Quick Settings, the launcher, its desktop file `rutile-settings.desktop`, which runs `rutile-shell settings`,
@@ -82,19 +82,22 @@ any wallpaper (the maintainer asked for a colored pill). It does nothing on clic
 |---|---|---|
 | `shell/shell.qml` | yes | `ShellRoot`, `PaletteWatcher`, the one backend, a status pill per screen (`Variants`), a `LazyLoader` with the Quick Settings window, the `IpcHandler` |
 | `shell/bar/ScreenStatus.qml` | yes | one screen's top edge: the clock's and the pill's windows and the space they reserve |
-| `shell/bar/ClockWindow.qml` | yes | the clock's `PanelWindow` at the top left, top layer, with a `SystemClock` ticking each minute |
+| `shell/bar/ClockWindow.qml` | yes | the clock's `PanelWindow` at the top left, top layer, with a `SystemClock` ticking each minute; a press toggles the calendar (D93) |
 | `shell/bar/ClockPill.qml` | no | the time and date in one `Text` on the pill's container (`now` passed in, so tests use fixed dates) |
 | `shell/bar/ClockText.js` | no | the time ("8:55", "20:55") and date ("Fri, Oct 9") strings, and whether a locale uses a 24-hour clock |
 | `shell/bar/StatusWindow.qml` | yes | the pill's `PanelWindow` at the top right of one screen, on the top layer: always visible |
 | `shell/bar/EdgeExclusion.qml` | yes | a 1 px transparent, click-through surface whose exclusive zone keeps windows below the pill (32 px; niri adds its gap) (D42) |
 | `shell/bar/StatusPill.qml` | no | network, volume and battery icons (one `Icon` with three ligatures) and the battery percentage, 24 px tall with 16 px icons on a tonal container (`surfaceContainer`; `secondaryContainer` while Quick Settings is open). Ethernet is `settings_ethernet`, Android's icon: Material Symbols has no RJ45 jack |
 | `shell/bar/StatusIcons.js` | no | which Material Symbol for which state |
+| `shell/bar/NotificationBell.qml` | no | the bell left of the pill: opens the notification list (D47) |
+| `shell/bar/TrayPill.qml`, `TrayModel.js`, `TrayMenuPanel.qml`, `TrayMenuWindow.qml` | partly | app indicators and their menus (D61) |
 | `shell/quicksettings/QuickSettingsWindow.qml` | yes | a `PanelWindow` (layer shell) at the top right, `ExclusionMode.Ignore`, keyboard focus for Escape |
 | `shell/quicksettings/QuickSettingsBackend.qml` | yes (through `qs.services`) | the panel's backend interface on top of the services |
 | `shell/quicksettings/QuickSettingsPanel.qml` | no | header, brightness and volume sliders, tiles on the `EditableGrid`, the open and close motion |
+| `shell/quicksettings/QuickSettingsDetails.qml` | no | a tile's detail page in place of the tiles: Wi-Fi networks (password, forget) or Bluetooth devices |
+| `shell/quicksettings/Details.js` | no | what the detail pages list, in which order, and what a click does |
+| `shell/power/PowerOverlay.qml`, `PowerWindow.qml`, `PowerActions.js` | partly | the full-screen power menu, its window, and its entries and commands |
 | `shell/quicksettings/Controls.js` | no | the tiles' names, icons and search words, their state from the backend, what a toggle asks; the same controls as launcher search results (choosing a toggle flips it, a slider opens Quick Settings) |
-| `shell/quicksettings/PowerMenu.qml` | no | the power menu: a segmented list of `ListItem`s, created only while open |
-| `shell/quicksettings/PowerActions.js` | no | the power menu's entries and their commands (run by the backend with `Quickshell.execDetached`) |
 | `shell/services/AudioService.qml` | yes | default output and input: volume, mute (`Pipewire`, `PwObjectTracker`) |
 | `shell/services/NetworkService.qml` | yes | Wi-Fi on/off, connected network (`Networking`, NetworkManager) |
 | `shell/services/BluetoothService.qml` | yes | adapter on/off, a connected device (`Bluetooth`, BlueZ) |
@@ -155,9 +158,6 @@ window (`niri msg action focus-column-right`) closed the panel.
 
 - Closing on a click on another program's bar (D90 covers the shell's own desktop, shelf and clock). Detail pages for the other tiles; hidden networks.
 - Blur behind the panel (`BackgroundEffect`, D38): the panel is opaque like Googlebook's for now.
-- The power menu is a small dropdown for now. Planned (maintainer's request): a full-screen power menu over the
-  blurred desktop, replacing it (plan 2.8). Lock runs `loginctl lock-session`, which locks nothing until a lock
-  screen listens (plan 2.8) or e.g. swayidle runs one. Clicking elsewhere in the panel does not close the menu.
 - **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path
   live), several screens; the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real
   hardware; Wi-Fi, Bluetooth and a backlight have not been seen working at all (the machine it ran on has none

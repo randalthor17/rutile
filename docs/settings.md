@@ -135,6 +135,5 @@ Deleting `state.json` forgets all of it; nothing else depends on it.
 
 ## Not done
 
-- The settings app (plan 5.1, `shell/settingsapp/`) shows every setting and searches them, and the launcher
-  finds them too (D77); the Widgets page is plan 5.2, after the widget system (phase 4).
-- A home-manager option that installs the shell: needs the package (plan 6.1).
+- Settings that only Nix can set are shown locked (D45); the app cannot unlock them.
+- See `docs/PLAN.md` (5.1) for what the settings app still lacks.
