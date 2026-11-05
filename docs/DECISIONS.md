@@ -1259,4 +1259,5 @@ greeter):
   cell over mostly lands back where it was or sends a neighbor a row down, because gravity reflows in reading order.
   So Left and Right swap the item with the one before or after it in reading order and let the rest flow, refusing
   a swap that would outgrow `maxRows`. That is how Quick Settings tiles read: in order.
-- **Not done.** Screen reader announcements of the moves, and moving between screens or into the grid from outside.
+- **Not done.** Moving between screens, or into the grid from outside. Screen reader support is out of scope: the
+  shell has one user, who does not use one (the maintainer, 2026-11-05).
