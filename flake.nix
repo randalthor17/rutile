@@ -80,9 +80,10 @@
             "${pkgs.material-symbols}/share/fonts"
           ];
           # Test cross-checks only, never imported by the tools: materialyoucolor (palette, when nixpkgs has
-          # it) and jsonschema (tools/widget_check.py, D29), so those tests run instead of skipping.
+          # it), jsonschema (tools/widget_check.py, D29) and PySide6 (tools/dev/pyside_qml.py's own test, the
+          # maintainer's choice), so those tests run instead of skipping.
           python = pkgs.python3.withPackages (
-            ps: [ ps.jsonschema ] ++ lib.optional (ps ? materialyoucolor) ps.materialyoucolor
+            ps: [ ps.jsonschema ps.pyside6 ] ++ lib.optional (ps ? materialyoucolor) ps.materialyoucolor
           );
 
           # The everyday shell's tools and setup, shared by every shell: an agent in local-ai must be

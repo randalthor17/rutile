@@ -37,9 +37,19 @@ def need_pyside():
     return QtCore, QUICK_TEST_MAIN
 
 
+def bundled_qml():
+    """Whether this PySide6 carries Qt's QML modules itself (pip's wheels do)."""
+    import PySide6
+    return (Path(PySide6.__file__).parent / "Qt" / "qml" / "QtQuick").is_dir()
+
+
 def run(ws, gl):
     QtCore, quick_test_main = need_pyside()
-    env = {"QML_XHR_ALLOW_FILE_READ": "1", "QML_IMPORT_PATH": str(ws), "QML2_IMPORT_PATH": str(ws)}
+    # pip's wheels carry Qt's QML modules; nixpkgs' PySide6 does not, so add the ones beside qmltestrunner (the same
+    # Qt there), as qtws does for itself
+    dirs = [str(ws)] + ([] if bundled_qml() else qtws.qml_import_dirs(shutil.which("qmltestrunner") or ""))
+    path = os.pathsep.join(dirs)
+    env = {"QML_XHR_ALLOW_FILE_READ": "1", "QML_IMPORT_PATH": path, "QML2_IMPORT_PATH": path}
     if gl:
         if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
             raise SystemExit("--gl needs a display; run under xvfb-run (see --help)")
