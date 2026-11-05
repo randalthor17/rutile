@@ -1,8 +1,9 @@
 // Network (plan 5.2): Wi-Fi (its switch, the networks around, a password when one is needed) and wired devices.
 // A page view: the app sets `app`, `store` and `backend` (NetworkBackend.qml, or the tests' fake), which has
 //   available, wifiAvailable, wifiEnabled; networks: [(id, name, signal 0-1, secure, known, connected, busy,
-//   error)]; wired: [(id, name, connected)]; asking: the network whose password is wanted ("" for none);
-//   setWifiEnabled(b), connect(id), connectWithPassword(id, password), cancelPassword(), disconnect(id), forget(id).
+//   error)]; wired: [(id, name, connected, on (connected or connecting), connecting, disconnecting, cable)]; asking: the network whose
+//   password is wanted ("" for none); setWifiEnabled(b), connect(id), connectWithPassword(id, password),
+//   cancelPassword(), disconnect(id), forget(id), setWiredEnabled(id, b) (an Ethernet port's switch, D111).
 // The groups are `setting_network.wifi` and `setting_network.ethernet` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick
@@ -226,16 +227,30 @@ Column {
         Repeater {
             model: page.wired
             delegate: ListItem {
+                id: port
                 required property var modelData
                 required property int index
+                // off with no cable there is nothing to turn on
+                readonly property bool busy: !!modelData.connecting || !!modelData.disconnecting
+                readonly property bool switchable: !busy && (modelData.on || modelData.cable !== false)
                 objectName: "networkWired_" + index
                 width: page.width
                 position: page.segment(index, page.wired.length)
                 tone: Colors.surfaceContainer
                 iconName: "lan"
-                text: modelData.connected ? "Connected" : "Not connected"
+                text: modelData.connecting ? "Connecting…" : modelData.disconnecting ? "Disconnecting…"
+                    : modelData.connected ? "Connected" : modelData.cable === false ? "No cable" : "Off"
                 supportingText: modelData.name
                 selected: modelData.connected
+                enabled: port.switchable
+                onClicked: page.backend.setWiredEnabled(modelData.id, !modelData.on)
+                Switch {
+                    objectName: "networkWiredSwitch_" + port.index
+                    controlled: true
+                    checked: port.modelData.on
+                    enabled: port.switchable
+                    onToggled: want => page.backend.setWiredEnabled(port.modelData.id, want)
+                }
             }
         }
     }

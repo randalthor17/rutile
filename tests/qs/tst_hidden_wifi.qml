@@ -11,6 +11,7 @@ import qs.services
 ShellRoot {
     id: root
     property int stage: 0
+    property bool ready: false              // the saved networks are written
     readonly property string log: Quickshell.env("FAKE_NMCLI_LOG")
     QsTest { id: t }
     FileView {
@@ -19,10 +20,13 @@ ShellRoot {
         blockLoading: true
         printErrors: false
     }
-    FileView {
+    // the saved networks, written before anything starts: a FileView's write lands later, and under load the
+    // saved one's join could look before it had
+    Process {
         id: known
-        path: root.log + ".known"
-        printErrors: false
+        running: true
+        command: ["sh", "-c", 'mkdir -p "$(dirname "$1")" && printf "Saved Open\\n" > "$1"', "sh", root.log + ".known"]
+        onExited: root.ready = true
     }
     function lines() {
         logFile.reload();
@@ -35,6 +39,7 @@ ShellRoot {
         onTriggered: {
             const n = NetworkService;
             const l = root.lines();
+            if (!root.ready) return;
             switch (root.stage) {
             case 0:
                 t.verify(n.joinHiddenWifi("Secret Lab", "pa ss; $word"), "a join starts");
@@ -51,7 +56,6 @@ ShellRoot {
                     "--wait 90 connection up id Secret Lab passwd-file /dev/stdin",
                     "stdin: 802-11-wireless-security.psk:pa ss; $word"].join("\n"), "added as hidden, joined, the password on stdin");
                 t.compare(ToastService.current, null, "no toast for a success");
-                known.setText("Saved Open\n");
                 t.verify(n.joinHiddenWifi("Saved Open", ""), "a saved one");
                 break;
             case 2:

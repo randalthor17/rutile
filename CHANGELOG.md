@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Switch Ethernet off and on** in Settings > Connections, as Wi-Fi: each port has a switch, and shows when it has
+  no cable. A port switched off stays off until you switch it on again. Airplane mode still leaves Ethernet alone,
+  as other systems do: it is for radios.
 - **Settings: a Connections page.** Wi-Fi and Ethernet, Bluetooth and Airplane mode are on one page now, in place
   of the separate Network and Bluetooth pages. Notifications has the Do not disturb switch, and Wallpaper & style
   shows the theme as a "Dark theme" switch.

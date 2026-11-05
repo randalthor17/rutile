@@ -40,7 +40,8 @@ TestCase {
                 { id: "Cafe", name: "Cafe", signal: 0.4, secure: false, known: false, connected: false, busy: false, error: "" },
                 { id: "Office", name: "Office", signal: 0.6, secure: true, known: false, connected: false, busy: false, error: "" }
             ]
-            property var wired: [{ id: "enp5s0", name: "enp5s0", connected: false }]
+            property var wired: [{ id: "enp5s0", name: "enp5s0", connected: false, on: false, cable: true,
+                                   connecting: false, disconnecting: false }]
             property string asking: ""
             property var calls: []
             function call(c) { calls = calls.concat([c]); }
@@ -55,6 +56,7 @@ TestCase {
             function cancelPassword() { call("cancel"); asking = ""; }
             function disconnect(id) { call("disconnect:" + id); }
             function forget(id) { call("forget:" + id); }
+            function setWiredEnabled(id, on) { call("wired:" + id + ":" + on); }
         }
     }
     Component {
@@ -493,7 +495,6 @@ TestCase {
         keyClick(Qt.Key_Escape);
         compare(b.calls[b.calls.length - 1], "cancel");
 
-        compare(findChild(a, "networkWired_0").text, "Not connected");
         verify(findChild(a, "setting_network.ethernet").visible);
 
         mouseClick(findChild(a, "networkWifiSwitch"));
@@ -574,6 +575,35 @@ TestCase {
         waitForRendering(a);
         compare(findChild(a, "bluetoothSwitchRow").supportingText, "No Bluetooth adapter");
         verify(!findChild(a, "bluetoothSwitchRow").enabled);
+    }
+
+    function test_ethernet_switch() {
+        // D111: each port switches on and off, as Wi-Fi does (the rows are made again when the list changes)
+        const t = connections();
+        const a = t.a, b = t.n;
+        const port = () => findChild(a, "networkWired_0"), sw = () => findChild(a, "networkWiredSwitch_0");
+        compare(port().text, "Off");
+        compare(port().supportingText, "enp5s0");
+        verify(!sw().checked);
+        mouseClick(inView(a, sw()));
+        compare(b.calls[b.calls.length - 1], "wired:enp5s0:true");
+        const w = o => [Object.assign({}, b.wired[0], o)];
+        b.wired = w({ on: true, connecting: true });
+        compare(port().text, "Connecting…");
+        verify(!sw().enabled, "busy: no clicks");
+        b.wired = w({ on: true, connecting: false, connected: true });
+        compare(port().text, "Connected");
+        verify(sw().checked && sw().enabled);
+        waitForRendering(a);
+        mouseClick(inView(a, port()), 40, port().height / 2);
+        compare(b.calls[b.calls.length - 1], "wired:enp5s0:false", "the row toggles too");
+        b.wired = w({ on: false, connected: true, disconnecting: true });
+        compare(port().text, "Disconnecting…", "not Connecting while it goes down");
+        b.wired = w({ on: false, connected: false, disconnecting: false, cable: false });
+        compare(port().text, "No cable");
+        verify(!sw().enabled, "off with no cable: nothing to turn on");
+        b.wired = w({ on: true, connected: true, cable: false });
+        verify(sw().enabled, "but one that is on can go off");
     }
 
     function test_airplane_mode() {

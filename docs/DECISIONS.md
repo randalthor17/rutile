@@ -1292,3 +1292,13 @@ maintainer's list, 2026-11-05):
   under its sound setting.
 - **Dark theme.** `style.mode` ("dark" or "light") shows as a switch titled Dark theme: a hint's `on`/`off` give a
   switch over a setting of two values, and a hint's `title` replaces the schema's. The schema is unchanged.
+
+**D111. Ethernet ports switch off and on** (plan 5.2, the maintainer's request, 2026-11-05):
+- Each port on Connections has a switch, as Wi-Fi. Off is Quickshell's `WiredDevice.disconnect()`, NetworkManager's
+  device disconnect, which keeps the port down (no autoconnect) until it is asked again; on is the port's saved
+  connection (`network.connect()`), or `nmcli device connect PORT` when Quickshell knows none. A port shows
+  Connecting, Disconnecting, Connected, Off or No cable; off with no cable it cannot be switched on.
+- Airplane mode stays radios only (Wi-Fi and Bluetooth), as GNOME, Windows, macOS, Android and ChromeOS have it:
+  Ethernet is no radio, and the maintainer's machine is on Ethernet alone.
+- **Not verified.** The real switch against NetworkManager: trying it on the maintainer's machine would cut its only
+  connection. Only the page with a fake backend is tested, and the real backend is loaded by the smoke test.

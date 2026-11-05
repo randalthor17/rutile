@@ -1,9 +1,11 @@
 // The Network page's backend (NetworkPage.qml has the interface): Wi-Fi and wired devices through Quickshell's
 // Networking (NetworkManager). The window loads it only while the page is open (D31); while loaded and `scan` is
 // on, the Wi-Fi device scans, so the list is fresh. A secured network that is not saved asks for its password
-// first; one whose saved password is refused (NoSecrets) asks again.
+// first; one whose saved password is refused (NoSecrets) asks again. An Ethernet port switches off with
+// NetworkManager's disconnect, which keeps it down until asked again, and on with its saved connection (D111).
 import QtQuick
 import QtQml
+import Quickshell.Io
 import Quickshell.Networking
 
 Item {
@@ -29,8 +31,12 @@ Item {
             known: n.known, connected: n.connected, busy: n.stateChanging, error: failed[n.name] ?? ""
         })).sort((a, b) => (b.connected - a.connected) || (b.signal - a.signal));
     }
-    readonly property var wired: Networking.devices.values.filter(d => d.type === DeviceType.Wired)
-        .map(d => ({ id: d.name, name: d.name, connected: d.connected }))
+    readonly property var wiredDevices: Networking.devices.values.filter(d => d.type === DeviceType.Wired)
+    readonly property var wired: wiredDevices.map(d => ({
+        id: d.name, name: d.name, connected: d.connected, cable: d.hasLink,
+        connecting: d.state === ConnectionState.Connecting, disconnecting: d.state === ConnectionState.Disconnecting,
+        on: (d.connected || d.state === ConnectionState.Connecting) && d.state !== ConnectionState.Disconnecting
+    }))
     property string asking: ""                  // the network whose password is asked for
     property var failed: ({})                   // name: why it did not connect
 
@@ -69,6 +75,18 @@ Item {
     function disconnect(id) {
         wifiNetworks.find(n => n.name === id && n.connected)?.disconnect();
     }
+    function setWiredEnabled(id, on) {
+        const d = wiredDevices.find(x => x.name === id);
+        if (!d) return;
+        if (!on) d.disconnect();
+        else if (d.network) d.network.connect();
+        else {
+            // no saved connection Quickshell knows of: NetworkManager makes or picks one
+            wiredUp.command = ["nmcli", "device", "connect", id];
+            wiredUp.running = true;
+        }
+    }
+    Process { id: wiredUp }
     function forget(id) {
         for (const n of wifiNetworks.filter(n => n.name === id && n.known)) n.forget();
         fail(id, "");
