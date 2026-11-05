@@ -474,3 +474,6 @@ renderer; sway can (`WLR_RENDERER=pixman`). A VM test of anything niri hosts run
 **A FileView read again with `reload()` can give the text it read before** (Quickshell 0.3.2, observed in
 tst_brightness_service): a log checked twice showed its first contents the second time, so a write that had run
 looked missing. Read a file that something else keeps appending to with a Process (`cat`) instead.
+
+**Never chain a commit after `make check` with `;`.** A push went out with the gate red (D122's commit; the
+failure was an unrelated flaky test, fixed in the next commit). Use `make check && git commit ...`.

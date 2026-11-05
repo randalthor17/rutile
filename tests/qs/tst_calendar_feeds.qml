@@ -41,6 +41,9 @@ ShellRoot {
         id: listCache
         command: ["sh", "-c", 'cat "$1"/*.ics; ls "$1"', "sh", root.cacheDir]
         stdout: StdioCollector { id: cacheOut }
+        // the saved copy is written a moment after the fetch (FileView writes asynchronously): read until it is there
+        property bool listed: false
+        onExited: listed = true
     }
 
     Timer {
@@ -64,7 +67,10 @@ ShellRoot {
                 t.compare(f.failed.join(" "), root.base + "rates.json " + root.base + "missing.ics", "failed");
                 root.stage = 2;
                 listCache.running = true;
-            } else if (root.stage === 2 && !listCache.running && cacheOut.text !== "") {
+            } else if (root.stage === 2 && listCache.listed && !cacheOut.text.includes("SUMMARY:")) {
+                listCache.listed = false;
+                listCache.running = true;
+            } else if (root.stage === 2 && listCache.listed) {
                 t.verify(cacheOut.text.includes("SUMMARY:From the web"), "saved: " + cacheOut.text);
                 t.verify(!cacheOut.text.includes("cal.ics"), "the address is in no file name");
                 t.verify(/^[0-9a-f]{16}\.ics$/m.test(cacheOut.text), "a hash as the name: " + cacheOut.text);
