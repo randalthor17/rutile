@@ -1,4 +1,4 @@
-// The on-screen display for volume and brightness (plan 2.8): a pill holding the level as Quick Settings' slider,
+// The on-screen display for volume, brightness and the microphone (plan 2.8, D122): a pill holding the level as Quick Settings' slider,
 // shown when a key (or anything else) changes the level and gone after `holdTime` unless the pointer is on it or
 // the slider is held. Its slider can be dragged. show() opens it, or keeps it open, on a kind; it grows and fades
 // with the shared popup motion from its bottom edge (D43), and `hidden` fires once it has closed, so the window
@@ -10,15 +10,16 @@ import qs.components
 Surface {
     id: root
 
-    property string kind: "volume"     // volume or brightness
+    property string kind: "volume"     // volume, brightness or mic
     property real value: 0             // 0..1
-    property bool muted: false         // volume only: the slider shows 0 and the muted icon
+    property bool muted: false         // volume and mic: the slider shows 0 and the muted icon
     property int holdTime: 1500        // ms on screen after the last change
     property bool open: false
 
     readonly property alias slider: levelSlider
     readonly property bool held: hover.hovered || levelSlider.pressed
     readonly property string iconName: kind === "brightness" ? "brightness_medium"
+                                     : kind === "mic" ? (muted ? "mic_off" : "mic")
                                      : muted ? "music_off" : "music_note"
 
     signal moved(string kind, real value)
@@ -67,7 +68,7 @@ Surface {
             root.moved(root.kind, v);
         }
         Binding on value {
-            value: root.muted && root.kind === "volume" ? 0 : root.value
+            value: root.muted && root.kind !== "brightness" ? 0 : root.value
             when: !levelSlider.pressed
             restoreMode: Binding.RestoreNone
         }

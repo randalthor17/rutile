@@ -1247,11 +1247,18 @@ ShellRoot {
         function volumeUp(): void { AudioService.setVolume(AudioService.volume + shell.osdStep); }
         function volumeDown(): void { AudioService.setVolume(AudioService.volume - shell.osdStep); }
         function toggleMute(): void { AudioService.setMuted(!AudioService.muted); }
+        // the microphone's mute (XF86AudioMicMute), shown in the OSD; false without a microphone
+        function toggleMicMute(): bool {
+            if (!AudioService.micAvailable) return false;
+            AudioService.setMicMuted(!AudioService.micMuted);
+            shell.showOsd("mic");
+            return true;
+        }
         // false without a backlight
         function brightnessUp(): bool { return shell.stepBrightness(shell.osdStep); }
         function brightnessDown(): bool { return shell.stepBrightness(-shell.osdStep); }
         // not `show`: the CLI takes `ipc call <target> show` for its own `ipc show` command
-        function display(kind: string): void { shell.showOsd(kind === "brightness" ? "brightness" : "volume"); }
+        function display(kind: string): void { shell.showOsd(["brightness", "mic"].indexOf(kind) >= 0 ? kind : "volume"); }
         function state(): string {
             const p = osd.item?.panel;
             return JSON.stringify({ loaded: osd.active, open: p?.open ?? false, kind: p?.kind ?? "",

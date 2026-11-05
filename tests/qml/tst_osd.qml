@@ -46,6 +46,13 @@ TestCase {
         p.show("brightness");
         tryCompare(p.slider, "value", 0.6, 1000, "brightness ignores the mute");
         compare(p.iconName, "brightness_medium");
+        // the microphone (D122): its own icons, and 0 while muted
+        p.show("mic");
+        compare(p.iconName, "mic_off");
+        tryCompare(p.slider, "value", 0, 1000, "a muted microphone shows 0");
+        p.muted = false;
+        compare(p.iconName, "mic");
+        tryCompare(p.slider, "value", 0.6, 1000);
     }
 
     function test_held_while_hovered_or_dragged() {

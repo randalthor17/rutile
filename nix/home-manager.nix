@@ -197,6 +197,7 @@ in
             XF86AudioRaiseVolume = [ "osd" "volumeUp" ];
             XF86AudioLowerVolume = [ "osd" "volumeDown" ];
             XF86AudioMute = [ "osd" "toggleMute" ];
+            XF86AudioMicMute = [ "osd" "toggleMicMute" ];
             XF86MonBrightnessUp = [ "osd" "brightnessUp" ];
             XF86MonBrightnessDown = [ "osd" "brightnessDown" ];
             XF86AudioPlay = [ "media" "playPause" ];

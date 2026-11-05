@@ -30,10 +30,11 @@ PanelWindow {
         id: panel
         width: root.implicitWidth
         height: root.implicitHeight
-        value: kind === "brightness" ? BrightnessService.value : AudioService.volume
-        muted: AudioService.muted
+        value: kind === "brightness" ? BrightnessService.value : kind === "mic" ? AudioService.micVolume : AudioService.volume
+        muted: kind === "mic" ? AudioService.micMuted : AudioService.muted
         onMoved: (kind, v) => {
             if (kind === "brightness") BrightnessService.set(v);
+            else if (kind === "mic") AudioService.setMicVolume(v);
             else AudioService.setVolume(v);
         }
         onHidden: root.finished()

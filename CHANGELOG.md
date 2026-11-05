@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Microphone mute key.** `rutile-shell osd toggleMicMute` mutes or unmutes the microphone and shows it in the
+  on-screen display (its own icon and level); home-manager's binds put it on the mic-mute key.
 - **Keys for the new features.** With home-manager's `programs.rutile.niri.binds.enable`, the play/pause, next and
   previous media keys control what is playing (also on the lock screen), Print opens the capture bar and Mod+V
   the clipboard history. They come in rutile.kdl, after your own niri binds.

@@ -1447,3 +1447,11 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
 - The shell never edits config.kdl (D72); a user without home-manager binds the keys in their own config, with the
   lines the IPC help gives.
 - **Not verified:** which of two binds on one key niri runs at run time (validation only).
+
+**D122. The microphone's mute key** (plan 2.8, the maintainer's request, 2026-11-05):
+- IPC `osd toggleMicMute` (false without a microphone) flips the default source's mute and shows the OSD on a new
+  kind, `mic`: the microphone's level (0 while muted) with mic or mic_off, its slider setting the microphone's
+  volume. `osd display mic` shows it too. home-manager's default binds put it on XF86AudioMicMute (allowed while
+  locked, as every XF86 key).
+- **Not verified:** a real microphone and mic-mute key (the headless test has no PipeWire, so only the "no
+  microphone" answer is checked; the OSD's mic kind is tested offscreen).

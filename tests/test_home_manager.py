@@ -177,6 +177,7 @@ class ShellModule(unittest.TestCase):
         self.assertIn(f'XF86AudioNext allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "media" "next"; }}', kdl)
         self.assertIn(f'XF86AudioPrev allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "media" "previous"; }}', kdl)
         self.assertIn(f'Print {{ spawn "{got["exe"]}" "ipc" "call" "capture" "open"; }}', kdl)
+        self.assertIn(f'XF86AudioMicMute allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "osd" "toggleMicMute"; }}', kdl)
         self.assertIn(f'Mod+V {{ spawn "{got["exe"]}" "ipc" "call" "clipboard" "toggle"; }}', kdl)
         valid = niri_valid(kdl)
         if valid is not None:

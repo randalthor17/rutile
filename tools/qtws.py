@@ -688,6 +688,8 @@ def run_wayland_smoke(screenshot=None):
                     osd = osd_state()
                     if shown != "" or not (osd.get("open") and osd.get("kind") == "volume"):
                         problems.append(f"ipc osd display volume: {shown!r}, state {osd}, expected the volume OSD")
+                    if ipc("toggleMicMute", target="osd") != "false":
+                        problems.append("ipc osd toggleMicMute without a microphone (no PipeWire here): accepted")
                     got = ipc("brightnessUp", target="osd")
                     time.sleep(0.5)
                     osd = osd_state()
