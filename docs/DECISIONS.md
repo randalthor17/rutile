@@ -1456,7 +1456,7 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
 - **Not verified:** a real microphone and mic-mute key (the headless test has no PipeWire, so only the "no
   microphone" answer is checked; the OSD's mic kind is tested offscreen).
 
-**D123. PySide6 in the dev shell** (the maintainer's request, 2026-11-05): nixpkgs' PySide6 joins the dev shell's
-Python (test cross-checks only, as jsonschema), so `tools/dev/pyside_qml.py`'s own test runs in `make check`
-instead of skipping. nixpkgs' PySide6 carries no QML modules (pip's wheels do), so the runner adds the ones beside
-qmltestrunner, the same Qt (6.12 from the same nixpkgs). `make check` now skips nothing.
+**D123. No PySide6 test in `make check`** (the maintainer's choice, 2026-11-05): nixpkgs' PySide6 is built on the
+dev shell's own Qt (6.12), so a test of `tools/dev/pyside_qml.py` through it checked nothing a newer Qt would; it
+only skipped before. The test is gone and PySide6 left the dev shell again. The runner stays for a pip PySide6 (a
+newer Qt), and now also works with nixpkgs' (it adds the QML modules beside qmltestrunner when PySide6 has none).

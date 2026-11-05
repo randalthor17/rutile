@@ -240,17 +240,6 @@ class DevTools(unittest.TestCase):
         for word in ("suite", "file", "render", "--gl", "xvfb-run"):
             self.assertIn(word, r.stdout, word)
 
-    def test_pyside_runner_runs_a_real_test_file_on_a_modern_qt(self):
-        try:
-            import PySide6.QtQuickTest  # noqa: F401
-        except ImportError:
-            self.skipTest("PySide6 not installed (pip install PySide6-Essentials PySide6-Addons); SKIPPED")
-        r = subprocess.run([sys.executable, str(ROOT / "tools" / "dev" / "pyside_qml.py"), "suite", "--only", "tst_spring"],
-                           capture_output=True, text=True, timeout=300)
-        self.assertEqual(r.returncode, 0, (r.stdout + r.stderr)[-1500:])
-        self.assertRegex(r.stdout, r"Totals: \d+ passed, 0 failed")
-        self.assertIn("Qt 6.", r.stdout)
-
 
 if __name__ == "__main__":
     unittest.main()
