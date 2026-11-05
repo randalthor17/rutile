@@ -32,8 +32,10 @@ and in that user's home-manager configuration:
   programs.rutile.enable = true;
 
   # Optional:
-  programs.rutile.niri.binds.enable = true;              # media keys, Mod+Alt+L lock, Mod+Alt+P power, Mod+Alt+S settings,
-                                                         # Mod+Space launcher; change them with niri.binds.keys
+  programs.rutile.niri.binds.enable = true;              # media keys (volume, brightness, play/pause, next, previous),
+                                                         # Print capture bar, Mod+V clipboard history, Mod+Alt+L lock,
+                                                         # Mod+Alt+P power, Mod+Alt+S settings, Mod+Space launcher;
+                                                         # change them with niri.binds.keys
   programs.rutile.settings.wallpaper.path = "/home/test/Pictures/wall.png";   # any setting; set in Nix, it is
                                                          # locked in the shell's Settings
 }

@@ -172,6 +172,12 @@ class ShellModule(unittest.TestCase):
         kdl = got["niriFile"]
         self.assertIn(f'XF86AudioRaiseVolume allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "osd" "volumeUp"; }}', kdl)
         self.assertIn(f'Mod+Alt+L {{ spawn "{got["exe"]}" "ipc" "call" "lock" "lock"; }}', kdl, "only media keys when locked")
+        # D121: the media keys, Print and Mod+V reach the shell's media controls, capture bar and clipboard history
+        self.assertIn(f'XF86AudioPlay allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "media" "playPause"; }}', kdl)
+        self.assertIn(f'XF86AudioNext allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "media" "next"; }}', kdl)
+        self.assertIn(f'XF86AudioPrev allow-when-locked=true {{ spawn "{got["exe"]}" "ipc" "call" "media" "previous"; }}', kdl)
+        self.assertIn(f'Print {{ spawn "{got["exe"]}" "ipc" "call" "capture" "open"; }}', kdl)
+        self.assertIn(f'Mod+V {{ spawn "{got["exe"]}" "ipc" "call" "clipboard" "toggle"; }}', kdl)
         valid = niri_valid(kdl)
         if valid is not None:
             self.assertTrue(valid[0], valid[1])
@@ -179,7 +185,8 @@ class ShellModule(unittest.TestCase):
             import tempfile
             with tempfile.TemporaryDirectory() as d:
                 (Path(d) / "rutile.kdl").write_text(kdl)
-                both = niri_valid('binds {\n    Mod+Alt+L { spawn "foot"; }\n}\n' + f'include "{d}/rutile.kdl"\n')
+                both = niri_valid('binds {\n    Mod+Alt+L { spawn "foot"; }\n    Mod+V { toggle-window-floating; }\n'
+                                  '    Print { screenshot; }\n}\n' + f'include "{d}/rutile.kdl"\n')
             self.assertTrue(both[0], both[1])
         got, _ = module('{ enable = true; niri.binds = { enable = true; keys = { "Mod+X" = [ "power" "toggle" ]; }; }; }', niri=True)
         self.assertIn("Mod+X", got["niriFile"])

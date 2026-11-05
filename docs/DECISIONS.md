@@ -1437,3 +1437,13 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
   three (tests/qs/bin) and send files to the test's own folders.
 - **Not verified:** niri's actions from the bar and its ScreenshotCaptured event on the maintainer's niri (the
   event is tested with the fake niri socket), real wf-recorder on niri, and the microphone.
+
+**D121. Default keys for media, capture and the clipboard** (plan 6.1, the maintainer's question, 2026-11-05):
+- home-manager's opt-in binds (rutile.kdl, `programs.rutile.niri.binds.keys`) gain XF86AudioPlay and
+  XF86AudioPause (media playPause), XF86AudioNext, XF86AudioPrev (allowed while locked, as every XF86 key there),
+  Print (capture open) and Mod+V (clipboard toggle, as Googlebook's Search+V). A user's config.kdl that binds the
+  same keys (niri's defaults bind Print to its screenshot and many configs Mod+V to floating) stays valid with
+  rutile.kdl included after it: `niri validate` passes (tested).
+- The shell never edits config.kdl (D72); a user without home-manager binds the keys in their own config, with the
+  lines the IPC help gives.
+- **Not verified:** which of two binds on one key niri runs at run time (validation only).

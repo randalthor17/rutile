@@ -199,6 +199,12 @@ in
             XF86AudioMute = [ "osd" "toggleMute" ];
             XF86MonBrightnessUp = [ "osd" "brightnessUp" ];
             XF86MonBrightnessDown = [ "osd" "brightnessDown" ];
+            XF86AudioPlay = [ "media" "playPause" ];
+            XF86AudioPause = [ "media" "playPause" ];
+            XF86AudioNext = [ "media" "next" ];
+            XF86AudioPrev = [ "media" "previous" ];
+            Print = [ "capture" "open" ];
+            "Mod+V" = [ "clipboard" "toggle" ];
             "Mod+Alt+L" = [ "lock" "lock" ];
             "Mod+Alt+P" = [ "power" "toggle" ];
             "Mod+Alt+S" = [ "settings" "toggle" ];

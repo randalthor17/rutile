@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Keys for the new features.** With home-manager's `programs.rutile.niri.binds.enable`, the play/pause, next and
+  previous media keys control what is playing (also on the lock screen), Print opens the capture bar and Mod+V
+  the clipboard history. They come in rutile.kdl, after your own niri binds.
 - **Screenshots and screen recording.** `rutile-shell capture open` (bind it to Print) shows a capture bar, as
   ChromeOS's: take a screenshot of a region, a window or the screen, or record a region or the screen, with the
   microphone if you like. Screenshots go to Pictures/Screenshots and are copied; recordings go to
