@@ -1,6 +1,7 @@
 // The shelf's layer-shell surface along the bottom of one screen, on the top layer, showing that screen's
-// workspaces. It spans the width, so its exclusive zone (PanelWindow's default, its height) keeps windows above
-// it (niri adds its gap). A button's tooltip (D106) is a surface of its own above the shelf, loaded while shown.
+// workspaces. It spans the width, and is taller than the shelf by the concave corners above its ends (D115); its
+// exclusive zone is the shelf's own height, which keeps windows above it (niri adds its gap), and only the shelf
+// takes the pointer, so the corners never cover a window's. A button's tooltip (D106) is a surface of its own above the shelf, loaded while shown.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -21,14 +22,17 @@ PanelWindow {
     anchors.right: true
     WlrLayershell.namespace: "rutile-shelf"
     WlrLayershell.layer: WlrLayer.Top
-    implicitHeight: shelf.height
+    implicitHeight: shelf.height + shelf.cornerRadius
+    exclusiveZone: shelf.height
     color: "transparent"
+    mask: Region { item: shelf }
 
     Shelf {
         id: shelf
         onPressed: root.pressed()
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: parent.bottom
         pinned: root.backend.pinned
         groups: root.backend.groupsFor(root.screen?.name ?? "")
         onLaunched: app => root.backend.launch(app)

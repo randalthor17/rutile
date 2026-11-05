@@ -20,7 +20,7 @@ var pages = [
         summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette", "matugen"],
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
-            { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed"] },
+            { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed", "style.panelOpacity"] },
             { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] },
             { title: "", keys: ["notice.niriInclude"] }
         ]
@@ -189,6 +189,8 @@ var hints = {
                        "scheme-neutral": "Neutral", "scheme-rainbow": "Rainbow", "scheme-vibrant": "Vibrant" })[v] ?? v,
         aliases: ["scheme", "vibrant", "monochrome", "palette style"]
     },
+    "style.panelOpacity": { step: 0.05, label: v => Math.round(v * 100) + "%",
+                            aliases: ["transparency", "translucent", "translucency", "see-through", "blur", "opacity"] },
     "style.contrast": { step: 0.25, label: v => v === 0 ? "Standard" : (v > 0 ? "+" : "") + v, aliases: ["contrast"] },
     // Material's baseline and a few seeds around the color wheel
     "style.seed": {

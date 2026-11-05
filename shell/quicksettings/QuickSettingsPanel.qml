@@ -87,7 +87,7 @@ Rectangle {
     width: implicitWidth
     height: implicitHeight
     radius: Shapes.extraLarge
-    color: Colors.surfaceContainer
+    color: Panels.tint(Colors.surfaceContainer)
 
     // Grows from the corner under the status pill; no input while it goes away.
     PopupMotion {
@@ -156,7 +156,7 @@ Rectangle {
                 width: powerIcons.width + 2 * Spacing.sm
                 height: ControlSpec.iconButtonSizes.s.height
                 radius: height / 2
-                color: Colors.surfaceContainer
+                color: "transparent"           // the panel's own, so it shows as see-through as the panel (D115)
                 readonly property color contentColor: Colors.surfaceVariantOn
                 Row {
                     id: powerIcons
@@ -282,7 +282,7 @@ Rectangle {
             width: parent.width
             height: grid.height + (root.editMode ? 2 * Spacing.sm : 0)
             radius: Shapes.extraLarge
-            color: Colors.surfaceContainer
+            color: "transparent"               // the panel's own (D115); the border marks edit mode
             border.width: root.editMode ? Spacing.xs / 2 : 0
             border.color: Colors.primary
 

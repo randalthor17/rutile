@@ -415,10 +415,19 @@ TestCase {
         verify(!findChild(seed, "settingSwatch_#386a20"), "set in Nix: no swatches");
     }
 
+    // Scrolls the open page so `item` is in view, for a click.
+    function inView(a, item) {
+        const f = findChild(a, "settingsPageFlick");
+        const y = item.mapToItem(f.contentItem, 0, 0).y;
+        f.contentY = Math.max(0, Math.min(f.contentHeight - f.height, y - f.height / 3));
+        waitForRendering(a);
+        return item;
+    }
+
     function test_app_colors_wait_for_the_main_switch() {
         const t = make();
         const main = findChild(t.a, "setting_appColors.enabled");
-        const kitty = findChild(t.a, "setting_appColors.niri");      // the first app's row: in view
+        const kitty = inView(t.a, findChild(t.a, "setting_appColors.niri"));      // the first app's row
         verify(main.item.enabled, "the main switch works");
         verify(!kitty.applies && !kitty.item.enabled, "an app's switch is greyed out while it is off");
         mouseClick(kitty, 40, kitty.height / 2);

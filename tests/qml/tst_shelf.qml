@@ -97,6 +97,38 @@ TestCase {
         compare(pressed.count, 1);
     }
 
+    // D115: the launcher at the left, the pins and windows in the middle, concave corners above the ends, and the bar
+    // as see-through as the panels
+    function test_layout_corners_translucency() {
+        var shelf = createTemporaryObject(shelfComp, root, { y: 100, pinned: pinned, groups: ShelfApps.decorate(niriGroups, lookup) });
+        waitForRendering(shelf);
+        var l = findChild(shelf, "shelfLauncher");
+        compare(l.x, Spacing.md, "the launcher at the left");
+        var first = findChild(shelf, "shelfPin_org.gnome.Nautilus");
+        var last = findChild(shelf, "shelfWorkspace_2");
+        var left = first.mapToItem(shelf, 0, 0).x, right = last.mapToItem(shelf, last.width, 0).x;
+        verify(Math.abs((left + right) / 2 - shelf.width / 2) <= 1, "the pins and windows centered: " + left + ".." + right);
+        verify(left > l.x + l.width, "clear of the launcher");
+        var r = shelf.cornerRadius;
+        verify(r > 0);
+        var cl = findChild(shelf, "shelfCorner_left"), cr = findChild(shelf, "shelfCorner_right");
+        compare([cl.x, cl.y, cl.width, cl.height], [0, -r, r, r], "above the left end");
+        compare([cr.x, cr.y], [shelf.width - r, -r], "and the right one");
+        tryVerify(function () {
+            var img = grabImage(root);
+            var bar = img.pixel(shelf.width / 2, 100 - r + 1), edge = img.pixel(1, 100 - 2), inner = img.pixel(r - 1, 100 - r + 1);
+            // inside the quarter circle (centered on the corner's top inner point), under a straight diagonal
+            var curve = img.pixel(Math.round(0.4 * r), Math.round(100 - 0.4 * r));
+            return Qt.colorEqual(edge, shelf.color) && !Qt.colorEqual(inner, shelf.color) && !Qt.colorEqual(bar, shelf.color)
+                && !Qt.colorEqual(curve, shelf.color);
+        }, 3000, "filled at the screen's side, curved open toward the middle, nothing over the rest");
+        compare(shelf.color.a, 1, "solid by default");
+        Panels.opacity = 0.7;
+        verify(Math.abs(shelf.color.a - 0.7) < 0.01, "as see-through as the panels");
+        compare(cl.data[0].fillColor, shelf.color, "the corners too");
+        Panels.opacity = 1;
+    }
+
     function test_toggle_pin() {
         compare(ShelfApps.togglePin(["a", "b"], "c").join(), "a,b,c", "pins at the end");
         compare(ShelfApps.togglePin(["a", "b", "c"], "b").join(), "a,c", "unpins in place");

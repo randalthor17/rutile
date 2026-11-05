@@ -110,6 +110,14 @@ var schema = {
                     "title": "Contrast",
                     "description": "-1 the least, 0 Material's own, 1 the most."
                 },
+                "panelOpacity": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 1,
+                    "default": 0.85,
+                    "title": "Panel opacity",
+                    "description": "How solid the shelf, the pills at the top and the panels they open are: 1 is solid, less lets the wallpaper and windows show through."
+                },
                 "seed": {
                     "type": "string",
                     "pattern": "#[0-9a-f]{6}",

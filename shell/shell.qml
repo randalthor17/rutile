@@ -280,6 +280,12 @@ ShellRoot {
         property: "speed"
         value: shell.speedFromEnv ? shell.envSpeed : Settings.value("motion.speed")
     }
+    // How see-through the panels are (D115).
+    Binding {
+        target: Panels
+        property: "opacity"
+        value: Math.max(0.5, Math.min(1, Settings.value("style.panelOpacity") ?? 1))
+    }
     IpcHandler {
         target: "motion"
         // false when the speed is out of range (0 to 4) or set in Nix
@@ -689,7 +695,7 @@ ShellRoot {
             backend: shelfBackend
             onLauncherClicked: shell.toggleLauncher(modelData)
             onPressed: shell.closePopups()
-            onMenuRequested: (target, x) => shell.openShelfMenu(modelData, target, x, height)
+            onMenuRequested: (target, x) => shell.openShelfMenu(modelData, target, x, shelf.height)
         }
     }
 
@@ -738,7 +744,7 @@ ShellRoot {
                 if (app) t = { app: app };
             }
             if (!t) return false;
-            shell.openShelfMenu(shelf.screen, t, shelf.width / 2, shelf.height);
+            shell.openShelfMenu(shelf.screen, t, shelf.width / 2, shelf.shelf.height);
             return true;
         }
         // an entry of the open menu by its text, as a click

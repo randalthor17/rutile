@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **See-through panels.** The shelf, the pills at the top of the screen and the panels they open (Quick Settings,
+  notifications, the calendar) let the wallpaper and windows show through a little. Settings > Wallpaper & style >
+  Panel opacity sets how much, from 50% to solid (100%); 85% by default.
+- **The shelf's new shape.** The launcher button sits at the shelf's left end, with your pinned apps and windows
+  still in the middle, and the shelf's ends curve up into the screen's sides.
 - **Brightness on desktop monitors.** The brightness slider, the brightness keys and the OSD now work on external
   monitors as well as laptop panels, and set every display together. Settings > Display has a brightness slider
   for each display. Monitors are set over their cable (DDC/CI, through ddcutil), which needs your user in the

@@ -1,10 +1,14 @@
 pragma ComponentBehavior: Bound
-// The shelf (plan 2.4): a bar along the bottom with the launcher button, the pinned apps, and, after a divider,
+// The shelf (plan 2.4): a bar along the bottom with the launcher button at its left, and in the middle the pinned
+// apps and, after a divider,
 // the open windows grouped by workspace: a capsule per workspace with its number and one icon per window, the
 // active workspace's capsule tinted, the focused window marked (as Noctalia's taskbar groups them). The wheel over
 // the shelf moves between workspaces, one per notch (touchpads add up to a notch). Plain QtQuick
 // on data from ShelfApps.js (icons as URLs), so it tests offscreen; ShelfWindow.qml gives it the real ones.
+// Above each end a concave corner (`cornerRadius` tall, drawn outside the bar) joins it to the screen's side, as
+// rounded screen corners rising out of it (D115); the bar and corners are as see-through as the panels.
 import QtQuick
+import QtQuick.Shapes
 import qs.common
 import qs.components
 
@@ -74,7 +78,33 @@ Rectangle {
 
     implicitHeight: Spacing.xxxl
     height: implicitHeight
-    color: Colors.surfaceContainerLowest
+    color: Panels.tint(Colors.surfaceContainerLowest)
+    readonly property real cornerRadius: Shapes.large
+
+    // The two corners: each fills between the screen's side, the bar's top and a quarter circle.
+    Repeater {
+        model: 2
+        Shape {
+            id: corner
+            required property int index
+            objectName: "shelfCorner_" + (index === 0 ? "left" : "right")
+            readonly property real r: root.cornerRadius
+            width: r
+            height: r
+            y: -r
+            x: index === 0 ? 0 : root.width - r
+            transform: Scale { origin.x: root.cornerRadius / 2; xScale: corner.index === 0 ? 1 : -1 }
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                strokeWidth: -1
+                fillColor: root.color
+                startX: 0; startY: 0
+                PathLine { x: 0; y: root.cornerRadius }
+                PathLine { x: root.cornerRadius; y: root.cornerRadius }
+                PathArc { x: 0; y: 0; radiusX: root.cornerRadius; radiusY: root.cornerRadius }
+            }
+        }
+    }
 
     signal pressed()                        // a press on the shelf between its buttons (the shell closes its popups, D90)
     MouseArea {
@@ -83,32 +113,33 @@ Rectangle {
         onPressed: root.pressed()
     }
 
+    // The launcher (plan 2.7), at the left. Googlebook's is a "G" pill; Rutile's shows the apps icon.
+    Rectangle {
+        objectName: "shelfLauncher"
+        anchors.verticalCenter: parent.verticalCenter
+        x: Spacing.md
+        width: Spacing.xxxl + Spacing.sm
+        height: Spacing.xxl
+        radius: height / 2
+        color: Colors.surfaceContainerHigh
+        Icon {
+            anchors.centerIn: parent
+            name: "apps"
+            size: Spacing.lg + Spacing.xs
+            color: Colors.surfaceOn
+        }
+        StateLayer {
+            anchors.fill: parent
+            radius: parent.radius
+            stateColor: Colors.surfaceOn
+            onClicked: root.launcherClicked()
+        }
+    }
+
     Row {
         id: row
         anchors.centerIn: parent
         spacing: Spacing.sm
-
-        // The launcher (plan 2.7). Googlebook's is a "G" pill; Rutile's shows the apps icon.
-        Rectangle {
-            objectName: "shelfLauncher"
-            anchors.verticalCenter: parent.verticalCenter
-            width: Spacing.xxxl + Spacing.sm
-            height: Spacing.xxl
-            radius: height / 2
-            color: Colors.surfaceContainerHigh
-            Icon {
-                anchors.centerIn: parent
-                name: "apps"
-                size: Spacing.lg + Spacing.xs
-                color: Colors.surfaceOn
-            }
-            StateLayer {
-                anchors.fill: parent
-                radius: parent.radius
-                stateColor: Colors.surfaceOn
-                onClicked: root.launcherClicked()
-            }
-        }
 
         Repeater {
             model: root.pinned

@@ -101,7 +101,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   windows, one icon per window in layout order, the active workspace tinted and the focused window marked; a click
   focuses that window, and the wheel moves between workspaces down to niri's blank one (D44, niri through
   `NiriService`; without niri, `ToplevelManager` ungrouped); press motion. The right-click menu (D72): pin, unpin, close, a new window, desktop actions. Tooltips (D106): the
-  app's name over a pin, the window's title over a window, after half a second. Not done: special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
+  app's name over a pin, the window's title over a window, after half a second. Since D115: the launcher at the
+  left with the pins and windows in the middle, concave corners above both ends, and the bar as see-through as the
+  panels (Wallpaper & style > Panel opacity, also the top pills, Quick Settings, notifications and calendar). Not done: special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
   via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
 - [ ] **2.5** Started (D45, `docs/settings.md`): the config store. `settings/schema.json` describes every setting

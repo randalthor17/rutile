@@ -26,7 +26,7 @@ Rectangle {
     width: implicitWidth
     height: implicitHeight
     radius: height / 2
-    color: Colors.surfaceContainer
+    color: Panels.tint(Colors.surfaceContainer)
 
     // The right edge of an item's icon, in the pill (-1: not shown): where its menu goes.
     function rightOf(id) {

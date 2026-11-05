@@ -22,7 +22,7 @@ Rectangle {
     width: implicitWidth
     height: implicitHeight
     radius: height / 2
-    color: open ? Colors.secondaryContainer : Colors.surfaceContainer
+    color: Panels.tint(open ? Colors.secondaryContainer : Colors.surfaceContainer)
     Behavior on color { EffectsColor {} }
 
     Accessible.role: Accessible.Button

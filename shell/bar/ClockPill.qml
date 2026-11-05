@@ -20,7 +20,7 @@ Rectangle {
     width: implicitWidth
     height: implicitHeight
     radius: height / 2
-    color: open ? Colors.secondaryContainer : Colors.surfaceContainer
+    color: Panels.tint(open ? Colors.secondaryContainer : Colors.surfaceContainer)
     Behavior on color { EffectsColor {} }
 
     // One Text for both parts (D31); the em space keeps them apart as Googlebook does.

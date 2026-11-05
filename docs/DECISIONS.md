@@ -1338,3 +1338,19 @@ maintainer's list, 2026-11-05):
 - An icon-only tile draws no separate icon target, but a dual-target one (Microphone) still took SystemUI's dual
   colors, which color the icon for that target: on, its icon was primaryOn over surfaceVariant, pale on pale. An
   icon-only tile now takes the plain active and inactive colors, as every other small tile.
+
+**D115. See-through panels; the shelf's launcher at the left and concave corners** (plans 2.3, 2.4, 5.2, the
+maintainer's request, 2026-11-05):
+- **Translucency.** A new setting, `style.panelOpacity` (0.5 to 1, default 0.85; Wallpaper & style > Panel opacity,
+  a slider in 5% steps, the maintainer's choice over a switch). `Panels` (shell/common, not generated) holds it as
+  `opacity`, set by shell.qml, 1 elsewhere (the offscreen tests), and `Panels.tint(c)` gives a panel's own
+  background at it. It applies to the backgrounds of the shelf, the status, clock, bell and tray pills, and Quick
+  Settings, the notification list and the calendar; never to what is drawn on them, so tiles, cards and menu items
+  stay solid. Parts of Quick Settings that were painted in the panel's own color over it (the power button's pill,
+  the tiles' backdrop) are transparent now, so they do not stack into a darker patch. No blur: Quickshell has no
+  background blur on niri yet (`BackgroundEffect`, plan 3.1).
+- **Corners.** Above each end of the shelf a concave corner (`Shapes.large`, 16 px) joins it to the screen's side,
+  as rounded screen corners rising out of the bar (the maintainer's pick of two shapes). The shelf's window is
+  taller by that, but its exclusive zone stays the bar's height and only the bar takes the pointer (a mask), so the
+  corners cover nothing a window has. The shelf's menus and tooltips still sit on the bar's height.
+- **Launcher at the left**, 12 px in; the pins and windows stay centered on the screen.

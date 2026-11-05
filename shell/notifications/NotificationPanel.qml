@@ -100,7 +100,7 @@ Rectangle {
     width: implicitWidth
     height: implicitHeight
     radius: Shapes.extraLarge
-    color: Colors.surfaceContainer
+    color: Panels.tint(Colors.surfaceContainer)
 
     PopupMotion {
         target: root
