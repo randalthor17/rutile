@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# A stand-in for wl-paste in tests: a watcher (--watch) only waits; calls are logged to $FAKE_CLIP.log.
+db="${FAKE_CLIP:-${TMPDIR:-/tmp}/rutile-fake-clip}"
+echo "wl-paste $*" >> "$db.log"
+case " $* " in *" --watch "*) exec sleep 100000 ;; esac

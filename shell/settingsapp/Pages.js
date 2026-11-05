@@ -125,10 +125,11 @@ var pages = [
     },
     {
         id: "security", title: "Security & privacy", icon: "lock", tone: "primaryContainer",
-        summary: "Screen lock, passwords", aliases: ["lock screen", "idle", "polkit", "admin"],
+        summary: "Screen lock, passwords, clipboard", aliases: ["lock screen", "idle", "polkit", "admin", "clipboard", "copy", "paste"],
         sections: [
             { title: "Screen lock", keys: ["lock.idleMinutes", "lock.beforeSleep"] },
-            { title: "Passwords", keys: ["polkit.agent"] }
+            { title: "Passwords", keys: ["polkit.agent"] },
+            { title: "Clipboard", keys: ["clipboard.history"] }
         ]
     },
     {

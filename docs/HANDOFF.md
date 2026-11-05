@@ -283,7 +283,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
 | `RUTILE_AMDGPU_IDS`, `RUTILE_PCI_IDS` | `shell/widgethost/sources/GpuSource.qml` | libdrm's amdgpu.ids and hwdata's pci.ids, for graphics card names (the package sets both; without them, /usr/share's) |
 | `RUTILE_FCITX5`, `RUTILE_FCITX5_CONFIGTOOL` | `shell/services/InputMethodService.qml` | the fcitx5 the shell starts when none runs, and its settings tool (the package sets both, D118; tests name the fake) |
-| `FAKE_FCITX`, `FAKE_DDC`, `FAKE_DDC_BUSES` | `tests/qs/bin/` | the fake fcitx5, busctl and ddcutil's state files and monitors (tests only) |
+| `FAKE_FCITX`, `FAKE_DDC`, `FAKE_DDC_BUSES`, `FAKE_CLIP` | `tests/qs/bin/` | the fake fcitx5, busctl, ddcutil, cliphist, wl-paste and wl-copy's state files and monitors (tests only) |
 | `RUTILE_WEATHER_URL` | `shell/widgethost/sources/WeatherSource.qml` | the weather address instead of Open-Meteo's (tests point it at a local server) |
 | `RUTILE_CALENDAR` | `shell/calendar/EdsCalendar.qml` | the evolution-data-server reader when it is not `build/rutile-calendar` beside the shell (D95; tests point it at a stand-in) |
 | `RUTILE_CALENDAR_APP` | `shell/calendar/CalendarWindow.qml`, `shell/settingsapp/SettingsWindow.qml` | the calendar app instead of `gnome-calendar` (tests: a stand-in) |

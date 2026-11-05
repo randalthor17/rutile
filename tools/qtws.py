@@ -37,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp", "clipboard")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -289,6 +289,7 @@ def qs_test_env(test, ws):
     # never a real fcitx5 (D118): the shell starts one when none answers; the fake in tests/qs/bin
     env["RUTILE_FCITX5"] = str(ws / "bin" / "fcitx5")
     env["FAKE_FCITX"] = str(ws / "home" / "fake-fcitx")
+    env["FAKE_CLIP"] = str(ws / "home" / "fake-clip")
     port = free_port()
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
         env[name] = (value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
@@ -450,6 +451,7 @@ def run_wayland_smoke(screenshot=None):
             "FAKE_BRIGHTNESS": str(fake),
             "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"),
             "FAKE_FCITX": str(comp.runtime / "fake-fcitx"),
+            "FAKE_CLIP": str(comp.runtime / "fake-clip"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             # a session of its own, heard through the fake dbus-monitor; the fake systemd-inhibit holds nothing
             "XDG_SESSION_ID": "rutiletest",
@@ -608,6 +610,31 @@ def run_wayland_smoke(screenshot=None):
                     fcitx_log = Path(env["FAKE_FCITX"] + ".log")
                     if "fcitx5 -d" not in (fcitx_log.read_text() if fcitx_log.exists() else ""):
                         problems.append("fcitx5 was not started")
+                    # clipboard history (D119): the watchers run from the start; the picker lists the history newest
+                    # first, and choosing an entry copies it back (to the fake wl-copy) and closes the picker
+                    clip = Path(env["FAKE_CLIP"])
+                    clip_log = Path(env["FAKE_CLIP"] + ".log")
+                    watching = clip_log.read_text() if clip_log.exists() else ""
+                    if "wl-paste --type text --watch cliphist store" not in watching or "--type image --watch" not in watching:
+                        problems.append(f"clipboard watchers not started: {watching!r}")
+                    clip.write_text("1\tfirst copy\n2\tsecond copy\n")
+                    def clip_state():
+                        try:
+                            return json.loads(ipc("state", target="clipboard"))
+                        except ValueError:
+                            return {}
+                    ipc("open", target="clipboard")
+                    time.sleep(0.8)
+                    cs = clip_state()
+                    if cs != {"history": True, "open": True, "entries": ["second copy", "first copy"]}:
+                        problems.append(f"ipc clipboard open: {cs}, expected the history newest first")
+                    if ipc("choose", "1", target="clipboard") != "true":
+                        problems.append("ipc clipboard choose 1: refused")
+                    time.sleep(0.8)
+                    copied = Path(env["FAKE_CLIP"] + ".copied")
+                    if not copied.exists() or copied.read_text() != "first copy" or clip_state().get("open") is not False:
+                        problems.append(f"clipboard choose: copied {copied.read_text() if copied.exists() else None!r}, "
+                                        f"state {clip_state()}, expected 'first copy' and the picker closed")
                     # the media keys (D117): no player on this private bus, so nothing to control
                     media = ipc("state", target="media")
                     if media != json.dumps({"players": [], "current": None}, separators=(",", ":")) or \
@@ -1502,6 +1529,7 @@ def run_wayland_surfaces():
             "FAKE_BRIGHTNESS": str(comp.runtime / "fake-brightness"),
             "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"),
             "FAKE_FCITX": str(comp.runtime / "fake-fcitx"),
+            "FAKE_CLIP": str(comp.runtime / "fake-clip"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             "XDG_SESSION_ID": "",
             "DBUS_SESSION_BUS_ADDRESS": bus.address,

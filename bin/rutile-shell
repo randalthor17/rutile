@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd media input toast quicksettings tray shelf widgets"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd media input clipboard toast quicksettings tray shelf widgets"
 
 usage() {
     cat <<'EOF'
@@ -105,6 +105,10 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
   input          next              the next input method of fcitx5's group (bind it to a key)
                  set NAME          an input method by fcitx5's name: keyboard-us, m17n_bn_itrans...
                  configure         fcitx5's settings
+                 state
+  clipboard      toggle | open | close   the clipboard history (bind it to Mod+V)
+                 isOpen
+                 choose INDEX      copy back the open picker's entry INDEX, as a click
                  state
   toast          send TEXT ICON    a short message (ICON: a Material Symbols name, or ""); its id
                  state

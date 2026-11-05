@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# A stand-in for cliphist in tests: the history is $FAKE_CLIP (one "id<TAB>text" line per copy, oldest first),
+# every call is logged to $FAKE_CLIP.log. FAKE_CLIP defaults to a file under /tmp, never the tree.
+db="${FAKE_CLIP:-${TMPDIR:-/tmp}/rutile-fake-clip}"
+echo "$*" >> "$db.log"
+touch "$db"
+case "$1" in
+  store)
+    text=$(cat | tr '\t\n' '  ')
+    id=$(( $(cut -f1 "$db" | sort -n | tail -1) + 1 ))
+    printf '%s\t%s\n' "$id" "$text" >> "$db"
+    ;;
+  list) tac "$db" ;;
+  decode) IFS= read -r line; printf '%s' "${line#*$'\t'}" ;;
+  delete) IFS= read -r line; grep -vxF -- "$line" "$db" > "$db.new"; mv "$db.new" "$db" ;;
+  wipe) : > "$db" ;;
+esac

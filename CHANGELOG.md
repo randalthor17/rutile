@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Clipboard history.** What you copy (text and images) is kept, and `rutile-shell clipboard toggle` (bind it to
+  Mod+V in niri) opens a picker: search it, press Enter or click to copy an entry again, then paste with Ctrl+V;
+  Delete or the row's button forgets one, "Clear all" forgets everything. Passwords that password managers mark
+  as such are not kept. Settings > Security & privacy > Clipboard history turns it off.
 - **Type in other languages.** Rutile now comes with fcitx5 and m17n's input methods (Bangla, Hindi, Tamil, Tibetan
   and many more), and starts fcitx5 if your system does not. Add input methods in fcitx5's settings; with more
   than one, a small label at the top right (EN, BN) shows the one in use, and clicking it opens fcitx5's menu to

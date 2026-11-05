@@ -140,9 +140,9 @@ TestCase {
 
     function test_advanced_goes_last() {
         const s = Model.sections(Pages.page("security"), Schema.schema, Pages.hints);
-        compare(s.map(x => x.title).join(), "Screen lock,Advanced", "Passwords had only an advanced setting");
-        compare(s[1].rows[0].key, "polkit.agent");
-        verify(s[1].advanced);
+        compare(s.map(x => x.title).join(), "Screen lock,Clipboard,Advanced", "Passwords had only an advanced setting");
+        compare(s[2].rows[0].key, "polkit.agent");
+        verify(s[2].advanced);
         compare(Model.sections(null, Schema.schema, Pages.hints).length, 0);
         const odd = { sections: [{ title: "", keys: ["nope.missing", "lock.idleMinutes"] }] };
         compare(Model.sections(odd, Schema.schema, {})[0].rows.map(r => r.key).join(), "lock.idleMinutes",

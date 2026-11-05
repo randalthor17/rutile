@@ -1400,3 +1400,20 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
   icon changes on a real session, and the menu at the pill. Apps under XWayland need `XMODIFIERS=@im=fcitx`
   (NixOS's input-method module sets it; the shell cannot set apps' environment); Electron apps need
   `--enable-wayland-ime`.
+
+**D119. Clipboard history through cliphist** (plan 2.1, 2026-11-05):
+- New runtime dependencies (approved with the maintainer's list): cliphist and wl-clipboard. ClipboardService runs
+  cliphist's two watchers (`wl-paste --type text --watch cliphist store`, and `--type image`) while
+  `clipboard.history` is on (default on; Settings > Security & privacy), and starts one again if it stops. A
+  password manager's copy is marked sensitive (`x-kde-passwordManagerHint`); wl-clipboard 2.2+ passes that as
+  `CLIPBOARD_STATE=sensitive` and cliphist 0.6+ does not store it.
+- The picker (shell/clipboard, a layer surface above the shelf as the launcher, created only while open, D31):
+  a search field over `cliphist list` (newest first; every word must match; images by "PNG image, 10 × 20"),
+  Enter or a click copies the entry back (`cliphist decode | wl-copy`, the line passed as an argument) and closes,
+  Delete in an empty field or the row's button forgets one, Clear all wipes. IPC `clipboard
+  toggle|open|close|isOpen|choose INDEX|state`. It does not paste for you: that needs a virtual keyboard
+  (wtype), and Ctrl+V after it works everywhere.
+- Tests: fakes for cliphist, wl-paste and wl-copy (tests/qs/bin), so no test touches the session's clipboard or
+  cliphist's database.
+- **Not verified:** the real cliphist and wl-paste on the maintainer's session (only their formats were checked,
+  on a scratch database), image thumbnails (not shown; the label only).

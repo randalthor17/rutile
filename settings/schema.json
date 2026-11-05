@@ -143,6 +143,18 @@
         }
       }
     },
+    "clipboard": {
+      "type": "object",
+      "title": "Clipboard",
+      "properties": {
+        "history": {
+          "type": "boolean",
+          "default": true,
+          "title": "Clipboard history",
+          "description": "Keep what you copy (text and images) so you can copy it again later from the clipboard history. Off, nothing new is kept."
+        }
+      }
+    },
     "appColors": {
       "type": "object",
       "title": "Colors in other apps",

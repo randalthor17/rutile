@@ -17,6 +17,7 @@ import Quickshell.Wayland
 import qs.common
 import qs.bar
 import qs.calendar
+import qs.clipboard
 import qs.launcher
 import qs.notifications
 import qs.osd
@@ -59,6 +60,58 @@ ShellRoot {
         if (launcherOpen) closeLauncher();
         if (notificationListOpen) closeNotificationList();
         if (calendarOpen) closeCalendar();
+        if (clipboardOpen) closeClipboard();
+    }
+
+    // Clipboard history (D119): ClipboardService keeps it from the start (its watchers); the picker, as the
+    // launcher, opens on a screen (null: the compositor's choice) only while asked for.
+    readonly property bool clipboardHistory: ClipboardService.enabled
+    property var clipboardScreen: null
+    readonly property bool clipboardOpen: clipboard.active && !(clipboard.item?.closing ?? false)
+    function closeClipboard() {
+        if (clipboard.item) clipboard.item.close();
+        else clipboard.active = false;
+    }
+    function toggleClipboard(screen) {
+        const here = screen === null || screen === clipboardScreen;
+        if (clipboardOpen && here) {
+            closeClipboard();
+            return;
+        }
+        if (clipboard.item?.closing && here) {
+            clipboard.item.reopen();
+            return;
+        }
+        clipboard.active = false;
+        clipboardScreen = screen;
+        clipboard.active = true;
+    }
+    LazyLoader {
+        id: clipboard
+        ClipboardWindow {
+            screen: shell.clipboardScreen
+            onCloseRequested: clipboard.active = false
+        }
+    }
+    // From a key in niri: Mod+V { spawn "rutile-shell" "clipboard" "toggle"; }
+    IpcHandler {
+        target: "clipboard"
+        function toggle(): void { shell.toggleClipboard(null); }
+        function open(): void { if (!shell.clipboardOpen) shell.toggleClipboard(null); }
+        function close(): void { shell.closeClipboard(); }
+        function isOpen(): bool { return shell.clipboardOpen; }
+        // the open picker's entry at `index` (as shown), as a click: copied back, and the picker closes
+        function choose(index: int): bool {
+            const p = clipboard.item?.panel;
+            const e = p?.results[index];
+            if (!e) return false;
+            p.chosen(e);
+            return true;
+        }
+        function state(): string {
+            return JSON.stringify({ history: ClipboardService.enabled, open: shell.clipboardOpen,
+                                    entries: ClipboardService.entries.map(e => e.text) });
+        }
     }
 
     // The calendar under the clock (D93), as the notification list: on a screen (null: the compositor's choice). A

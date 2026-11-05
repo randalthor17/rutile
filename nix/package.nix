@@ -35,6 +35,8 @@
   gnome-online-accounts-gtk,
   qt6Packages,
   fcitx5-m17n,
+  cliphist,
+  wl-clipboard,
 }:
 let
   # The system's fontconfig first (every other font keeps working), then the two fonts the shell is drawn with.
@@ -48,14 +50,14 @@ let
     </fontconfig>
   '';
   # What the shell runs (Process, execDetached): matugen (palette, other apps' colors), brightnessctl (backlight),
-  # ddcutil (monitors' brightness, D113), pw-play (notification sounds), dbus-monitor (logind's Lock), systemctl/systemd-inhibit/busctl (power, lock
+  # ddcutil (monitors' brightness, D113), cliphist and wl-clipboard (clipboard history, D119), pw-play (notification sounds), dbus-monitor (logind's Lock), systemctl/systemd-inhibit/busctl (power, lock
   # before sleep, LockedHint), pkill (apps' reload), sh, coreutils and sed (file jobs; the folder icons, D64), dconf
 # and gsettings (GTK's dark or light, D65), wlsunset (Night light, D91), GNOME Calendar and the
 # accounts window (D95). niri itself comes from the system.
   # Typing in other languages (D118): fcitx5 with m17n's input methods and its settings tool. The shell starts it
   # only when no fcitx5 runs (a system's own, with the user's addons, wins), so it is named, not put on PATH.
   fcitx5 = qt6Packages.fcitx5-with-addons.override { addons = [ fcitx5-m17n ]; };
-  runtime = [ matugen brightnessctl ddcutil wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash
+  runtime = [ matugen brightnessctl ddcutil cliphist wl-clipboard wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash
               gnome-calendar gnome-online-accounts-gtk ];
 in
 stdenv.mkDerivation {

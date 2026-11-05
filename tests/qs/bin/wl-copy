@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A stand-in for wl-copy in tests: what would be copied goes to $FAKE_CLIP.copied, never the session's clipboard.
+db="${FAKE_CLIP:-${TMPDIR:-/tmp}/rutile-fake-clip}"
+cat > "$db.copied"
