@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# A stand-in for fcitx5 in tests: `fcitx5 -d` marks the fake as running ($FAKE_FCITX.running), so the fake busctl
+# beside it answers for org.fcitx.Fcitx5. FAKE_FCITX defaults to a file under /tmp, never the tree. Every call is
+# logged to $FAKE_FCITX.log.
+state="${FAKE_FCITX:-${TMPDIR:-/tmp}/rutile-fake-fcitx}"
+echo "fcitx5 $*" >> "$state.log"
+touch "$state.running"

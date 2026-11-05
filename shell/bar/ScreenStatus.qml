@@ -14,6 +14,7 @@ Scope {
     property bool calendarOpen: false
     property var trayItems: []
     property string trayMenuId: ""
+    property bool inputOpen: false
     readonly property alias pill: pillWindow
     readonly property alias clock: clockWindow
     readonly property real reserved: exclusion.size
@@ -22,6 +23,7 @@ Scope {
     signal clockPressed()
     signal bellClicked()
     signal trayMenuRequested(var entry, real right)
+    signal inputClicked(real right)
 
     StatusWindow {
         id: pillWindow
@@ -35,6 +37,8 @@ Scope {
         trayMenuId: root.trayMenuId
         // from the screen's right edge, for the menu's window
         onTrayMenuRequested: (entry, right) => root.trayMenuRequested(entry, pillWindow.margins.right + right)
+        inputOpen: root.inputOpen
+        onInputClicked: right => root.inputClicked(pillWindow.margins.right + right)
     }
 
     ClockWindow {

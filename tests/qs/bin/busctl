@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# A stand-in for busctl in tests that answers only for fcitx5 (org.fcitx.Fcitx5) and runs the real busctl for
+# anything else. fcitx5 answers while $FAKE_FCITX.running exists (the fake fcitx5 makes it, or the test): a group
+# "Default" of English (US) and Bangla (m17n itrans), the current one in $FAKE_FCITX.current. Calls are logged to
+# $FAKE_FCITX.log.
+state="${FAKE_FCITX:-${TMPDIR:-/tmp}/rutile-fake-fcitx}"
+case " $* " in
+  *" org.fcitx.Fcitx5 "*) ;;
+  *)
+    self=$(cd "$(dirname "$0")" && pwd)
+    IFS=: read -ra dirs <<< "$PATH"
+    for d in "${dirs[@]}"; do
+      [ "$(cd "$d" 2>/dev/null && pwd)" = "$self" ] && continue
+      [ -x "$d/busctl" ] && exec "$d/busctl" "$@"
+    done
+    echo "busctl: not found" >&2
+    exit 127
+    ;;
+esac
+method=""
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+  [ "${args[i]}" = org.fcitx.Fcitx.Controller1 ] && method="${args[i + 1]}" && arg="${args[i + 3]-}"
+done
+echo "$method${arg:+ $arg}" >> "$state.log"
+if [ ! -e "$state.running" ]; then
+  echo "Call failed: The name org.fcitx.Fcitx5 was not provided by any .service files" >&2
+  exit 1
+fi
+case "$method" in
+  CurrentInputMethodGroup) echo '{"type":"s","data":["Default"]}' ;;
+  CurrentInputMethod) printf '{"type":"s","data":["%s"]}\n' "$(cat "$state.current" 2>/dev/null)" ;;
+  FullInputMethodGroupInfo)
+    echo '{"type":"sssa{sv}a(sssssssbsa{sv})","data":["Default","keyboard-us","us",{},[["keyboard-us","Keyboard - English (US)","","input-keyboard","en","en","keyboard",true,"",{}],["m17n_bn_itrans","itrans (M17N)","","/m17n/icons/bn-itrans.png","","bn","m17n",true,"",{}]]]}' ;;
+  SetCurrentIM) printf '%s' "$arg" > "$state.current"; echo '{"type":"","data":[]}' ;;
+  *) echo "Unknown method $method" >&2; exit 1 ;;
+esac

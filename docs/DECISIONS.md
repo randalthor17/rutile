@@ -1380,3 +1380,23 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
   first among the missing pieces.
 - **Not verified:** a real player. The card is tested with fake players offscreen; the headless shell has no player
   on its private bus, so only the IPC's "none" answers are checked.
+
+**D118. Input methods through fcitx5** (plan 2.1, 2.3, the maintainer's choice, 2026-11-05):
+- Rutile depends on fcitx5 with fcitx5-m17n (the package's `RUTILE_FCITX5`, `RUTILE_FCITX5_CONFIGTOOL`; not on
+  PATH). More engines are fcitx5 addons the user adds in their system (NixOS's `i18n.inputMethod`), whose fcitx5
+  then runs instead: the shell starts its own only when no fcitx5 answers on D-Bus 4 s after it starts.
+- InputMethodService talks to fcitx5's `org.fcitx.Fcitx.Controller1` with `busctl --json=short`, one call at a
+  time: the current group's methods (`FullInputMethodGroupInfo`, with label and language), the current one
+  (`CurrentInputMethod`; "" while no window takes text, shown as the group's first) and switching
+  (`SetCurrentIM`). fcitx5 announces no switch there, but its tray item's icon changes with every one (its own
+  hotkey too), so the shell reads again then.
+- The input pill, left of the app indicators, shows the short label (the method's own, else its language: EN,
+  BN) while the group has more than one method. A click opens fcitx5's own tray menu at the pill (its methods,
+  Configure, Restart: the existing tray-menu window), and fcitx5's item is left out of the indicators; without
+  that item a click goes to the next method. IPC `input next|set NAME|configure|state`.
+- Tests: a fake fcitx5 and a fake busctl (tests/qs/bin; the busctl answers for org.fcitx.Fcitx5 only and runs the
+  real one for anything else). Every test environment names the fake fcitx5, so no test can start a real one.
+- **Not verified:** typing through fcitx5 in real apps, its tray item's id ("Fcitx", from fcitx5's source) and
+  icon changes on a real session, and the menu at the pill. Apps under XWayland need `XMODIFIERS=@im=fcitx`
+  (NixOS's input-method module sets it; the shell cannot set apps' environment); Electron apps need
+  `--enable-wayland-ime`.

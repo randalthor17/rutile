@@ -2,13 +2,26 @@
 // of plain values (the Quickshell side passes its enum values in), so it tests offscreen.
 .pragma library
 
+// fcitx5's item (D118): not among the indicators, as the input pill shows it and opens its menu.
+var INPUT_METHOD = "Fcitx";
+
+// The entry for fcitx5's item (as shown() makes them), or null.
+function inputMethod(items) {
+    for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it && it.id === INPUT_METHOD)
+            return { id: it.id, title: it.tooltipTitle || it.title || it.id, icon: it.icon, attention: false, item: it };
+    }
+    return null;
+}
+
 // SystemTray items to show, in the tray's order: Passive ones are hidden (the StatusNotifierItem spec: nothing to
 // show right now). [{id, title, icon, attention, item}]
 function shown(items, passive, attention) {
     var out = [];
     for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        if (!it || it.status === passive) continue;
+        if (!it || it.status === passive || it.id === INPUT_METHOD) continue;
         out.push({ id: it.id, title: it.tooltipTitle || it.title || it.id, icon: it.icon,
                    attention: it.status === attention, item: it });
     }

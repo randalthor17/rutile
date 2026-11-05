@@ -33,6 +33,8 @@
   evolution-data-server,
   gnome-calendar,
   gnome-online-accounts-gtk,
+  qt6Packages,
+  fcitx5-m17n,
 }:
 let
   # The system's fontconfig first (every other font keeps working), then the two fonts the shell is drawn with.
@@ -50,6 +52,9 @@ let
   # before sleep, LockedHint), pkill (apps' reload), sh, coreutils and sed (file jobs; the folder icons, D64), dconf
 # and gsettings (GTK's dark or light, D65), wlsunset (Night light, D91), GNOME Calendar and the
 # accounts window (D95). niri itself comes from the system.
+  # Typing in other languages (D118): fcitx5 with m17n's input methods and its settings tool. The shell starts it
+  # only when no fcitx5 runs (a system's own, with the user's addons, wins), so it is named, not put on PATH.
+  fcitx5 = qt6Packages.fcitx5-with-addons.override { addons = [ fcitx5-m17n ]; };
   runtime = [ matugen brightnessctl ddcutil wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash
               gnome-calendar gnome-online-accounts-gtk ];
 in
@@ -106,7 +111,9 @@ stdenv.mkDerivation {
       --set FONTCONFIG_FILE ${fontsConf} \
       --suffix XDG_DATA_DIRS : ${papirus-icon-theme}/share \
       --set RUTILE_AMDGPU_IDS ${libdrm}/share/libdrm/amdgpu.ids \
-      --set RUTILE_PCI_IDS ${hwdata}/share/hwdata/pci.ids
+      --set RUTILE_PCI_IDS ${hwdata}/share/hwdata/pci.ids \
+      --set-default RUTILE_FCITX5 ${fcitx5}/bin/fcitx5 \
+      --set-default RUTILE_FCITX5_CONFIGTOOL ${fcitx5}/bin/fcitx5-configtool
     runHook postInstall
   '';
 

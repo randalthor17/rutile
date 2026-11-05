@@ -666,6 +666,8 @@ ShellRoot {
             trayItems: shell.trayItems
             trayMenuId: shell.trayMenuOpen && trayMenu.item?.screen === modelData ? shell.trayMenuId : ""
             onTrayMenuRequested: (entry, right) => shell.toggleTrayMenu(modelData, entry, right)
+            inputOpen: shell.trayMenuOpen && trayMenu.item?.screen === modelData && shell.trayMenuId === TrayModel.INPUT_METHOD
+            onInputClicked: right => shell.inputClicked(modelData, right)
         }
     }
 
@@ -691,7 +693,36 @@ ShellRoot {
     function closeTrayMenu() {
         if (trayMenu.item) trayMenu.item.close();
     }
-    onTrayItemsChanged: if (trayMenu.active && !trayItems.some(e => e.id === trayMenuId)) trayMenu.active = false
+    onTrayItemsChanged: if (trayMenu.active && !trayItems.concat(inputEntry ? [inputEntry] : []).some(e => e.id === trayMenuId))
+        trayMenu.active = false
+
+    // Typing in other languages (D118): fcitx5's own menu from the input pill, or the next input method without it.
+    // Its tray icon changes with every switch (also by its hotkey): the service reads again then.
+    readonly property var inputEntry: TrayModel.inputMethod(SystemTray.items.values)
+    function inputClicked(screen, right) {
+        if (inputEntry) toggleTrayMenu(screen, inputEntry, right);
+        else InputMethodService.next();
+    }
+    IpcHandler {
+        target: "input"
+        // the next input method of fcitx5's current group (bind it to a key); false while fcitx5 is not there
+        function next(): bool { return InputMethodService.next(); }
+        // an input method by its fcitx5 name (keyboard-us, m17n_bn_itrans), from the current group
+        function set(name: string): bool { return InputMethodService.set(name); }
+        function configure(): void { InputMethodService.configure(); }
+        function state(): string {
+            return JSON.stringify({ available: InputMethodService.available, current: InputMethodService.shown?.id ?? "",
+                                    methods: InputMethodService.methods.map(m => m.id),
+                                    labels: statusWindows.instances.map(s => s.pill.input.visible ? s.pill.input.label : ""),
+                                    started: InputMethodService.started, inTray: shell.trayItems.some(e => e.id === TrayModel.INPUT_METHOD) });
+        }
+    }
+    Connections {
+        target: shell.inputEntry?.item ?? null
+        ignoreUnknownSignals: true
+        function onIconChanged() { InputMethodService.refresh(); }
+        function onTooltipTitleChanged() { InputMethodService.refresh(); }
+    }
     LazyLoader {
         id: trayMenu
         TrayMenuWindow {

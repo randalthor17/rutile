@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Type in other languages.** Rutile now comes with fcitx5 and m17n's input methods (Bangla, Hindi, Tamil, Tibetan
+  and many more), and starts fcitx5 if your system does not. Add input methods in fcitx5's settings; with more
+  than one, a small label at the top right (EN, BN) shows the one in use, and clicking it opens fcitx5's menu to
+  switch or configure. `rutile-shell input next` switches from a key. More engines (fcitx5 addons) can be added
+  in your system's configuration.
 - **Media controls.** Quick Settings shows what is playing (any app that speaks MPRIS: Spotify, Firefox, mpv...):
   the cover, title and artist, previous, play or pause, next, and how far along it is, which you can drag to seek.
   With several players, click the player's name to switch. Media keys can call `rutile-shell media playPause`,

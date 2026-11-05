@@ -286,6 +286,9 @@ def qs_test_env(test, ws):
     env["XDG_DATA_HOME"] = str(ws / "home" / "data")
     # never the user's logind session (the lock screen's triggers and LockedHint act on it)
     env["XDG_SESSION_ID"] = ""
+    # never a real fcitx5 (D118): the shell starts one when none answers; the fake in tests/qs/bin
+    env["RUTILE_FCITX5"] = str(ws / "bin" / "fcitx5")
+    env["FAKE_FCITX"] = str(ws / "home" / "fake-fcitx")
     port = free_port()
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
         env[name] = (value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
@@ -445,6 +448,8 @@ def run_wayland_smoke(screenshot=None):
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(fake),
+            "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"),
+            "FAKE_FCITX": str(comp.runtime / "fake-fcitx"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             # a session of its own, heard through the fake dbus-monitor; the fake systemd-inhibit holds nothing
             "XDG_SESSION_ID": "rutiletest",
@@ -576,6 +581,33 @@ def run_wayland_smoke(screenshot=None):
                     held = keep_awake()
                     ipc("keepAwake", "false", target="quicksettings")
                     time.sleep(0.3)
+                    # typing in other languages (D118): no fcitx5 answers at first, so the shell starts one (the fake),
+                    # whose group of two shows as EN; switching shows BN
+                    def input_state():
+                        try:
+                            return json.loads(ipc("state", target="input"))
+                        except ValueError:
+                            return {}
+                    for _ in range(100):
+                        if input_state().get("available"):
+                            break
+                        time.sleep(0.1)
+                    st = input_state()
+                    want_in = {"available": True, "current": "keyboard-us", "methods": ["keyboard-us", "m17n_bn_itrans"],
+                               "labels": ["EN"], "started": True, "inTray": False}
+                    if st != want_in:
+                        problems.append(f"ipc input state after start: {st}, expected {want_in}")
+                    if ipc("next", target="input") != "true":
+                        problems.append("ipc input next: refused")
+                    time.sleep(0.5)
+                    st = input_state()
+                    if st.get("current") != "m17n_bn_itrans" or st.get("labels") != ["BN"]:
+                        problems.append(f"ipc input next: {st}, expected Bangla shown as BN")
+                    if ipc("set", "nothing", target="input") != "false" or ipc("set", "keyboard-us", target="input") != "true":
+                        problems.append("ipc input set: an unknown name taken, or a known one refused")
+                    fcitx_log = Path(env["FAKE_FCITX"] + ".log")
+                    if "fcitx5 -d" not in (fcitx_log.read_text() if fcitx_log.exists() else ""):
+                        problems.append("fcitx5 was not started")
                     # the media keys (D117): no player on this private bus, so nothing to control
                     media = ipc("state", target="media")
                     if media != json.dumps({"players": [], "current": None}, separators=(",", ":")) or \
@@ -1468,6 +1500,8 @@ def run_wayland_surfaces():
         env = comp.env({
             "PATH": f"{ROOT / 'tests' / 'qs' / 'bin'}:{os.environ.get('PATH', '')}",
             "FAKE_BRIGHTNESS": str(comp.runtime / "fake-brightness"),
+            "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"),
+            "FAKE_FCITX": str(comp.runtime / "fake-fcitx"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             "XDG_SESSION_ID": "",
             "DBUS_SESSION_BUS_ADDRESS": bus.address,
@@ -1699,6 +1733,7 @@ def run_tray_smoke():
     with HeadlessSway() as comp, PrivateBus() as bus:
         rt = comp.runtime
         env = comp.env({"DBUS_SESSION_BUS_ADDRESS": bus.address, "XDG_SESSION_ID": "",
+                        "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"), "FAKE_FCITX": str(rt / "fake-fcitx"),
                         "XDG_CONFIG_HOME": str(rt / "config"), "XDG_STATE_HOME": str(rt / "state"),
                         "RUTILE_PALETTE": str(rt / "palette.json")})
         shutil.copy(ROOT / "theme" / "fixtures" / "palette-134aae-tonal-spot-dark.json", rt / "palette.json")
