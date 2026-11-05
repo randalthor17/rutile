@@ -43,6 +43,7 @@ Rectangle {
     signal settingsRequested()
     signal hidden()
     signal soundSettingsRequested()
+    signal settingsPageRequested(string page)   // a details page's link to a Settings page (D108)
     signal detailsRequested(string tileId)
     // The window this panel is in lost keyboard focus (another window took it), after having had it. The
     // window's state, not the item's activeFocus: that moves to a slider or tile inside the panel on a click.
@@ -120,6 +121,7 @@ Rectangle {
                 backend: root.backend
                 page: root.details
                 onBack: root.details = ""
+                onSettingsPageRequested: page => root.settingsPageRequested(page)
             }
         }
 

@@ -50,6 +50,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | IconButton | 70.1 | 54.1 | the above |
 | Switch | 125.2 | 90.3 | three color Behaviors, handle icon on demand |
 | Slider | 140.3 | 71.6 | Rectangles instead of a Canvas |
+| Slider, 100 steps (November 2026) | | 1028.9 | one tick dot per stop, about 9.5 KiB each; with `ticks: false` 80.4 (D108). Use it for fine steps |
 | Slider with sizes and track icons | 71.6 | 79.9 | sizes, icons and right to left; one Loader for both icons (about 4), the rest bindings; `m` with an end icon is 118.9 |
 | ProgressBar | 92.0 | 50.0 | Rectangles; the wave's Canvas only while it shows |
 | Chip | | 71.1 | icons only when shown |

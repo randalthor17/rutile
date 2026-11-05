@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Night light and Power saver pages in Quick Settings.** Click the Night light tile's name for its warmth and
+  "Sunset to sunrise", with a link to Display settings; click Power saver's for Performance, Balanced and Power
+  saver. The tiles' icons still switch them on and off.
 - **Edit tiles and widgets with the keyboard.** In Quick Settings' edit mode and while editing desktop widgets, Tab
   picks a tile or widget, the arrow keys move it, and Shift with an arrow makes it bigger or smaller.
 - **Tooltips on the shelf.** Hover an app on the shelf for half a second and its name shows above it; over an open

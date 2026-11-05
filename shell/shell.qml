@@ -1046,6 +1046,10 @@ ShellRoot {
                 shell.openSettings("sound");
                 shell.closeQuickSettings();
             }
+            onSettingsPageRequested: page => {
+                shell.openSettings(page);
+                shell.closeQuickSettings();
+            }
         }
     }
 
@@ -1057,7 +1061,7 @@ ShellRoot {
         function isOpen(): bool { return shell.quickSettingsOpen; }
         // Opens Quick Settings at a tile's detail page ("wifi", "bluetooth"); "" goes back to the tiles.
         function details(page: string): bool {
-            if (page !== "" && page !== "wifi" && page !== "bluetooth") return false;
+            if (["", "wifi", "bluetooth", "nightLight", "powerSaver"].indexOf(page) < 0) return false;
             if (!shell.quickSettingsOpen) shell.toggleQuickSettings(null);
             quickSettings.item.details = page;
             return true;

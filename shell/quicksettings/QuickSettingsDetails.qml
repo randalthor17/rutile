@@ -4,7 +4,9 @@ pragma ComponentBehavior: Bound
 // first asks for the password, typed in a field under that network (Enter connects, Escape cancels).
 // A saved network has a button to forget it. Under the list, "Hidden network" asks for a network's name and its
 // password (none for an open one) and joins it (D100). "bluetooth" lists the adapter's devices: a click connects (pairing first) or disconnects. The page asks the
-// backend to scan or discover while it is shown. Plain QtQuick, through the panel's backend.
+// backend to scan or discover while it is shown. "nightLight" (D108) has the warmth (saved once it rests: every
+// change restarts wlsunset) and Sunset to sunrise, and opens Settings > Display for the rest; "powerSaver" lists the power
+// modes to choose from. Plain QtQuick, through the panel's backend.
 import QtQuick
 import qs.common
 import qs.components
@@ -15,16 +17,18 @@ Column {
     id: root
 
     required property var backend
-    property string page: ""                // "wifi" | "bluetooth"
+    property string page: ""                // "wifi" | "bluetooth" | "nightLight" | "powerSaver"
     property string askingFor: ""           // the network whose password is being typed
     property bool askingHidden: false       // a hidden network's name and password are being typed
     readonly property var live: Controls.state(page, backend)
     readonly property bool isWifi: page === "wifi"
+    readonly property bool isList: isWifi || page === "bluetooth"
     readonly property var rows: isWifi ? Details.networks(backend?.wifiNetworks)
-                                       : Details.devices(backend?.bluetoothDevices)
+                                : page === "bluetooth" ? Details.devices(backend?.bluetoothDevices) : []
     readonly property int maxRows: 6
 
     signal back()
+    signal settingsPageRequested(string page)
 
     function activate(row) {
         if (isWifi) {
@@ -101,7 +105,7 @@ Column {
     // ---- the list ----
     Text {
         objectName: "qsDetailsEmpty"
-        visible: root.rows.length === 0
+        visible: root.isList && root.rows.length === 0
         width: parent.width
         wrapMode: Text.Wrap
         text: !root.live.available ? "Unavailable"
@@ -171,6 +175,116 @@ Column {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // ---- Night light (D108) ----
+    Column {
+        objectName: "qsNightLightPage"
+        visible: root.page === "nightLight"
+        width: parent.width
+        spacing: Spacing.sm
+        Item {
+            width: parent.width
+            height: warmthLabel.height
+            Text {
+                id: warmthLabel
+                text: "Warmth"
+                color: Colors.surfaceOn
+                font: Type.font(Type.titleSmall)
+            }
+            Text {
+                objectName: "qsNightLightKelvin"
+                anchors.right: parent.right
+                text: Math.round(warmth.value) + " K"
+                color: Colors.surfaceVariantOn
+                font: Type.font(Type.bodyMedium)
+            }
+        }
+        Slider {
+            id: warmth
+            objectName: "qsNightLightWarmth"
+            width: parent.width
+            size: "s"
+            from: 2500
+            to: 6000
+            stepSize: 100
+            ticks: false
+            enabled: root.backend?.nightLightAvailable ?? false
+            // in kelvin, as Settings > Display's: warmer to the left
+            Binding on value {
+                value: root.backend?.nightLightTemperature ?? 4000
+                when: !warmth.pressed
+                restoreMode: Binding.RestoreNone
+            }
+            // saved once it rests: a drag or a run of key steps makes one save, not one per step
+            property real wanted: 4000
+            property bool unsaved: false
+            onMoved: v => {
+                wanted = v;
+                unsaved = true;
+                warmthSave.restart();
+            }
+            onPressedChanged: if (!pressed && unsaved) warmthSave.restart()
+            Timer {
+                id: warmthSave
+                interval: 300
+                onTriggered: if (!warmth.pressed) {
+                    warmth.unsaved = false;
+                    root.backend.setNightLightTemperature(warmth.wanted);
+                }
+            }
+        }
+        ListItem {
+            objectName: "qsNightLightSchedule"
+            width: parent.width
+            tone: Colors.surfaceContainerHigh
+            iconName: "schedule"
+            text: "Sunset to sunrise"
+            supportingText: "Only at night, fading in and out"
+            enabled: root.backend?.nightLightAvailable ?? false
+            onClicked: root.backend.setNightLightScheduled(!(root.backend?.nightLightScheduled ?? false))
+            Switch {
+                objectName: "qsNightLightScheduleSwitch"
+                controlled: true
+                checked: root.backend?.nightLightScheduled ?? false
+                onToggled: wanted => root.backend.setNightLightScheduled(wanted)
+            }
+        }
+        Button {
+            objectName: "qsNightLightSettings"
+            type: "text"
+            size: "xs"
+            iconName: "settings"
+            text: "Display settings"
+            onClicked: root.settingsPageRequested("display")
+        }
+    }
+
+    // ---- power modes (D108) ----
+    Column {
+        objectName: "qsPowerPage"
+        visible: root.page === "powerSaver"
+        width: parent.width
+        spacing: ControlSpec.listSpec.segmentedGap
+        Repeater {
+            model: root.page === "powerSaver" ? Details.powerProfiles(root.backend?.performanceAvailable ?? false) : []
+            delegate: ListItem {
+                id: mode
+                required property var modelData
+                required property int index
+                readonly property int count: root.backend?.performanceAvailable ? 3 : 2
+                objectName: "qsPowerMode_" + modelData.id
+                width: parent?.width ?? 0
+                position: mode.index === 0 ? "first" : mode.index === mode.count - 1 ? "last" : "middle"
+                tone: Colors.surfaceContainerHigh
+                selected: (root.backend?.powerProfile ?? "") === modelData.id
+                enabled: root.live.available
+                iconName: modelData.icon
+                text: modelData.text
+                supportingText: modelData.supportingText
+                onClicked: root.backend.setPowerProfile(modelData.id)
             }
         }
     }

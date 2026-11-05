@@ -157,7 +157,8 @@ window (`niri msg action focus-column-right`) closed the panel.
 
 ## Not done yet
 
-- Closing on a click on another program's bar (D90 covers the shell's own desktop, shelf and clock). Detail pages for the other tiles.
+- Closing on a click on another program's bar (D90 covers the shell's own desktop, shelf and clock). Detail pages for
+  Microphone, Dark theme, Airplane mode and Do not disturb (Night light and Power saver have theirs, D108).
 - Blur behind the panel (`BackgroundEffect`, D38): the panel is opaque like Googlebook's for now.
 - **Not verified:** clicking or scrolling the pill on a real screen (only its signal is tested offscreen, and the IPC path
   live), several screens; the setters (Wi-Fi, Bluetooth, volume, microphone, brightness) have not run against real

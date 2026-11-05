@@ -33,10 +33,16 @@ QtObject {
     readonly property bool nightLightAvailable: NightLightService.available
     readonly property bool nightLight: NightLightService.on
     readonly property bool nightLightScheduled: NightLightService.schedule
+    readonly property int nightLightTemperature: NightLightService.temperature
     // Power saver needs power-profiles-daemon, which Quickshell cannot tell is there: `busctl` looks for it once,
     // when Quick Settings first opens (refresh), and PowerProfiles is not touched before it is found
     property bool powerSaverAvailable: false
     readonly property bool powerSaver: powerSaverAvailable && PowerProfiles.profile === PowerProfile.PowerSaver
+    // the Power saver page's modes (D108): "performance", "balanced" or "power-saver"
+    readonly property string powerProfile: !powerSaverAvailable ? ""
+        : PowerProfiles.profile === PowerProfile.PowerSaver ? "power-saver"
+        : PowerProfiles.profile === PowerProfile.Performance ? "performance" : "balanced"
+    readonly property bool performanceAvailable: powerSaverAvailable && PowerProfiles.hasPerformanceProfile
     property Process profilesProbe: Process {
         command: ["busctl", "--system", "list", "--no-legend", "--no-pager"]
         stdout: StdioCollector {
@@ -75,6 +81,19 @@ QtObject {
         if (powerSaverAvailable)
             PowerProfiles.profile = on ? PowerProfile.PowerSaver : PowerProfile.Balanced;
     }
+    function setPowerProfile(id) {
+        if (!powerSaverAvailable)
+            return;
+        if (id === "performance" && performanceAvailable)
+            PowerProfiles.profile = PowerProfile.Performance;
+        else if (id === "power-saver")
+            PowerProfiles.profile = PowerProfile.PowerSaver;
+        else if (id === "balanced")
+            PowerProfiles.profile = PowerProfile.Balanced;
+    }
+    // Settings > Display's Night light settings, from its page in Quick Settings (D108)
+    function setNightLightTemperature(kelvin) { Settings.set("nightLight.temperature", Math.round(kelvin)); }
+    function setNightLightScheduled(on) { Settings.set("nightLight.schedule", on); }
     function refresh() {
         BrightnessService.refresh();
         if (!probed) {

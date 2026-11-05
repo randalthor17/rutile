@@ -101,7 +101,7 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
   toast          send TEXT ICON    a short message (ICON: a Material Symbols name, or ""); its id
                  state
   quicksettings  toggle | open | close
-                 details PAGE      open at a tile's page: wifi, bluetooth ("" for the tiles)
+                 details PAGE      open at a tile's page: wifi, bluetooth, nightLight, powerSaver ("" for the tiles)
                  isOpen
                  state
   tray           activate ID       as a click on an app indicator (state lists their ids)

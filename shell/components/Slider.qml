@@ -19,6 +19,7 @@ Item {
     property real to: 1
     property real value: 0
     property real stepSize: 0     // 0: continuous; otherwise values snap to from + n * stepSize
+    property bool ticks: true     // a stepped slider's tick dots; off for many small steps (Night light's 100 K)
     property string size: "xs"    // xs, s, m, l, xl
     property string startIcon: ""  // Material Symbols names; shown on sizes m, l and xl only
     property string endIcon: ""
@@ -187,9 +188,10 @@ Item {
             color: root.inactiveShown
         }
         // Ticks sit where the handle stops: inactive-track color on the active side, active-track
-        // color on the inactive side. Only stepped sliders create them.
+        // color on the inactive side. Only stepped sliders with `ticks` create them.
         Repeater {
-            model: Math.max(0, root.stepCount - 1)
+            objectName: "sliderTicks"
+            model: root.ticks ? Math.max(0, root.stepCount - 1) : 0
             delegate: Rectangle {
                 required property int index
                 readonly property real cx: track.width * (index + 1) / root.stepCount

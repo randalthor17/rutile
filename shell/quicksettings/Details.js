@@ -68,6 +68,17 @@ function deviceStatus(d) {
     return d.paired ? "Paired" : "Not paired";
 }
 
+// The power modes (power-profiles-daemon's profiles) as rows, Performance only where the machine has it (D108).
+function powerProfiles(hasPerformance) {
+    var rows = [
+        { id: "performance", text: "Performance", supportingText: "Faster, uses more power", icon: "speed" },
+        { id: "balanced", text: "Balanced", supportingText: "The usual", icon: "balance" },
+        { id: "power-saver", text: "Power saver", supportingText: "Slower, the battery lasts longer",
+          icon: "energy_savings_leaf" }
+    ];
+    return hasPerformance ? rows : rows.slice(1);
+}
+
 // "disconnect", "connect" (pairs first when not paired), or "" while busy.
 function deviceAction(d) {
     if (d.busy) return "";

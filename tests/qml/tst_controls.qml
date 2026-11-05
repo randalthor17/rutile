@@ -188,6 +188,11 @@ TestCase {
         compare(s.value, 10, "stays at the end");
         keyClick(Qt.Key_Home);
         compare(s.value, 0);
+        compare(findChild(s, "sliderTicks").count, 4, "a dot at each stop between the ends");
+        s.ticks = false;
+        compare(findChild(s, "sliderTicks").count, 0, "none without ticks (D108)");
+        keyClick(Qt.Key_Right);
+        compare(s.value, 2, "still stepped");
     }
 
     function test_slider_handle_narrows_while_pressed_every_time() {

@@ -15,9 +15,9 @@ var catalog = {
     airplane: { text: "Airplane mode", icon: "flight", offIcon: "flight", keywords: ["flight mode", "offline", "radios"] },
     dnd: { text: "Do not disturb", icon: "do_not_disturb_on", offIcon: "do_not_disturb_off",
            keywords: ["notifications", "silence", "quiet", "focus", "dnd"] },
-    nightLight: { text: "Night light", icon: "nightlight", offIcon: "nightlight",
+    nightLight: { text: "Night light", icon: "nightlight", offIcon: "nightlight", dualTarget: true,
                   keywords: ["blue light", "warm", "night shift", "eye", "wlsunset"] },
-    powerSaver: { text: "Power saver", icon: "energy_savings_leaf", offIcon: "energy_savings_leaf",
+    powerSaver: { text: "Power saver", icon: "energy_savings_leaf", offIcon: "energy_savings_leaf", dualTarget: true,
                   keywords: ["battery saver", "power mode", "power profile", "energy"] }
 };
 

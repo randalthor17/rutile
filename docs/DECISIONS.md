@@ -1261,3 +1261,14 @@ greeter):
   a swap that would outgrow `maxRows`. That is how Quick Settings tiles read: in order.
 - **Not done.** Moving between screens, or into the grid from outside. Screen reader support is out of scope: the
   shell has one user, who does not use one (the maintainer, 2026-11-05).
+
+**D108. Night light and Power saver detail pages in Quick Settings** (plan 2.6, 2026-11-05):
+- **What.** Both tiles are dual-target now, like Wi-Fi: the icon toggles, the body opens a page. Night light's has
+  the warmth (2500 to 6000 K in 100 K steps, the setting's range), Sunset to sunrise, and "Display settings" for the
+  sunset and sunrise times (`settingsPageRequested("display")`). Power saver's lists power-profiles-daemon's modes,
+  Performance only where the machine has it, the current one marked. Added tiles of either kind come wide.
+- **Saving the warmth.** Every change to `nightLight.temperature` restarts wlsunset, so the slider saves 300 ms after
+  it rests and never while held: one save per drag or run of key steps.
+- **The slider's ticks.** A stepped slider drew a dot at every stop: 35 here, and about 1 MiB for 100 steps.
+  `Slider.ticks: false` leaves them out (80 KiB), still snapping to the steps.
+- **Not done.** Pages for Microphone (input devices), Dark theme, Airplane mode and Do not disturb.

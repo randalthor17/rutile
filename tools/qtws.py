@@ -580,6 +580,15 @@ def run_wayland_smoke(screenshot=None):
                             notes.append(f"screenshot: {screenshot}")
                         else:
                             notes.append("no screenshot: grim not found")
+                    # the tiles' pages (D108) open on the real backend without errors
+                    for page in ("nightLight", "powerSaver", ""):
+                        got = ipc("details", page)
+                        try:
+                            shown = json.loads(ipc("state")).get("details")
+                        except ValueError:
+                            shown = None
+                        if got != "true" or shown != page:
+                            problems.append(f"ipc details {page!r}: {got}, showing {shown!r}")
                     for call, want in [("toggle", ""), ("isOpen", "false"), ("open", ""), ("isOpen", "true"),
                                        ("close", ""), ("isOpen", "false")]:
                         got = ipc(call)

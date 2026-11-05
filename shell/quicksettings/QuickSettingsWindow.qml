@@ -17,6 +17,7 @@ PanelWindow {
     signal powerMenuRequested()
     signal settingsRequested()
     signal soundSettingsRequested()
+    signal settingsPageRequested(string page)
     signal tilesEdited(var tiles)
 
     // For `ipc call quicksettings state` (diagnostics and the Wayland smoke test).
@@ -60,6 +61,7 @@ PanelWindow {
         onPowerMenuRequested: root.powerMenuRequested()
         onSettingsRequested: root.settingsRequested()
         onSoundSettingsRequested: root.soundSettingsRequested()
+        onSettingsPageRequested: page => root.settingsPageRequested(page)
         onTilesEdited: tiles => root.tilesEdited(tiles)
         Keys.onEscapePressed: root.close()
     }

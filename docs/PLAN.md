@@ -125,7 +125,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   the 2.1 services, `SystemTray` with `QsMenuOpener`. Since D89 (v0.10.0): the layout in state.json, edit mode's
   chips to add the tiles not shown, Do not disturb and Power saver tiles, Wi-Fi and Bluetooth detail pages (networks
   with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
-  button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Not done:
+  button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Night light and
+  Power saver pages (D108): the warmth and Sunset to sunrise, a link to Settings > Display; the power modes. Not done:
   detail pages for the other
   tiles. Forgetting a saved network: done. Hidden networks (D100, v0.11.0): by name and password through nmcli, checked in a
   NixOS VM with a simulated radio (`checks.x86_64-linux.hidden-wifi`). Night light (D91): wlsunset,
@@ -146,7 +147,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Settings in search (maintainer's choice, until the settings app): typing in All also finds the Quick Settings
   controls (`Controls.js`: Wi-Fi, Bluetooth, Microphone, Dark theme, Airplane mode, Brightness, Volume, those the
   system has, by name or keyword); a toggle flips at once and closes the launcher, a slider opens Quick Settings.
-  Not done: settings from the schema (`motion.speed`, `shelf.pins`) as results, once the settings app has pages. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  Settings from the Settings app's pages are results too (D77). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Started (D47, `shell/notifications/`): notifications. `NotificationService` (Quickshell's

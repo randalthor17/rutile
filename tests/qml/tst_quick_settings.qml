@@ -41,6 +41,9 @@ TestCase {
             property bool nightLight: false
             property bool nightLightScheduled: false
             property bool powerSaver: false
+            property int nightLightTemperature: 4000
+            property string powerProfile: "balanced"
+            property bool performanceAvailable: true
             property var wifiNetworks: [
                 { name: "Cafe", signal: 0.9, secure: false, psk: false, connected: false, known: false, busy: false },
                 { name: "Home", signal: 0.4, secure: true, psk: true, connected: true, known: true, busy: false },
@@ -63,6 +66,9 @@ TestCase {
             function setDnd(b) { log("dnd " + b); }
             function setPowerSaver(b) { log("powerSaver " + b); }
             function setNightLight(b) { log("nightLight " + b); }
+            function setNightLightTemperature(k) { log("temperature " + k); nightLightTemperature = k; }
+            function setNightLightScheduled(b) { log("schedule " + b); nightLightScheduled = b; }
+            function setPowerProfile(p) { log("profile " + p); powerProfile = p; }
             function connectWifi(n, psk) { log("connectWifi " + n + (psk ? " " + psk : "")); }
             function disconnectWifi(n) { log("disconnectWifi " + n); }
             function forgetWifi(n) { log("forgetWifi " + n); }
@@ -89,6 +95,10 @@ TestCase {
     }
 
     function tile(panel, id) { return findChild(panel, "qsTile_" + id); }
+    // the Columns an item is in have placed it (a click before then lands where it was)
+    function laidOut(item) {
+        for (var it = item; it; it = it.parent) waitForItemPolished(it);
+    }
 
     function clickItem(item) {
         mouseClick(item, item.width / 2, item.height / 2);
@@ -466,6 +476,67 @@ TestCase {
         verify(!t.panel.editMode);
     }
 
+    // ---- Night light and power modes (D108) ----
+    function test_night_light_page() {
+        var t = make({ nightLight: true });
+        var asked = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "settingsPageRequested" });
+        verify(tile(t.panel, "nightLight").dualTarget, "the tile has a details side");
+        t.panel.details = "nightLight";
+        var page = findChild(t.panel, "qsNightLightPage");
+        tryVerify(() => page && page.visible);
+        verify(!findChild(t.panel, "qsDetailsEmpty").visible, "no list, so no list's empty text");
+        verify(!findChild(t.panel, "qsPowerPage").visible);
+        verify(findChild(t.panel, "qsDetailsSwitch").checked, "its switch, as on the tile");
+        var warmth = findChild(t.panel, "qsNightLightWarmth");
+        laidOut(warmth);
+        compare(warmth.value, 4000);
+        compare(findChild(t.panel, "qsNightLightKelvin").text, "4000 K");
+        // a drag saves once, when let go
+        mousePress(warmth, warmth.width * 0.1, warmth.height / 2);
+        mouseMove(warmth, warmth.width * 0.2, warmth.height / 2);
+        mouseMove(warmth, warmth.width * 0.3, warmth.height / 2);
+        wait(500);                                  // a pause mid-drag saves nothing yet
+        compare(t.backend.calls.filter(c => c.startsWith("temperature")).length, 0, "not while held");
+        mouseRelease(warmth, warmth.width * 0.3, warmth.height / 2);
+        tryVerify(() => t.backend.calls.some(c => c.startsWith("temperature")), 2000);
+        wait(400);
+        var saved = t.backend.calls.filter(c => c.startsWith("temperature"));
+        compare(saved.length, 1, "once, after the drag");
+        verify(t.backend.nightLightTemperature < 4000 && t.backend.nightLightTemperature % 100 === 0,
+               "warmer, in steps of 100: " + t.backend.nightLightTemperature);
+        // a keyboard step saves at once
+        warmth.forceActiveFocus();
+        keyClick(Qt.Key_Right);
+        tryCompare(t.backend, "nightLightTemperature", Number(saved[0].split(" ")[1]) + 100, 2000, "a key step saves too");
+        var schedule = findChild(t.panel, "qsNightLightSchedule");
+        laidOut(schedule);
+        clickItem(schedule);
+        compare(t.backend.calls[t.backend.calls.length - 1], "schedule true");
+        verify(findChild(t.panel, "qsNightLightScheduleSwitch").checked);
+        clickItem(findChild(t.panel, "qsNightLightSettings"));
+        compare(asked.count, 1);
+        compare(asked.signalArguments[0][0], "display", "the rest is in Settings > Display");
+    }
+    function test_power_modes_page() {
+        var t = make({ powerSaver: false });
+        verify(Controls.catalog.powerSaver.dualTarget, "the tile has a details side");
+        t.panel.details = "powerSaver";
+        var page = findChild(t.panel, "qsPowerPage");
+        tryVerify(() => page && page.visible);
+        verify(!findChild(t.panel, "qsNightLightPage").visible);
+        laidOut(findChild(t.panel, "qsPowerMode_performance"));
+        verify(findChild(t.panel, "qsPowerMode_balanced").selected, "the current mode is marked");
+        verify(!findChild(t.panel, "qsPowerMode_performance").selected);
+        clickItem(findChild(t.panel, "qsPowerMode_performance"));
+        compare(t.backend.calls[t.backend.calls.length - 1], "profile performance");
+        verify(findChild(t.panel, "qsPowerMode_performance").selected);
+        t.backend.performanceAvailable = false;
+        tryVerify(() => findChild(t.panel, "qsPowerMode_performance") === null, 1000, "no Performance where the machine has none");
+        verify(findChild(t.panel, "qsPowerMode_power-saver"));
+        compare(Details.powerProfiles(true).map(p => p.id).join(), "performance,balanced,power-saver");
+        compare(Details.powerProfiles(false).map(p => p.id).join(), "balanced,power-saver");
+    }
+
     function test_edit_mode_moves_tiles_with_the_keyboard() {
         // the grid's keys (D107) reach it inside the panel: a click selects, Left swaps with the tile before
         var t = make();
@@ -491,7 +562,8 @@ TestCase {
         verify(!findChild(t.panel, "qsAdd_wifi"), "a shown tile is not offered");
         clickItem(findChild(t.panel, "qsAdd_powerSaver"));
         compare(spy.count, 1);
-        compare(JSON.stringify(spy.signalArguments[0][0].slice(-1)), JSON.stringify([{ id: "powerSaver", w: 1 }]));
+        compare(JSON.stringify(spy.signalArguments[0][0].slice(-1)), JSON.stringify([{ id: "powerSaver", w: 2 }]),
+                "wide: it has a details side (D108)");
         compare(t.panel.addableTiles.length, 0);
         // removing one offers it again, wide if it has a details side
         t.panel.tiles = [{ id: "mic", w: 1 }];
@@ -520,7 +592,7 @@ TestCase {
         compare(p.secondaryText, "Unavailable");
         t.backend.powerSaverAvailable = true;
         compare(p.secondaryText, "Off");
-        clickItem(p);
+        mouseClick(p, ControlSpec.tileSpec.iconSize, p.height / 2);     // its icon toggles; the body opens its page
         verify(t.backend.calls.indexOf("powerSaver true") >= 0, "" + t.backend.calls);
         t.backend.powerSaver = true;
         verify(p.active);
@@ -534,7 +606,7 @@ TestCase {
         compare(n.secondaryText, "Unavailable", "no wlsunset");
         t.backend.nightLightAvailable = true;
         compare(n.secondaryText, "Off");
-        clickItem(n);
+        mouseClick(n, ControlSpec.tileSpec.iconSize, n.height / 2);     // its icon toggles (D108)
         compare(t.backend.calls[t.backend.calls.length - 1], "nightLight true");
         t.backend.nightLight = true;
         verify(n.active);
