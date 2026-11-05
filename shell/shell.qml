@@ -195,6 +195,28 @@ ShellRoot {
         saveDesktop(name, Desktop.withAdded(items, path, size));
         return true;
     }
+    // The size widget `item` gets on screen `name` (its own, or smaller to fit), or null when that screen is full or
+    // has no layer (only while editing or showing widgets).
+    function desktopRoom(name, item) {
+        const grid = desktops.instances.find(l => l.modelData.name === name)?.item?.content.grid;
+        return grid ? grid.fitNew({ w: item.w, h: item.h }) : null;
+    }
+    // Moves widget `id` to screen `to`, into the first cells with room there; false when there is none, or no such
+    // widget or screen.
+    function moveWidget(id, to) {
+        if (!Quickshell.screens.some(s => s.name === to)) return false;
+        for (const name in desktopLayouts) {
+            const items = Desktop.placed(desktopLayouts, name);
+            const at = items.findIndex(i => i.id === id);
+            if (at < 0) continue;
+            if (name === to) return false;
+            const size = desktopRoom(to, items[at]);
+            if (!size) return false;
+            Settings.setState("desktop.widgets", Desktop.withMoved(desktopLayouts, name, at, to, size));
+            return true;
+        }
+        return false;
+    }
     WidgetLibrary {
         id: widgetLibrary
         paths: Desktop.paths(shell.desktopLayouts)
@@ -217,6 +239,10 @@ ShellRoot {
                 columns: Settings.value("widgets.columns") ?? 12
                 scaleText: Settings.value("widgets.scaleText") === true
                 commitHandler: next => shell.saveDesktop(desktop.modelData.name, next)
+                screens: Quickshell.screens.filter(s => s.name !== desktop.modelData.name)
+                    .map(s => ({ name: s.name, label: s.model ? s.model + " (" + s.name + ")" : s.name }))
+                roomOn: (name, item) => shell.desktopRoom(name, item)
+                onMoveRequested: (index, screen) => shell.moveWidget(desktop.items[index]?.id ?? "", screen)
                 onDoneRequested: shell.widgetsEditing = false
                 onPressed: shell.closePopups()
                 onAddListRequested: widgetLibrary.scan()
@@ -422,6 +448,8 @@ ShellRoot {
         function done(): void { shell.widgetsEditing = false; }
         // An absolute path, on the focused screen; false for a relative one or no room.
         function add(path: string): bool { return shell.addWidget(path); }
+        // Widget `id` to the screen named `screen` (its output name), while editing; false when it has no room there.
+        function move(id: string, screen: string): bool { return shell.moveWidget(id, screen); }
         function remove(id: string): bool {
             for (const name in shell.desktopLayouts) {
                 const items = Desktop.placed(shell.desktopLayouts, name);

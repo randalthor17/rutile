@@ -803,9 +803,29 @@ def run_wayland_smoke(screenshot=None):
                     ipc("edit", target="widgets")
                     if desktop_layout().get("editing") is not True:
                         problems.append("ipc widgets edit: not editing")
+                    # moved to a second screen (plugged in now): saved there and gone from the first
+                    comp.msg("create_output")
+                    for _ in range(40):
+                        if len(desktop_layout().get("shown") or []) == 2:
+                            break
+                        time.sleep(0.1)
+                    first = next(iter((desktop_layout().get("screens") or {}).keys()), "")
+                    second = [n for n in (desktop_layout().get("shown") or []) if n != first]
+                    if not second:
+                        problems.append(f"ipc widgets move: no second screen while editing: {desktop_layout()}")
+                    elif ipc("move", "stat", second[0], target="widgets") != "true":
+                        problems.append(f"ipc widgets move stat {second[0]}: refused")
+                    else:
+                        screens = desktop_layout().get("screens") or {}
+                        if list(screens) != second or [i.get("id") for i in screens[second[0]]] != ["stat"]:
+                            problems.append(f"ipc widgets move stat {second[0]}: layout {screens}")
+                    if ipc("move", "stat", "NOWHERE-1", target="widgets") != "false":
+                        problems.append("ipc widgets move to a screen that is not there: accepted")
                     ipc("done", target="widgets")
                     if ipc("remove", "stat", target="widgets") != "true" or desktop_layout().get("shown") != []:
                         problems.append(f"ipc widgets remove stat: layout {desktop_layout()}")
+                    for name in second:
+                        comp.msg("output", name, "unplug")     # one screen again for the rest
                     if ipc("add", "relative.json", target="widgets") != "false":
                         problems.append("ipc widgets add of a relative path: accepted")
                     # the Widgets app (D82): a category's templates are drawn; using one copies it to the user's

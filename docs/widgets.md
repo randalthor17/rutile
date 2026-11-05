@@ -120,7 +120,8 @@ tinted card or tile, its text color, fading).
 
 Right-click a widget, or the desktop and choose "Edit widgets", to move, resize, add and remove them. While you
 edit, every screen switches to its empty workspace so the apps are out of the way (niri has no minimize); Done
-switches back. A widget made bigger
+switches back. With more than one screen, "Move to" puts the selected widget on another screen, in the first
+cells with room there (smaller if it must be; a screen without room is greyed out). A widget made bigger
 stretches its cards and tiles to fill the space; one without a card is centered in it with a margin. Settings >
 Widgets > "Scale text with widget size" also makes text bigger in a bigger widget (off by default). A widget taller
 than its space is shrunk to fit.

@@ -1,7 +1,7 @@
 // One screen's desktop widgets (plan 4.4, D81): placed widgets on the shared EditableGrid (1.6), with gravity off
 // so each stays where it was put. Cells are square, `columns` across the screen. In `editMode` widgets are moved and
 // resized as Quick Settings tiles are, and a bar at the bottom adds a widget (from `available`), removes the selected
-// one, and finishes (Escape too; Delete removes). Plain QtQuick: files are read by the owner, which hands over
+// one, moves it to another screen (`screens`, when there are others), and finishes (Escape too; Delete removes). Plain QtQuick: files are read by the owner, which hands over
 // `specs` (path: spec, or null when the file cannot be read) and saves what `commitHandler` gets.
 pragma ComponentBehavior: Bound
 import QtQuick
@@ -19,6 +19,8 @@ Item {
     property int columns: 12
     property bool scaleText: false         // text follows a widget's size (widgets.scaleText, D84)
     property var commitHandler: null       // a callback, as EditableGrid's: the whole list after each change
+    property var screens: []               // [{name, label}], the other screens a widget can be moved to
+    property var roomOn: null              // (screen name, item): the size it gets there, or null when it is full
     readonly property alias grid: desktopGrid
     // where the widgets are, in this item: outside edit mode the window takes the pointer only there (D86)
     readonly property var inputRects: desktopGrid.slotLayout.slots.filter(s => !!s)
@@ -28,12 +30,14 @@ Item {
         desktopGrid.selectedIndex = index;
     }
     readonly property bool addOpen: addMenu.open
+    readonly property bool moveOpen: moveMenu.open
 
     signal doneRequested()
     signal addListRequested()              // Add was opened: the owner lists the widget files again
     signal galleryRequested()              // "More widgets": the Widgets app
     signal editRequested(int index)        // a widget was right-clicked: edit, with it selected
     signal pressed()                        // a widget was pressed (the shell closes its popups, D90)
+    signal moveRequested(int index, string screen)   // move widget `index` to that screen; the owner saves both
 
     function commit(next) {
         if (commitHandler)
@@ -63,13 +67,17 @@ Item {
 
     focus: editMode
     Keys.onEscapePressed: {
-        if (addMenu.open)
+        if (addMenu.open || moveMenu.open) {
             addMenu.open = false;
-        else
+            moveMenu.open = false;
+        } else
             root.doneRequested();
     }
     Keys.onDeletePressed: root.removeSelected()
-    onEditModeChanged: if (!editMode) addMenu.open = false
+    onEditModeChanged: if (!editMode) {
+        addMenu.open = false;
+        moveMenu.open = false;
+    }
 
     // Over the whole screen while editing, so the widgets stand out from the wallpaper and a click on empty space
     // drops the selection.
@@ -82,6 +90,7 @@ Item {
             enabled: root.editMode
             onClicked: {
                 addMenu.open = false;
+                moveMenu.open = false;
                 desktopGrid.selectedIndex = -1;
             }
         }
@@ -135,6 +144,7 @@ Item {
                 iconName: "add"
                 text: "Add widget"
                 onClicked: {
+                    moveMenu.open = false;
                     addMenu.open = !addMenu.open;
                     if (addMenu.open)
                         root.addListRequested();
@@ -147,6 +157,20 @@ Item {
                 text: "Remove"
                 enabled: desktopGrid.selectedIndex >= 0
                 onClicked: root.removeSelected()
+            }
+            Button {
+                id: moveButton
+                objectName: "desktopMove"
+                type: "tonal"
+                iconName: "move_item"
+                text: "Move to"
+                visible: root.screens.length > 0
+                enabled: desktopGrid.selectedIndex >= 0
+                onEnabledChanged: if (!enabled) moveMenu.open = false
+                onClicked: {
+                    addMenu.open = false;
+                    moveMenu.open = !moveMenu.open;
+                }
             }
             Button {
                 objectName: "desktopDone"
@@ -179,6 +203,29 @@ Item {
                 const entry = root.available[Number(id)];
                 if (entry)
                     root.add(entry.path);
+            }
+        }
+    }
+
+    // The other screens, each greyed out when the selected widget has no room there.
+    PopupLoader {
+        id: moveMenu
+        z: 3
+        origin: Item.Bottom
+        x: bar.x + moveButton.x + buttons.x
+        y: bar.y - ((item as Item)?.height ?? 0) - Spacing.sm
+        sourceComponent: Menu {
+            readonly property var widget: root.items[desktopGrid.selectedIndex] ?? null
+            items: root.screens.map(s => ({ id: s.name, text: s.label, icon: "monitor",
+                                            enabled: !!widget && (!root.roomOn || root.roomOn(s.name, widget) !== null) }))
+            itemPrefix: "desktopMoveItem_"
+            onChosen: id => {
+                moveMenu.open = false;
+                const index = desktopGrid.selectedIndex;
+                if (index < 0)
+                    return;
+                desktopGrid.selectedIndex = -1;
+                root.moveRequested(index, id);
             }
         }
     }

@@ -1302,3 +1302,14 @@ maintainer's list, 2026-11-05):
   Ethernet is no radio, and the maintainer's machine is on Ethernet alone.
 - **Not verified.** The real switch against NetworkManager: trying it on the maintainer's machine would cut its only
   connection. Only the page with a fake backend is tested, and the real backend is loaded by the smoke test.
+
+**D112. Moving a desktop widget to another screen** (plan 4.4, 2026-11-05):
+- Each screen keeps its own grid (D81), so a widget cannot be dragged across: edit mode's bar gets "Move to" (shown
+  only with more than one screen, enabled with a widget selected), a menu of the other screens by model and output
+  name. The widget goes in the first free cells there, as Add places one, at its size or smaller (the target grid's
+  `fitNew`); a screen without room is greyed out. Its place on the old screen is not kept, and it keeps its id unless
+  the other screen has that id already. Both screens are saved in one state write (`Desktop.withMoved`).
+- IPC `widgets move ID SCREEN` does the same while editing (a screen's grid exists only while it shows widgets or
+  they are edited, D31), false when it has no room or there is no such screen.
+- Tested offscreen (the data, the button and menu), and in the real shell under headless sway with a second output
+  plugged in (`create_output`). Not verified on two real monitors.

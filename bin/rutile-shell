@@ -60,6 +60,7 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  edit | done       move, resize, add and remove the desktop's widgets (or right-click the desktop)
                  add PATH          put a widget file on the focused screen's desktop
                  remove ID         take one off
+                 move ID SCREEN    move one to another screen (an output name, as in layout), while editing
                  layout            what each screen has, with the ids
                  gallery [CATEGORY]  the Widgets app: templates (weather, daily-update, world-clock, finance,
                                    countdown, sports) and your widgets (yours)

@@ -48,6 +48,22 @@ function withoutIndex(items, index) {
     return items.filter(function (i, n) { return n !== index; });
 }
 
+// `all` with widget `index` of screen `from` moved to screen `to` at `size` (the room its grid found there), where
+// that grid finds free cells. It keeps its id unless `to` has one already; its place on `from` is not kept.
+function withMoved(all, from, index, to, size) {
+    var source = placed(all, from);
+    var item = source[index];
+    if (!item || from === to) return all;
+    var target = placed(all, to);
+    var moved = {};
+    for (var k in item)
+        if (k !== "col" && k !== "row") moved[k] = item[k];
+    if (target.some(function (i) { return i.id === item.id; })) moved.id = newId(target, item.path);
+    moved.w = size.w;
+    moved.h = size.h;
+    return withScreen(withScreen(all, from, withoutIndex(source, index)), to, target.concat([moved]));
+}
+
 // The widgets that can be added, from the scan's output: each file as \x1e path \x1f contents. A file that does
 // not parse is listed by its file name, so it can still be placed and fixed while it shows.
 function scanned(text) {

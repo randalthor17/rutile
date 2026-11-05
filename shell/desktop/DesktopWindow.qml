@@ -16,12 +16,15 @@ PanelWindow {
     property alias columns: content.columns
     property alias scaleText: content.scaleText
     property alias commitHandler: content.commitHandler
+    property alias screens: content.screens
+    property alias roomOn: content.roomOn
 
     signal doneRequested()
     signal addListRequested()
     signal galleryRequested()
     signal editRequested(int index)
     signal pressed()
+    signal moveRequested(int index, string screen)
 
     anchors.top: true
     anchors.bottom: true
@@ -59,5 +62,6 @@ PanelWindow {
         onGalleryRequested: root.galleryRequested()
         onEditRequested: index => root.editRequested(index)
         onPressed: root.pressed()
+        onMoveRequested: (index, screen) => root.moveRequested(index, screen)
     }
 }

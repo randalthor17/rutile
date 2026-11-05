@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Move a widget to another screen.** While editing desktop widgets with more than one screen, select a widget and
+  choose "Move to" and the screen. It goes in the first free space there, made smaller if it has to be; a screen
+  with no room is greyed out. Also `rutile-shell widgets move ID SCREEN`.
 - **Switch Ethernet off and on** in Settings > Connections, as Wi-Fi: each port has a switch, and shows when it has
   no cable. A port switched off stays off until you switch it on again. Airplane mode still leaves Ethernet alone,
   as other systems do: it is for radios.

@@ -55,6 +55,22 @@ TestCase {
         compare(JSON.stringify(added[2]), JSON.stringify({ id: "clock-3", path: "/y/clock.json", w: 3, h: 2 }));
         compare(Desktop.withoutIndex(added, 1).map(i => i.id).join(), "clock,clock-3");
     }
+    function test_moved_between_screens() {
+        const all = { "DP-1": [{ id: "card", path: "/w/card.json", w: 4, h: 3, col: 2, row: 1 },
+                               { id: "tall", path: "/w/tall.json", w: 2, h: 4, col: 8, row: 0 }],
+                      "HDMI-A-1": [{ id: "card", path: "/x/card.json", w: 4, h: 3, col: 0, row: 0 }] };
+        const one = Desktop.withMoved(all, "DP-1", 1, "HDMI-A-1", { w: 1, h: 3 });
+        compare(one["DP-1"].map(i => i.id).join(), "card", "gone from where it was");
+        compare(JSON.stringify(one["HDMI-A-1"][1]), JSON.stringify({ id: "tall", path: "/w/tall.json", w: 1, h: 3 }),
+                "on the other screen at the size there, its place left for the grid to find");
+        const two = Desktop.withMoved(one, "DP-1", 0, "HDMI-A-1", { w: 4, h: 3 });
+        compare(Object.keys(two).join(), "HDMI-A-1", "a screen left empty is left out");
+        compare(two["HDMI-A-1"].map(i => i.id).join(), "card,tall,card-2", "an id taken there gets a new one");
+        const fresh = Desktop.withMoved(all, "DP-1", 0, "eDP-1", { w: 4, h: 3 });
+        compare(fresh["eDP-1"].map(i => i.id).join(), "card", "a screen with nothing yet");
+        compare(Desktop.withMoved(all, "DP-1", 5, "eDP-1", { w: 1, h: 1 }), all, "no such widget: unchanged");
+        compare(Desktop.withMoved(all, "DP-1", 0, "DP-1", { w: 1, h: 1 }), all, "the same screen: unchanged");
+    }
     function test_scan_output() {
         const out = "\x1e/c/mine.json\x1f{\"version\":1,\"name\":\"Mine\"}\n" +
                     "\x1e/c/bad.json\x1f{not json" +
@@ -223,6 +239,45 @@ TestCase {
         d.items = full.slice(0, rows - 1);
         verify(d.add("/w/card.json"), "one free row: taken");
         compare(saved[rows - 1].h, 1, "shrunk to the room there is");
+    }
+
+    function test_move_to_another_screen() {
+        const d = make({ editMode: true, items: [{ id: "card", path: "/w/card.json", w: 4, h: 3, col: 0, row: 0 },
+                                                 { id: "tall", path: "/w/tall.json", w: 2, h: 4, col: 6, row: 0 }] });
+        const move = findChild(d, "desktopMove");
+        verify(!move.visible, "one screen: nothing to move to");
+        d.screens = [{ name: "HDMI-A-1", label: "Dell (HDMI-A-1)" }, { name: "DP-2", label: "DP-2" }];
+        d.roomOn = (name, item) => name === "DP-2" ? null : { w: item.w, h: item.h };
+        verify(move.visible);
+        waitForItemPolished(move.parent);       // the bar's row places it beside Remove
+        verify(!move.enabled, "nothing selected");
+        d.select(1);
+        verify(move.enabled);
+        const asked = signalSpy.createObject(root, { target: d, signalName: "moveRequested" });
+        mouseClick(move);
+        tryVerify(() => findChild(d, "desktopMoveItem_HDMI-A-1") !== null, 1000, "the other screens are listed");
+        verify(d.moveOpen);
+        const full = findChild(d, "desktopMoveItem_DP-2");
+        verify(!full.enabled, "a screen without room is greyed out");
+        mouseClick(findChild(d, "desktopMoveItem_HDMI-A-1"));
+        compare(asked.count, 1, "chosen: asked to move");
+        compare(asked.signalArguments[0][0], 1, "the selected widget");
+        compare(asked.signalArguments[0][1], "HDMI-A-1", "to that screen");
+        tryVerify(() => !d.moveOpen, 1000, "the menu closes");
+        compare(d.grid.selectedIndex, -1, "nothing selected after");
+        verify(!move.enabled);
+        d.select(0);
+        mouseClick(move);
+        tryVerify(() => d.moveOpen);
+        d.forceActiveFocus();
+        const done = signalSpy.createObject(root, { target: d, signalName: "doneRequested" });
+        keyClick(Qt.Key_Escape);
+        tryVerify(() => !d.moveOpen, 1000, "Escape closes the menu first");
+        compare(done.count, 0);
+        mouseClick(move);
+        tryVerify(() => d.moveOpen);
+        d.select(-1);
+        tryVerify(() => !d.moveOpen, 1000, "and losing the selection closes it");
     }
 
     Component { id: signalSpy; SignalSpy {} }
