@@ -1367,3 +1367,16 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
   also block a suspend asked for by hand.
 - For the session only (not in state.json): forgetting it on would keep the machine awake for days.
 - **Not verified:** that niri honours the inhibitor (the headless test checks only that the surface is held).
+
+**D117. Media controls** (plan 2.6, 2026-11-05):
+- A card in Quick Settings, under the sliders, while an MPRIS player exists (Quickshell's `Mpris`): cover (the
+  music icon without one), title, artist, the player's name, previous / play-pause / next, and a progress bar with
+  the position and length that seeks where the player allows (`canSeek`, `positionSupported`). It acts on the
+  player playing, else the first; with several, the player's name switches to the next (kept while that player
+  exists). MPRIS does not report the position as it moves, so the card calls `positionChanged()` each second while
+  it plays and shows (Quickshell's documented way). Out of the way in edit mode and on a tile's page.
+- IPC `media playPause|next|previous|state` on the same choice of player, for the media keys (niri binds them).
+- In Quick Settings, not the notification list: it is where volume already is, and the maintainer's list put it
+  first among the missing pieces.
+- **Not verified:** a real player. The card is tested with fake players offscreen; the headless shell has no player
+  on its private bus, so only the IPC's "none" answers are checked.

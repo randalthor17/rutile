@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd toast quicksettings tray shelf widgets"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd media toast quicksettings tray shelf widgets"
 
 usage() {
     cat <<'EOF'
@@ -100,6 +100,8 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  brightnessUp | brightnessDown    false without a backlight
                  display KIND      show the volume or brightness OSD
                  state
+  media          playPause | next | previous   the player playing (else the first); false without one
+                 state             the players, and what the current one plays
   toast          send TEXT ICON    a short message (ICON: a Material Symbols name, or ""); its id
                  state
   quicksettings  toggle | open | close

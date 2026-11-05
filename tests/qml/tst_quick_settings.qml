@@ -6,6 +6,7 @@ import qs.quicksettings
 import "../qs/services/BrightnessCtl.js" as Ctl
 import "../qs/power/PowerActions.js" as PowerActions
 import "../qs/quicksettings/Controls.js" as Controls
+import "../qs/quicksettings/Media.js" as Media
 import "../qs/quicksettings/Details.js" as Details
 import "../qs/services/NightLight.js" as NightLight
 
@@ -45,6 +46,7 @@ TestCase {
             property bool nightLightScheduled: false
             property bool powerSaver: false
             property bool keepAwake: false
+            property var mediaPlayers: []
             property int nightLightTemperature: 4000
             property string powerProfile: "balanced"
             property bool performanceAvailable: true
@@ -92,6 +94,106 @@ TestCase {
     Component {
         id: panelComp
         QuickSettingsPanel {}
+    }
+
+    // an MPRIS player as Quickshell's MprisPlayer has it
+    Component {
+        id: playerComp
+        QtObject {
+            property string dbusName: "org.mpris.MediaPlayer2.x"
+            property string identity: "Player"
+            property string trackTitle: ""
+            property string trackArtist: ""
+            property string trackArtUrl: ""
+            property bool isPlaying: false
+            property bool canGoNext: true
+            property bool canGoPrevious: true
+            property bool canTogglePlaying: true
+            property bool canSeek: true
+            property bool positionSupported: true
+            property bool lengthSupported: true
+            property real length: 0
+            property real position: 0
+            property var calls: []
+            property int asked: 0           // positionChanged() calls: the card asking for the position
+            onPositionChanged: asked++
+            function togglePlaying() { calls = calls.concat(["toggle"]); isPlaying = !isPlaying; }
+            function next() { calls = calls.concat(["next"]); }
+            function previous() { calls = calls.concat(["previous"]); }
+        }
+    }
+
+    function test_media_helpers() {
+        const a = { dbusName: "a", isPlaying: false }, b = { dbusName: "b", isPlaying: true }, c = { dbusName: "c", isPlaying: true };
+        compare(Media.current([], ""), null);
+        compare(Media.current(null, ""), null);
+        compare(Media.current([a], ""), a, "the only one, playing or not");
+        compare(Media.current([a, b, c], ""), b, "the first playing");
+        compare(Media.current([a, b, c], "c"), c, "the chosen one");
+        compare(Media.current([a, b], "gone"), b, "a chosen one that left: back to the playing one");
+        compare(Media.next([a, b, c], b), c);
+        compare(Media.next([a, b, c], c), a, "round");
+        compare(Media.next([], a), null);
+        compare(Media.time(0), "0:00");
+        compare(Media.time(65.9), "1:05");
+        compare(Media.time(3725), "1:02:05");
+        compare(Media.time(-1), "");
+        compare(Media.time(NaN), "");
+        compare(Media.subtitle({ trackArtist: "", identity: "Spotify" }), "Spotify");
+        compare(Media.subtitle({ trackArtist: "Low", identity: "Spotify" }), "Low");
+        compare(Media.subtitle(null), "");
+    }
+
+    function test_media_card() {
+        var t = make();
+        tryCompare(t.panel, "appearProgress", 1, 2000);
+        var card = findChild(t.panel, "qsMedia");
+        verify(!card.visible, "no player: no card");
+        const music = createTemporaryObject(playerComp, root, { dbusName: "org.mpris.MediaPlayer2.spotify", identity: "Spotify",
+                                                                trackTitle: "Words", trackArtist: "Low", length: 200, position: 50 });
+        const video = createTemporaryObject(playerComp, root, { dbusName: "org.mpris.MediaPlayer2.mpv", identity: "mpv",
+                                                                trackTitle: "Film", isPlaying: true, length: 0 });
+        t.backend.mediaPlayers = [music, video];
+        waitForRendering(t.panel);
+        verify(card.visible);
+        compare(findChild(card, "mediaTitle").text, "Film", "the one playing");
+        verify(!findChild(card, "mediaProgress").parent.visible, "no length: no progress");
+        compare(findChild(card, "mediaPlayPause").iconName, "pause");
+        compare(findChild(card, "mediaPlayer").text, "mpv  ›", "several players: its name switches");
+        laidOut(findChild(card, "mediaSwitch"));
+        mouseClick(findChild(card, "mediaSwitch"));
+        compare(findChild(card, "mediaTitle").text, "Words", "switched to the next player");
+        compare(findChild(card, "mediaArtist").text, "Low");
+        compare(findChild(card, "mediaPosition").text, "0:50");
+        compare(findChild(card, "mediaLength").text, "3:20");
+        compare(findChild(card, "mediaProgress").value, 0.25);
+        const play = findChild(card, "mediaPlayPause");
+        compare(play.iconName, "play_arrow");
+        laidOut(play);
+        mouseClick(play);
+        compare(music.calls, ["toggle"]);
+        compare(play.iconName, "pause");
+        mouseClick(findChild(card, "mediaNext"));
+        mouseClick(findChild(card, "mediaPrevious"));
+        compare(music.calls, ["toggle", "next", "previous"]);
+        compare(video.calls, [], "only the shown player");
+        // it asks for the position while it plays
+        const before = music.asked;
+        tryVerify(() => music.asked > before, 2500, "positionChanged() each second while playing");
+        // seeking where the player allows it
+        const bar = findChild(card, "mediaProgress");
+        laidOut(bar);
+        mouseClick(bar, bar.width / 2, bar.height / 2);
+        verify(Math.abs(music.position - 100) < 10, "seeked to the middle: " + music.position);
+        music.canSeek = false;
+        verify(!bar.enabled, "no seeking: the bar only shows");
+        music.canGoNext = false;
+        verify(!findChild(card, "mediaNext").enabled);
+        t.backend.mediaPlayers = [video];
+        compare(findChild(card, "mediaPlayer").text, "mpv", "one player: no switch");
+        verify(!findChild(card, "mediaSwitch").enabled);
+        t.panel.editMode = true;
+        verify(!card.visible, "out of the way while editing tiles");
     }
 
     function make(props) {

@@ -4,6 +4,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import qs.common
@@ -38,6 +39,7 @@ QtObject {
     readonly property bool darkTheme: Settings.value("style.mode") === "dark"
     readonly property bool dnd: NotificationService.dnd
     readonly property bool keepAwake: KeepAwakeService.on
+    readonly property var mediaPlayers: Mpris.players.values
     readonly property bool nightLightAvailable: NightLightService.available
     readonly property bool nightLight: NightLightService.on
     readonly property bool nightLightScheduled: NightLightService.schedule

@@ -576,6 +576,11 @@ def run_wayland_smoke(screenshot=None):
                     held = keep_awake()
                     ipc("keepAwake", "false", target="quicksettings")
                     time.sleep(0.3)
+                    # the media keys (D117): no player on this private bus, so nothing to control
+                    media = ipc("state", target="media")
+                    if media != json.dumps({"players": [], "current": None}, separators=(",", ":")) or \
+                            ipc("playPause", target="media") != "false":
+                        problems.append(f"ipc media without players: state {media!r}, playPause {ipc('playPause', target='media')!r}")
                     if held is not True or keep_awake() is not False:
                         problems.append(f"ipc quicksettings keepAwake: held {held}, then {keep_awake()}, expected True then False")
                     # the compositor keeps windows out of the reserved strip: sway's workspace starts below it

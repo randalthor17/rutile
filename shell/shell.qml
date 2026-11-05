@@ -10,6 +10,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Mpris
 import Quickshell.Services.Polkit
 import Quickshell.Services.SystemTray
 import Quickshell.Wayland
@@ -32,6 +33,7 @@ import qs.desktop
 import qs.widgetsapp
 import qs.widgethost
 import "quicksettings/Controls.js" as Controls
+import "quicksettings/Media.js" as Media
 import "calendar/Calendar.js" as CalendarModel
 import "lock/LockWallpaper.js" as LockWallpaper
 import "power/PowerActions.js" as PowerActions
@@ -280,6 +282,36 @@ ShellRoot {
         property: "speed"
         value: shell.speedFromEnv ? shell.envSpeed : Settings.value("motion.speed")
     }
+    // The media keys (D117): the player Quick Settings' card shows by default (the one playing, else the first).
+    // Bind them in niri: XF86AudioPlay { spawn "rutile-shell" "media" "playPause"; }
+    IpcHandler {
+        target: "media"
+        function playPause(): bool {
+            const p = Media.current(Mpris.players.values, "");
+            if (!p || !p.canTogglePlaying) return false;
+            p.togglePlaying();
+            return true;
+        }
+        function next(): bool {
+            const p = Media.current(Mpris.players.values, "");
+            if (!p || !p.canGoNext) return false;
+            p.next();
+            return true;
+        }
+        function previous(): bool {
+            const p = Media.current(Mpris.players.values, "");
+            if (!p || !p.canGoPrevious) return false;
+            p.previous();
+            return true;
+        }
+        function state(): string {
+            const p = Media.current(Mpris.players.values, "");
+            return JSON.stringify({ players: Mpris.players.values.map(x => x.identity),
+                                    current: p ? { identity: p.identity, title: p.trackTitle, artist: p.trackArtist,
+                                                   playing: p.isPlaying } : null });
+        }
+    }
+
     // Keep awake (D116): an idle inhibitor on a 1 px surface of its own on the overlay layer, which stays above a
     // fullscreen window (an inhibitor holds only while its surface shows), created only while on (D31).
     LazyLoader {

@@ -9,7 +9,8 @@ pragma ComponentBehavior: Bound
 //
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
-// darkTheme, dnd, nightLightAvailable, nightLight, nightLightScheduled, powerSaverAvailable, powerSaver, keepAwake; and setBrightness(v), setVolume(v), setMicMuted(b),
+// darkTheme, dnd, nightLightAvailable, nightLight, nightLightScheduled, powerSaverAvailable, powerSaver, keepAwake,
+// mediaPlayers (MPRIS players, D117); and setBrightness(v), setVolume(v), setMicMuted(b),
 // setWifiEnabled(b), setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), setDnd(b), setNightLight(b), setPowerSaver(b), setKeepAwake(b),
 // refresh(); for the detail pages (QuickSettingsDetails.qml): wifiNetworks, bluetoothDevices, connectWifi(name,
 // psk), disconnectWifi(name), forgetWifi(name), setWifiScanning(b), connectBluetooth(address),
@@ -18,6 +19,7 @@ import QtQuick
 import qs.common
 import qs.components
 import "Controls.js" as Controls
+import "Media.js" as Media
 
 Rectangle {
     id: root
@@ -32,6 +34,7 @@ Rectangle {
     property alias editMode: grid.editMode
     // A tile's detail page in place of the rest ("wifi", "bluetooth"; "" none): a dual-target tile's body opens it
     property string details: ""
+    property string mediaChosen: ""          // the player the card's switch went to (its dbusName); "" for the playing one
     readonly property var detailRows: (detailsLoader.item as QuickSettingsDetails)?.rows ?? []
     // Open and close motion: false shrinks and fades the panel away, then `hidden` fires.
     property bool shown: true
@@ -274,6 +277,18 @@ Rectangle {
                     onClicked: root.soundSettingsRequested()
                 }
             }
+        }
+
+        // ---- what is playing (D117) ----
+        MediaCard {
+            id: media
+            objectName: "qsMedia"
+            readonly property var players: root.backend?.mediaPlayers ?? []
+            visible: !root.editMode && root.details === "" && !!player
+            width: parent.width
+            player: Media.current(players, root.mediaChosen)
+            playerCount: players.length
+            onSwitchRequested: root.mediaChosen = Media.next(players, player)?.dbusName ?? ""
         }
 
         // ---- tiles ----
