@@ -588,7 +588,7 @@ TestCase {
         compare(p.results[0].subtitle, "Settings · Security & privacy");
         compare(p.results[0].symbol, SettingsPages.page("security").icon, "the page's icon");
         p.query = "bluetooth";
-        compare(p.results[0].id, "settings:bluetooth", "a page");
+        compare(p.results[0].id, "settings:connections", "a page: Bluetooth is on Connections (D110)");
         compare(p.results[0].key, "");
         p.query = "fire";
         compare(ids(p.results).split(",").slice(0, 2).join(), "firefox,firewall", "apps first");

@@ -76,6 +76,46 @@ TestCase {
         }
     }
 
+    // Connections (D110): the two pages' fakes under one backend, with Airplane mode over both
+    Component {
+        id: connectionsComp
+        QtObject {
+            property var network: null
+            property var bluetooth: null
+            readonly property bool radios: (network?.wifiAvailable ?? false) || (bluetooth?.available ?? false)
+            readonly property bool airplane: radios && !(network.wifiAvailable && network.wifiEnabled)
+                                             && !(bluetooth.available && bluetooth.enabled)
+            function setAirplane(on) {
+                network.setWifiEnabled(!on);
+                bluetooth.setEnabled(!on);
+            }
+        }
+    }
+    // scrolls the page so `item` shows (Connections is longer than the window), and gives it back
+    function inView(a, item) {
+        const f = findChild(a, "settingsPageFlick");
+        const y = item.mapToItem(f.contentItem, 0, 0).y;
+        f.contentY = Math.max(0, Math.min(f.contentHeight - f.height, y - f.height / 3));
+        waitForRendering(a);
+        return item;
+    }
+    function connections(page) {
+        const s = createTemporaryObject(storeComp, root);
+        const a = createTemporaryObject(appComp, root, { store: s });
+        const n = createTemporaryObject(networkComp, root), bt = createTemporaryObject(bluetoothComp, root);
+        a.backend = createTemporaryObject(connectionsComp, root, { network: n, bluetooth: bt });
+        verify(a.openPage(page ?? "connections"));
+        waitForRendering(a);
+        return { a: a, n: n, bt: bt, b: a.backend };
+    }
+    Component {
+        id: notificationsComp
+        QtObject {
+            property bool dnd: false
+            function setDnd(on) { dnd = on; }
+        }
+    }
+
     // niri's outputs as `niri msg -j outputs` gave them on the maintainer's machine (modes trimmed), and a
     // second, rotated and scaled, and a third that is off
     function niriOutputs() {
@@ -411,8 +451,9 @@ TestCase {
     }
 
     function test_network() {
-        const t = make("network", networkComp);
-        const a = t.a, b = t.b;
+        const t = connections("network");
+        compare(t.a.currentPage, "connections", "the old page's id opens Connections");
+        const a = t.a, b = t.n;
         verify(!findChild(a, "networkUnavailable").visible);
         verify(findChild(a, "networkWifiSwitch").checked);
         compare(findChild(a, "network_0").text, "Home");
@@ -478,19 +519,20 @@ TestCase {
     }
 
     function test_network_error_shows() {
-        const t = make("network", networkComp);
-        const n = t.b.networks.slice();
+        const t = connections();
+        const n = t.n.networks.slice();
         n[1] = Object.assign({}, n[1], { error: "Could not connect" });
         n[2] = Object.assign({}, n[2], { busy: true });
-        t.b.networks = n;
+        t.n.networks = n;
         waitForRendering(t.a);
         compare(findChild(t.a, "network_1").supportingText, "Could not connect");
         compare(findChild(t.a, "network_2").supportingText, "Connecting…");
     }
 
     function test_bluetooth() {
-        const t = make("bluetooth", bluetoothComp);
-        const a = t.a, b = t.b;
+        const t = connections("bluetooth");
+        compare(t.a.currentPage, "connections");
+        const a = t.a, b = t.bt;
         verify(findChild(a, "bluetoothSwitch").checked);
         const buds = findChild(a, "bluetooth_paired_0");
         compare(buds.text, "Buds");
@@ -505,11 +547,11 @@ TestCase {
         verify(!findChild(speaker, "bluetoothForget_0").visible, "not paired: nothing to forget");
         verify(!findChild(a, "bluetoothEmpty_paired").visible);
 
-        mouseClick(buds);
+        mouseClick(inView(a, buds));
         compare(b.calls, ["toggle:AA"]);
-        mouseClick(speaker);
+        mouseClick(inView(a, speaker));
         compare(b.calls[1], "toggle:CC");
-        mouseClick(findChild(findChild(a, "bluetooth_paired_1"), "bluetoothForget_1"));
+        mouseClick(inView(a, findChild(findChild(a, "bluetooth_paired_1"), "bluetoothForget_1")));
         compare(b.calls[2], "forget:BB");
 
         const d = b.devices.slice();
@@ -524,7 +566,7 @@ TestCase {
         compare(findChild(a, "bluetoothEmpty_available").text, "Looking for devices…");
         verify(findChild(a, "bluetoothEmpty_paired").visible);
 
-        mouseClick(findChild(a, "bluetoothSwitch"));
+        mouseClick(inView(a, findChild(a, "bluetoothSwitch")));
         compare(b.calls[b.calls.length - 1], "enabled:false");
         waitForRendering(a);
         verify(!findChild(a, "setting_bluetooth.paired"), "off: no lists");
@@ -534,21 +576,54 @@ TestCase {
         verify(!findChild(a, "bluetoothSwitchRow").enabled);
     }
 
+    function test_airplane_mode() {
+        const t = connections();
+        const sw = findChild(t.a, "airplaneSwitch");
+        verify(!sw.checked, "Wi-Fi and Bluetooth on");
+        mouseClick(sw);
+        compare(t.n.calls[t.n.calls.length - 1], "wifi:false");
+        compare(t.bt.calls[t.bt.calls.length - 1], "enabled:false");
+        verify(sw.checked, "both off: on");
+        verify(findChild(t.a, "networkWifiSwitch") && !findChild(t.a, "networkWifiSwitch").checked);
+        mouseClick(findChild(t.a, "setting_connections.airplane"));
+        compare(t.n.calls[t.n.calls.length - 1], "wifi:true", "the row toggles too");
+        verify(!sw.checked);
+        t.n.wifiAvailable = false;
+        t.bt.available = false;
+        verify(!sw.enabled, "no radios: nothing to switch");
+        compare(findChild(t.a, "setting_connections.airplane").supportingText, "No Wi-Fi or Bluetooth");
+    }
+
+    function test_notifications_do_not_disturb() {
+        const t = make("notifications", notificationsComp);
+        verify(findChild(t.a, "setting_notifications.sound"), "the page's settings stay");
+        const sw = findChild(t.a, "dndSwitch");
+        verify(!sw.checked);
+        mouseClick(sw);
+        verify(t.b.dnd);
+        verify(sw.checked);
+        mouseClick(findChild(t.a, "setting_notifications.dnd"));
+        verify(!t.b.dnd, "the row toggles too");
+        const keys = Model.search("do not disturb", Pages.pages, Schema.schema, Pages.hints).map(h => h.page + "/" + h.key);
+        compare(keys[0], "notifications/notifications.dnd");
+    }
+
     function test_search_finds_them() {
         const keys = q => Model.search(q, Pages.pages, Schema.schema, Pages.hints).map(h => h.page + "/" + h.key);
-        compare(keys("wi-fi")[0], "network/network.wifi");
-        verify(keys("password").indexOf("network/network.wifi") >= 0, "beside the polkit agent's passwords");
-        compare(keys("ethernet")[0], "network/network.ethernet");
+        compare(keys("wi-fi")[0], "connections/network.wifi");
+        verify(keys("password").indexOf("connections/network.wifi") >= 0, "beside the polkit agent's passwords");
+        compare(keys("ethernet")[0], "connections/network.ethernet");
+        compare(keys("airplane")[0], "connections/connections.airplane");
         compare(keys("resolution")[0], "display/display.outputs");
         compare(keys("monitor")[0], "display/");
         compare(keys("power saver")[0], "power/power.mode");
         compare(keys("battery")[0], "power/power.battery");
         compare(keys("default browser")[0], "apps/apps.defaults");
         compare(keys("pinned apps")[0], "shelf/shelf.pins");
-        compare(keys("bluetooth")[0], "bluetooth/");
-        compare(keys("add device")[0], "bluetooth/bluetooth.available");
-        verify(keys("pair").slice(0, 2).indexOf("bluetooth/bluetooth.available") >= 0);
-        const t = make("wallpaper", bluetoothComp);
+        verify(keys("bluetooth").slice(0, 2).indexOf("connections/") >= 0, keys("bluetooth").slice(0, 3));
+        compare(keys("add device")[0], "connections/bluetooth.available");
+        verify(keys("pair").slice(0, 2).indexOf("connections/bluetooth.available") >= 0);
+        const t = connections("wallpaper");
         verify(!findChild(t.a, "bluetoothSwitch"), "views load only on their page");
         t.a.openPage("bluetooth", "bluetooth.paired");
         waitForRendering(t.a);

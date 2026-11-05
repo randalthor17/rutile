@@ -5,7 +5,8 @@
 // Nix and the store need). Hints: `kind` (path, list), `choices` (values offered in a menu) with `label(value)`,
 // `step` for a slider, `aliases` for search, `advanced` (shown under the page's Advanced section), `filters` for a
 // path's file chooser ("Name (*.ext ...)"), `requires` (another setting that must be on for this one to apply),
-// `swatches` (the colors a color setting offers), `placeholder` (a typed setting's example, D79). A key that is no setting can be an action: its hint has
+// `swatches` (the colors a color setting offers), `placeholder` (a typed setting's example, D79), `title` (instead of
+// the schema's), and `on`/`off` with `kind: "switch"` for a switch over a setting of two values (D110). A key that is no setting can be an action: its hint has
 // `kind: "action"`, a `title`, a `description` and the `button`'s text; the app asks for it (actionRequested).
 // A page of its own making (plan 5.2) names its `view` (a QML file under pages/, loaded only while the page is
 // open, after its sections) and may name a `backend` (the Quickshell services it shows, which the window loads
@@ -25,23 +26,19 @@ var pages = [
         ]
     },
     {
-        id: "network", title: "Network", icon: "wifi", tone: "primaryContainer",
-        summary: "Wi-Fi, Ethernet", aliases: ["internet", "networkmanager"],
+        // Network and Bluetooth were pages of their own; their ids still open this one (`moved`, D110)
+        id: "connections", title: "Connections", icon: "wifi", tone: "primaryContainer",
+        summary: "Wi-Fi, Ethernet, Bluetooth, Airplane mode",
+        aliases: ["network", "internet", "networkmanager", "bluetooth", "bluez", "radios"],
         sections: [],
-        view: "pages/NetworkPage.qml", backend: "pages/NetworkBackend.qml",
+        view: "pages/ConnectionsPage.qml", backend: "pages/ConnectionsBackend.qml",
         entries: [
+            { key: "connections.airplane", title: "Airplane mode", description: "Wi-Fi and Bluetooth off at once",
+              aliases: ["flight mode", "offline", "radios"] },
             { key: "network.wifi", title: "Wi-Fi", description: "Wireless networks, and their passwords",
               aliases: ["wireless", "wlan", "password", "hotspot"] },
             { key: "network.ethernet", title: "Ethernet", description: "Wired connections",
-              aliases: ["wired", "cable", "lan"] }
-        ]
-    },
-    {
-        id: "bluetooth", title: "Bluetooth", icon: "bluetooth", tone: "secondaryContainer",
-        summary: "Devices", aliases: ["bluez"],
-        sections: [],
-        view: "pages/BluetoothPage.qml", backend: "pages/BluetoothBackend.qml",
-        entries: [
+              aliases: ["wired", "cable", "lan"] },
             { key: "bluetooth.paired", title: "Paired devices", description: "Connect, disconnect or forget a device",
               aliases: ["earbuds", "mouse", "keyboard", "controller", "connect"] },
             { key: "bluetooth.available", title: "Available devices", description: "Pair a new device",
@@ -112,8 +109,13 @@ var pages = [
     },
     {
         id: "notifications", title: "Notifications", icon: "notifications", tone: "errorContainer",
-        summary: "Sounds", aliases: ["alerts", "popups"],
-        sections: [{ title: "", keys: ["notifications.sound"] }]
+        summary: "Do not disturb, sounds", aliases: ["alerts", "popups"],
+        sections: [{ title: "", keys: ["notifications.sound"] }],
+        view: "pages/NotificationsPage.qml", backend: "pages/NotificationsBackend.qml",
+        entries: [
+            { key: "notifications.dnd", title: "Do not disturb", description: "No popups, except urgent ones",
+              aliases: ["dnd", "silence", "quiet", "focus", "mute notifications"] }
+        ]
     },
     {
         id: "calendar", title: "Calendar", icon: "calendar_month", tone: "secondaryContainer",
@@ -179,7 +181,8 @@ var hints = {
         aliases: ["new event", "edit event", "gnome calendar"]
     },
     "calendar.feeds": { aliases: ["ical", "webcal", "secret address", "icloud", "proton"] },
-    "style.mode": { label: v => v === "light" ? "Light" : "Dark", aliases: ["dark mode", "light mode", "night", "theme"] },
+    "style.mode": { kind: "switch", on: "dark", off: "light", title: "Dark theme",
+                    label: v => v === "light" ? "Light" : "Dark", aliases: ["dark mode", "light mode", "night", "theme", "mode"] },
     "style.scheme": {
         label: v => ({ "scheme-tonal-spot": "Tonal spot", "scheme-content": "Content", "scheme-expressive": "Expressive",
                        "scheme-fidelity": "Fidelity", "scheme-fruit-salad": "Fruit salad", "scheme-monochrome": "Monochrome",
@@ -273,6 +276,10 @@ var hints = {
     }
 };
 
+// pages that were merged into another, by their old id
+var moved = { network: "connections", bluetooth: "connections" };
+
 function page(id) {
-    return pages.find(p => p.id === id) ?? null;
+    const want = moved[id] ?? id;
+    return pages.find(p => p.id === want) ?? null;
 }

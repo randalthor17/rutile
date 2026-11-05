@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Settings: a Connections page.** Wi-Fi and Ethernet, Bluetooth and Airplane mode are on one page now, in place
+  of the separate Network and Bluetooth pages. Notifications has the Do not disturb switch, and Wallpaper & style
+  shows the theme as a "Dark theme" switch.
 - **A Microphone page in Quick Settings**: the input level, the microphones to choose from, and a link to Sound
   settings. Small tiles with a page (the Microphone tile is one) still switch on a click; right-click or long-press
   them for the page.

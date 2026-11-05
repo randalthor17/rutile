@@ -320,7 +320,7 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   lists its pages and settings as results; a desktop file (`rutile-settings.desktop`) opens it from any app
   launcher. A setting opened from a search gets a ring (M3's focus indicator) that fades. Choices open a dialog as
   Googlebook's (D92, the Dialog of 1.5g): pick, then Done; Cancel, Escape or the scrim leave it.
-- [x] **5.2** Pages: Network, Bluetooth, Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
+- [x] **5.2** Pages: Network, Bluetooth (one Connections page with Airplane mode since D110), Display (niri outputs), Sound, Wallpaper and style (seed color, scheme),
   Widgets, Shelf, Apps, Power, Input, About. Wallpaper & style done (D65): mode (dark or light), color style,
   contrast, the seed color (a swatch row, the first custom row); the palette renders again on any of them, and
   everything that takes the shell's colors follows (checked by screenshots in light mode). Sound done (D67): the

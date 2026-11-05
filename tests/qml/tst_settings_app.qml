@@ -76,6 +76,20 @@ TestCase {
         waitForRendering(a);                // Columns lay out at polish, before the first frame
         return { s: s, a: a };
     }
+    function test_switch_over_two_values() {
+        // Dark theme (D110): style.mode's "dark" and "light" as a switch
+        const t = make();
+        open(t, "wallpaper");
+        const row = findChild(t.a, "setting_style.mode");
+        compare(row.item.text, "Dark theme");
+        const sw = findChild(row, "settingSwitch_style.mode");
+        verify(sw.checked, "dark");
+        mouseClick(sw);
+        compare(t.s.sets[t.s.sets.length - 1], ["style.mode", "light"]);
+        verify(!sw.checked);
+        mouseClick(row, 40, row.height / 2);
+        compare(t.s.sets[t.s.sets.length - 1], ["style.mode", "dark"], "a click on the row toggles too");
+    }
     function open(t, id) {
         verify(t.a.openPage(id));
         waitForRendering(t.a);
@@ -376,7 +390,9 @@ TestCase {
         const rows = {};
         for (const s of Model.sections(Pages.page("wallpaper"), Schema.schema, Pages.hints))
             for (const r of s.rows) rows[r.key] = r;
-        compare(rows["style.mode"].kind, "choice");
+        compare(rows["style.mode"].kind, "switch", "Dark theme is a switch (D110)");
+        compare(rows["style.mode"].title, "Dark theme");
+        compare([rows["style.mode"].on, rows["style.mode"].off].join(), "dark,light");
         compare(Model.valueText("style.mode", "light", Pages.hints), "Light");
         compare(Model.valueText("style.scheme", "scheme-fruit-salad", Pages.hints), "Fruit salad");
         compare(rows["style.scheme"].choices.length, 9);
@@ -612,7 +628,7 @@ TestCase {
         verify(t.a.narrow);
         verify(findChild(t.a, "settingsPages").visible, "the list first");
         verify(!findChild(t.a, "settingsPage_wallpaper").selected, "nothing marked in a list alone");
-        mouseClick(findChild(t.a, "settingsPage_network"));
+        mouseClick(findChild(t.a, "settingsPage_connections"));
         verify(t.a.pageShown);
         waitForRendering(t.a);
         verify(!findChild(t.a, "settingsPages").visible, "then the page alone");
@@ -620,12 +636,12 @@ TestCase {
         verify(back.visible);
         mouseClick(back);
         verify(!t.a.pageShown);
-        mouseClick(findChild(t.a, "settingsPage_network"));
+        mouseClick(findChild(t.a, "settingsPage_connections"));
         verify(t.a.pageShown);
         t.a.search.text = "dock";
         verify(!t.a.pageShown, "a search shows the results, not the page");
         t.a.search.text = "";
-        mouseClick(findChild(t.a, "settingsPage_network"));
+        mouseClick(findChild(t.a, "settingsPage_connections"));
         t.a.forceActiveFocus();
         keyClick(Qt.Key_F, Qt.ControlModifier);
         verify(!t.a.pageShown && t.a.search.activeFocus, "Ctrl+F brings the search back");

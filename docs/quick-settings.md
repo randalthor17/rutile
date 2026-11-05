@@ -65,7 +65,7 @@ over the blurred desktop (namespace `rutile-polkit`, so the layer rule above nee
 `ipc call polkit state` (never the password) and `cancel`.
 
 The gear at the panel's top left opens the settings app (`shell/settingsapp/`, D50) and closes the panel.
-`ipc call settings open <page>` (wallpaper, network, bluetooth, display, sound, power, input, windows, apps, notifications, calendar, security, shelf, widgets, accessibility, about; "" for the one
+`ipc call settings open <page>` (wallpaper, connections (network and bluetooth open it too, D110), display, sound, power, input, windows, apps, notifications, calendar, security, shelf, widgets, accessibility, about; "" for the one
 showing), `openSetting <page> <key>` (the page with that setting ringed, the ring fading), `close`, `toggle`,
 `isOpen`, `search <text>` (as typing would), `state`. There is one Settings window: opened again from anywhere
 (Quick Settings, the launcher, its desktop file `rutile-settings.desktop`, which runs `rutile-shell settings`,

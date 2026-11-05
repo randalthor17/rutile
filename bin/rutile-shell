@@ -44,7 +44,8 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
                  choose ID         lock, suspend, logout, reboot or poweroff, as a click in the open menu
                  state
   settings       open PAGE         open the Settings app on a page ("" keeps the current one): wallpaper,
-                                   network, bluetooth, display, sound, power, input, windows, apps,
+                                   connections (network and bluetooth open it too), display, sound, power,
+                                   input, windows, apps,
                                    notifications, calendar, security, shelf, widgets, accessibility, about; open already, it is focused.
                                    "rutile-shell settings" alone opens it as it was (its desktop file)
                  openSetting PAGE KEY   the same, with one setting ringed (e.g. security lock.idleMinutes)

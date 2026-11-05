@@ -744,6 +744,12 @@ def run_wayland_smoke(screenshot=None):
                     st = settings_state()
                     if (st.get("results") or [""])[0] != "security/lock.idleMinutes":
                         problems.append(f"ipc settings search idle: results {st.get('results')}")
+                    # Connections and Notifications (D110) load their real backends; the old ids open Connections
+                    for asked, page in (("network", "connections"), ("notifications", "notifications")):
+                        ok = ipc("open", asked, target="settings")
+                        st = settings_state()
+                        if ok != "true" or st.get("page") != page:
+                            problems.append(f"ipc settings open {asked}: {ok}, state {st}")
                     # opened again (no niri here to focus it): the same window, on the page asked, the setting ringed
                     if ipc("openSetting", "accessibility", "motion.speed", target="settings") != "true":
                         problems.append("ipc settings openSetting: refused")

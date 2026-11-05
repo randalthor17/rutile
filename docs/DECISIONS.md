@@ -1281,3 +1281,14 @@ greeter):
   so one could not be switched at all: Microphone, icon-only by default, would have lost its mute. Now an icon-only
   tile toggles on a click, even when dual-target, and opens its page on a long press or a right click, as Android's
   small tiles do. Wide tiles are unchanged.
+
+**D110. Settings: Connections; Do not disturb under Notifications; Dark theme as a switch** (plan 5.2, the
+maintainer's list, 2026-11-05):
+- **Connections.** The Network (Wi-Fi, Ethernet) and Bluetooth pages (D68) became one page, under an Airplane mode
+  switch that works as Quick Settings' tile (on while every radio there is is off). The two views and backends are
+  kept and loaded inside it by their files (Quickshell resolves a folder's types only where the root imports that
+  folder, LESSONS). `network` and `bluetooth` still open it (`Pages.moved`), so links and `settings open` keep working.
+- **Do not disturb** is shell state (state.json), not a setting, so Notifications has a small view of its own for it,
+  under its sound setting.
+- **Dark theme.** `style.mode` ("dark" or "light") shows as a switch titled Dark theme: a hint's `on`/`off` give a
+  switch over a setting of two values, and a hint's `title` replaces the schema's. The schema is unchanged.

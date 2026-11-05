@@ -43,9 +43,10 @@ Rectangle {
 
     // Opens a page (and marks one of its settings); false for an unknown page.
     function openPage(id, key) {
-        if (!Pages.page(id)) return false;
+        const found = Pages.page(id);
+        if (!found) return false;
         menuKey = "";
-        currentPage = id;
+        currentPage = found.id;
         highlightKey = key ?? "";
         searchInput.text = "";
         pageShown = true;

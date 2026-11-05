@@ -56,7 +56,7 @@ Item {
         enabled: !root.managed && root.applies
 
         onClicked: {
-            if (root.row.kind === "switch") root.store.set(root.row.key, !root.current);
+            if (root.row.kind === "switch") root.store.set(root.row.key, root.current === root.row.on ? root.row.off : root.row.on);
             else if (root.row.kind === "choice") root.toggleMenu();
             else if (root.row.kind === "path") root.pickPath();
             else if (root.row.kind === "action") root.runAction();
@@ -69,9 +69,9 @@ Item {
             sourceComponent: Switch {
                 objectName: "settingSwitch_" + root.row.key
                 controlled: true
-                checked: root.current === true
+                checked: root.current === root.row.on
                 enabled: !root.managed && root.applies
-                onToggled: want => root.store.set(root.row.key, want)
+                onToggled: want => root.store.set(root.row.key, want ? root.row.on : root.row.off)
             }
         }
         Loader {

@@ -31,7 +31,7 @@ function sections(page, schema, hints) {
             const row = {
                 key: key,
                 kind: kind(leaf, hint),
-                title: leaf.title ?? key,
+                title: hint.title ?? leaf.title ?? key,
                 description: leaf.description ?? "",
                 advanced: !!hint.advanced,
                 minimum: leaf.minimum,
@@ -44,7 +44,10 @@ function sections(page, schema, hints) {
                 placeholder: hint.placeholder ?? "",
                 button: hint.button ?? "",
                 when: hint.when ?? "",
-                requires: hint.requires ?? ""
+                requires: hint.requires ?? "",
+                // a switch over a setting of two values (style.mode's "dark" and "light"): the value it is on at
+                on: hint.on ?? true,
+                off: hint.off ?? false
             };
             (row.advanced ? advanced : rows).push(row);
         }

@@ -32,7 +32,7 @@ The shell runs as a whole desktop on niri; `docs/PLAN.md` has each part's state 
 | Tokens, palette (matugen), QML singletons, fonts | done (Phase 0 and 1) |
 | Components (`shell/components/`): buttons, icon buttons, switch, slider, progress, tile, chip, list item, ShapeMorph, EditableGrid, menu, text field, dialog, FAB, card, title bar | done, in the gallery; NavRail collapsed only (D103); GeminiGlow left (1.5) |
 | Top bar: clock with its calendar (D93 to D95), status pill, notification bell, app indicators | working; tested headless and in nested niri |
-| Quick Settings: saved tiles, Wi-Fi and Bluetooth pages, Night light (wlsunset), Power saver, Do not disturb | working; real Wi-Fi, Bluetooth and Night light not tried |
+| Quick Settings: saved tiles, Wi-Fi, Bluetooth, Night light, Power saver and Microphone pages, Do not disturb | working; real Wi-Fi, Bluetooth and Night light not tried |
 | Shelf, launcher, notifications, OSD, toasts, lock screen, power menu, polkit agent, wallpaper | working (Phase 2) |
 | Settings app (D50, D92), Widgets app, desktop widgets and their renderer and data sources | working (Phase 4, 5) |
 | Windows like Googlebook's (niri window rule, D88) | working, off by default |
