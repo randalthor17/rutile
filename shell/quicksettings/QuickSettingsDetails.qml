@@ -6,7 +6,8 @@ pragma ComponentBehavior: Bound
 // password (none for an open one) and joins it (D100). "bluetooth" lists the adapter's devices: a click connects (pairing first) or disconnects. The page asks the
 // backend to scan or discover while it is shown. "nightLight" (D108) has the warmth (saved once it rests: every
 // change restarts wlsunset) and Sunset to sunrise, and opens Settings > Display for the rest; "powerSaver" lists the power
-// modes to choose from. Plain QtQuick, through the panel's backend.
+// modes to choose from. "mic" (D109) has the input level and the input devices to choose from, and opens Settings >
+// Sound. Plain QtQuick, through the panel's backend.
 import QtQuick
 import qs.common
 import qs.components
@@ -17,7 +18,7 @@ Column {
     id: root
 
     required property var backend
-    property string page: ""                // "wifi" | "bluetooth" | "nightLight" | "powerSaver"
+    property string page: ""                // "wifi" | "bluetooth" | "nightLight" | "powerSaver" | "mic"
     property string askingFor: ""           // the network whose password is being typed
     property bool askingHidden: false       // a hidden network's name and password are being typed
     readonly property var live: Controls.state(page, backend)
@@ -259,6 +260,58 @@ Column {
             iconName: "settings"
             text: "Display settings"
             onClicked: root.settingsPageRequested("display")
+        }
+    }
+
+    // ---- the microphone (D109) ----
+    Column {
+        objectName: "qsMicPage"
+        visible: root.page === "mic"
+        width: parent.width
+        spacing: Spacing.sm
+        Slider {
+            id: micLevel
+            objectName: "qsMicLevel"
+            width: parent.width
+            size: "m"
+            endIcon: root.live.active ? "mic" : "mic_off"
+            enabled: root.live.available
+            onMoved: v => root.backend.setMicVolume(v)
+            Binding on value {
+                value: root.backend?.micMuted ? 0 : (root.backend?.micVolume ?? 0)
+                when: !micLevel.pressed
+                restoreMode: Binding.RestoreNone
+            }
+        }
+        Column {
+            width: parent.width
+            spacing: ControlSpec.listSpec.segmentedGap
+            Repeater {
+                model: root.page === "mic" ? (root.backend?.micInputs ?? []) : []
+                delegate: ListItem {
+                    id: input
+                    required property var modelData
+                    required property int index
+                    objectName: "qsMicInput_" + modelData.id
+                    width: parent?.width ?? 0
+                    readonly property int count: root.backend?.micInputs.length ?? 0
+                    position: input.count === 1 ? "single" : input.index === 0 ? "first"
+                            : input.index === input.count - 1 ? "last" : "middle"
+                    tone: Colors.surfaceContainerHigh
+                    selected: (root.backend?.micInput ?? -1) === modelData.id
+                    iconName: "mic"
+                    text: modelData.name
+                    onClicked: root.backend.setMicInput(modelData.id)
+                }
+            }
+        }
+        Button {
+            objectName: "qsMicSettings"
+            type: "text"
+            size: "xs"
+            iconName: "settings"
+            text: "Sound settings"
+            onClicked: root.settingsPageRequested("sound")
         }
     }
 

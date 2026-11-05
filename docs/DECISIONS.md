@@ -1272,3 +1272,12 @@ greeter):
 - **The slider's ticks.** A stepped slider drew a dot at every stop: 35 here, and about 1 MiB for 100 steps.
   `Slider.ticks: false` leaves them out (80 KiB), still snapping to the steps.
 - **Not done.** Pages for Microphone (input devices), Dark theme, Airplane mode and Do not disturb.
+
+**D109. The Microphone page, and small tiles with a page** (plan 2.6, 2026-11-05):
+- **Page.** The input level (the default source's volume, empty while muted), the input devices as Settings > Sound
+  lists them (PipeWire's audio nodes that are neither streams nor sinks), the one in use marked; a click sets
+  `preferredDefaultAudioSource`, the same hint Settings > Sound gives. "Sound settings" opens that page.
+- **Small tiles.** A dual-target tile opened its page from anywhere but its icon, and an icon-only tile is all icon,
+  so one could not be switched at all: Microphone, icon-only by default, would have lost its mute. Now an icon-only
+  tile toggles on a click, even when dual-target, and opens its page on a long press or a right click, as Android's
+  small tiles do. Wide tiles are unchanged.

@@ -126,7 +126,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   chips to add the tiles not shown, Do not disturb and Power saver tiles, Wi-Fi and Bluetooth detail pages (networks
   with a password field, devices with pairing; scanning while open; `ipc call quicksettings details`), the sound
   button opening Settings > Sound; a press on the wallpaper, widgets, shelf or clock closes it (D90). Night light and
-  Power saver pages (D108): the warmth and Sunset to sunrise, a link to Settings > Display; the power modes. Not done:
+  Power saver pages (D108): the warmth and Sunset to sunrise, a link to Settings > Display; the power modes.
+  Microphone page (D109): the input level and devices; a small dual tile toggles on click and opens its page on a
+  long press or right click. Not done:
   detail pages for the other
   tiles. Forgetting a saved network: done. Hidden networks (D100, v0.11.0): by name and password through nmcli, checked in a
   NixOS VM with a simulated radio (`checks.x86_64-linux.hidden-wifi`). Night light (D91): wlsunset,

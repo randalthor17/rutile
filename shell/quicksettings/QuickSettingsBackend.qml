@@ -4,6 +4,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import qs.common
 import qs.services
@@ -16,6 +17,12 @@ QtObject {
     readonly property bool muted: AudioService.muted
     readonly property bool micAvailable: AudioService.micAvailable
     readonly property bool micMuted: AudioService.micMuted
+    // the Microphone page (D109): the input level and the input devices, as Settings > Sound lists them
+    readonly property real micVolume: AudioService.micVolume
+    readonly property var micInputs: Pipewire.nodes.values
+        .filter(n => n && n.audio && !n.isStream && !n.isSink)
+        .map(n => ({ id: n.id, name: n.description || n.nickname || n.name }))
+    readonly property int micInput: AudioService.source?.id ?? -1
     readonly property bool wifiAvailable: NetworkService.wifiAvailable
     readonly property bool wifiEnabled: NetworkService.wifiEnabled
     readonly property string wifiName: NetworkService.wifiName
@@ -54,6 +61,12 @@ QtObject {
     function setBrightness(v) { BrightnessService.set(v); }
     function setVolume(v) { AudioService.setVolume(v); }
     function setMicMuted(m) { AudioService.setMicMuted(m); }
+    function setMicVolume(v) { AudioService.setMicVolume(v); }
+    // a hint PipeWire follows when it can, as Settings > Sound's (the page shows the default in use)
+    function setMicInput(id) {
+        const n = Pipewire.nodes.values.find(x => x && x.id === id && x.audio && !x.isStream && !x.isSink);
+        if (n) Pipewire.preferredDefaultAudioSource = n;
+    }
     function setWifiEnabled(on) { NetworkService.setWifiEnabled(on); }
     function setBluetoothEnabled(on) { BluetoothService.setEnabled(on); }
     function setDarkTheme(on) { Settings.set("style.mode", on ? "dark" : "light"); }

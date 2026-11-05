@@ -1,7 +1,9 @@
 // A Quick Settings tile after Android 16's (SystemUI, Apache-2.0): 72 px tall. A large tile has a
 // 56 px icon target, a label and a secondary label; `iconOnly` makes a square small tile. Inactive
 // tiles are pills; active ones animate to 24 px corners (icon target 16 px). A `dualTarget` tile
-// toggles from its icon and opens details from the rest (`clicked`); otherwise a click toggles.
+// toggles from its icon and opens details from the rest (`clicked`); otherwise a click toggles. An icon-only tile is
+// all icon, so a click toggles even when it is dual-target, and a long press or a right click opens its details, as
+// Android's small tiles do (D109).
 // Values and per-state colors come from ControlSpec.tileSpec; the Googlebook references show the same tile
 // (D32). Any width or height works: content stays vertically centered. Under LayoutMirroring (a right-to-left
 // locale) the icon sits on the right and the labels read from the right.
@@ -57,8 +59,12 @@ Item {
     }
     function body() {
         if (!enabled || !available) return;
-        if (dualTarget) clicked();
+        if (dualTarget && !iconOnly) clicked();
         else toggle();
+    }
+    // a small dual-target tile's details
+    function details() {
+        if (enabled && available && dualTarget) clicked();
     }
 
     Keys.onPressed: event => {
@@ -84,6 +90,11 @@ Item {
         stateColor: Colors[root.colors.labelColor]
         focused: root.activeFocus
         onClicked: root.body()
+    }
+    Connections {
+        target: bodyLayer.input
+        enabled: root.iconOnly && root.dualTarget
+        function onPressAndHold() { root.details(); }
     }
 
     // Large tile: the icon target, then the labels.
@@ -148,5 +159,14 @@ Item {
             color: Colors[root.colors.secondaryLabelColor]
             font: Type.font(Type[root.spec.secondaryLabelFont])
         }
+    }
+
+    // a small dual-target tile's right click (last, over the rest; it takes only the right button)
+    MouseArea {
+        objectName: "tileMenuArea"
+        anchors.fill: parent
+        enabled: root.iconOnly && root.dualTarget
+        acceptedButtons: Qt.RightButton
+        onClicked: root.details()
     }
 }

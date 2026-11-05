@@ -9,7 +9,7 @@ var catalog = {
             keywords: ["wireless", "wlan", "network", "internet"] },
     bluetooth: { text: "Bluetooth", icon: "bluetooth", offIcon: "bluetooth_disabled", dualTarget: true,
                  keywords: ["wireless", "devices", "headphones"] },
-    mic: { text: "Microphone", icon: "mic", offIcon: "mic_off", keywords: ["mute", "input", "audio"] },
+    mic: { text: "Microphone", icon: "mic", offIcon: "mic_off", dualTarget: true, keywords: ["mute", "input", "audio"] },
     dark: { text: "Dark theme", icon: "contrast", offIcon: "contrast",
             keywords: ["dark mode", "light", "night", "appearance"] },
     airplane: { text: "Airplane mode", icon: "flight", offIcon: "flight", keywords: ["flight mode", "offline", "radios"] },

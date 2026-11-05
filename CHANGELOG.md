@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **A Microphone page in Quick Settings**: the input level, the microphones to choose from, and a link to Sound
+  settings. Small tiles with a page (the Microphone tile is one) still switch on a click; right-click or long-press
+  them for the page.
 - **Night light and Power saver pages in Quick Settings.** Click the Night light tile's name for its warmth and
   "Sunset to sunrise", with a link to Display settings; click Power saver's for Performance, Balanced and Power
   saver. The tiles' icons still switch them on and off.

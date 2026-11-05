@@ -28,6 +28,9 @@ TestCase {
             property bool muted: false
             property bool micAvailable: true
             property bool micMuted: false
+            property real micVolume: 0.5
+            property var micInputs: [{ id: 41, name: "Built-in microphone" }, { id: 42, name: "Headset" }]
+            property int micInput: 41
             property bool wifiAvailable: true
             property bool wifiEnabled: true
             property string wifiName: "Home"
@@ -59,6 +62,8 @@ TestCase {
             function setBrightness(v) { log("brightness " + v.toFixed(2)); }
             function setVolume(v) { log("volume " + v.toFixed(2)); }
             function setMicMuted(m) { log("micMuted " + m); }
+            function setMicVolume(v) { log("micVolume " + v.toFixed(2)); }
+            function setMicInput(id) { log("micInput " + id); micInput = id; }
             function setWifiEnabled(b) { log("wifi " + b); }
             function setBluetoothEnabled(b) { log("bluetooth " + b); }
             function setDarkTheme(b) { log("dark " + b); }
@@ -516,6 +521,48 @@ TestCase {
         clickItem(findChild(t.panel, "qsNightLightSettings"));
         compare(asked.count, 1);
         compare(asked.signalArguments[0][0], "display", "the rest is in Settings > Display");
+    }
+    function test_small_dual_tile_toggles_and_opens_on_long_press() {
+        // the Microphone tile is icon-only by default: a click mutes, a right click or a long press opens its page
+        var t = make();
+        var m = tile(t.panel, "mic");
+        verify(m.iconOnly && m.dualTarget);
+        clickItem(m);
+        compare(t.backend.calls[t.backend.calls.length - 1], "micMuted true", "a click toggles");
+        compare(t.panel.details, "");
+        mouseClick(m, m.width / 2, m.height / 2, Qt.RightButton);
+        compare(t.panel.details, "mic", "a right click opens its page");
+        t.panel.details = "";
+        var n = t.backend.calls.length;
+        mousePress(m, m.width / 2, m.height / 2);
+        tryCompare(t.panel, "details", "mic", 2000, "a long press opens it");
+        mouseRelease(m, m.width / 2, m.height / 2);
+        compare(t.backend.calls.length, n, "and does not toggle as well");
+    }
+    function test_mic_page() {
+        var t = make();
+        var asked = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "settingsPageRequested" });
+        t.panel.details = "mic";
+        var page = findChild(t.panel, "qsMicPage");
+        tryVerify(() => page && page.visible);
+        verify(!findChild(t.panel, "qsDetailsEmpty").visible);
+        var level = findChild(t.panel, "qsMicLevel");
+        laidOut(level);
+        compare(level.value, 0.5);
+        mouseClick(level, level.width * 0.8, level.height / 2);
+        verify(t.backend.calls[t.backend.calls.length - 1].startsWith("micVolume 0.8"), t.backend.calls[t.backend.calls.length - 1]);
+        t.backend.micMuted = true;
+        compare(level.value, 0, "muted shows empty");
+        verify(findChild(t.panel, "qsMicInput_41").selected, "the input in use is marked");
+        var headset = findChild(t.panel, "qsMicInput_42");
+        laidOut(headset);
+        clickItem(headset);
+        compare(t.backend.calls[t.backend.calls.length - 1], "micInput 42");
+        verify(headset.selected);
+        var link = findChild(t.panel, "qsMicSettings");
+        laidOut(link);
+        clickItem(link);
+        compare(asked.signalArguments[0][0], "sound");
     }
     function test_power_modes_page() {
         var t = make({ powerSaver: false });
