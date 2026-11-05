@@ -151,6 +151,16 @@ class CalendarHelper(unittest.TestCase):
         self.assertEqual(holiday["start"], self.at(2026, 11, 5, 18), "an all-day event from local midnight")
         self.assertEqual(holiday["end"] - holiday["start"], 86400)
 
+    def test_reading_does_not_wait_for_calendars_to_be_online(self):
+        # local calendars never say they are online; a read waiting for that took a second each time (the widget's
+        # and the popup's first events came that late)
+        self.run_helper("events", str(self.at(2026, 11, 10)), str(self.at(2026, 11, 12)))     # the factory started
+        began = time.monotonic()
+        r = self.run_helper("events", str(self.at(2026, 11, 10)), str(self.at(2026, 11, 12)))
+        took = time.monotonic() - began
+        self.assertEqual([json.loads(l)["uid"] for l in r.stdout.splitlines()], ["weekly"])
+        self.assertLess(took, 0.5)
+
     def test_range_leaves_out_other_times(self):
         r = self.run_helper("events", str(self.at(2026, 11, 10)), str(self.at(2026, 11, 12)))
         self.assertEqual([json.loads(l)["uid"] for l in r.stdout.splitlines()], ["weekly"])

@@ -412,7 +412,8 @@ keeps one connection for the whole read (`native/calendar.c`, D95).
 **evolution-data-server's local calendars never report "online".** `e_cal_client_connect_sync` waits the whole
 `wait_for_connected_seconds` for each local calendar (10 s each at first, 20 s for a read), then answers from its
 copy anyway. Wait briefly (1 s) and open the calendars side by side. Found by timing each calendar's open in an
-instrumented copy.
+instrumented copy. Even 1 s made every read 1 s late (the widget's first events), so reads now do not wait, and
+neither does anything on a local calendar. Not waiting is `(guint32) -1`, not 0: 0 waits forever.
 
 **In a property's change handler, bindings on that property may not have caught up.** EdsCalendar's
 `onFromChanged` started the Process at once, and the Process ran the command bound to the old range. Start it
@@ -425,7 +426,8 @@ after anything that changes the model.
 
 **A Row or Column places a newly shown child only at the next polish.** Clicking a button just made visible (the
 calendar's Today button, "Open Calendar") hit whatever was there before, here the Previous month button. Call
-`waitForItemPolished` on the layout before clicking.
+`waitForItemPolished` on the layout before clicking. When the button sits in layouts within layouts (the add-event
+form's calendar menu, which failed about one run in four), wait on every ancestor: `laidOut()` in tst_calendar.
 
 **A private dbus-daemon config needs `allow receive_sender` as well as `send_destination`.** With only send and own
 rules, every reply was rejected ("Rejected receive message, 0 matched rules") and clients timed out. The socket's

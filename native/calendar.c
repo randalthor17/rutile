@@ -36,9 +36,10 @@
 
 #include <libecal/libecal.h>
 
-/* How long to wait for a calendar to be online. Local ones never say so and take the whole wait (seen with
- * evolution-data-server 3.60), and one that is not online still answers from its copy, so the wait is short; the
- * calendars are opened side by side, so the whole read takes about this long. */
+/* How long to wait for a calendar to be online before refreshing it or adding to it. Local ones never say so and
+ * would take the whole wait (seen with evolution-data-server 3.60), so they get none; reading waits for none either,
+ * as a calendar that is not online still answers from its copy (the shell reads again after the refresh). The
+ * calendars are opened side by side, so a refresh takes about this long. */
 #define CONNECT_SECONDS 1u
 
 /* ---- JSON strings: escaped, and only valid UTF-8 (anything else becomes U+FFFD) ---- */
@@ -145,9 +146,12 @@ static gboolean instance(ICalComponent *comp, ICalTime *start, ICalTime *end, gp
     return TRUE;
 }
 
-static ECalClient *open_calendar(ESource *source, ICalTimezone *local) {
+/* `online`: wait for a calendar on a server to be online (CONNECT_SECONDS). */
+static ECalClient *open_calendar(ESource *source, ICalTimezone *local, gboolean online) {
+    ESourceBackend *backend = e_source_get_extension(source, E_SOURCE_EXTENSION_CALENDAR);
+    guint32 wait = online && g_strcmp0(e_source_backend_get_backend_name(backend), "local") != 0 ? CONNECT_SECONDS : (guint32)-1;
     GError *error = NULL;
-    EClient *client = e_cal_client_connect_sync(source, E_CAL_CLIENT_SOURCE_TYPE_EVENTS, CONNECT_SECONDS, NULL, &error);
+    EClient *client = e_cal_client_connect_sync(source, E_CAL_CLIENT_SOURCE_TYPE_EVENTS, wait, NULL, &error);
     if (client == NULL) {
         fprintf(stderr, "rutile-calendar: %s: %s\n", e_source_get_display_name(source),
                 error != NULL ? error->message : "cannot open");
@@ -172,7 +176,7 @@ static gchar *color_of(ESource *source) {
 /* One calendar, on its own thread: opened, then refreshed or read. */
 static gpointer work(gpointer data) {
     Calendar *cal = data;
-    ECalClient *client = open_calendar(cal->source, cal->local);
+    ECalClient *client = open_calendar(cal->source, cal->local, cal->refresh);
     if (client == NULL) return NULL;
     GError *error = NULL;
     if (cal->refresh) {
@@ -203,7 +207,7 @@ static int add_event(ESourceRegistry *registry, ICalTimezone *local, const char 
         if (source != NULL) g_object_unref(source);
         return 3;
     }
-    ECalClient *client = open_calendar(source, local);
+    ECalClient *client = open_calendar(source, local, TRUE);
     g_object_unref(source);
     if (client == NULL) return 3;
     int status = 0;

@@ -247,6 +247,11 @@ TestCase {
 
     // ---- the panel ----
     Component { id: panelComp; CalendarPanel {} }
+    // The Columns and Rows an item is in have placed it: they do so at the next polish, and a click before then lands
+    // where the item was.
+    function laidOut(item) {
+        for (let i = item; i; i = i.parent) waitForItemPolished(i);
+    }
     function panel(props) {
         const p = createTemporaryObject(panelComp, root, Object.assign({ now: new Date(2026, 10, 4, 9, 30), locale: en,
                                                                          use24h: true }, props || {}));
@@ -485,7 +490,9 @@ TestCase {
         compare(findChild(p, "calendarComposeError").text, "It ends before it starts");
         end.text = "10:30";
         // another calendar, from the menu
-        mouseClick(findChild(p, "calendarChoose"));
+        const ch = findChild(p, "calendarChoose");
+        laidOut(ch);
+        mouseClick(ch);
         tryVerify(() => findChild(p, "calendarChoice_w") !== null);
         const work = findChild(p, "calendarChoice_w");
         tryCompare(work, "opacity", 1);

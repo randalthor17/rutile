@@ -1039,7 +1039,9 @@ gnome-online-accounts, evolution-data-server, gnome-calendar and gnome-online-ac
   - `refresh` asks each calendar to sync now.
   - `sources` lists the calendars.
   It opens the calendars side by side and waits 1 s for each to be online. Local calendars never report online
-  and took the whole 10 s wait first tried; a calendar that is not online still answers from its copy.
+  and took the whole 10 s wait first tried; a calendar that is not online still answers from its copy. Since
+  2026-11-05 only a refresh or an add on a server's calendar waits; a read and a local calendar never do, which took a
+  read from about 1 s to 0.01 s.
 - **The popup.** `EdsCalendar.qml` runs the helper when the popup opens: it reads, asks for a sync, then reads
   again. It reads a new month's six weeks once both ends have changed (`Qt.callLater`: the command's binding lags
   the range).
