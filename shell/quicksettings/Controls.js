@@ -18,7 +18,9 @@ var catalog = {
     nightLight: { text: "Night light", icon: "nightlight", offIcon: "nightlight", dualTarget: true,
                   keywords: ["blue light", "warm", "night shift", "eye", "wlsunset"] },
     powerSaver: { text: "Power saver", icon: "energy_savings_leaf", offIcon: "energy_savings_leaf", dualTarget: true,
-                  keywords: ["battery saver", "power mode", "power profile", "energy"] }
+                  keywords: ["battery saver", "power mode", "power profile", "energy"] },
+    keepAwake: { text: "Keep awake", icon: "coffee", offIcon: "coffee",
+                 keywords: ["caffeine", "idle", "sleep", "screen off", "inhibit", "stay awake", "presentation"] }
 };
 
 // The tiles a new user gets, {id, w} (w: 2 is a wide tile with its name, 1 the icon alone).
@@ -90,6 +92,8 @@ function state(id, b) {
     case "powerSaver":
         return { active: b.powerSaver, available: b.powerSaverAvailable,
                  secondary: !b.powerSaverAvailable ? "Unavailable" : b.powerSaver ? "On" : "Off" };
+    case "keepAwake":
+        return { active: b.keepAwake === true, available: true, secondary: b.keepAwake ? "On" : "Off" };
     }
     return { active: false, available: false, secondary: "" };
 }
@@ -105,6 +109,7 @@ function toggle(id, wanted, b) {
     case "dnd": b.setDnd(wanted); break;
     case "powerSaver": b.setPowerSaver(wanted); break;
     case "nightLight": b.setNightLight(wanted); break;
+    case "keepAwake": b.setKeepAwake(wanted); break;
     }
 }
 

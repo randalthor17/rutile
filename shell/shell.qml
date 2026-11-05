@@ -280,6 +280,29 @@ ShellRoot {
         property: "speed"
         value: shell.speedFromEnv ? shell.envSpeed : Settings.value("motion.speed")
     }
+    // Keep awake (D116): an idle inhibitor on a 1 px surface of its own on the overlay layer, which stays above a
+    // fullscreen window (an inhibitor holds only while its surface shows), created only while on (D31).
+    LazyLoader {
+        id: keepAwake
+        active: KeepAwakeService.on
+        PanelWindow {
+            id: keepAwakeSurface
+            anchors.top: true
+            anchors.left: true
+            implicitWidth: 1
+            implicitHeight: 1
+            color: "transparent"
+            exclusionMode: ExclusionMode.Ignore
+            mask: Region {}
+            WlrLayershell.namespace: "rutile-keep-awake"
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            IdleInhibitor {
+                window: keepAwakeSurface
+                enabled: true
+            }
+        }
+    }
     // How see-through the panels are (D115).
     Binding {
         target: Panels
@@ -1100,6 +1123,8 @@ ShellRoot {
             quickSettings.item.details = page;
             return true;
         }
+        // Keep awake (the tile): on or off, for this session.
+        function keepAwake(on: bool): void { KeepAwakeService.setOn(on); }
         // What the windows see, as JSON: for diagnostics and tools/qtws.py test-wayland.
         function state(): string {
             const w = quickSettings.item;
@@ -1111,6 +1136,7 @@ ShellRoot {
                 details: w?.details ?? "",
                 detailRows: w?.detailRows ?? [],
                 darkTheme: shellBackend.darkTheme,
+                keepAwake: keepAwake.active && !!keepAwake.item,
                 pillsOpen: statusWindows.instances.map(s => s.pill.open),
                 pillsHaveBackend: statusWindows.instances.map(s => !!s.pill.backend),
                 pillsOnTop: statusWindows.instances.map(s => s.pill.WlrLayershell.layer === WlrLayer.Top),

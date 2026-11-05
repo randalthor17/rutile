@@ -1354,3 +1354,16 @@ maintainer's request, 2026-11-05):
   taller by that, but its exclusive zone stays the bar's height and only the bar takes the pointer (a mask), so the
   corners cover nothing a window has. The shelf's menus and tooltips still sit on the bar's height.
 - **Launcher at the left**, 12 px in; the pins and windows stay centered on the screen.
+
+**D116. Keep awake** (plan 2.6, 2026-11-05, the first of five additions the maintainer asked for: keep awake, media
+controls, keyboard input through fcitx5, clipboard history, screenshots and recording):
+- A Quick Settings tile (not among the defaults; added in edit mode, small: it has no page) and IPC
+  `quicksettings keepAwake true|false`. KeepAwakeService keeps the switch; shell.qml holds a Wayland idle
+  inhibitor (Quickshell's `IdleInhibitor`) on a 1 px surface of its own on the overlay layer, created only while on
+  (D31; not in the service, as the offscreen tests load every service and have no layer shell): an inhibitor
+  holds only while its surface is shown, and the overlay layer stays above a fullscreen window, which the shelf
+  would not. The lock on idle (IdleMonitor) honours it, as do idle daemons that follow the protocol (swayidle,
+  hypridle). No logind inhibitor: nothing here sets logind's IdleAction, and `systemd-inhibit --what=sleep` would
+  also block a suspend asked for by hand.
+- For the session only (not in state.json): forgetting it on would keep the machine awake for days.
+- **Not verified:** that niri honours the inhibitor (the headless test checks only that the surface is held).

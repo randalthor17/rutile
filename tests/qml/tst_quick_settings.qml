@@ -44,6 +44,7 @@ TestCase {
             property bool nightLight: false
             property bool nightLightScheduled: false
             property bool powerSaver: false
+            property bool keepAwake: false
             property int nightLightTemperature: 4000
             property string powerProfile: "balanced"
             property bool performanceAvailable: true
@@ -70,6 +71,7 @@ TestCase {
             function setAirplaneMode(b) { log("airplane " + b); }
             function setDnd(b) { log("dnd " + b); }
             function setPowerSaver(b) { log("powerSaver " + b); }
+            function setKeepAwake(b) { log("keepAwake " + b); }
             function setNightLight(b) { log("nightLight " + b); }
             function setNightLightTemperature(k) { log("temperature " + k); nightLightTemperature = k; }
             function setNightLightScheduled(b) { log("schedule " + b); nightLightScheduled = b; }
@@ -605,16 +607,16 @@ TestCase {
         verify(!findChild(t.panel, "qsAdd_powerSaver").visible, "only in edit mode");
         t.panel.editMode = true;
         waitForRendering(t.panel);
-        compare(t.panel.addableTiles.join(), "powerSaver", "what the defaults leave out");
+        compare(t.panel.addableTiles.join(), "powerSaver,keepAwake", "what the defaults leave out");
         verify(!findChild(t.panel, "qsAdd_wifi"), "a shown tile is not offered");
         clickItem(findChild(t.panel, "qsAdd_powerSaver"));
         compare(spy.count, 1);
         compare(JSON.stringify(spy.signalArguments[0][0].slice(-1)), JSON.stringify([{ id: "powerSaver", w: 2 }]),
                 "wide: it has a details side (D108)");
-        compare(t.panel.addableTiles.length, 0);
+        compare(t.panel.addableTiles.join(), "keepAwake");
         // removing one offers it again, wide if it has a details side
         t.panel.tiles = [{ id: "mic", w: 1 }];
-        compare(t.panel.addableTiles.join(), "wifi,bluetooth,dark,airplane,dnd,nightLight,powerSaver", "in catalog order");
+        compare(t.panel.addableTiles.join(), "wifi,bluetooth,dark,airplane,dnd,nightLight,powerSaver,keepAwake", "in catalog order");
         t.panel.addTile("bluetooth");
         compare(JSON.stringify(t.panel.tiles), JSON.stringify([{ id: "mic", w: 1 }, { id: "bluetooth", w: 2 }]));
         t.panel.addTile("bluetooth");
@@ -643,6 +645,25 @@ TestCase {
         verify(t.backend.calls.indexOf("powerSaver true") >= 0, "" + t.backend.calls);
         t.backend.powerSaver = true;
         verify(p.active);
+    }
+
+    function test_keep_awake_tile() {
+        var t = make();
+        t.panel.tiles = [{ id: "keepAwake", w: 2 }];
+        tryCompare(t.panel, "appearProgress", 1, 2000);
+        waitForRendering(t.panel);
+        var k = tile(t.panel, "keepAwake");
+        verify(k.available && !k.active);
+        compare(k.secondaryText, "Off");
+        compare(k.iconName, "coffee");
+        clickItem(k);
+        compare(t.backend.calls[t.backend.calls.length - 1], "keepAwake true");
+        t.backend.keepAwake = true;
+        verify(k.active);
+        compare(k.secondaryText, "On");
+        clickItem(k);
+        compare(t.backend.calls[t.backend.calls.length - 1], "keepAwake false");
+        compare(Controls.withTile([], "keepAwake")[0].w, 1, "a small tile when added: it has no page");
     }
 
     function test_night_light_tile() {

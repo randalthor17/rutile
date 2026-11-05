@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Keep awake.** A new Quick Settings tile (add it in edit mode) stops the screen locking, blanking or sleeping on
+  idle until you switch it off; it is off again after a restart. Also `rutile-shell quicksettings keepAwake true`.
 - **See-through panels.** The shelf, the pills at the top of the screen and the panels they open (Quick Settings,
   notifications, the calendar) let the wallpaper and windows show through a little. Settings > Wallpaper & style >
   Panel opacity sets how much, from 50% to solid (100%); 85% by default.

@@ -37,6 +37,7 @@ QtObject {
     // the style's mode (D65): the shell's palette and the apps that take its colors; saved
     readonly property bool darkTheme: Settings.value("style.mode") === "dark"
     readonly property bool dnd: NotificationService.dnd
+    readonly property bool keepAwake: KeepAwakeService.on
     readonly property bool nightLightAvailable: NightLightService.available
     readonly property bool nightLight: NightLightService.on
     readonly property bool nightLightScheduled: NightLightService.schedule
@@ -90,6 +91,7 @@ QtObject {
     function setBluetoothDiscovering(on) { BluetoothService.setDiscovering(on); }
     function setDnd(on) { NotificationService.setDnd(on); }
     function setNightLight(on) { NightLightService.setOn(on); }
+    function setKeepAwake(on) { KeepAwakeService.setOn(on); }
     function setPowerSaver(on) {
         if (powerSaverAvailable)
             PowerProfiles.profile = on ? PowerProfile.PowerSaver : PowerProfile.Balanced;

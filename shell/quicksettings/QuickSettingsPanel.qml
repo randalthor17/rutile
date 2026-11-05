@@ -9,8 +9,8 @@ pragma ComponentBehavior: Bound
 //
 // The backend has: brightnessAvailable, brightness, volumeAvailable, volume, muted, micAvailable,
 // micMuted, wifiAvailable, wifiEnabled, wifiName, bluetoothAvailable, bluetoothEnabled, bluetoothDevice,
-// darkTheme, dnd, nightLightAvailable, nightLight, nightLightScheduled, powerSaverAvailable, powerSaver; and setBrightness(v), setVolume(v), setMicMuted(b),
-// setWifiEnabled(b), setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), setDnd(b), setNightLight(b), setPowerSaver(b),
+// darkTheme, dnd, nightLightAvailable, nightLight, nightLightScheduled, powerSaverAvailable, powerSaver, keepAwake; and setBrightness(v), setVolume(v), setMicMuted(b),
+// setWifiEnabled(b), setBluetoothEnabled(b), setDarkTheme(b), setAirplaneMode(b), setDnd(b), setNightLight(b), setPowerSaver(b), setKeepAwake(b),
 // refresh(); for the detail pages (QuickSettingsDetails.qml): wifiNetworks, bluetoothDevices, connectWifi(name,
 // psk), disconnectWifi(name), forgetWifi(name), setWifiScanning(b), connectBluetooth(address),
 // disconnectBluetooth(address), setBluetoothDiscovering(b). The power button asks for the power menu (powerMenuRequested).

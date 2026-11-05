@@ -105,6 +105,7 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
   quicksettings  toggle | open | close
                  details PAGE      open at a tile's page: wifi, bluetooth, nightLight, powerSaver, mic ("" for the tiles)
                  isOpen
+                 keepAwake true|false  no lock, screen blanking or sleep on idle, for this session
                  state
   tray           activate ID       as a click on an app indicator (state lists their ids)
                  openMenu ID      its menu, under its icon

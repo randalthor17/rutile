@@ -561,10 +561,23 @@ def run_wayland_smoke(screenshot=None):
                     # the fixture's default pins; no niri and no windows here, so no workspace groups
                     if shelves != [{"pinned": ["org.gnome.Nautilus", "firefox", "foot"], "workspaces": []}]:
                         problems.append(f"ipc state: shelves {shelves!r}, expected the fixture's default pins")
-                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "details": "", "detailRows": [], "darkTheme": True, "pillsOpen": [True],
+                    want = {"open": True, "loaded": True, "panelHasBackend": True, "brightnessShown": True, "details": "", "detailRows": [], "darkTheme": True, "keepAwake": False, "pillsOpen": [True],
                             "pillsHaveBackend": [True], "pillsOnTop": [True], "reserved": [32]}
                     if state != want:
                         problems.append(f"ipc state: got {state}, expected {want}")
+                    # keep awake: its inhibitor surface while on, gone when off
+                    def keep_awake():
+                        try:
+                            return json.loads(ipc("state", target="quicksettings")).get("keepAwake")
+                        except ValueError:
+                            return None
+                    ipc("keepAwake", "true", target="quicksettings")
+                    time.sleep(0.5)
+                    held = keep_awake()
+                    ipc("keepAwake", "false", target="quicksettings")
+                    time.sleep(0.3)
+                    if held is not True or keep_awake() is not False:
+                        problems.append(f"ipc quicksettings keepAwake: held {held}, then {keep_awake()}, expected True then False")
                     # the compositor keeps windows out of the reserved strip: sway's workspace starts below it
                     spaces = comp.msg("-t", "get_workspaces") or []
                     tops = [w["rect"]["y"] for w in spaces]

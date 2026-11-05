@@ -52,6 +52,7 @@ TestCase {
             property bool dnd: false
             property bool powerSaverAvailable: false
             property bool powerSaver: false
+            property bool keepAwake: false
             property var asked: []
             function setWifiEnabled(on) { asked.push("wifi " + on); wifiEnabled = on; }
             function setBluetoothEnabled(on) { asked.push("bluetooth " + on); }
@@ -59,6 +60,7 @@ TestCase {
             function setDarkTheme(on) { asked.push("dark " + on); darkTheme = on; }
             function setAirplaneMode(on) { asked.push("airplane " + on); }
             function setDnd(on) { asked.push("dnd " + on); dnd = on; }
+            function setKeepAwake(on) { asked.push("keepAwake " + on); keepAwake = on; }
         }
     }
     Component { id: spyComp; SignalSpy {} }
@@ -536,7 +538,7 @@ TestCase {
     function test_controls_search_items() {
         const b = createTemporaryObject(backendComp, root);
         let items = Controls.searchItems(b);
-        compare(items.map(i => i.id).join(), "qs:wifi,qs:mic,qs:dark,qs:airplane,qs:dnd,qs:brightness,qs:volume",
+        compare(items.map(i => i.id).join(), "qs:wifi,qs:mic,qs:dark,qs:airplane,qs:dnd,qs:keepAwake,qs:brightness,qs:volume",
                 "only what this system has (no Bluetooth, no power-profiles-daemon)");
         const wifi = items[0];
         compare(wifi.type, "setting");
@@ -547,14 +549,15 @@ TestCase {
         compare(mic.symbol + "," + mic.status, "mic_off,Muted", "off: the off icon");
         compare(items[3].status, "Off", "airplane mode is off while Wi-Fi is on");
         compare(items[4].status + "," + items[4].symbol, "Off,do_not_disturb_off", "do not disturb");
-        compare(items[5].action + "," + items[5].status + "," + items[5].symbol, "open,40%,brightness_medium");
-        compare(items[6].action + "," + items[6].status + "," + items[6].symbol, "open,50%,music_note");
+        compare(items[5].status + "," + items[5].symbol, "Off,coffee", "keep awake");
+        compare(items[6].action + "," + items[6].status + "," + items[6].symbol, "open,40%,brightness_medium");
+        compare(items[7].action + "," + items[7].status + "," + items[7].symbol, "open,50%,music_note");
         b.muted = true;
         b.brightnessAvailable = false;
         b.volumeAvailable = false;
         b.wifiAvailable = false;
         items = Controls.searchItems(b);
-        compare(items.map(i => i.id).join(), "qs:mic,qs:dark,qs:dnd", "no radios, no backlight, no audio");
+        compare(items.map(i => i.id).join(), "qs:mic,qs:dark,qs:dnd,qs:keepAwake", "no radios, no backlight, no audio");
         b.volumeAvailable = true;
         compare(Controls.searchItems(b).pop().status + "," + Controls.searchItems(b).pop().symbol, "Muted,music_off");
         compare(Controls.searchItems(null).length, 0);
@@ -571,9 +574,11 @@ TestCase {
         compare(b.asked[2], "dark true");
         compare(Controls.choose(items[4], b), "toggled");
         compare(b.asked[3], "dnd true");
-        compare(Controls.choose(items[5], b), "open", "a slider: Quick Settings opens");
-        compare(Controls.choose(items[6], b), "open");
-        compare(b.asked.length, 4, "and nothing else was asked");
+        compare(Controls.choose(items[5], b), "toggled");
+        compare(b.asked[4], "keepAwake true");
+        compare(Controls.choose(items[6], b), "open", "a slider: Quick Settings opens");
+        compare(Controls.choose(items[7], b), "open");
+        compare(b.asked.length, 5, "and nothing else was asked");
     }
 
     // The Settings app's pages and settings (Model.launcherItems), next to the apps while searching in All.
