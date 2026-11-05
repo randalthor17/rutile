@@ -466,6 +466,21 @@ TestCase {
         verify(!t.panel.editMode);
     }
 
+    function test_edit_mode_moves_tiles_with_the_keyboard() {
+        // the grid's keys (D107) reach it inside the panel: a click selects, Left swaps with the tile before
+        var t = make();
+        var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "tilesEdited" });
+        clickItem(findChild(t.panel, "qsEditTiles"));
+        const before = t.panel.tiles.map(x => x.id);
+        const i = before.indexOf("bluetooth");
+        clickItem(tile(t.panel, "bluetooth"));
+        verify(findChild(t.panel, "qsGrid").activeFocus, "the grid has the keys");
+        keyClick(Qt.Key_Left);
+        compare(spy.count, 1, "the move is saved");
+        const order = findChild(t.panel, "qsGrid").items.slice().sort((a, b) => a.row - b.row || a.col - b.col).map(x => x.id);
+        compare(order.indexOf("bluetooth"), i - 1, "a place earlier: " + order.join());
+    }
+
     function test_edit_mode_adds_tiles() {
         var t = make();
         var spy = createTemporaryObject(spyComp, root, { target: t.panel, signalName: "tilesEdited" });

@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Edit tiles and widgets with the keyboard.** In Quick Settings' edit mode and while editing desktop widgets, Tab
+  picks a tile or widget, the arrow keys move it, and Shift with an arrow makes it bigger or smaller.
 - **Tooltips on the shelf.** Hover an app on the shelf for half a second and its name shows above it; over an open
   window, the window's title. Moving along the shelf, the next one shows at once. The gallery has the new tooltip
   component.

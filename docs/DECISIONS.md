@@ -1249,3 +1249,14 @@ greeter):
   draw outside the shelf's), taking no input, loaded only while it shows (D31). `ipc call shelf tooltip TEXT` shows
   one for scripts and the smoke test.
 - **Cost.** 58.7 KiB per tooltip, and only while one shows (docs/memory.md).
+
+**D107. Keyboard editing in the EditableGrid** (plan 1.6 and 4.4, 2026-11-05):
+- **Keys.** In edit mode, with the grid focused (a click on an item focuses it): Tab and Shift+Tab select, going
+  round; the arrows move the selected item a step on screen; Shift with the arrows resizes it as a handle would,
+  Shift+Right and Shift+Down growing it whichever way the grid runs. Every step commits through the owner, as a drop
+  or a released handle does.
+- **Moves.** A one-cell drag, through the same code as the pointer, except sideways with gravity: there a drag one
+  cell over mostly lands back where it was or sends a neighbor a row down, because gravity reflows in reading order.
+  So Left and Right swap the item with the one before or after it in reading order and let the rest flow, refusing
+  a swap that would outgrow `maxRows`. That is how Quick Settings tiles read: in order.
+- **Not done.** Screen reader announcements of the moves, and moving between screens or into the grid from outside.

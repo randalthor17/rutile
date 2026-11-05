@@ -5,6 +5,9 @@
 // move away only when they would have to go below their minimum. Changes go to `commitHandler(items)`; with none,
 // the grid keeps them itself (demos). Every item can grow to the full width and to `maxRows` (0 for no limit)
 // unless it sets minW/maxW/minH/maxH. Columns follow LayoutMirroring, so a right-to-left session mirrors the grid.
+// The keyboard edits too (D107), with the grid focused in edit mode (a click on an item focuses it): Tab and
+// Shift+Tab select the next and previous item, the arrows move the selected one, and Shift with the arrows resizes
+// it.
 //
 // Light on memory (D31): delegates are kept across reorders (a ListModel keyed by id), the edit chrome exists only
 // in edit mode, and one spring per grid moves every item (each lerps from where it was to where it goes).
@@ -186,6 +189,79 @@ Item {
         cancelInteraction();
         if (changed)
             commit(next);
+    }
+
+    // ---- the keyboard (D107) ----
+    // Move item `index` one step: `dcol` and `drow` are -1, 0 or 1, on screen (so a step right is a column back in a
+    // right-to-left grid). With gravity a step sideways swaps it with the item before or after it in reading order
+    // and the rest flow on (Quick Settings' order). Otherwise, and up or down, it is a drag one cell that way (the
+    // rest make room as for a drag). False when nothing moves: at an edge, or with nothing to swap with.
+    function moveBy(index, dcol, drow) {
+        const step = mirrored ? -dcol : dcol;
+        if (gravity && drow === 0)
+            return editMode && !interacting && !!items[index] && swapInReadingOrder(index, step);
+        if (!beginDrag(index))
+            return false;
+        const slot = slotLayout.slots[index];
+        const lastRow = maxRows > 0 ? Math.max(maxRows, slotLayout.rows) - slot.rows : slotLayout.rows;
+        dragCell = { col: Math.max(0, Math.min(columns - slot.cols, slot.col + step)),
+                     row: Math.max(0, Math.min(Math.max(0, lastRow), slot.row + drow)) };
+        const next = committedItems();
+        if (!pinnedCells.some((c, i) => c && (c.col !== next[i].col || c.row !== next[i].row))) {
+            cancelInteraction();
+            return false;
+        }
+        endDrag();
+        return true;
+    }
+    function swapInReadingOrder(index, step) {
+        const placed = placedNow();
+        const order = placed.map((item, i) => i).sort((a, b) => placed[a].row - placed[b].row || placed[a].col - placed[b].col);
+        const at = order.indexOf(index), to = at + step;
+        if (step === 0 || to < 0 || to >= order.length)
+            return false;
+        order[at] = order[to];
+        order[to] = index;
+        // no saved places: with gravity each item flows on after the one before it in `order`
+        const bare = placed.map(item => Object.assign({}, item, { col: undefined, row: undefined }));
+        const next = GridLayout.placedItems(placed, GridLayout.packCells(bare, order, columns, null, true).cells);
+        if (!fits(next, placed))
+            return false;
+        commit(next);
+        return true;
+    }
+    // Make item `index` one cell wider (`growth` 1) or narrower (-1) on its end side, or taller or shorter at its
+    // bottom (`edge` "end" or "bottom"), as a handle would. False when it cannot.
+    function resizeBy(index, edge, growth) {
+        if (!editMode || interacting || !items[index])
+            return false;
+        previewResize(index, edge, growth);
+        const changed = resizeItems !== null;
+        commitResize();
+        return changed;
+    }
+    Keys.onPressed: event => {
+        if (!editMode || interacting || items.length === 0)
+            return;
+        const shift = (event.modifiers & Qt.ShiftModifier) !== 0;
+        if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            const back = event.key === Qt.Key_Backtab;
+            selectedIndex = selectedIndex < 0 ? (back ? items.length - 1 : 0)
+                                               : (selectedIndex + (back ? -1 : 1) + items.length) % items.length;
+            event.accepted = true;
+            return;
+        }
+        const arrows = { [Qt.Key_Left]: [-1, 0], [Qt.Key_Right]: [1, 0], [Qt.Key_Up]: [0, -1], [Qt.Key_Down]: [0, 1] };
+        const d = arrows[event.key];
+        if (!d || selectedIndex < 0 || !items[selectedIndex])
+            return;
+        event.accepted = true;
+        if (!shift)
+            moveBy(selectedIndex, d[0], d[1]);
+        else if (d[0] !== 0)            // Shift+Right: wider, whichever way the grid runs
+            resizeBy(selectedIndex, "end", d[0]);
+        else
+            resizeBy(selectedIndex, "bottom", d[1]);
     }
 
     // Whether an item of this size would fit under maxRows (for an "add" action), and the size it would get.
@@ -399,6 +475,7 @@ Item {
                     root.endDrag();
                 } else {
                     root.selectedIndex = chrome.slot.index;
+                    root.forceActiveFocus();
                 }
             }
             onCanceled: {

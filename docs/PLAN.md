@@ -71,7 +71,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (v0.6.0). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that
   shrink before they move (D34), `maxRows`, gravity that leaves no gaps (D35), right to left, commits through the
   owner; in the gallery as
-  Googlebook's "Edit tiles". Not done: keyboard editing, drag in from outside.
+  Googlebook's "Edit tiles". Keyboard editing (D107): Tab selects, the arrows move, Shift with them resizes. Not
+  done: drag in from outside.
 - [ ] **1.7** Gallery covering every component, compared against the spec and screenshots. Exists for the current
   components; extend as each lands. The maintainer's look review is pending.
 
@@ -269,8 +270,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   4.2), a preview command (4.6).
 - [x] **4.4** Desktop widget grid reusing the EditableGrid (1.6), D81: each screen's widgets on square cells
   (`widgets.columns`), gravity off, saved in state.json; edit mode from the desktop's right-click menu or
-  `rutile-shell widgets edit`, with Add (the user's widgets and the examples), Remove, Done. Not done: keyboard
-  moves, moving a widget between screens, a widget's preferred size.
+  `rutile-shell widgets edit`, with Add (the user's widgets and the examples), Remove, Done. Keyboard moves come
+  with the grid's (D107). Not done: moving a widget between screens, a widget's preferred size.
 - [x] **4.5** Widgets app (D82): widgets are written by hand as JSON, so the app is a gallery and a way into
   editing. Categories (weather, daily update, world clock, finance, countdown, sports, your widgets) with live
   cards; Use copies a template to `~/.config/rutile/widgets`, allows the address it reads, puts it on the desktop,

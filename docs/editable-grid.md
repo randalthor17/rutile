@@ -160,6 +160,24 @@ minimum) without the grid outgrowing `maxRows`, or null when there is no room. W
 the same flow, so a new item counts as going after the last one, not into a free cell earlier in the grid.
 Dragging items in from outside (the Add sheet) is not built yet.
 
+### The keyboard (D107)
+
+In edit mode, once the grid has the keyboard (a click on an item gives it, or the owner calls
+`forceActiveFocus()`):
+
+- **Tab** and **Shift+Tab** select the next and the previous item, going round.
+- **The arrows** move the selected item a step on screen (so Right goes toward column 0 in a right-to-left grid).
+  With gravity, Left and Right swap it with the item before or after it in reading order and the rest flow on, so
+  a step always changes the order, never just leaves a gap gravity would close; Up and Down are a one-cell drag.
+  Without gravity every arrow is a one-cell drag, the rest making room as for a drag. Nothing happens at an edge or
+  with nothing to swap with, and a swap that would outgrow `maxRows` is refused.
+- **Shift with the arrows** resizes it as a handle would: Shift+Right wider and Shift+Left narrower (its end
+  edge, whichever way the grid runs), Shift+Down taller and Shift+Up shorter (its bottom edge).
+
+Each step commits at once. `moveBy(index, dcol, drow)` and `resizeBy(index, edge, growth)` do the same from code.
+Tests: `test_keyboard_moves_and_resizes`, `test_keyboard_selects_with_tab_and_only_in_edit_mode`,
+`test_keyboard_with_gravity_and_right_to_left`.
+
 ## Right to left
 
 The grid reads `LayoutMirroring.enabled`, which the shell sets once at its root (with `childrenInherit`) for a
@@ -187,6 +205,5 @@ panel will save only `id` and size and look the rest up by `id`; the gallery put
 
 ## Not done
 
-- Keyboard: selecting, moving and resizing without a pointer.
 - Dragging items in from outside the grid (the Add sheet) and out of it.
 - The desktop widget grid's own rules (plan 4.4); it is expected to run with `gravity` off.

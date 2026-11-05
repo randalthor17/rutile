@@ -436,4 +436,91 @@ TestCase {
         settle(g);
         compare(b.x, 0, "and ends at its new cell");
     }
+
+    // ---- the keyboard (D107) ----
+    function at(g, id) {
+        var c = cellOf(g, id);
+        return [c.col, c.row, c.cols, c.rows].join();
+    }
+    function test_keyboard_moves_and_resizes() {
+        var commits = 0;
+        var g = make({ items: four(), editMode: true, gravity: false });
+        g.commitHandler = function (next) { commits++; g.items = next; };
+        mouseClick(slotsOf(g)[3]);
+        compare(g.selectedIndex, 3);
+        verify(g.activeFocus, "a click on an item gives the grid the keys");
+        keyClick(Qt.Key_Right);
+        compare(at(g, "d"), "1,1,1,1", "Right: a column on");
+        compare(commits, 1, "each step commits");
+        keyClick(Qt.Key_Up);
+        compare(at(g, "d"), "1,0,1,1", "Up: a row up, onto the wide item, which makes room");
+        keyClick(Qt.Key_Left);
+        compare(at(g, "d"), "0,0,1,1");
+        commits = 0;
+        keyClick(Qt.Key_Left);
+        compare(at(g, "d"), "0,0,1,1", "not past the edge");
+        compare(commits, 0, "nothing moved, nothing committed");
+        keyClick(Qt.Key_Right, Qt.ShiftModifier);
+        compare(at(g, "d"), "0,0,2,1", "Shift+Right: wider");
+        keyClick(Qt.Key_Down, Qt.ShiftModifier);
+        compare(at(g, "d"), "0,0,2,2", "Shift+Down: taller");
+        keyClick(Qt.Key_Up, Qt.ShiftModifier);
+        keyClick(Qt.Key_Left, Qt.ShiftModifier);
+        compare(at(g, "d"), "0,0,1,1", "Shift+Up and Shift+Left: back");
+        // a wide item steps past itself
+        g.selectedIndex = 0;
+        var a = cellOf(g, "a");
+        keyClick(Qt.Key_Right);
+        verify(cellOf(g, "a").col !== a.col || cellOf(g, "a").row !== a.row, "the wide item moved: " + at(g, "a"));
+    }
+    function test_keyboard_selects_with_tab_and_only_in_edit_mode() {
+        var g = make({ items: four(), editMode: true, gravity: false });
+        g.commitHandler = function (next) { g.items = next; };
+        g.forceActiveFocus();
+        keyClick(Qt.Key_Tab);
+        compare(g.selectedIndex, 0, "Tab: the first item");
+        keyClick(Qt.Key_Tab);
+        compare(g.selectedIndex, 1);
+        keyClick(Qt.Key_Backtab);
+        keyClick(Qt.Key_Backtab);
+        compare(g.selectedIndex, 3, "Shift+Tab goes round");
+        keyClick(Qt.Key_Tab);
+        compare(g.selectedIndex, 0, "and Tab too");
+        g.editMode = false;
+        g.forceActiveFocus();
+        keyClick(Qt.Key_Tab);
+        compare(g.selectedIndex, -1, "out of edit mode the keys do nothing");
+        g.selectedIndex = 0;
+        keyClick(Qt.Key_Right);
+        compare(at(g, "a"), "0,0,2,1");
+    }
+    function test_keyboard_with_gravity_and_right_to_left() {
+        var g = make({ items: four(), editMode: true });
+        g.commitHandler = function (next) { g.items = next; };
+        g.forceActiveFocus();
+        g.selectedIndex = 2;
+        keyClick(Qt.Key_Left);
+        compare([at(g, "a"), at(g, "c"), at(g, "b"), at(g, "d")].join(" "), "0,0,2,1 2,0,1,1 3,0,1,1 0,1,1,1",
+                "Left with gravity: c swaps with b, the one before it");
+        g.selectedIndex = 0;
+        keyClick(Qt.Key_Right);
+        compare([at(g, "c"), at(g, "a"), at(g, "b"), at(g, "d")].join(" "), "0,0,1,1 1,0,2,1 3,0,1,1 0,1,1,1",
+                "Right: the wide one swaps with the next, and the rest flow on");
+        verify(!g.moveBy(3, 1, 0), "the last item has no next");
+        verify(!g.moveBy(3, 0, 1), "nor anywhere further down to go");
+        // a swap that would need a row more than maxRows is refused
+        var m = make({ editMode: true, maxRows: 2, items: [{ id: "p", w: 1, h: 1 }, { id: "q", w: 3, h: 1 },
+                                                            { id: "r", w: 2, h: 1 }, { id: "s", w: 2, h: 1 }] });
+        m.commitHandler = function (next) { m.items = next; };
+        verify(!m.moveBy(1, 1, 0), "q after r would leave s a third row");
+        compare(at(m, "q"), "1,0,3,1", "and nothing moved");
+        verify(m.moveBy(2, 1, 0), "r and s swap: still two rows");
+        var r = createTemporaryObject(rtlComp, root).grid;
+        r.items = four();
+        r.editMode = true;
+        r.forceActiveFocus();
+        r.selectedIndex = 2;
+        keyClick(Qt.Key_Right);
+        compare([cellOf(r, "c").col, cellOf(r, "b").col].join(), "2,3", "right to left: Right goes back, before b");
+    }
 }
