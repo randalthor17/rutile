@@ -171,6 +171,29 @@ def label_styles():
             "xl": "headline_large"}
 
 
+def tooltip_impl():
+    """Tooltip.kt: the plain tooltip's padding, its smallest size, its widest, and its gap from what it explains (the
+    token file has only its colors, shape and font)."""
+    text = (SRC / "Tooltip.kt").read_text()
+
+    def dp(pattern, what):
+        m = re.search(pattern, text)
+        if not m:
+            raise ComponentError(f"Tooltip.kt: {what} not found")
+        return int(m.group(1))
+
+    def getter(name):
+        return dp(rf"val {name}\s*\n\s*get\(\) = (\d+)\.dp", name)
+
+    if not re.search(r"PlainTooltipContentPadding =\s*PaddingValues\(PlainTooltipHorizontalPadding, "
+                     r"PlainTooltipVerticalPadding\)", text):
+        raise ComponentError("Tooltip.kt: PlainTooltipContentPadding changed")
+    return {"anchor_space": getter("SpacingBetweenTooltipAndAnchor"), "min_height": getter("TooltipMinHeight"),
+            "min_width": getter("TooltipMinWidth"), "horizontal_padding": getter("PlainTooltipHorizontalPadding"),
+            "vertical_padding": getter("PlainTooltipVerticalPadding"),
+            "max_width": dp(r"val plainTooltipMaxWidth: Dp = (\d+)\.dp", "plainTooltipMaxWidth")}
+
+
 def token_table(file, corners):
     """Every token of a component token file, snake_cased: dp as numbers, colors as roles,
     shapes as px or "full", type styles by name, elevation levels as 0..5, opacities as numbers. Anything else
@@ -687,6 +710,7 @@ def build():
             "colors": {f"{k}_color": v for k, v in token_table("NavigationRailColorTokens.kt", corners).items()},
             "item": token_table("NavigationRailVerticalItemTokens.kt", corners),
         },
+        "tooltip": {"plain": token_table("PlainTooltipTokens.kt", corners), "impl": tooltip_impl()},
         "material_shapes": material_shapes(),
     }
 

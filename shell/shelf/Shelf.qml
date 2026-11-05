@@ -21,6 +21,40 @@ Rectangle {
     // a right click: `target` is {app} for a pin or {window} for a window, `x` the button's middle on the shelf
     signal menuRequested(var target, real x)
 
+    // The tooltip of the button under the pointer (D106): its text and middle on the shelf; "" for none. It comes after
+    // `tooltipDelay` of hovering, at once when the pointer moves on from a button whose tooltip shows, and goes when
+    // the pointer leaves the buttons or presses one.
+    property string tooltipText: ""
+    property real tooltipX: 0
+    property int tooltipDelay: 500
+    property Item hoveredButton: null
+    function hover(button) {
+        if (button.hovered) {
+            hoveredButton = button;
+            if (tooltipText !== "") showTooltip();
+            else tooltipWait.restart();
+        } else if (hoveredButton === button) {
+            hoveredButton = null;
+            tooltipWait.stop();
+            // a move to the next button leaves this one first: hide only if none is entered meanwhile
+            Qt.callLater(() => { if (!root.hoveredButton) root.tooltipText = ""; });
+        }
+    }
+    function showTooltip() {
+        if (!hoveredButton) return;
+        tooltipText = hoveredButton.tooltip;
+        tooltipX = hoveredButton.mapToItem(root, hoveredButton.width / 2, 0).x;
+    }
+    function hideTooltip() {
+        tooltipWait.stop();
+        tooltipText = "";
+    }
+    Timer {
+        id: tooltipWait
+        interval: root.tooltipDelay
+        onTriggered: root.showTooltip()
+    }
+
     // Wheel deltas add up until a notch (120), so a touchpad's small steps move one workspace at a time.
     property real wheelRest: 0
     function scrollBy(angleDeltaY) {
@@ -79,12 +113,20 @@ Rectangle {
         Repeater {
             model: root.pinned
             ShelfButton {
+                id: pin
                 required property var modelData
                 objectName: "shelfPin_" + modelData.id
                 name: modelData.name
                 iconSource: modelData.icon
-                onClicked: root.launched(modelData)
-                onMenuRequested: root.menuRequested({ app: modelData }, mapToItem(root, width / 2, 0).x)
+                onHoveredChanged: root.hover(pin)
+                onClicked: {
+                    root.hideTooltip();
+                    root.launched(modelData);
+                }
+                onMenuRequested: {
+                    root.hideTooltip();
+                    root.menuRequested({ app: modelData }, mapToItem(root, width / 2, 0).x);
+                }
             }
         }
 
@@ -127,14 +169,23 @@ Rectangle {
                     Repeater {
                         model: group.modelData.windows
                         ShelfButton {
+                            id: windowButton
                             required property var modelData
                             objectName: "shelfWindow_" + modelData.id
                             name: modelData.name
+                            tooltip: modelData.title || modelData.name
                             iconSource: modelData.icon
                             running: modelData.focused
                             active: modelData.focused
-                            onClicked: root.windowClicked(modelData)
-                            onMenuRequested: root.menuRequested({ window: modelData }, mapToItem(root, width / 2, 0).x)
+                            onHoveredChanged: root.hover(windowButton)
+                            onClicked: {
+                                root.hideTooltip();
+                                root.windowClicked(modelData);
+                            }
+                            onMenuRequested: {
+                                root.hideTooltip();
+                                root.menuRequested({ window: modelData }, mapToItem(root, width / 2, 0).x);
+                            }
                         }
                     }
                 }

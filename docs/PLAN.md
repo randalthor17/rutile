@@ -62,6 +62,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   outlined cards, clickable when `interactive`; in the gallery. No shadows yet.
 - [ ] **1.5** Component kit, remaining: GeminiGlow gradient border (needs a reference image). NavRail done
   (D103, v0.11.0): the collapsed rail from the vendored rail tokens, in the gallery; not the expanded one.
+  Tooltip done (D106): the plain tooltip from the vendored Compose tooltip tokens and Tooltip.kt, in the gallery and
+  on the shelf; not the rich tooltip.
   and the 1.5c leftovers when something needs them. Likely next: GeminiGlow, or what Quick Settings (2.6) needs
   first (the slider is done, 1.5e).
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
@@ -96,8 +98,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   browser and terminal; the `shelf.pins` setting, 2.5) that start on click, then the screen's workspaces with
   windows, one icon per window in layout order, the active workspace tinted and the focused window marked; a click
   focuses that window, and the wheel moves between workspaces down to niri's blank one (D44, niri through
-  `NiriService`; without niri, `ToplevelManager` ungrouped); press motion. Not done: tooltips, context menu
-  (pin, close), special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
+  `NiriService`; without niri, `ToplevelManager` ungrouped); press motion. The right-click menu (D72): pin, unpin, close, a new window, desktop actions. Tooltips (D106): the
+  app's name over a pin, the window's title over a window, after half a second. Not done: special buttons, drag to reorder, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
   via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
 - [ ] **2.5** Started (D45, `docs/settings.md`): the config store. `settings/schema.json` describes every setting

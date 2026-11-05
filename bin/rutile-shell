@@ -114,6 +114,7 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
   shelf          openMenu TARGET   a pin's (its app id) or a window's (window:ID) right-click menu
                  choose TEXT       the open menu's entry with that text
                  closeMenu
+                 tooltip TEXT      a tooltip mid-shelf, as over a button ("": hides it)
                  state
 
 Examples:

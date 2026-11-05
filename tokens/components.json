@@ -2087,5 +2087,21 @@
     "tile_height": 72,
     "tile_padding": 8,
     "toggle_target_size": 56
+  },
+  "tooltip": {
+    "impl": {
+      "anchor_space": 4,
+      "horizontal_padding": 8,
+      "max_width": 200,
+      "min_height": 24,
+      "min_width": 40,
+      "vertical_padding": 4
+    },
+    "plain": {
+      "container_color": "inverse_surface",
+      "container_shape": 4,
+      "supporting_text_color": "inverse_on_surface",
+      "supporting_text_font": "body_small"
+    }
   }
 }

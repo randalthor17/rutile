@@ -592,6 +592,47 @@ Rectangle {
                 }
             }
 
+            GallerySection {
+                title: "Tooltip"
+                width: parent.width
+                Row {
+                    spacing: Spacing.xl
+                    Item {
+                        width: galleryTipButton.width
+                        height: galleryTipButton.height
+                        IconButton {
+                            id: galleryTipButton
+                            objectName: "galleryTipButton"
+                            iconName: "delete"
+                        }
+                        // a hover shows it after half a second, as the shelf's do
+                        Timer {
+                            id: galleryTipWait
+                            interval: 500
+                            running: galleryTipButton.hovered
+                        }
+                        Tooltip {
+                            objectName: "galleryTooltip"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.top
+                            anchors.bottomMargin: spec.impl.anchorSpace
+                            text: "Move to trash"
+                            shown: galleryTipButton.hovered && !galleryTipWait.running
+                        }
+                    }
+                    Tooltip {
+                        text: "A longer tooltip wraps at 200 px, as Compose's plain tooltip does"
+                    }
+                    Text {
+                        width: 240
+                        wrapMode: Text.Wrap
+                        text: "Plain tooltips: hover the button. The shelf's buttons have them too."
+                        color: Colors.surfaceVariantOn
+                        font: Type.font(Type.bodySmall)
+                    }
+                }
+            }
+
             // ---- editable grid: Quick Settings tiles ----
             GallerySection {
                 title: "Quick Settings panel"

@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Tooltips on the shelf.** Hover an app on the shelf for half a second and its name shows above it; over an open
+  window, the window's title. Moving along the shelf, the next one shows at once. The gallery has the new tooltip
+  component.
 - **Calendar files keep their time zones.** An event in a calendar file or address that was written in another time
   zone now shows at the right time for you, and a repeating one keeps its time in its own zone across daylight
   saving changes. Before, such times were read as your own clock's.

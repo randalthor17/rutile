@@ -1037,6 +1037,29 @@ def run_wayland_smoke(screenshot=None):
                     warm = [l.split() for l in (comp.runtime / "calendar.log").read_text().splitlines()]
                     if not any(len(w) == 3 and w[0] == "events" and 0 <= int(w[2]) - int(w[1]) <= 1 for w in warm):
                         problems.append(f"calendar: no warm-up read by the shell in {warm}")
+                    # a shelf button's tooltip (D106): its own surface, loaded while shown, unloaded once it has gone
+                    def shelf_state():
+                        try:
+                            return json.loads(ipc("state", target="shelf"))
+                        except ValueError:
+                            return {}
+                    ipc("tooltip", "Smoke tooltip", target="shelf")
+                    tip = {}
+                    for _ in range(30):
+                        tip = shelf_state()
+                        if tip.get("tooltipShown"):
+                            break
+                        time.sleep(0.1)
+                    if tip.get("tooltip") != "Smoke tooltip" or not tip.get("tooltipLoaded") or not tip.get("tooltipShown"):
+                        problems.append(f"ipc shelf tooltip: {tip}, expected it loaded and shown")
+                    ipc("tooltip", "", target="shelf")
+                    for _ in range(30):
+                        tip = shelf_state()
+                        if not tip.get("tooltipLoaded"):
+                            break
+                        time.sleep(0.1)
+                    if tip.get("tooltipLoaded"):
+                        problems.append(f"ipc shelf tooltip '': {tip}, expected it unloaded")
                     if not list((comp.runtime / "cache" / "rutile" / "calendars").glob("*.ics")):
                         problems.append("calendar address: nothing saved in XDG_CACHE_HOME/rutile/calendars")
                     if screenshot and shutil.which("grim"):

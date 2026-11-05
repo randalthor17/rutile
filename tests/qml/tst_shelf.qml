@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import qs.common
 import qs.shelf
+import qs.components
 import "../qs/shelf/ShelfApps.js" as ShelfApps
 
 TestCase {
@@ -206,5 +207,73 @@ TestCase {
         var fallback = findChild(b, "shelfFallbackIcon");
         verify(fallback.visible, "no icon: the app's initial");
         compare(fallback.children[0].text, "F");
+    }
+
+    // ---- tooltips (D106) ----
+    function test_tooltips() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, groups: ShelfApps.decorate(niriGroups, lookup),
+                                                             tooltipDelay: 200 });
+        waitForItemPolished(shelf);
+        const files = findChild(shelf, "shelfPin_org.gnome.Nautilus"), fox = findChild(shelf, "shelfPin_firefox");
+        mouseMove(files);
+        compare(shelf.tooltipText, "", "not at once");
+        tryCompare(shelf, "tooltipText", "Files", 1000, "after the wait");
+        compare(shelf.tooltipX, files.mapToItem(shelf, files.width / 2, 0).x, "over the button's middle");
+        mouseMove(fox);
+        compare(shelf.tooltipText, "Firefox", "from one button to the next at once");
+        compare(shelf.tooltipX, fox.mapToItem(shelf, fox.width / 2, 0).x);
+        mouseMove(shelf, 5, 5);
+        tryCompare(shelf, "tooltipText", "", 500, "gone off the buttons");
+        mouseMove(fox, 5, 5);
+        wait(50);
+        mouseMove(shelf, 5, 5);
+        wait(400);
+        compare(shelf.tooltipText, "", "a pass over a button shows nothing");
+        // a window says its title
+        const kitty = findChild(shelf, "shelfWindow_10");
+        mouseMove(kitty);
+        tryCompare(shelf, "tooltipText", "b", 1000);
+        mouseClick(kitty);
+        compare(shelf.tooltipText, "", "a press hides it");
+        mouseMove(fox);
+        wait(100);
+        mouseClick(fox, fox.width / 2, fox.height / 2, Qt.RightButton);
+        wait(300);
+        compare(shelf.tooltipText, "", "nor does it come under its menu");
+    }
+    // stand-ins for buttons, to send the leave before the enter, as a compositor may
+    Component { id: fakeButton; Item { property bool hovered: false; property string tooltip: ""; width: 10; height: 10 } }
+    function test_tooltip_leave_before_enter() {
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: pinned, tooltipDelay: 200 });
+        const a = createTemporaryObject(fakeButton, shelf, { tooltip: "A" }), b = createTemporaryObject(fakeButton, shelf, { tooltip: "B", x: 20 });
+        a.hovered = true;
+        shelf.hover(a);
+        tryCompare(shelf, "tooltipText", "A", 1000);
+        a.hovered = false;
+        shelf.hover(a);
+        b.hovered = true;
+        shelf.hover(b);
+        compare(shelf.tooltipText, "B", "the next button's at once, though the last one was left first");
+        wait(0);
+        compare(shelf.tooltipText, "B");
+    }
+    Component { id: tipComp; Tooltip {} }
+    function test_tooltip_component() {
+        const tip = createTemporaryObject(tipComp, root, { text: "Hi" });
+        tryCompare(tip, "opacity", 1);
+        compare(tip.width, ControlSpec.tooltipSpec.impl.minWidth, "a short text: the smallest width");
+        compare(tip.height, ControlSpec.tooltipSpec.impl.minHeight);
+        compare(tip.color, Colors.inverseSurface);
+        compare(findChild(tip, "tooltipText").color, Colors.inverseOnSurface);
+        compare(tip.radius, 4);
+        tip.text = "A rather long tooltip that says far more than a tooltip should, so it has to wrap";
+        compare(tip.width, ControlSpec.tooltipSpec.impl.maxWidth, "at most 200 px wide");
+        verify(tip.height > 2 * ControlSpec.tooltipSpec.impl.minHeight - 8, "it wraps: " + tip.height);
+        tip.text = "Files and folders";
+        const label = findChild(tip, "tooltipText");
+        compare(tip.width, label.implicitWidth + 16, "the text and 8 px each side");
+        const hidden = createTemporaryObject(spyComp, root, { target: tip, signalName: "hidden" });
+        tip.shown = false;
+        tryCompare(hidden, "count", 1, 2000, "it says when it has gone");
     }
 }

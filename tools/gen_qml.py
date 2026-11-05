@@ -224,7 +224,7 @@ def gen_control_spec(c):
     out.append(f"    readonly property var iconButtonSizes: ({js(sizes(c['icon_button']['sizes']))})")
     out.append(f"    readonly property var iconButtonTypes: "
                f"({js({k: camel_keys(role_names(v)) for k, v in c['icon_button']['types'].items()})})")
-    for name in ("switch", "slider", "progress", "chip", "list", "tile", "text_field", "dialog", "fab", "card", "nav_rail"):
+    for name in ("switch", "slider", "progress", "chip", "list", "tile", "text_field", "dialog", "fab", "card", "nav_rail", "tooltip"):
         prop = re.sub(r"_(\w)", lambda m: m.group(1).upper(), name)
         out.append(f"    readonly property var {prop}Spec: ({js(spec_values(c[name]))})")
     out.append("}")

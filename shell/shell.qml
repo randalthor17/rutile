@@ -683,8 +683,18 @@ ShellRoot {
     IpcHandler {
         target: "shelf"
         function state(): string {
+            const shelf = shelves.instances[0];
             return JSON.stringify({ pins: shelfBackend.pinnedIds, menuOpen: shell.shelfMenuOpen,
-                                    menu: shelfMenu.item ? shelfMenu.item.items.map(i => i.separator ? "-" : i.text) : [] });
+                                    menu: shelfMenu.item ? shelfMenu.item.items.map(i => i.separator ? "-" : i.text) : [],
+                                    tooltip: shelf?.shelf.tooltipText ?? "", tooltipLoaded: shelf?.tooltip.active ?? false,
+                                    tooltipShown: (shelf?.tooltip.item?.tooltip.opacity ?? 0) === 1 });
+        }
+        // the first screen's shelf shows TEXT as a hovered button's tooltip, mid-shelf; "" hides it (D106)
+        function tooltip(text: string): void {
+            const shelf = shelves.instances[0]?.shelf;
+            if (!shelf) return;
+            shelf.tooltipX = shelf.width / 2;
+            shelf.tooltipText = text;
         }
         // TARGET: a pinned app's id, or window:<niri window id>; on the first screen's shelf
         function openMenu(target: string): bool {

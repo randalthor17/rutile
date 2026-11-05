@@ -1236,3 +1236,16 @@ greeter):
   local.
 - **Not done.** A wall time in a DST gap takes the offset after the change, and one in an overlap the offset
   before it; a zone rule with several weekdays uses the first. Events from accounts (D95) were already right: EDS works their zones out.
+
+**D106. Plain tooltips, first on the shelf** (plan 1.5 and 2.4, 2026-11-05):
+- **What.** `Tooltip` (shell/components) is M3's plain tooltip: Compose's `PlainTooltipTokens.kt` (inverse surface
+  and its text, the extra-small corner, bodySmall) and the sizes `Tooltip.kt` keeps in code (8 x 4 padding, at least
+  40 x 24, at most 200 wide, 4 from what it explains), both vendored and checked by `gen_components.py`. It grows in
+  with PopupMotion and says `hidden` when gone. The rich tooltip (title, actions) is not done.
+- **The shelf.** Hovering a button for 500 ms shows its tooltip: a pin's app name, a window's title (its app's name
+  without one). From one button to the next it changes at once, as desktop tooltips do; it goes when the pointer
+  leaves the buttons, presses one, or opens its menu. The delay is Rutile's choice; Compose shows a tooltip on hover
+  without naming a delay in its tokens. The tooltip is a layer-shell surface of its own above the shelf (it could not
+  draw outside the shelf's), taking no input, loaded only while it shows (D31). `ipc call shelf tooltip TEXT` shows
+  one for scripts and the smoke test.
+- **Cost.** 58.7 KiB per tooltip, and only while one shows (docs/memory.md).

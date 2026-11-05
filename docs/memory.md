@@ -80,6 +80,7 @@ anything rounded; do not tune for it. Results are stable to a fraction of a KiB 
 | Dialog, headline, a line and two actions | | 232.0 | the card, two Texts with TextMetrics, two text Buttons; 64.4 bare. Only inside a PopupLoader while open |
 | Fab | | 83.2 | container, icon, state layer and press spring |
 | NavRail, 4 destinations | | 323.4 | about 80 per destination: indicator, its spring, state layer, icon, label, pointer area; only in windows that use it |
+| Tooltip | | 58.7 | the pill, its text and PopupMotion. The shelf's has a layer-shell surface of its own, loaded only while it shows (LazyLoader) |
 | Card | | 29.7 | a Rectangle and its state layer; the content is the caller's |
 | TitleBar | | 160.4 | icon, title, maximize and close IconButtons, the drag area; one per app window, only while it is open |
 | CalendarPanel | | 1566 (2922 before the grid was cut) | 42 day numbers as bare Texts; one MouseArea, one hover circle, today's and the chosen day's circles moved to their day, and a dot only under days with events (a circle, dot and StateLayer in every cell had cost 1.3 MB more); the header's 3 IconButtons, the event list. Only while the calendar is open (LazyLoader) |

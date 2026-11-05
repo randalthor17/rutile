@@ -1,6 +1,7 @@
 // One app or window on the shelf: its icon (or its initial on a tonal circle when the icon theme has none), a state
 // layer, a press that shrinks it on the spatial spring, and a mark under it: a dot for `running`, a longer primary
 // dash for `active` (the shelf marks the focused window). A right click asks for its menu (menuRequested, D72).
+// `tooltip` is what its tooltip says (D106); `hovered` while the pointer is over it.
 import QtQuick
 import qs.common
 import qs.components
@@ -12,6 +13,8 @@ Item {
     property string iconSource: ""      // an image URL (Quickshell.iconPath in the shell), or "" for the fallback
     property bool running: false
     property bool active: false
+    property string tooltip: name
+    readonly property bool hovered: stateLayer.hovered
 
     signal clicked()
     signal menuRequested()
