@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd media input clipboard toast quicksettings tray shelf widgets"
+TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd media input clipboard capture toast quicksettings tray shelf widgets"
 
 usage() {
     cat <<'EOF'
@@ -109,6 +109,13 @@ IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diag
   clipboard      toggle | open | close   the clipboard history (bind it to Mod+V)
                  isOpen
                  choose INDEX      copy back the open picker's entry INDEX, as a click
+                 state
+  capture        open | close | toggle   the capture bar: screenshot or record a region, window or screen
+                 screenshot TARGET   at once: region, window (niri only) or screen
+                 record TARGET AUDIO   region or screen until stop; AUDIO true adds the microphone
+                 stop
+                 choose TARGET     as a click on the open bar's region, window or screen
+                 setRecord BOOL    the open bar's mode: record or screenshot
                  state
   toast          send TEXT ICON    a short message (ICON: a Material Symbols name, or ""); its id
                  state

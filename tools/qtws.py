@@ -37,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp", "clipboard")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp", "clipboard", "capture")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -290,6 +290,7 @@ def qs_test_env(test, ws):
     env["RUTILE_FCITX5"] = str(ws / "bin" / "fcitx5")
     env["FAKE_FCITX"] = str(ws / "home" / "fake-fcitx")
     env["FAKE_CLIP"] = str(ws / "home" / "fake-clip")
+    env["FAKE_CAPTURE"] = str(ws / "home" / "fake-capture")
     port = free_port()
     for name, value in re.findall(r"^// env (\w+)=(\S+)$", Path(test).read_text(), flags=re.M):
         env[name] = (value.replace("@WS@", str(ws)).replace("@PATH@", os.environ.get("PATH", ""))
@@ -452,6 +453,9 @@ def run_wayland_smoke(screenshot=None):
             "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"),
             "FAKE_FCITX": str(comp.runtime / "fake-fcitx"),
             "FAKE_CLIP": str(comp.runtime / "fake-clip"),
+            "FAKE_CAPTURE": str(comp.runtime / "fake-capture"),
+            "XDG_PICTURES_DIR": str(comp.runtime / "Pictures"),
+            "XDG_VIDEOS_DIR": str(comp.runtime / "Videos"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             # a session of its own, heard through the fake dbus-monitor; the fake systemd-inhibit holds nothing
             "XDG_SESSION_ID": "rutiletest",
@@ -1132,6 +1136,42 @@ def run_wayland_smoke(screenshot=None):
                         time.sleep(0.2)
                     if toast != {"loaded": False, "open": False, "current": None, "queued": []}:
                         problems.append(f"ipc toast state 15 s after two toasts: {toast}, expected none left")
+                    # screenshots and recording (D120; after the toast checks, as these toast too), without niri here: grim and slurp, wf-recorder (fakes)
+                    def capture_state():
+                        try:
+                            return json.loads(ipc("state", target="capture"))
+                        except ValueError:
+                            return {}
+                    cap_log = Path(env["FAKE_CAPTURE"] + ".log")
+                    ipc("open", target="capture")
+                    time.sleep(0.6)
+                    cs = capture_state()
+                    if not cs.get("open") or cs.get("niri") is not False:
+                        problems.append(f"ipc capture open: {cs}")
+                    if ipc("choose", "screen", target="capture") != "true":
+                        problems.append("ipc capture choose screen: refused")
+                    time.sleep(1.2)
+                    shots = sorted((Path(env["XDG_PICTURES_DIR"]) / "Screenshots").glob("Screenshot from *.png"))
+                    copied = Path(env["FAKE_CLIP"] + ".copied")
+                    if len(shots) != 1 or "grim -o HEADLESS-1 " not in (cap_log.read_text() if cap_log.exists() else "") \
+                            or capture_state().get("open") is not False or not copied.exists() or copied.read_text() != "PNG":
+                        problems.append(f"capture a screen: files {shots}, log {cap_log.read_text() if cap_log.exists() else ''!r}, "
+                                        f"state {capture_state()}, expected one screenshot of HEADLESS-1, copied, and the bar closed")
+                    if ipc("screenshot", "window", target="capture") != "false":
+                        problems.append("ipc capture screenshot window without niri: accepted")
+                    if ipc("record", "region", "false", target="capture") != "true":
+                        problems.append("ipc capture record region: refused")
+                    time.sleep(1.2)
+                    cs = capture_state()
+                    if not cs.get("recording") or cs.get("pills") != [True]:
+                        problems.append(f"recording: {cs}, expected recording with the pill shown")
+                    ipc("stop", target="capture")
+                    time.sleep(0.8)
+                    films = sorted((Path(env["XDG_VIDEOS_DIR"]) / "Screencasts").glob("Screencast from *.mp4"))
+                    log_text = cap_log.read_text() if cap_log.exists() else ""
+                    if capture_state().get("recording") is not False or len(films) != 1 or "-g 10,20 300x200" not in log_text \
+                            or "wf-recorder stopped" not in log_text:
+                        problems.append(f"recording stopped: {capture_state()}, files {films}, log {log_text!r}")
                     # the calendar under the clock (D93): it reads the folder when it opens, a weekly event comes back
                     # a week on, and it closes and unloads
                     def calendar_state():
@@ -1530,6 +1570,9 @@ def run_wayland_surfaces():
             "RUTILE_FCITX5": str(ROOT / "tests" / "qs" / "bin" / "fcitx5"),
             "FAKE_FCITX": str(comp.runtime / "fake-fcitx"),
             "FAKE_CLIP": str(comp.runtime / "fake-clip"),
+            "FAKE_CAPTURE": str(comp.runtime / "fake-capture"),
+            "XDG_PICTURES_DIR": str(comp.runtime / "Pictures"),
+            "XDG_VIDEOS_DIR": str(comp.runtime / "Videos"),
             "FAKE_PW_PLAY": str(comp.runtime / "pw-play.log"),
             "XDG_SESSION_ID": "",
             "DBUS_SESSION_BUS_ADDRESS": bus.address,

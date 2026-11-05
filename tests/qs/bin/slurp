@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# A stand-in for slurp in tests: picks a fixed region, or none (exit 1) while $FAKE_CAPTURE.cancel exists.
+state="${FAKE_CAPTURE:-${TMPDIR:-/tmp}/rutile-fake-capture}"
+echo "slurp $*" >> "$state.log"
+[ -e "$state.cancel" ] && exit 1
+echo "10,20 300x200"

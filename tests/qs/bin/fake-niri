@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """A stand-in for niri's IPC socket (tests/qs/tst_niri_service.qml). `fake-niri SOCKET LOG`: an EventStream
-request gets {"Ok":"Handled"} and two snapshots (workspaces, windows), then a window opening after a moment;
+request gets {"Ok":"Handled"} and two snapshots (workspaces, windows), then a window opening after a moment and a
+screenshot taken;
 any other request is appended to LOG and answered {"Ok":"Handled"}. Exits after 20 s."""
 import json
 import os
@@ -28,6 +29,7 @@ EVENTS = [
 LATER = {"WindowOpenedOrChanged": {"window": {
     "id": 12, "title": "t", "app_id": "foot", "pid": 3, "workspace_id": 2, "is_focused": False, "is_floating": False,
     "is_urgent": False, "layout": {"pos_in_scrolling_layout": [1, 1]}}}}
+SHOT = {"ScreenshotCaptured": {"path": "/home/u/Pictures/Screenshots/Screenshot from 2026-11-05 10-00-00.png"}}
 
 
 def serve(conn):
@@ -41,6 +43,7 @@ def serve(conn):
             f.flush()
             time.sleep(0.5)
             f.write((json.dumps(LATER) + "\n").encode())
+            f.write((json.dumps(SHOT) + "\n").encode())
             f.flush()
             time.sleep(30)
         else:

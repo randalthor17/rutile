@@ -1417,3 +1417,23 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
   cliphist's database.
 - **Not verified:** the real cliphist and wl-paste on the maintainer's session (only their formats were checked,
   on a scratch database), image thumbnails (not shown; the label only).
+
+**D120. Screenshots and screen recording** (plan 2.1, 2.8, 2026-11-05):
+- The capture bar (shell/capture, a layer surface above the shelf created only while open, D31), as ChromeOS's:
+  Screenshot or Record, then a region, a window (screenshots on niri only) or the screen, the microphone for a
+  recording, close. What was chosen is taken once the bar is unloaded (250 ms later), so it is not in the picture.
+  IPC `capture open|close|toggle|screenshot T|record T AUDIO|stop|choose T|setRecord B|state`.
+- On niri, screenshots are niri's own actions (`screenshot` with its region picker, `screenshot-window`,
+  `screenshot-screen`): saved and copied as its config says. niri announces each one on its event stream
+  (`ScreenshotCaptured`, with the path), which NiriService passes on, so a toast with Open comes for every
+  screenshot, also from niri's own Print bind. Without niri: grim (a screen by output, or a region slurp picks),
+  saved to Pictures/Screenshots (XDG_PICTURES_DIR first) and copied with wl-copy.
+- Recording: wf-recorder (niri has no recorder; it implements wlr-screencopy) of a region (slurp) or a screen
+  (`-o`), with the default microphone when asked (`--audio`), to Videos/Screencasts as .mp4. Stopped with SIGINT,
+  as wf-recorder finishes its file then; a red pill left of the indicators shows the time and stops it. Desktop
+  audio (the output's monitor) is not offered: it needs the sink's name, and the microphone covers talking over a
+  recording.
+- New runtime dependencies (approved with the maintainer's list): grim, slurp, wf-recorder. Tests use fakes of all
+  three (tests/qs/bin) and send files to the test's own folders.
+- **Not verified:** niri's actions from the bar and its ScreenshotCaptured event on the maintainer's niri (the
+  event is tested with the fake niri socket), real wf-recorder on niri, and the microphone.

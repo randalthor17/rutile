@@ -19,6 +19,7 @@ PanelWindow {
     readonly property alias pill: pill
     readonly property alias tray: tray
     readonly property alias input: input
+    readonly property alias record: record
 
     signal clicked()
     signal bellClicked()
@@ -41,6 +42,13 @@ PanelWindow {
     Row {
         id: row
         spacing: Spacing.xs
+        RecordPill {
+            id: record
+            objectName: "recordPill"
+            recording: CaptureService.recording
+            since: CaptureService.recordingSince
+            onClicked: CaptureService.stop()
+        }
         NotificationBell {
             id: bell
             objectName: "notificationBell"

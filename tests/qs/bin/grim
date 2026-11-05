@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# A stand-in for grim in tests: writes a tiny file at the path it is given (the last argument), never reading the
+# screen. Calls are logged to $FAKE_CAPTURE.log.
+log="${FAKE_CAPTURE:-${TMPDIR:-/tmp}/rutile-fake-capture}.log"
+echo "grim $*" >> "$log"
+printf 'PNG' > "${!#}"

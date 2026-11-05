@@ -23,6 +23,12 @@ ShellRoot {
         printErrors: false
     }
 
+    property var shots: []
+    Connections {
+        target: NiriService
+        function onScreenshotCaptured(path) { root.shots = root.shots.concat([path]); }
+    }
+
     // Wait (up to 10 s) for the connection and the window that opens half a second after the snapshots.
     property int waited: 0
     Timer {
@@ -39,6 +45,8 @@ ShellRoot {
             t.compare(g[0].windows.map(w => w.appId).join(), "firefox,kitty", "layout order");
             t.compare(g[1].windows.map(w => w.appId).join(), "foot", "a window opened later");
             t.verify(g[0].windows[1].focused, "focus");
+            t.compare(root.shots.join("|"), "/home/u/Pictures/Screenshots/Screenshot from 2026-11-05 10-00-00.png",
+                      "a screenshot niri took (D120), and not taken for a state change");
             NiriService.focusWindow(11);
             NiriService.focusWindow(12);
             NiriService.scrollWorkspace("DP-1", -1);       // already the first: nothing

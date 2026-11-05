@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# A stand-in for wf-recorder in tests: records nothing; on SIGINT it writes the file named after -f and exits 0, as
+# the real one finishes its file. Calls are logged to $FAKE_CAPTURE.log.
+log="${FAKE_CAPTURE:-${TMPDIR:-/tmp}/rutile-fake-capture}.log"
+echo "wf-recorder $*" >> "$log"
+file=""
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do [ "${args[i]}" = -f ] && file="${args[i + 1]}"; done
+trap 'printf "MP4" > "$file"; echo "wf-recorder stopped" >> "$log"; exit 0' INT
+while :; do sleep 0.1; done

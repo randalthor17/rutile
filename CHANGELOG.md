@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Screenshots and screen recording.** `rutile-shell capture open` (bind it to Print) shows a capture bar, as
+  ChromeOS's: take a screenshot of a region, a window or the screen, or record a region or the screen, with the
+  microphone if you like. Screenshots go to Pictures/Screenshots and are copied; recordings go to
+  Videos/Screencasts. While recording, a red pill at the top right shows the time; click it to stop. A toast says
+  where each one went, with Open; niri's own screenshot key gets the toast too.
 - **Clipboard history.** What you copy (text and images) is kept, and `rutile-shell clipboard toggle` (bind it to
   Mod+V in niri) opens a picker: search it, press Enter or click to copy an entry again, then paste with Ctrl+V;
   Delete or the row's button forgets one, "Clear all" forgets everything. Passwords that password managers mark

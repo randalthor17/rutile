@@ -17,6 +17,7 @@ import Quickshell.Wayland
 import qs.common
 import qs.bar
 import qs.calendar
+import qs.capture
 import qs.clipboard
 import qs.launcher
 import qs.notifications
@@ -61,6 +62,95 @@ ShellRoot {
         if (notificationListOpen) closeNotificationList();
         if (calendarOpen) closeCalendar();
         if (clipboardOpen) closeClipboard();
+        if (captureOpen) closeCapture();
+    }
+
+    // Screenshots and recording (D120): the capture bar on a screen (null: the first), as the launcher; what was
+    // chosen is taken once the bar is off the screen. A toast says where it went, with Open.
+    property var captureScreen: null
+    readonly property bool captureOpen: capture.active && !(capture.item?.closing ?? false)
+    function closeCapture() {
+        if (capture.item) capture.item.close();
+        else capture.active = false;
+    }
+    function toggleCapture(screen) {
+        if (captureOpen) {
+            closeCapture();
+            return;
+        }
+        capture.active = false;
+        captureScreen = screen;
+        capture.active = true;
+    }
+    function captureOutput() {
+        return (captureScreen ?? Quickshell.screens[0])?.name ?? "";
+    }
+    function takeCapture(c) {
+        if (c.mode === "record") return CaptureService.record(c.target, captureOutput(), c.audio);
+        return CaptureService.screenshot(c.target, captureOutput());
+    }
+    LazyLoader {
+        id: capture
+        CaptureWindow {
+            screen: shell.captureScreen
+            bar.windows: CaptureService.niri
+            onCloseRequested: {
+                const c = chosen;
+                capture.active = false;
+                if (c) {
+                    captureLater.chosen = c;
+                    captureLater.restart();
+                }
+            }
+        }
+    }
+    // the compositor drops the bar's surface a frame or two after it is unloaded
+    Timer {
+        id: captureLater
+        property var chosen: null
+        interval: 250
+        onTriggered: shell.takeCapture(chosen)
+    }
+    Connections {
+        target: CaptureService
+        function onDone(kind, path, ok) {
+            if (!ok) {
+                if (kind === "recording" && path !== "") ToastService.show("Recording stopped", { icon: "videocam_off" });
+                return;
+            }
+            const what = kind === "recording" ? "Recording saved" : path !== "" ? "Screenshot saved and copied" : "Screenshot copied";
+            ToastService.show(what, { icon: kind === "recording" ? "videocam" : "photo_camera",
+                                      action: path !== "" ? { text: "Open", run: () => Qt.openUrlExternally("file://" + path) } : null });
+        }
+    }
+    // From a key in niri: Print { spawn "rutile-shell" "capture" "open"; }
+    IpcHandler {
+        target: "capture"
+        function open(): void { if (!shell.captureOpen) shell.toggleCapture(null); }
+        function close(): void { shell.closeCapture(); }
+        function toggle(): void { shell.toggleCapture(null); }
+        // at once, without the bar: region, window (niri only) or screen; false when it cannot be taken
+        function screenshot(target: string): bool { return CaptureService.screenshot(target, shell.captureOutput()); }
+        function record(target: string, audio: bool): bool { return CaptureService.record(target, shell.captureOutput(), audio); }
+        function stop(): bool { return CaptureService.stop(); }
+        // as a click on the open bar's button: region, window or screen
+        function choose(target: string): bool {
+            const b = capture.item?.bar;
+            if (!b || ["region", "window", "screen"].indexOf(target) < 0) return false;
+            b.take(target);
+            return true;
+        }
+        function setRecord(on: bool): bool {
+            const b = capture.item?.bar;
+            if (!b) return false;
+            b.record = on;
+            return true;
+        }
+        function state(): string {
+            return JSON.stringify({ open: shell.captureOpen, niri: CaptureService.niri, recording: CaptureService.recording,
+                                    recordingPath: CaptureService.recordingPath,
+                                    pills: statusWindows.instances.map(s => s.pill.record.visible) });
+        }
     }
 
     // Clipboard history (D119): ClipboardService keeps it from the start (its watchers); the picker, as the

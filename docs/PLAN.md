@@ -80,7 +80,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 
 - [ ] **2.1** Started: `shell/services/` wraps Pipewire (volume, mute, mic), Networking (Wi-Fi), Bluetooth and,
   through brightnessctl (D39), the backlight, and through ddcutil (D113), external monitors' brightness over DDC/CI,
-  every display at once or one each from Settings > Display; clipboard history through cliphist (D119, a picker
+  every display at once or one each from Settings > Display; screenshots and recording (D120, a capture bar on
+  IPC `capture open`, niri's actions or grim and slurp, wf-recorder); clipboard history through cliphist (D119, a picker
   on IPC `clipboard toggle`); and fcitx5 (D118) for input methods, with a pill
   at the top showing the one in use; enough for Quick Settings. Next: UPower, Mpris, notifications, tray.
   Quickshell built-in services first (Pipewire, UPower, NetworkManager, Bluetooth, notifications,

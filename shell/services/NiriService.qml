@@ -58,6 +58,10 @@ Singleton {
         _desktopPlan = null;
     }
 
+    // niri took a screenshot (its own Print bind, or the shell's capture bar, D120): where it saved it ("" when only
+    // copied).
+    signal screenshotCaptured(string path)
+
     property var _queue: []
     function request(line) {
         if (socketPath === "") return;
@@ -81,7 +85,8 @@ Singleton {
             onRead: line => {
                 try {
                     const msg = JSON.parse(line);
-                    if (!("Ok" in msg) && !("Err" in msg)) root.state = NiriState.apply(root.state, msg);
+                    if ("ScreenshotCaptured" in msg) root.screenshotCaptured(msg.ScreenshotCaptured?.path ?? "");
+                    else if (!("Ok" in msg) && !("Err" in msg)) root.state = NiriState.apply(root.state, msg);
                 } catch (e) {
                     console.warn("rutile: niri event not understood:", line);
                 }
