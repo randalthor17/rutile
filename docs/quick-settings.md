@@ -24,10 +24,10 @@ under the bell, `isOpen`, `setDnd <true|false>`, `dnd`, `dismiss <id>`, `dismiss
 `state` (what is kept and popping up, the windows, each screen's bell). A niri keybind runs the `toggle` line (with the
 absolute path), e.g. `Mod+S { spawn "quickshell" "-p" "/path/to/shell/shell.qml" "ipc" "call" "quicksettings" "toggle"; }`.
 The OSD (volume and brightness, `shell/osd/`): `ipc call osd volumeUp`, `volumeDown`, `toggleMute`, `brightnessUp`,
-`brightnessDown` (5% steps; the brightness calls return false without a backlight), `display <volume|brightness>` and
+`brightnessDown` (5% steps, every display together; the brightness calls return false when no display can be set), `display <volume|brightness>` and
 `state`. Bind the media keys to them, e.g. `XF86MonBrightnessUp allow-when-locked=true { spawn "quickshell" "-p"
 "/path/to/shell/shell.qml" "ipc" "call" "osd" "brightnessUp"; }`. A volume change from anywhere else (keys bound to
-`wpctl`, an app) shows the OSD too, but brightnessctl reports no changes, so brightness keys must go through the
+`wpctl`, an app) shows the OSD too, but neither brightnessctl nor ddcutil reports changes, so brightness keys must go through the
 shell to show it. It is not shown while Quick Settings is open, whose sliders show the level.
 Toasts: `ipc call toast send <text> <icon>` (a Material Symbols name, or "" for none) returns the toast's id; `state`.
 No IPC function is called `show`: `quickshell ipc call <target> show` is read as the CLI's own `ipc show`.
@@ -101,7 +101,7 @@ any wallpaper (the maintainer asked for a colored pill). It does nothing on clic
 | `shell/services/AudioService.qml` | yes | default output and input: volume, mute (`Pipewire`, `PwObjectTracker`) |
 | `shell/services/NetworkService.qml` | yes | Wi-Fi on/off, connected network (`Networking`, NetworkManager) |
 | `shell/services/BluetoothService.qml` | yes | adapter on/off, a connected device (`Bluetooth`, BlueZ) |
-| `shell/services/BrightnessService.qml` | yes | backlight through `brightnessctl` (D39) |
+| `shell/services/BrightnessService.qml` | yes | every display's brightness: backlights through `brightnessctl` (D39), monitors through `ddcutil` (D113) |
 | `shell/services/PowerService.qml` | yes | the laptop battery (`UPower` display device) |
 
 The window exists only while open: closing destroys it (D31). The panel shows and changes everything
@@ -144,9 +144,9 @@ window (`niri msg action focus-column-right`) closed the panel.
 ## Tests
 
 - `tests/qml/tst_quick_settings.qml` (offscreen, `make check`): the panel against a fake backend, every tile,
-  slider, button and edit mode; brightnessctl output parsing.
+  slider, button and edit mode; brightnessctl's and ddcutil's output parsing.
 - `tests/qs/tst_brightness_*.qml` (`tools/qtws.py test-qs`, in `make check`): the brightness service against a fake
-  `brightnessctl` (`tests/qs/bin/`), including how quick changes are queued.
+  `brightnessctl` and a fake `ddcutil` with two monitors (`tests/qs/bin/`), including how quick changes are queued.
 - `tools/qtws.py test-wayland [--screenshot FILE]` (in `make check` when sway is installed): the real
   `shell/shell.qml` under a headless sway with its own runtime directory, opened and closed over IPC, checking
   `state` (the panel and the pill reached the backend, brightness shows, the pill is marked and on the top layer,

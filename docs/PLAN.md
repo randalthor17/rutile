@@ -79,7 +79,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 ## Phase 2: shell core (on niri)
 
 - [ ] **2.1** Started: `shell/services/` wraps Pipewire (volume, mute, mic), Networking (Wi-Fi), Bluetooth and,
-  through brightnessctl (D39), the backlight; enough for Quick Settings. Next: UPower, Mpris, notifications, tray.
+  through brightnessctl (D39), the backlight, and through ddcutil (D113), external monitors' brightness over DDC/CI,
+  every display at once or one each from Settings > Display; enough for Quick Settings. Next: UPower, Mpris, notifications, tray.
   Quickshell built-in services first (Pipewire, UPower, NetworkManager, Bluetooth, notifications,
   MPRIS, tray); a small daemon only for real gaps (settings persistence, widget validation, Ollama bridge).
   Types: `Pipewire`, `UPower`/`PowerProfiles`, `Networking`, `Bluetooth`, `NotificationServer`, `Mpris`,
@@ -329,7 +330,8 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
   and Bluetooth done (D68): Wi-Fi's switch, the networks around (scanning while the page is open) with a
   password asked under the network, saved ones forgotten, Ethernet's state; Bluetooth's switch, paired devices
   (connect, disconnect, forget, battery) and the devices around to pair (discovering while open). Display done
-  (D69): each niri output's resolution, refresh rate, size, orientation, variable refresh rate and on or off,
+  (D69): each niri output's resolution, refresh rate, size, orientation, variable refresh rate, on or off, and its
+  brightness where it can be set (D113),
   through `niri msg output` (until niri restarts; a Copy button gives the KDL for niri's config). Power and Input
   done (D70): the battery (charge, time, health) and the power mode (power-profiles-daemon, holds shown); key
   repeat, touchpad and mouse settings that the shell writes to rutile-input.kdl for niri to include, behind a

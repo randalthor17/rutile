@@ -1313,3 +1313,28 @@ maintainer's list, 2026-11-05):
   they are edited, D31), false when it has no room or there is no such screen.
 - Tested offscreen (the data, the button and menu), and in the real shell under headless sway with a second output
   plugged in (`create_output`). Not verified on two real monitors.
+
+**D113. Brightness for every display: ddcutil beside brightnessctl** (plan 2.1, the maintainer's request,
+2026-11-05):
+- brightnessctl (D39) sets backlights only, so a desktop had no brightness at all. External monitors take it over
+  DDC/CI (VCP feature 0x10), through ddcutil (new runtime dependency, approved): `ddcutil detect --terse` finds
+  the monitors that answer (by I2C bus, with their DRM connector, which is niri's output name without the card),
+  `getvcp 10 --brief --bus N` reads one (about 50 ms here), `setvcp 10 V --bus N --noverify` sets it (about 90 ms).
+  It needs read and write access to /dev/i2c-* (the `i2c` group, NixOS's `hardware.i2c.enable`); the shell does
+  not set that up, the system does.
+- `BrightnessService.displays` lists every backlight (brightnessctl now lists all, `-l`) then every monitor that
+  answered. `set()` sets them all to the same fraction and `value` is the first one's, so the one Quick Settings
+  slider, the keys and the OSD work as before. Settings > Display has a slider per output: a monitor by its
+  connector, a backlight under a built-in panel (eDP, LVDS, DSI).
+- Writes go one at a time, each display keeping only its newest value, so a dragged slider never queues a process
+  per frame. A read while a display's write runs or waits keeps the value shown for it. A monitor may go to 0 (its
+  dimmest); a backlight never does (it can turn the panel off). Monitors are looked for at start and when screens
+  change; values are read again when Quick Settings or Settings > Display opens.
+- Tests use a fake ddcutil (tests/qs/bin) everywhere the shell steps brightness, so no real monitor is touched.
+- **Not verified:** the shell setting the maintainer's monitor. Only the commands were tried by hand (a read, and
+  writing its current value back); the shell's own writes ran against the fake.
+
+**D114. A small dual-target tile colors as a plain one** (plan 2.6, fix to D109):
+- An icon-only tile draws no separate icon target, but a dual-target one (Microphone) still took SystemUI's dual
+  colors, which color the icon for that target: on, its icon was primaryOn over surfaceVariant, pale on pale. An
+  icon-only tile now takes the plain active and inactive colors, as every other small tile.

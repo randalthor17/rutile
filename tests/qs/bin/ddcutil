@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# A stand-in for ddcutil in tests, so no real monitor is ever touched. Monitors are the buses in
+# $FAKE_DDC_BUSES (default "8", a comma or space between; empty for none), bus 8 on DP-1 and the others on HDMI-A-<bus>; each
+# bus's brightness (of 100) lives in $FAKE_DDC.<bus> (default 70). Every call is appended to
+# $FAKE_DDC.log. FAKE_DDC defaults to $FAKE_BRIGHTNESS.ddc, then a file under /tmp, never the tree.
+state="${FAKE_DDC:-${FAKE_BRIGHTNESS:-${TMPDIR:-/tmp}/rutile-fake}.ddc}"
+buses="${FAKE_DDC_BUSES-8}"
+buses="${buses//,/ }"
+echo "$*" >> "$state.log"
+bus=""
+args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+  [ "${args[i]}" = --bus ] && bus="${args[i + 1]}"
+done
+case "$1" in
+  detect)
+    n=1
+    for b in $buses; do
+      out=$([ "$b" = 8 ] && echo DP-1 || echo "HDMI-A-$b")
+      printf 'Display %s\n   I2C bus:          /dev/i2c-%s\n   DRM connector:    card1-%s\n   drm_connector_id: %s\n   Monitor:          FAK:Fake Monitor %s:SN%s\n\n' "$n" "$b" "$out" "$b" "$b" "$b"
+      n=$((n + 1))
+    done
+    printf 'Invalid display\n   I2C bus:          /dev/i2c-3\n   DRM connector:    card1-HDMI-A-7\n\n'
+    ;;
+  getvcp)
+    case " $buses " in *" $bus "*) ;; *) echo "Bus /dev/i2c-$bus cannot be used for DDC/CI communication." >&2; exit 1 ;; esac
+    [ -f "$state.$bus" ] || echo 70 > "$state.$bus"
+    echo "VCP 10 C $(cat "$state.$bus") 100"
+    ;;
+  setvcp)
+    sleep 0.2
+    echo "$3" > "$state.$bus"
+    ;;
+esac

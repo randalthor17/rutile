@@ -432,7 +432,8 @@ class HeadlessSway:
 def run_wayland_smoke(screenshot=None):
     """Start shell/shell.qml under headless sway, toggle Quick Settings over IPC, and collect problems.
 
-    Returns (code, report). brightnessctl is the fake in tests/qs/bin, so the real backlight is never touched.
+    Returns (code, report). brightnessctl and ddcutil are the fakes in tests/qs/bin, so no real backlight or monitor
+    is ever touched.
     """
     qs, sway = shutil.which("quickshell"), shutil.which("sway")
     if not qs or not sway:
@@ -623,6 +624,12 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc osd state 4 s after a key: {osd}, expected unloaded and no volume")
                     if fake.read_text().strip() != str(want_raw):
                         problems.append(f"fake backlight after brightnessUp: {fake.read_text().strip()}, expected {want_raw}")
+                    # every display steps together (D113): the fake monitor on DDC/CI bus 8 too
+                    ddc = Path(f"{fake}.ddc.8")
+                    want_ddc = str(round((512 / 1060 + 0.05) * 100))
+                    if not ddc.exists() or ddc.read_text().strip() != want_ddc:
+                        problems.append(f"fake monitor after brightnessUp: {ddc.read_text().strip() if ddc.exists() else 'never read'}, "
+                                        f"expected {want_ddc}")
                     # toasts: one at a time, in order; the same text again is not queued
                     first = ipc("send", "Screenshot saved", "photo_camera", target="toast")
                     second = ipc("send", "Copied", "", target="toast")
@@ -813,6 +820,9 @@ def run_wayland_smoke(screenshot=None):
                     second = [n for n in (desktop_layout().get("shown") or []) if n != first]
                     if not second:
                         problems.append(f"ipc widgets move: no second screen while editing: {desktop_layout()}")
+                    ddc_log = Path(f"{fake}.ddc.log")
+                    if not ddc_log.exists() or ddc_log.read_text().count("detect") < 2:
+                        problems.append("a screen plugged in: monitors were not looked for again (ddcutil detect)")
                     elif ipc("move", "stat", second[0], target="widgets") != "true":
                         problems.append(f"ipc widgets move stat {second[0]}: refused")
                     else:
@@ -1213,8 +1223,9 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"notification dismissed: state {n}, expected none and the window unloaded")
                     # Closing when another window takes focus (D41) cannot be tested here: sway gives an
                     # on-demand layer surface focus only when it is clicked, and there is no pointer.
+                    # the shell reads it once at start, and again as the panel opens
                     calls = (fake.parent / (fake.name + ".log"))
-                    if not calls.exists() or "info" not in calls.read_text():
+                    if not calls.exists() or calls.read_text().count("-m -l -c backlight") < 2:
                         problems.append("opening the panel did not read the brightness")
                     # last, as nothing unlocks it here. logind (the fake dbus-monitor) asks our session to lock: the
                     # lock screen covers the screen (the compositor says secure); there is no IPC call that unlocks it

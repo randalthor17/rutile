@@ -3,7 +3,8 @@
 // (DisplayBackend.qml, or the tests' fake), which has
 //   available; outputs: niri's JSON (`niri msg -j outputs`'s values); error: the last change's complaint;
 //   command(name, args) (`niri msg output NAME ARGS...`), kept (the outputs whose choices the shell keeps, D74),
-//   reset(name) (back to niri's own config).
+//   reset(name) (back to niri's own config); brightness: BrightnessService's displays (D113), and
+//   setBrightness(id, value), for a slider under each output whose brightness can be set.
 // The outputs are the group `setting_display.outputs` (Pages.js entries).
 pragma ComponentBehavior: Bound
 import QtQuick
@@ -11,6 +12,7 @@ import qs.common
 import qs.components
 import qs.settingsapp
 import "../../services/NiriDisplay.js" as Display
+import "../../services/BrightnessCtl.js" as Brightness
 
 Column {
     id: page
@@ -72,7 +74,9 @@ Column {
                 readonly property var rates: mode ? Display.rates(modelData, mode.width, mode.height) : []
                 readonly property var scales: Display.scales(modelData)
                 readonly property bool vrr: on && modelData.vrr_supported
-                readonly property int rows: (on ? 5 + (vrr ? 1 : 0) : 1) + (kept ? 1 : 0)
+                readonly property var light: on ? Brightness.forOutput(page.backend?.brightness, modelData.name) : null
+                readonly property int b: light ? 1 : 0       // the rows after brightness move down one
+                readonly property int rows: (on ? 5 + b + (vrr ? 1 : 0) : 1) + (kept ? 1 : 0)
                 readonly property string key: "display." + modelData.name
                 readonly property bool kept: (page.backend?.kept ?? []).indexOf(modelData.name) >= 0
                 width: page.width
@@ -110,12 +114,33 @@ Column {
                         onToggled: want => out.run([want ? "on" : "off"])
                     }
                 }
+                ListItem {
+                    objectName: "displayBrightness_" + out.index
+                    visible: !!out.light
+                    width: page.width
+                    position: page.segment(1, out.rows)
+                    tone: Colors.surfaceContainer
+                    iconName: "brightness_medium"
+                    text: "Brightness"
+                    Slider {
+                        id: lightSlider
+                        objectName: "displayBrightnessSlider_" + out.index
+                        anchors.verticalCenter: parent?.verticalCenter
+                        width: 200
+                        ticks: false
+                        onMoved: v => page.backend.setBrightness(out.light.id, v)
+                        Binding on value {
+                            value: out.light?.value ?? 0
+                            when: !lightSlider.pressed
+                        }
+                    }
+                }
                 ChoiceRow {
                     visible: out.on
                     app: page.app
                     key: out.key + ".resolution"
                     width: page.width
-                    position: page.segment(1, out.rows)
+                    position: page.segment(1 + out.b, out.rows)
                     iconName: "aspect_ratio"
                     text: "Resolution"
                     choices: out.resolutions.map(r => r.label)
@@ -131,7 +156,7 @@ Column {
                     app: page.app
                     key: out.key + ".rate"
                     width: page.width
-                    position: page.segment(2, out.rows)
+                    position: page.segment(2 + out.b, out.rows)
                     iconName: "speed"
                     text: "Refresh rate"
                     choices: out.rates.map(m => Display.rateLabel(m.refresh_rate))
@@ -143,7 +168,7 @@ Column {
                     app: page.app
                     key: out.key + ".scale"
                     width: page.width
-                    position: page.segment(3, out.rows)
+                    position: page.segment(3 + out.b, out.rows)
                     iconName: "zoom_in"
                     text: "Display size"
                     supportingText: "How large everything is drawn"
@@ -156,7 +181,7 @@ Column {
                     app: page.app
                     key: out.key + ".transform"
                     width: page.width
-                    position: page.segment(4, out.rows)
+                    position: page.segment(4 + out.b, out.rows)
                     iconName: "screen_rotation"
                     text: "Orientation"
                     supportingText: "Turned counter-clockwise"
@@ -169,7 +194,7 @@ Column {
                     objectName: "displayVrr_" + out.index
                     visible: out.vrr
                     width: page.width
-                    position: page.segment(5, out.rows)
+                    position: page.segment(5 + out.b, out.rows)
                     tone: Colors.surfaceContainer
                     iconName: "animation"
                     text: "Variable refresh rate"

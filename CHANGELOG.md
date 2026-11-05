@@ -5,6 +5,13 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Brightness on desktop monitors.** The brightness slider, the brightness keys and the OSD now work on external
+  monitors as well as laptop panels, and set every display together. Settings > Display has a brightness slider
+  for each display. Monitors are set over their cable (DDC/CI, through ddcutil), which needs your user in the
+  `i2c` group (on NixOS, `hardware.i2c.enable = true;` and the group on your user); a monitor that does not answer
+  shows no slider.
+- **Fix: the Microphone tile's icon** was drawn pale on a pale background while on. It now takes the same colors
+  as every other small tile.
 - **Move a widget to another screen.** While editing desktop widgets with more than one screen, select a widget and
   choose "Move to" and the screen. It goes in the first free space there, made smaller if it has to be; a screen
   with no room is greyed out. Also `rutile-shell widgets move ID SCREEN`.

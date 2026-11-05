@@ -470,3 +470,7 @@ NixOS's NetworkManager logs only warnings; `networking.networkmanager.logLevel =
 
 **niri cannot draw in a QEMU VM without a 3D GPU** ("no allocator available for device"), and has no software
 renderer; sway can (`WLR_RENDERER=pixman`). A VM test of anything niri hosts runs it under sway.
+
+**A FileView read again with `reload()` can give the text it read before** (Quickshell 0.3.2, observed in
+tst_brightness_service): a log checked twice showed its first contents the second time, so a write that had run
+looked missing. Read a file that something else keeps appending to with a Process (`cat`) instead.

@@ -1,7 +1,8 @@
 // The Display page's backend (DisplayPage.qml has the interface): niri's outputs through `niri msg` (the niri on
 // PATH talks to $NIRI_SOCKET). The window loads it only while the page is open (D31); it reads the outputs then,
 // and again after each change. Changes go through `niri msg output`, at once; NiriDisplayService then keeps the
-// output as niri has it, and puts it first again whenever niri starts or its config changes (D74).
+// output as niri has it, and puts it first again whenever niri starts or its config changes (D74). Brightness is
+// BrightnessService's (D113), read again with the outputs.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -18,8 +19,11 @@ Item {
     property bool _again: false                 // a read was asked for while one ran: read once more after it
     // the outputs whose choices the shell keeps (D74)
     readonly property var kept: Object.keys(NiriDisplayService.kept)
+    readonly property var brightness: BrightnessService.displays
+    function setBrightness(id, value) { BrightnessService.setDisplay(id, value); }
 
     function refresh() {
+        BrightnessService.refresh();
         if (query.running) _again = true;       // that read may predate the last change
         else query.running = true;
     }

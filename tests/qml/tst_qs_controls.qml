@@ -173,6 +173,11 @@ TestCase {
         compare(t.backgroundColor.toString(), Colors[states.activeDual.backgroundColor].toString());
         t.active = false;
         compare(t.colorState, "inactiveDual");
+        // a small tile with a page (Microphone, D109) colors as any small tile: its icon on its own background
+        var small = make(tileComp, { active: true, dualTarget: true, iconOnly: true, width: undefined });
+        compare(small.colorState, "active");
+        small.active = false;
+        compare(small.colorState, "inactive");
     }
 
     function test_tile_pixels() {

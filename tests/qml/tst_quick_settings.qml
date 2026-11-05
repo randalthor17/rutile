@@ -685,25 +685,65 @@ TestCase {
                 JSON.stringify([{ id: "dnd", w: 2 }, { id: "mic", w: 1 }]), "unknown, twice and odd widths");
     }
 
-    // ---- brightnessctl ----
+    // ---- brightnessctl and ddcutil (D113) ----
     function test_brightnessctl_output_is_parsed() {
-        compare(JSON.stringify(Ctl.parse("intel_backlight,backlight,512,48%,1060\n")),
-                JSON.stringify({ device: "intel_backlight", current: 512, max: 1060 }));
-        compare(Ctl.parse("input1::numlock,leds,0,0%,1\namdgpu_bl0,backlight,10,4%,255").device, "amdgpu_bl0",
-                "skips other classes");
-        compare(Ctl.parse("amdgpu_bl0,backlight,10,4%,255").device, "amdgpu_bl0");
-        compare(Ctl.parse(""), null);
-        compare(Ctl.parse("Failed to read any devices of class 'backlight'."), null);
-        compare(Ctl.parse("x,backlight,5,1%,0"), null, "a zero maximum is no device");
-        compare(Ctl.parse("input1::numlock,leds,0,0%,1"), null, "LEDs are not backlights");
+        compare(JSON.stringify(Ctl.parseAll("intel_backlight,backlight,512,48%,1060\n")),
+                JSON.stringify([{ device: "intel_backlight", current: 512, max: 1060 }]));
+        compare(Ctl.parseAll("input1::numlock,leds,0,0%,1\namdgpu_bl0,backlight,10,4%,255\nacpi_video0,backlight,3,30%,10")
+                .map(b => b.device).join(), "amdgpu_bl0,acpi_video0", "every backlight, no other class");
+        compare(Ctl.parseAll("").length, 0);
+        compare(Ctl.parseAll("Failed to read any devices of class 'backlight'.").length, 0);
+        compare(Ctl.parseAll("x,backlight,5,1%,0").length, 0, "a zero maximum is no device");
+        compare(Ctl.parseAll("x,backlight,-1,1%,10").length, 0);
     }
 
     function test_brightnessctl_commands() {
         compare(Ctl.rawFor(0.5, 1060), 530);
-        compare(Ctl.rawFor(0, 1060), 1, "never fully off");
+        compare(Ctl.rawFor(0, 1060), 1, "a backlight is never fully off");
+        compare(Ctl.rawFor(0, 100, 0), 0, "a monitor may go to its dimmest");
         compare(Ctl.rawFor(1.2, 255), 255);
-        compare(Ctl.readCommand().join(" "), "brightnessctl -m -c backlight info");
+        compare(Ctl.readCommand().join(" "), "brightnessctl -m -l -c backlight");
         compare(Ctl.setCommand("intel_backlight", 530).join(" "),
                 "brightnessctl -m -c backlight -d intel_backlight set 530");
+    }
+
+    function test_ddcutil_output_is_parsed() {
+        const detect = "Display 1\n   I2C bus:          /dev/i2c-8\n   DRM connector:    card1-DP-1\n" +
+                       "   drm_connector_id: 100\n   Monitor:          MSI:MSI MP243X:PB5H384500658\n\n" +
+                       "Invalid display\n   I2C bus:          /dev/i2c-3\n   DRM connector:    card0-HDMI-A-1\n\n" +
+                       "Display 2\n   I2C bus:          /dev/i2c-12\n   DRM connector:    card0-HDMI-A-2\n" +
+                       "   Monitor:          DEL::\n\n" +
+                       "Display 3\n   DRM connector:    card0-DP-3\n";
+        compare(JSON.stringify(Ctl.parseDetect(detect)), JSON.stringify([
+            { bus: 8, output: "DP-1", model: "MSI MP243X" }, { bus: 12, output: "HDMI-A-2", model: "" }]),
+            "displays that answer, by bus; an invalid one and one without a bus left out");
+        compare(Ctl.parseDetect("").length, 0);
+        const vcp = Ctl.parseVcp("8 VCP 10 C 70 100\n12 \n13 VCP 10 C 5 0\n14 VCP 10 ERR\n");
+        compare(JSON.stringify(vcp), JSON.stringify({ "8": { current: 70, max: 100 } }),
+                "only buses that answered with a maximum");
+        compare(Ctl.detectCommand().join(" "), "ddcutil detect --terse");
+        const read = Ctl.ddcReadCommand([8, 12]);
+        compare(read.slice(0, 2).join(" "), "sh -c");
+        compare(read.slice(3).join(" "), "sh 8 12", "buses as arguments, never in the script");
+        compare(Ctl.ddcSetCommand(8, 40).join(" "), "ddcutil setvcp 10 40 --bus 8 --noverify");
+    }
+
+    function test_displays_merged() {
+        const list = Ctl.displays([{ device: "intel_backlight", current: 530, max: 1060 }],
+                                  [{ bus: 8, output: "DP-1", model: "MSI MP243X" }, { bus: 9, output: "HDMI-A-1", model: "" },
+                                   { bus: 12, output: "DP-2", model: "" }],
+                                  { "8": { current: 70, max: 100 }, "9": { current: 20, max: 50 } });
+        compare(JSON.stringify(list), JSON.stringify([
+            { id: "backlight:intel_backlight", kind: "backlight", device: "intel_backlight", output: "", name: "Built-in display", max: 1060, value: 0.5 },
+            { id: "ddc:8", kind: "ddc", device: "8", output: "DP-1", name: "MSI MP243X", max: 100, value: 0.7 },
+            { id: "ddc:9", kind: "ddc", device: "9", output: "HDMI-A-1", name: "HDMI-A-1", max: 50, value: 0.4 }]),
+            "backlights first; a monitor that did not answer is left out; named by its model, else its output");
+        compare(Ctl.forOutput(list, "DP-1").id, "ddc:8");
+        compare(Ctl.forOutput(list, "eDP-1").id, "backlight:intel_backlight", "a built-in panel: the backlight");
+        compare(Ctl.forOutput(list, "DP-2"), null);
+        compare(Ctl.forOutput(list.slice(1), "eDP-1"), null);
+        compare(Ctl.forOutput(null, "DP-1"), null);
+        compare(Ctl.command(list[1], 40).join(" "), "ddcutil setvcp 10 40 --bus 8 --noverify");
+        compare(Ctl.command(list[0], 40).join(" "), "brightnessctl -m -c backlight -d intel_backlight set 40");
     }
 }

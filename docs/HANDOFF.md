@@ -222,7 +222,7 @@ If you are the local model: read `docs/sidework/CONVENTIONS.md` and your task br
 | `tools/dev/` | optional dev helpers: `memcost.py` (memory per component), `package_smoke.py` (the built package, headless; `make package-check`), `theming_check.py` and `theming-home.nix` (GTK, Qt and KDE apps in the shell's look through `programs.rutile.theming`, screenshotted in a sandbox; `make theming-check`, D59), `pyside_qml.py`, `eval_flake.sh`, `setup_sandbox.sh` |
 | `bin/rutile-shell` | the `rutile-shell` command (D57): runs the shell, calls it over IPC, `--help` lists every call; `flatpak-theming` (D66) |
 | `native/` | the C programs: the Firefox colors' host (D54) and the calendar's evolution-data-server reader and writer (D95, D101); `make native` builds `build/rutile-pywalfox-host` and `build/rutile-calendar` |
-| `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl` in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
+| `tests/` | Python tests; `tests/qml/` offscreen QML tests; `tests/qs/` tests run under `quickshell` (fake `brightnessctl`, `ddcutil` and others in `tests/qs/bin/`); `tests/qml_optional/` needs real fonts; `tests/qml_gpu/` needs a display; `tests/qml_render/` renders the gallery |
 | `docs/` | this handoff, plan, decisions, lessons, and per-area docs (`components.md`, `editable-grid.md`, `quick-settings.md`, `memory.md`, `qml.md`, `fonts.md`, `theme.md`, `sidework.md`, `settings.md`) |
 | `flake.nix` | dev shells (`default`, and x86_64-only `local-ai`), the font package, the NixOS module, the home-manager module |
 

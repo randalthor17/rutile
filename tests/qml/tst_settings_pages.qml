@@ -145,7 +145,9 @@ TestCase {
             property string error: ""
             property var calls: []
             property var kept: []
+            property var brightness: []
             function command(name, args) { calls = calls.concat([name + " " + args.join(" ")]); }
+            function setBrightness(id, v) { calls = calls.concat(["brightness " + id + " " + v.toFixed(1)]); }
             function reset(name) { calls = calls.concat(["reset " + name]); }
         }
     }
@@ -207,6 +209,22 @@ TestCase {
         compare(findChild(a, "choice_display.HDMI-A-1.scale").current, "130%");
         compare(findChild(a, "displayOn_2").supportingText, "Off");
         verify(!findChild(a, "choice_display.eDP-1.resolution").visible, "off: only its switch");
+        verify(!findChild(a, "displayBrightness_0").visible, "no brightness without a display that takes it");
+
+        // brightness (D113): under each output whose brightness can be set, as BrightnessService lists them
+        b.brightness = [{ id: "backlight:intel_backlight", kind: "backlight", output: "", value: 0.5 },
+                        { id: "ddc:8", kind: "ddc", output: "DP-1", value: 0.7 }];
+        waitForRendering(a);
+        verify(findChild(a, "displayBrightness_0").visible, "DP-1, over DDC/CI");
+        verify(!findChild(a, "displayBrightness_1").visible, "HDMI-A-1 answers no DDC/CI");
+        verify(!findChild(a, "displayBrightness_2").visible, "eDP-1's backlight, but the panel is off");
+        compare(findChild(a, "displayVrr_0").position, "last", "the rows below move down one");
+        const light = findChild(a, "displayBrightnessSlider_0");
+        compare(light.value, 0.7);
+        waitForItemPolished(light);
+        mouseClick(light, light.width * 0.2, light.height / 2);
+        compare(b.calls, ["brightness ddc:8 0.2"], "its own display only");
+        b.calls = [];
 
         // a choice through the app's choice dialog
         mouseClick(findChild(a, "choice_display.DP-1.scale"));

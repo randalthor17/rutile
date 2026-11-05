@@ -29,10 +29,12 @@ Item {
     signal toggled(bool active)             // the state asked for; already shown unless `controlled`
 
     readonly property var spec: ControlSpec.tileSpec
-    // Which of SystemUI's color sets applies (exposed for tests).
+    // Which of SystemUI's color sets applies (exposed for tests). An icon-only tile has no separate icon target, so
+    // it takes the plain sets even when dual-target: the dual ones color the icon for a target it does not draw.
+    readonly property bool splitColors: dualTarget && !iconOnly
     readonly property string colorState: !available ? "unavailable"
-                                       : (active ? (dualTarget ? "activeDual" : "active")
-                                                 : (dualTarget ? "inactiveDual" : "inactive"))
+                                       : (active ? (splitColors ? "activeDual" : "active")
+                                                 : (splitColors ? "inactiveDual" : "inactive"))
     readonly property var colors: spec.states[colorState]
     readonly property bool pressed: bodyLayer.pressed || (iconLayer.item ? (iconLayer.item as StateLayer).pressed : false)
     readonly property real tileRadius: active && available ? spec.activeTileCornerRadius : spec.inactiveCornerRadius
