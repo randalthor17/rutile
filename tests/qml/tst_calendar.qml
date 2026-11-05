@@ -371,6 +371,18 @@ TestCase {
         mouseClick(button);
         compare(spy.count, 1);
     }
+    function test_panel_loading() {
+        // until the calendars answer, neither "No events" nor "No calendars yet" (evolution-data-server starting, D95)
+        const p = panel({ hasFolder: false, loading: true });
+        verify(!findChild(p, "calendarEmpty").visible);
+        verify(!findChild(p, "calendarSettings").visible);
+        p.loading = false;
+        verify(findChild(p, "calendarEmpty").visible);
+        verify(findChild(p, "calendarSettings").visible);
+        const q = panel({ events: Calendar.icsEvents(sample), loading: true });
+        verify(findChild(q, "calendarDay_2026-11-04"));
+        tryVerify(() => findChild(q, "calendarEvent_1")?.visible, 1000, "what has been read shows meanwhile");
+    }
     function test_panel_opens_events_and_the_app() {
         const eds = Calendar.edsEvents('{"source":"g1","uid":"a","title":"Synced","start":' +
                                        (new Date(2026, 10, 4, 9).getTime() / 1000) + ',"end":' +

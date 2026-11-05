@@ -1033,6 +1033,10 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc calendar toggle: {cal}, expected it open on today with the folder's two "
                                         "events, the address's one, evolution-data-server's one, GNOME Calendar found "
                                         "and the clock marked")
+                    # evolution-data-server started with the shell (D95): a read of no time, before the popup's
+                    warm = [l.split() for l in (comp.runtime / "calendar.log").read_text().splitlines()]
+                    if not any(len(w) == 3 and w[0] == "events" and 0 <= int(w[2]) - int(w[1]) <= 1 for w in warm):
+                        problems.append(f"calendar: no warm-up read by the shell in {warm}")
                     if not list((comp.runtime / "cache" / "rutile" / "calendars").glob("*.ics")):
                         problems.append("calendar address: nothing saved in XDG_CACHE_HOME/rutile/calendars")
                     if screenshot and shutil.which("grim"):

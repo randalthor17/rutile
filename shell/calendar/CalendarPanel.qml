@@ -21,6 +21,7 @@ Rectangle {
     property date now: new Date()
     property bool shown: true
     property bool hasFolder: true           // false: no calendar address and no calendar folder, nothing to read
+    property bool loading: false            // the calendars have not answered yet: neither "No events" nor "No calendars"
     property string note: ""                // under the events: an address that did not answer
     property bool hasApp: false             // GNOME Calendar is there to open (D95)
     property bool use24h: ClockText.uses24h(Qt.locale().timeFormat(Locale.ShortFormat))
@@ -451,7 +452,7 @@ Rectangle {
         }
         Text {
             objectName: "calendarEmpty"
-            visible: root.dayEvents.length === 0 && !root.composing
+            visible: root.dayEvents.length === 0 && !root.composing && !root.loading
             leftPadding: Spacing.sm
             width: parent.width
             wrapMode: Text.Wrap
@@ -461,7 +462,7 @@ Rectangle {
         }
         Button {
             objectName: "calendarSettings"
-            visible: !root.hasFolder
+            visible: !root.hasFolder && !root.loading
             type: "text"
             size: "xs"
             text: "Calendar settings"

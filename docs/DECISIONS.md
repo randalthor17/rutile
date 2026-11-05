@@ -1041,7 +1041,11 @@ gnome-online-accounts, evolution-data-server, gnome-calendar and gnome-online-ac
   It opens the calendars side by side and waits 1 s for each to be online. Local calendars never report online
   and took the whole 10 s wait first tried; a calendar that is not online still answers from its copy. Since
   2026-11-05 only a refresh or an add on a server's calendar waits; a read and a local calendar never do, which took a
-  read from about 1 s to 0.01 s.
+  read from about 1 s to 0.01 s. evolution-data-server itself starts on first use (D-Bus activation), about 1.5 s on
+  the maintainer's machine with an online account, and the popup said "No calendars yet" meanwhile. So the shell
+  reads no time at all 3 s after it starts, which starts it (it then stays running, as in GNOME; that memory is the
+  data server's, not the shell's), and the popup shows neither "No events" nor "No calendars yet" until the data
+  server has answered (`loading`).
 - **The popup.** `EdsCalendar.qml` runs the helper when the popup opens: it reads, asks for a sync, then reads
   again. It reads a new month's six weeks once both ends have changed (`Qt.callLater`: the command's binding lags
   the range).

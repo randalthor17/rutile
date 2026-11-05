@@ -827,6 +827,19 @@ ShellRoot {
             onFinished: shell.notificationPopupsShown = false
         }
     }
+    // evolution-data-server starts on first use, and with online accounts that takes a second or more (D95). Started
+    // a few seconds after the shell (a read of no time at all, which opens the calendars), it is running when the
+    // calendar under the clock opens. It stays running, as in GNOME; the helper exits.
+    Timer {
+        interval: 3000
+        running: true
+        onTriggered: calendarWarmUp.running = true
+    }
+    Process {
+        id: calendarWarmUp
+        command: CalendarModel.edsCommand(CalendarModel.helperPath(Quickshell.env("RUTILE_CALENDAR"), Quickshell.shellDir),
+                                          new Date(), new Date())
+    }
     LazyLoader {
         id: calendar
         CalendarWindow {

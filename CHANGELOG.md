@@ -9,7 +9,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
   zone now shows at the right time for you, and a repeating one keeps its time in its own zone across daylight
   saving changes. Before, such times were read as your own clock's.
 - **Your calendars show at once.** The calendar widget and the calendar under the clock took a second or two to show
-  your accounts' events; reading them now takes a hundredth of a second.
+  your accounts' events; reading them now takes a hundredth of a second. The shell also starts the calendar service
+  a few seconds after it starts, so the first time you open the calendar it no longer says "No calendars yet" for a
+  moment while that service starts.
 
 ## 0.11.0
 

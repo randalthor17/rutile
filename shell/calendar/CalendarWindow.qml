@@ -96,6 +96,8 @@ PanelWindow {
         now: clock.date
         events: Calendar.icsEvents(root.folderText + "\n" + feeds.text).concat(Calendar.edsEvents(eds.text))
         hasFolder: (root.folder !== "" && root.hasFolder) || feeds.addresses.length > 0 || eds.available
+        // evolution-data-server can take a second or more to start (D95): until it has answered, no "No calendars yet"
+        loading: !eds.done
         hasApp: root.hasApp
         calendars: eds.available ? eds.calendars : []
         saving: eds.adding

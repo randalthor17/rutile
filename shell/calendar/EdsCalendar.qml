@@ -13,7 +13,7 @@ import "Calendar.js" as Calendar
 Scope {
     id: root
 
-    property string helper: Quickshell.env("RUTILE_CALENDAR") || (Quickshell.shellDir + "/../build/rutile-calendar")
+    property string helper: Calendar.helperPath(Quickshell.env("RUTILE_CALENDAR"), Quickshell.shellDir)
     property date from: new Date()
     property date to: new Date()
     property string text: ""                // the helper's lines

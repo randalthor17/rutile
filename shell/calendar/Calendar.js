@@ -358,6 +358,10 @@ function cacheName(address) {
 }
 
 // ---- evolution-data-server (D95): what native/calendar.c (rutile-calendar) prints ----
+// The helper: RUTILE_CALENDAR's, or the one built beside the shell.
+function helperPath(env, shellDir) {
+    return env || (shellDir + "/../build/rutile-calendar");
+}
 // The command that prints the events on between two Dates.
 function edsCommand(helper, from, to) {
     return [helper, "events", String(Math.floor(from.getTime() / 1000)), String(Math.ceil(to.getTime() / 1000))];
