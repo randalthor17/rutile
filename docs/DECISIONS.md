@@ -1045,7 +1045,11 @@ gnome-online-accounts, evolution-data-server, gnome-calendar and gnome-online-ac
   the maintainer's machine with an online account, and the popup said "No calendars yet" meanwhile. So the shell
   reads no time at all 3 s after it starts, which starts it (it then stays running, as in GNOME; that memory is the
   data server's, not the shell's), and the popup shows neither "No events" nor "No calendars yet" until the data
-  server has answered (`loading`).
+  server has answered (`loading`). On a test account with three Google calendars, a read still took 1.6 s on every
+  open (0.39 s right after another): the data server unloads an account's calendars soon after the last client
+  leaves. Keeping a reader connected would hold them, and a process, all the time; instead `EdsCalendar` keeps what
+  the last read printed in `~/.cache/rutile/calendars/` (one file for the popup, one for the widgets) and shows it
+  until its own read comes back, as the calendar addresses do (D94).
 - **The popup.** `EdsCalendar.qml` runs the helper when the popup opens: it reads, asks for a sync, then reads
   again. It reads a new month's six weeks once both ends have changed (`Qt.callLater`: the command's binding lags
   the range).

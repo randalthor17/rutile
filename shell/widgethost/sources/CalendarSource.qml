@@ -54,7 +54,9 @@ WidgetSource {
         id: eds
         active: !root.own
         Component.onCompleted: setSource(Qt.resolvedUrl("../../calendar/EdsCalendar.qml"),
-                                         { listCalendars: false, from: root.today, to: root.end })
+                                         { listCalendars: false, from: root.today, to: root.end,
+                                           cacheFile: (Quickshell.env("XDG_CACHE_HOME") || (Quickshell.env("HOME") + "/.cache"))
+                                                      + "/rutile/calendars/accounts-widget.jsonl" })
         onLoaded: {
             item.from = Qt.binding(() => root.today);
             item.to = Qt.binding(() => root.end);

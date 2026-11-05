@@ -11,7 +11,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 - **Your calendars show at once.** The calendar widget and the calendar under the clock took a second or two to show
   your accounts' events; reading them now takes a hundredth of a second. The shell also starts the calendar service
   a few seconds after it starts, so the first time you open the calendar it no longer says "No calendars yet" for a
-  moment while that service starts.
+  moment while that service starts. Your Google calendars' events now show the moment the calendar opens: it keeps
+  the last ones it read and shows them while it reads again (Google calendars take a second or more to load each
+  time, as the calendar service unloads them when nothing uses them).
 
 ## 0.11.0
 

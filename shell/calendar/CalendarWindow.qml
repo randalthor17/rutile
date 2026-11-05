@@ -74,6 +74,7 @@ PanelWindow {
     }
     EdsCalendar {
         id: eds
+        cacheFile: feeds.cacheDir + "/accounts-month.jsonl"
         onAdded: (ok, error) => panel.addFinished(ok, error)
         // the six weeks the month shows
         from: panel.days[0]

@@ -4,7 +4,9 @@
 // servers, then reads them again. A new range reads again (once more if one was asked for while reading, so the
 // last range wins). `available` is false while evolution-data-server cannot be reached or the helper is missing.
 // `calendars` are the ones an event can be added to; `add()` adds one (D101), then reads again; `added` says how it
-// went.
+// went. With a `cacheFile`, what the last read printed is kept there and is `text` until this one's first read comes
+// back: the data server unloads an account's calendars soon after the last reader leaves, and loading them again
+// takes a second or more (three Google calendars: about 1.6 s), on every popup open.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -17,6 +19,7 @@ Scope {
     property date from: new Date()
     property date to: new Date()
     property string text: ""                // the helper's lines
+    property string cacheFile: ""
     property bool available: false
     property bool done: false               // read once
     property bool synced: false             // the sync has been asked for
@@ -49,7 +52,10 @@ Scope {
         stdout: StdioCollector { id: lines }
         onExited: code => {
             root.available = code === 0;
-            if (code === 0) root.text = lines.text;
+            if (code === 0) {
+                if (root.cacheFile !== "" && lines.text !== root.text) cache.setText(lines.text);
+                root.text = lines.text;
+            }
             root.done = true;
             if (root.again) {
                 root.again = false;
@@ -60,6 +66,13 @@ Scope {
                 lister.running = root.listCalendars;
             }
         }
+    }
+    FileView {
+        id: cache
+        path: root.cacheFile
+        atomicWrites: true
+        printErrors: false
+        onLoaded: if (!root.done && root.text === "") root.text = cache.text()
     }
     // the calendars sync with their servers (Google's), then the events are read again
     Process {

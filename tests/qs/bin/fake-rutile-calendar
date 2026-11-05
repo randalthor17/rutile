@@ -3,8 +3,9 @@
 # $FAKE_CALENDAR_LOG; `events` prints $FAKE_CALENDAR_EVENTS (a file of JSON lines, as the real one prints); `sources`
 # prints $FAKE_CALENDAR_LOG.sources when it exists; `add` (D101) prints a uid, or fails as for a read-only calendar
 # when the title is "fail"; while the file $FAKE_CALENDAR_LOG.down exists it fails as with no evolution-data-server
-# (exit 2).
+# (exit 2). While $FAKE_CALENDAR_LOG.slow exists, `events` takes 2 s (an account's calendars loading).
 echo "$*" >> "$FAKE_CALENDAR_LOG"
+if [ "$1" = events ] && [ -e "$FAKE_CALENDAR_LOG.slow" ]; then sleep 2; fi
 if [ -e "$FAKE_CALENDAR_LOG.down" ]; then
     echo "rutile-calendar: no evolution-data-server" >&2
     exit 2
