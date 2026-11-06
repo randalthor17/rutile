@@ -45,6 +45,7 @@
           imports = [ ./nix/home-manager.nix ];
           programs.rutile.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
           programs.rutile.theming.fonts.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.google-sans-flex;
+          programs.rutile.inputMethod.khipro.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.khipro-m17n;
         };
 
       packages = forAllSystems (pkgs: rec {
@@ -52,6 +53,7 @@
         default = rutile-shell;
         rutile-shell = pkgs.callPackage ./nix/package.nix { google-sans-flex = googleSansFlex pkgs; };
         google-sans-flex = googleSansFlex pkgs;
+        khipro-m17n = pkgs.callPackage ./nix/khipro-m17n.nix { };
         # The Firefox colors' native-messaging host (D54), the shell's one compiled program.
         pywalfox-host = pkgs.stdenv.mkDerivation {
           pname = "rutile-pywalfox-host";

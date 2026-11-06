@@ -129,7 +129,7 @@ Rectangle {
     PopupMotion {
         target: root
         shown: root.shown
-        origin: Item.Bottom
+        origin: Item.BottomLeft         // from the launcher button, at the shelf's left end (D124)
         onHidden: root.hidden()
     }
 

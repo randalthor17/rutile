@@ -104,6 +104,7 @@ TestCase {
         waitForRendering(shelf);
         var l = findChild(shelf, "shelfLauncher");
         compare(l.x, Spacing.md, "the launcher at the left");
+        compare(shelf.launcherX, l.x, "where the launcher window opens (D124)");
         var first = findChild(shelf, "shelfPin_org.gnome.Nautilus");
         var last = findChild(shelf, "shelfWorkspace_2");
         var left = first.mapToItem(shelf, 0, 0).x, right = last.mapToItem(shelf, last.width, 0).x;

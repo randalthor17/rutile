@@ -193,6 +193,27 @@ class ShellModule(unittest.TestCase):
         self.assertIn("Mod+X", got["niriFile"])
         self.assertNotIn("XF86", got["niriFile"], "your keys replace the defaults")
 
+    def test_input_method_fcitx5_m17n_and_khipro(self):
+        # D125: fcitx5 as a user service with the session, m17n's methods, Khipro linked into ~/.m17n.d
+        kh = 'pkgs.runCommand "khipro" { } "mkdir -p $out/share/m17n/icons; touch $out/share/m17n/bn-khipro-dark.mim $out/share/m17n/icons/bn-khipro-dark.png"'
+        got, err = module(f"{{ enable = true; inputMethod.khipro.package = {kh}; }}".replace("pkgs.", "(import <nixpkgs> { })."))
+        self.assertIsNotNone(got, err)
+        im = got["inputMethod"]
+        self.assertEqual((im["enable"], im["type"]), (True, "fcitx5"))
+        self.assertTrue(im["fcitx5"]["waylandFrontend"], "niri takes typing through Wayland's input-method protocol")
+        self.assertEqual(len(im["fcitx5"]["addons"]), 1)
+        self.assertIn("fcitx5-m17n", str(im["fcitx5"]["addons"][0]))
+        files = got["homeFiles"]
+        self.assertTrue(files[".m17n.d/bn-khipro-dark.mim"].endswith("/share/m17n/bn-khipro-dark.mim"), files)
+        self.assertTrue(files[".m17n.d/icons/bn-khipro-dark.png"].endswith("/share/m17n/icons/bn-khipro-dark.png"))
+        got, err = module(f"{{ enable = true; inputMethod.khipro = {{ enable = false; package = {kh}; }}; }}".replace("pkgs.", "(import <nixpkgs> { })."))
+        self.assertEqual(got["homeFiles"], {}, "Khipro off: nothing linked")
+        self.assertEqual(got["inputMethod"]["type"], "fcitx5", "fcitx5 still")
+        got, err = module("{ enable = true; inputMethod.enable = false; }")
+        self.assertEqual((got["inputMethod"], got["homeFiles"]), ({}, {}), "off: home-manager's input method untouched")
+        got, err = module("{ enable = false; }")
+        self.assertEqual(got["inputMethod"], {}, "with the shell off, nothing")
+
     def test_theming_sets_up_gtk_qt_kde_and_fonts(self):
         got, err = module("{ enable = true; theming.enable = true; }")
         self.assertIsNotNone(got, err)

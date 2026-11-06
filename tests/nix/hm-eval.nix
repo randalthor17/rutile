@@ -15,6 +15,8 @@ let
     options.home.activation = lib.mkOption { type = lib.types.anything; default = { }; };
     options.qt = lib.mkOption { type = lib.types.anything; default = { }; };
     options.fonts = lib.mkOption { type = lib.types.anything; default = { }; };
+    options.i18n.inputMethod = lib.mkOption { type = lib.types.anything; default = { }; };
+    options.home.file = lib.mkOption { type = lib.types.anything; default = { }; };
   };
   eval = lib.evalModules {
     modules = [ module stub { programs.rutile.settings = settings; } ];

@@ -307,7 +307,7 @@ TestCase {
         var launched = createTemporaryObject(spyComp, root, { target: p, signalName: "launched" });
         var close = createTemporaryObject(spyComp, root, { target: p, signalName: "closeRequested" });
         var hidden = createTemporaryObject(spyComp, root, { target: p, signalName: "hidden" });
-        compare(p.transformOrigin, Item.Bottom, "grows up from the shelf");
+        compare(p.transformOrigin, Item.BottomLeft, "grows up from the launcher button, at the shelf's left end (D124)");
         tryCompare(p, "scale", 1, 2000);
         var tile = findChild(p, "launcherApp_foot");
         verify(tile);

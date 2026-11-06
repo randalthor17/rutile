@@ -80,6 +80,7 @@ Rectangle {
     height: implicitHeight
     color: Panels.tint(Colors.surfaceContainerLowest)
     readonly property real cornerRadius: Shapes.large
+    readonly property real launcherX: Spacing.md     // where the launcher button is: the launcher opens above it
 
     // The two corners: each fills between the screen's side, the bar's top and a quarter circle.
     Repeater {
@@ -117,7 +118,7 @@ Rectangle {
     Rectangle {
         objectName: "shelfLauncher"
         anchors.verticalCenter: parent.verticalCenter
-        x: Spacing.md
+        x: root.launcherX
         width: Spacing.xxxl + Spacing.sm
         height: Spacing.xxl
         radius: height / 2

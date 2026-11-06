@@ -29,6 +29,9 @@ let
       home.activation = anything;
       qt = anything;
       fonts = anything;
+      # home-manager's input method and home files, as plain values (programs.rutile.inputMethod sets them)
+      i18n.inputMethod = anything;
+      home.file = anything;
     } // lib.optionalAttrs niriModule {
       wayland.windowManager.niri = {
         enable = lib.mkOption { type = lib.types.bool; default = false; };
@@ -58,5 +61,7 @@ builtins.toJSON {
   activation = c.home.activation;
   qt = c.qt;
   fonts = c.fonts;
+  inputMethod = c.i18n.inputMethod;
+  homeFiles = lib.mapAttrs (_: f: toString f.source) c.home.file;
   managed = c.programs.rutile.settings.appColors;
 }

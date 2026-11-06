@@ -1005,6 +1005,7 @@ ShellRoot {
         id: launcher
         LauncherWindow {
             screen: shell.launcherScreen
+            left: (shelves.instances.find(s => s.screen === screen) ?? shelves.instances[0])?.shelf.launcherX ?? Spacing.md
             listView: shell.launcherListView
             onListViewChanged: shell.setLauncherListView(listView)
             pinnedIds: shelfBackend.pinnedIds

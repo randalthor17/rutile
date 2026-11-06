@@ -1460,3 +1460,21 @@ controls, keyboard input through fcitx5, clipboard history, screenshots and reco
 dev shell's own Qt (6.12), so a test of `tools/dev/pyside_qml.py` through it checked nothing a newer Qt would; it
 only skipped before. The test is gone and PySide6 left the dev shell again. The runner stays for a pip PySide6 (a
 newer Qt), and now also works with nixpkgs' (it adds the QML modules beside qmltestrunner when PySide6 has none).
+
+**D124. The launcher opens above its button** (plan 2.7, the maintainer's request, 2026-11-06): since D115 the
+launcher button sits at the shelf's left end, so the launcher's surface is anchored bottom-left, its left edge on
+the button's (`Shelf.launcherX`, passed by the shell), and it grows from its bottom-left corner.
+
+**D125. fcitx5 from the session, with m17n and Khipro** (plan 2.1, 6.1, the maintainer's request, 2026-11-06):
+- The shell started fcitx5 only from inside itself (D118), so a session without Rutile had none, and apps had no
+  input-method environment. home-manager's module now turns on home-manager's own `i18n.inputMethod` (type
+  fcitx5, Wayland frontend, fcitx5-m17n), which runs fcitx5 as a user service with the graphical session and
+  sets `XMODIFIERS` for XWayland apps; the shell then finds it and starts none. `programs.rutile.inputMethod.enable`
+  (default: `enable`); more engines go in `i18n.inputMethod.fcitx5.addons`.
+- Khipro (KhiproTeam/khipro-dark-m17n, MIT), a compositional Bengali input method, is the flake's `khipro-m17n`
+  package (pinned at 42db90d, 2026-10-27): its .mim and icon, linked into ~/.m17n.d, where m17n reads the user's
+  own input methods. fcitx5-m17n lists it as `m17n_bn_khipro-dark` (checked with the real fcitx5 on a private bus);
+  the user adds it to a group in fcitx5's settings. `inputMethod.khipro.enable` (default on).
+- Checked: home-manager's real module accepts it (the maintainer's nixos-config evaluated against this checkout:
+  the test user gets the fcitx5-daemon service and the two files). **Not verified:** typing Khipro in a real app,
+  and the maintainer's own user, which runs Noctalia and does not use this module.

@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **The launcher opens above its button**, at the shelf's left end, instead of the middle of the screen.
+- **fcitx5 starts with your session, with Khipro.** With home-manager's `programs.rutile.enable`, fcitx5 now runs
+  as a user service from login (home-manager's input-method module, Wayland frontend), with m17n's input methods
+  and Khipro, the compositional Bengali layout, ready to add in fcitx5's settings. Turn it off with
+  `programs.rutile.inputMethod.enable = false`; Khipro alone with `inputMethod.khipro.enable = false`.
 - **Microphone mute key.** `rutile-shell osd toggleMicMute` mutes or unmutes the microphone and shows it in the
   on-screen display (its own icon and level); home-manager's binds put it on the mic-mute key.
 - **Keys for the new features.** With home-manager's `programs.rutile.niri.binds.enable`, the play/pause, next and

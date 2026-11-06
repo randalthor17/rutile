@@ -984,6 +984,13 @@ def run_wayland_smoke(screenshot=None):
                             got = got.split(",")[0]         # the best match
                         if got != want:
                             problems.append(f"ipc launcher {' '.join(args)}: got {got!r}, expected {want!r}")
+                    if screenshot:
+                        grim = shutil.which("grim")
+                        if grim:
+                            time.sleep(0.6)
+                            shot = Path(screenshot).with_name(Path(screenshot).stem + "-launcher.png")
+                            subprocess.run([grim, str(shot)], env=comp.env(), timeout=10)
+                            notes.append(f"screenshot: {shot}")
                     try:
                         launcher = json.loads(ipc("state", target="launcher"))
                     except ValueError:

@@ -1,5 +1,5 @@
-// The launcher's layer-shell surface: centered above the shelf (it keeps clear of the shelf's and the status
-// strip's exclusive zones), keyboard focus on open. The shell creates it in a LazyLoader only while open (D31);
+// The launcher's layer-shell surface: above the shelf's left end, its left edge on the launcher button's (D124; it
+// keeps clear of the shelf's and the status strip's exclusive zones), keyboard focus on open. The shell creates it in a LazyLoader only while open (D31);
 // close() plays the closing motion, then closeRequested asks the shell to unload it. The apps are the desktop
 // entries Quickshell finds (DesktopEntries.applications: not hidden, not NoDisplay). Each app opened from here
 // counts toward its usage (state.json's `launcher.usage`, Usage.js); Pin and Unpin go to the shell (`pinToggled`).
@@ -33,7 +33,10 @@ PanelWindow {
     function reopen() { panel.shown = true; }
 
     anchors.bottom: true
+    anchors.left: true
     margins.bottom: Spacing.sm
+    property real left: Spacing.md          // the launcher button's x on the shelf (the shell passes it)
+    margins.left: left
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: 0
     focusable: true

@@ -8,6 +8,10 @@
 #                                      the end of your niri config.kdl yourself (D72; optional=true: no error
 #                                      while the file is not there), or, with home-manager's niri module, set
 #                                      programs.rutile.niri.includeInConfig = true and it is added there (D73).
+#   programs.rutile.inputMethod        typing in other languages (D125, on with `enable`): fcitx5 as a user service
+#                                      started with the session (home-manager's i18n.inputMethod), with m17n's input
+#                                      methods and Khipro (Bengali) linked into ~/.m17n.d; more fcitx5 addons go in
+#                                      i18n.inputMethod.fcitx5.addons.
 #   programs.rutile.theming.enable     GTK, Qt and KDE apps set up to wear the shell's colors, its font and an icon
 #                                      theme (D59): adw-gtk3 for GTK 3, a dark color scheme, gtk.css importing the
 #                                      shell's colors, qt5ct/qt6ct with Fusion, kdeglobals' fonts, and the shell's
@@ -216,6 +220,29 @@ in
       };
     };
 
+    inputMethod = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = cfg.enable;
+        defaultText = lib.literalExpression "config.programs.rutile.enable";
+        description = ''
+          fcitx5 for typing in other languages, started with the session (home-manager's i18n.inputMethod, its
+          Wayland frontend), with m17n's input methods. The shell shows the one in use and switches them (D118).'';
+      };
+      khipro = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Khipro, a compositional Bengali input method, among m17n's (linked into ~/.m17n.d).";
+        };
+        package = lib.mkOption {
+          type = lib.types.nullOr lib.types.package;
+          default = null;
+          description = "Khipro's m17n files (the flake's module sets its khipro-m17n package).";
+        };
+      };
+    };
+
     javaApps = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -345,6 +372,21 @@ in
   };
 
   config = lib.mkMerge [
+    (lib.mkIf cfg.inputMethod.enable {
+      i18n.inputMethod = {
+        enable = true;
+        type = "fcitx5";
+        fcitx5.waylandFrontend = lib.mkDefault true;
+        fcitx5.addons = [ pkgs.fcitx5-m17n ];
+      };
+    })
+    (lib.mkIf (cfg.inputMethod.enable && cfg.inputMethod.khipro.enable && cfg.inputMethod.khipro.package != null) {
+      # m17n reads the user's input methods from ~/.m17n.d, beside its own database
+      home.file.".m17n.d/bn-khipro-dark.mim".source = "${cfg.inputMethod.khipro.package}/share/m17n/bn-khipro-dark.mim";
+      home.file.".m17n.d/icons/bn-khipro-dark.png".source =
+        "${cfg.inputMethod.khipro.package}/share/m17n/icons/bn-khipro-dark.png";
+    })
+
     (lib.mkIf (managed != { }) {
       xdg.configFile."rutile/managed.json".source = json.generate "rutile-managed.json" managed;
     })

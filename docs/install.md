@@ -36,6 +36,8 @@ and in that user's home-manager configuration:
                                                          # Print capture bar, Mod+V clipboard history, Mod+Alt+L lock,
                                                          # Mod+Alt+P power, Mod+Alt+S settings, Mod+Space launcher;
                                                          # change them with niri.binds.keys
+  # programs.rutile.inputMethod.enable is on with enable: fcitx5 from login with m17n and Khipro (Bengali); more
+  # engines in i18n.inputMethod.fcitx5.addons
   programs.rutile.settings.wallpaper.path = "/home/test/Pictures/wall.png";   # any setting; set in Nix, it is
                                                          # locked in the shell's Settings
 }
