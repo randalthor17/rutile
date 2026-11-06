@@ -3,12 +3,17 @@
 // close() plays the closing motion, then closeRequested asks the shell to unload it. The apps are the desktop
 // entries Quickshell finds (DesktopEntries.applications: not hidden, not NoDisplay). Each app opened from here
 // counts toward its usage (state.json's `launcher.usage`, Usage.js); Pin and Unpin go to the shell (`pinToggled`).
+// An answer or an emoji chosen is copied with wl-copy, with a toast (D130). The emoji names are read from Unicode's
+// emoji-test.txt (RUTILE_EMOJI_DATA; the package names unicode-emoji's) only once a search asks for emoji, and go
+// with the launcher.
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import qs.common
 import qs.services
 import "Usage.js" as Usage
+import "Answers.js" as Answers
 
 PanelWindow {
     id: root
@@ -45,6 +50,13 @@ PanelWindow {
     implicitHeight: panel.height
     color: "transparent"
 
+    FileView {
+        id: emojiData
+        path: panel.wantsEmoji || panel.emojis.length > 0 ? (Quickshell.env("RUTILE_EMOJI_DATA") ?? "") : ""
+        printErrors: false
+        onLoaded: panel.emojis = Answers.parseEmoji(text())
+    }
+
     LauncherPanel {
         id: panel
         objectName: "launcherPanel"
@@ -72,6 +84,11 @@ PanelWindow {
             root.close();
         }
         onPinToggled: app => root.pinToggled(app)
+        onCopyRequested: text => {
+            Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | wl-copy', "sh", text]);
+            ToastService.show("Copied " + text, { icon: "content_copy" });
+            root.close();
+        }
         onSettingChosen: item => {
             root.settingChosen(item);
             root.close();

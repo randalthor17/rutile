@@ -30,6 +30,7 @@
   papirus-icon-theme,
   libdrm,
   hwdata,
+  unicode-emoji,
   pkg-config,
   evolution-data-server,
   gnome-calendar,
@@ -120,7 +121,8 @@ stdenv.mkDerivation {
       --set RUTILE_AMDGPU_IDS ${libdrm}/share/libdrm/amdgpu.ids \
       --set RUTILE_PCI_IDS ${hwdata}/share/hwdata/pci.ids \
       --set-default RUTILE_FCITX5 ${fcitx5}/bin/fcitx5 \
-      --set-default RUTILE_FCITX5_CONFIGTOOL ${fcitx5}/bin/fcitx5-configtool
+      --set-default RUTILE_FCITX5_CONFIGTOOL ${fcitx5}/bin/fcitx5-configtool \
+      --set-default RUTILE_EMOJI_DATA ${unicode-emoji}/share/unicode/emoji/emoji-test.txt
     runHook postInstall
   '';
 

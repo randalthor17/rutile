@@ -1525,3 +1525,18 @@ Khipro check left open in D126 is done: the maintainer typed with it on the sess
   once the drag starts.
 - Tested offscreen (the dot, the drag, the helpers) and against the fake niri (which pins are running).
   **Not verified:** dragging with a real pointer on niri.
+
+**D130. The launcher answers sums, conversions and emoji** (plan 2.7, the maintainer's go-ahead on the list of
+polish, 2026-11-06):
+- A sum typed in All ("2+3*4", "15% * 80", "sqrt(16)", "2^10", pi) shows its answer as the first result; so does
+  "<number> <unit> to|in <unit>" for length, mass, volume, time, data (KB and KiB apart), speed and temperature.
+  Enter or a click copies the number (wl-copy, as the clipboard picker) with a toast, and closes the launcher. A
+  sum is read by a small parser of its own (Answers.js), never run as code; only text with an operator, a function
+  or a constant is a sum, so app names and plain numbers are not. No currencies: they would need a web service.
+- A query starting with ":" finds emoji by name and subgroup ("smile", "hand") instead of apps; choosing one copies
+  it. The names are Unicode's emoji-test.txt from nixpkgs' `unicode-emoji` (data only, a few hundred KB; a new
+  dependency within the approved list), read only once an emoji search starts and dropped with the launcher (D31).
+  Skin-tone variants are left out. The emoji are drawn by the system's emoji font.
+- Tested offscreen (sums, conversions, emoji, the launcher's handling) and in the headless shell (the real
+  emoji-test.txt, an answer copied to the fake wl-copy). **Not verified:** pasting on the maintainer's session, and
+  how the emoji look there.

@@ -5,6 +5,7 @@ import qs.launcher
 import "../qs/launcher/Scorer.js" as Scorer
 import "../qs/launcher/Categories.js" as Categories
 import "../qs/launcher/Usage.js" as Usage
+import "../qs/launcher/Answers.js" as Answers
 import "../qs/quicksettings/Controls.js" as Controls
 import "../qs/settingsapp/Model.js" as SettingsModel
 import "../qs/settingsapp/Pages.js" as SettingsPages
@@ -526,6 +527,130 @@ TestCase {
         verify(loader.y + loader.height > top && loader.y + loader.height < top + tile.height / 2, "hangs above it");
         verify(loader.x + loader.width <= p.width - Spacing.sm, "pulled in from the right edge");
         verify(loader.x < tile.mapToItem(p, tile.width / 2, 0).x, "so it starts left of the app's middle");
+    }
+
+    // the answers (D130): sums, conversions and emoji
+    readonly property string emojiTest: "# group: Smileys & Emotion\n# subgroup: face-smiling\n"
+        + "1F600 ; fully-qualified # \u{1F600} E1.0 grinning face\n"
+        + "1F604 ; fully-qualified # \u{1F604} E0.6 grinning face with smiling eyes\n"
+        + "263A FE0F ; fully-qualified # \u263A\uFE0F E0.6 smiling face\n"
+        + "263A ; unqualified # \u263A E0.6 smiling face\n"
+        + "# subgroup: hand-fingers-open\n"
+        + "1F44B ; fully-qualified # \u{1F44B} E0.6 waving hand\n"
+        + "1F44B 1F3FB ; fully-qualified # \u{1F44B}\u{1F3FB} E1.0 waving hand: light skin tone\n"
+
+    function test_sums() {
+        const v = q => Answers.evaluate(q);
+        compare(v("2+3*4"), 14, "times before plus");
+        compare(v("(2+3)*4"), 20);
+        compare(v("2^3^2"), 512, "powers from the right");
+        compare(v("-2^2"), -4);
+        compare(v("2**10"), 1024);
+        compare(v("7 % 3"), 1, "a remainder between numbers");
+        compare(v("15% * 80"), 12, "a percent before an operator");
+        compare(v("50%"), 0.5);
+        compare(v("10 ÷ 4 × 2"), 5);
+        compare(v("1,000 + 1"), 1001, "thousands separators");
+        compare(v("sqrt(16) + abs(-2)"), 6);
+        compare(v("2pi"), null, "no implied multiplication");
+        verify(Math.abs(v("sin(pi/2)") - 1) < 1e-12);
+        compare(v("log(1000)"), 3);
+        compare(v("1/0"), null, "not a finite number");
+        compare(v("2+"), null);
+        compare(v("(2"), null);
+        compare(v("alert(1)"), null, "only the known functions");
+        compare(v("2; 3"), null, "nothing else");
+        compare(Answers.format(0.1 + 0.2), "0.3", "no float noise");
+        compare(Answers.format(2 / 3), "0.666666666667");
+        compare(Answers.sum("42"), null, "a plain number is no sum");
+        compare(Answers.sum("firefox"), null);
+        compare(Answers.sum("2+2").name, "= 4");
+        compare(Answers.sum("2+2").copy, "4");
+        compare(Answers.sum("pi").copy, "3.14159265359");
+    }
+
+    function test_conversions() {
+        const c = q => { const a = Answers.convert(q); return a ? a.name : null; };
+        compare(c("5 km to mi"), "3.10685596119 mi");
+        compare(c("1 mile in meters"), "1609.344 m");
+        compare(c("100 f to c"), "37.7777777778 °C");
+        compare(c("0 c in k"), "273.15 K");
+        compare(c("-40 °C to °F"), "-40 °F");
+        compare(c("2 GiB to MB"), "2147.483648 MB");
+        compare(c("1 mb to bits"), "8000000 bit", "in any case: megabytes");
+        compare(c("90 min to h"), "1.5 h");
+        compare(c("3 cups to ml"), "709.7647095 ml");
+        compare(c("12 in to cm"), "30.48 cm", "inches, though \"in\" also joins the two");
+        compare(c("100 km/h to mph"), "62.1371192237 mph");
+        compare(c("1,500 g to lb"), "3.30693393277 lb");
+        compare(c("5 km to kg"), null, "not the same kind");
+        compare(c("5 parsecs to km"), null, "an unknown unit");
+        compare(c("km to mi"), null, "no number");
+        compare(Answers.answer("5 km to m").copy, "5000");
+        compare(Answers.answer("2*3").copy, "6");
+        compare(Answers.answer("firefox"), null);
+    }
+
+    function test_emoji() {
+        const list = Answers.parseEmoji(emojiTest);
+        compare(list.map(e => e.name).join("|"), "grinning face|grinning face with smiling eyes|smiling face|waving hand",
+                "fully-qualified only, no skin tones");
+        compare(list[3].words, "waving hand hand fingers open", "with its subgroup");
+        const r = q => Answers.emojiResults(list, q, 50).map(e => e.name).join("|");
+        compare(r("smil"), "smiling face|grinning face with smiling eyes|grinning face",
+                "starting with it, then a word, then the subgroup");
+        compare(r("wav"), "waving hand");
+        compare(r("fingers"), "waving hand", "by its subgroup");
+        compare(r(""), "");
+        compare(Answers.emojiResults(list, "face", 2).length, 2, "at most the limit");
+        const e = Answers.emojiResults(list, "wav", 50)[0];
+        compare(e.glyph, "\u{1F44B}");
+        compare(e.copy, "\u{1F44B}");
+    }
+
+    function test_answers_in_the_launcher() {
+        var p = createTemporaryObject(panelComp, root);
+        waitForRendering(p);
+        var copied = createTemporaryObject(spyComp, root, { target: p, signalName: "copyRequested" });
+        var launched = createTemporaryObject(spyComp, root, { target: p, signalName: "launched" });
+        p.query = "12*12";
+        compare(p.results[0].type, "answer", "the answer first");
+        compare(p.results[0].name, "= 144");
+        compare(p.currentIndex, 0);
+        verify(findChild(p, "launcherApp_answer"), "shown as a tile");
+        keyClick(Qt.Key_Return);
+        compare(copied.count, 1);
+        compare(copied.signalArguments[0][0], "144", "Enter copies it");
+        compare(launched.count, 0);
+        p.category = "Network";
+        verify(!p.results.some(x => x.type === "answer"), "only in All");
+        p.category = "";
+        p.query = "fire";
+        verify(!p.results.some(x => x.type === "answer"), "an app's name: no answer");
+        // a right click on an answer opens no menu
+        p.query = "1 km to m";
+        waitForRendering(p);
+        var tile = findChild(p, "launcherApp_answer");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        verify(!p.menuOpen);
+        mouseClick(tile, tile.width / 2, tile.height / 2);
+        compare(copied.signalArguments[1][0], "1000", "a click copies too");
+
+        // emoji: asked for once the query starts with a colon; only emoji then
+        verify(!p.wantsEmoji);
+        p.query = ":";
+        verify(p.wantsEmoji);
+        compare(p.results.length, 0);
+        p.emojis = Answers.parseEmoji(emojiTest);
+        p.query = ":wav";
+        compare(ids(p.results), "emoji:\u{1F44B}");
+        waitForRendering(p);
+        const glyph = findChild(findChild(p, "launcherApp_emoji:\u{1F44B}"), "launcherTileGlyph");
+        verify(glyph.visible && glyph.text === "\u{1F44B}", "the emoji itself as the icon");
+        keyClick(Qt.Key_Return);
+        compare(copied.signalArguments[2][0], "\u{1F44B}");
+        p.query = ":fire";
+        compare(p.results.length, 0, "no app among emoji");
     }
 
     function test_empty_states() {

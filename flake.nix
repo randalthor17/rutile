@@ -111,6 +111,8 @@
             # Deliberately no QT_QPA_PLATFORM here: tools/qtws.py sets offscreen for tests only,
             # so Quickshell launched from this shell still opens real windows.
             export RUTILE_FONT_DIRS=${fontDirs}
+            # the launcher's emoji names (D130), as the package sets them
+            export RUTILE_EMOJI_DATA=${pkgs.unicode-emoji}/share/unicode/emoji/emoji-test.txt
             # the shell's icon theme (D62), after the system's
             export XDG_DATA_DIRS=''${XDG_DATA_DIRS:+$XDG_DATA_DIRS:}${pkgs.papirus-icon-theme}/share
             # Add those font dirs on top of the system fontconfig (it is included, nothing is lost).

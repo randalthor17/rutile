@@ -9,13 +9,16 @@ pragma ComponentBehavior: Bound
 // when Nix sets the pins); while it is open the arrows and Enter work in it and Escape closes only it. It grows in and out
 // with the shared popup motion (D43), then reports `hidden`. A search in All also finds the Quick Settings
 // controls (`settings`) and the Settings app's pages and settings (`findSettings(query)`, Model.launcherItems),
-// which `settingChosen` hands to the shell.
+// which `settingChosen` hands to the shell. A sum or a unit conversion typed in All shows its answer first, and
+// a query starting with ":" finds emoji by name instead of apps (Answers.js, D130; the emoji list, `emojis`, comes
+// from the window once `wantsEmoji`); choosing either asks `copyRequested` with its text.
 import QtQuick
 import qs.common
 import qs.components
 import "Scorer.js" as Scorer
 import "Categories.js" as Categories
 import "Usage.js" as Usage
+import "Answers.js" as Answers
 
 Rectangle {
     id: root
@@ -33,10 +36,16 @@ Rectangle {
     // only while typing in All, and choosing one asks `settingChosen` instead of opening an app.
     property var settings: []
     property var findSettings: null         // query => the Settings app's results, in the same form
-    readonly property var results: Scorer.rank(Categories.filter(apps, category)
-                                                   .concat(category === "" && query.trim() !== ""
-                                                           ? settings.concat(findSettings ? findSettings(query) : []) : []),
-                                               query, item => Usage.score(usage[item.id], now))
+    property var emojis: []                 // Answers.parseEmoji's, given once wanted
+    readonly property bool emojiMode: query.startsWith(":")
+    readonly property bool wantsEmoji: emojiMode
+    readonly property var answer: category === "" && !emojiMode ? Answers.answer(query) : null
+    readonly property var results: emojiMode ? Answers.emojiResults(emojis, query.slice(1), 50)
+        : (answer ? [answer] : []).concat(
+              Scorer.rank(Categories.filter(apps, category)
+                              .concat(category === "" && query.trim() !== ""
+                                      ? settings.concat(findSettings ? findSettings(query) : []) : []),
+                          query, item => Usage.score(usage[item.id], now)))
     readonly property alias currentIndex: grid.currentIndex
     readonly property int columns: 5
     readonly property real cell: Spacing.xxxl * 2 + Spacing.sm
@@ -47,6 +56,7 @@ Rectangle {
     signal actionChosen(var app, string actionId)
     signal pinToggled(var app)
     signal settingChosen(var item)
+    signal copyRequested(string text)       // an answer or an emoji chosen
     signal closeRequested()
     signal hidden()
 
@@ -72,7 +82,7 @@ Rectangle {
     readonly property Item menu: menuLoader.item as Item
 
     function openMenu(app, tile) {
-        if (app.type === "setting") return;     // a setting has nothing more to offer
+        if (app.type === "setting" || app.copy !== undefined) return;     // a setting, an answer or an emoji has nothing more to offer
         menuApp = app;
         menuBelow = tile.mapToItem(root, Math.min(tile.width / 2, cell / 2), tile.height - Spacing.md);
         menuAboveY = tile.mapToItem(root, 0, Spacing.md).y;
@@ -113,6 +123,7 @@ Rectangle {
 
     function choose(item) {
         if (item.type === "setting") settingChosen(item);
+        else if (item.copy !== undefined) copyRequested(item.copy);
         else launched(item);
     }
     function launchCurrent() {
@@ -158,7 +169,7 @@ Rectangle {
                 anchors.left: field.left
                 anchors.verticalCenter: parent.verticalCenter
                 visible: field.text === ""
-                text: "Search apps"
+                text: "Search apps, work out 2+2, convert 5 km to mi, or :smile"
                 color: Colors.surfaceVariantOn
                 font: Type.font(Type.bodyLarge)
             }
@@ -311,6 +322,7 @@ Rectangle {
                 subtitle: modelData.status || modelData.genericName || modelData.subtitle || ""
                 iconSource: modelData.icon || ""
                 symbol: modelData.symbol || ""
+                glyph: modelData.glyph || ""
                 current: index === grid.currentIndex
                 onClicked: root.choose(modelData)
                 onMenuRequested: {
@@ -322,7 +334,8 @@ Rectangle {
             Text {
                 anchors.centerIn: parent
                 visible: root.results.length === 0
-                text: root.apps.length === 0 ? "No apps found" : "Nothing matches"
+                text: root.emojiMode ? (root.query.length > 1 ? "No emoji found" : "Type an emoji's name")
+                    : root.apps.length === 0 ? "No apps found" : "Nothing matches"
                 color: Colors.surfaceVariantOn
                 font: Type.font(Type.bodyLarge)
             }

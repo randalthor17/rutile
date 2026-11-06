@@ -1051,6 +1051,28 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"launcher action: ran {ran!r}, expected 'firefox --private-window'")
                     if ipc("isOpen", target="launcher") != "false":
                         problems.append("launcher action: the launcher stayed open")
+                    # answers and emoji (D130): the emoji from the dev shell's real emoji-test.txt; choosing an answer
+                    # copies it (to the fake wl-copy) and closes the launcher
+                    time.sleep(1.0)
+                    ipc("open", target="launcher")
+                    for _ in range(30):     # the names are read once asked for
+                        got = ipc("search", ":waving", target="launcher").split(",")[0]
+                        if got:
+                            break
+                        time.sleep(0.1)
+                    if got != "emoji:\U0001F44B":
+                        problems.append(f"ipc launcher search :waving: got {got!r}, expected the waving hand")
+                    got = ipc("search", "12*12", target="launcher").split(",")[0]
+                    if got != "answer" or ipc("launch", "answer", target="launcher") != "true":
+                        problems.append(f"ipc launcher search 12*12: got {got!r}, expected the answer first")
+                    copied = Path(env["FAKE_CLIP"] + ".copied")
+                    for _ in range(30):
+                        if copied.exists() and copied.read_text() == "144":
+                            break
+                        time.sleep(0.1)
+                    if not copied.exists() or copied.read_text() != "144" or ipc("isOpen", target="launcher") != "false":
+                        problems.append(f"launcher answer: copied {copied.read_text() if copied.exists() else None!r}, "
+                                        "expected '144' and the launcher closed")
                     time.sleep(1.5)
                     # what was opened counts toward its usage, in state.json (Usage.js)
                     try:

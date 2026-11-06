@@ -156,7 +156,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   Settings in search (maintainer's choice, until the settings app): typing in All also finds the Quick Settings
   controls (`Controls.js`: Wi-Fi, Bluetooth, Microphone, Dark theme, Airplane mode, Brightness, Volume, those the
   system has, by name or keyword); a toggle flips at once and closes the launcher, a slider opens Quick Settings.
-  Settings from the Settings app's pages are results too (D77). The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  Settings from the Settings app's pages are results too (D77). Answers (D130): a sum ("2+3*4", "sqrt(2)") or a
+  unit conversion ("5 km to mi") typed in All shows its answer first, and ":name" finds emoji; choosing one copies
+  it. Not done: file search. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Started (D47, `shell/notifications/`): notifications. `NotificationService` (Quickshell's

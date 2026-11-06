@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **The launcher calculates, converts and finds emoji.** Type a sum (`2+3*4`, `15% * 80`, `sqrt(2)`) or a
+  conversion (`5 km to mi`, `100 f to c`, `2 GiB to MB`) and the answer comes first; type `:` and a name
+  (`:smile`) for emoji. Enter or a click copies it.
 - **Shelf pins show open apps and can be dragged.** A dot under a pinned app means it has a window open. Drag a pin
   sideways to put it somewhere else; the new order is saved.
 - **Wallpapers from Wallhaven.** Right-click the desktop and choose Find on Wallhaven (or Settings > Wallpaper &
