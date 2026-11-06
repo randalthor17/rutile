@@ -1489,3 +1489,27 @@ the button's (`Shelf.launcherX`, passed by the shell), and it grows from its bot
   and fcitx5's settings could no longer change the group.
 - Checked against the real fcitx5 on a private bus (the call adds it and fcitx5 writes the profile); tested with
   the fake busctl in the headless shell. **Not verified:** on the maintainer's session.
+
+**D127. GeminiGlow and Magic Pointer dropped** (plan 1.5, L2, the maintainer's choice, 2026-11-06): the glowing
+gradient border was for Magic Pointer's prompt pill, an on-screen AI that sees the screen. The maintainer takes a
+screenshot into Google's AI mode for that instead, so neither is built; the software Glowbar goes with them. The
+Khipro check left open in D126 is done: the maintainer typed with it on the session.
+
+**D128. Wallhaven, after Noctalia's plugin** (plan 2.9, the maintainer's request, 2026-11-06):
+- Noctalia's official `wallhaven` plugin (noctalia-dev/official-plugins, MIT, Luau) browses wallhaven.cc and sets
+  a download as the wallpaper. Rutile has no plugin system, so it is part of the shell: `shell/wallhaven/` (the
+  panel and its window, created only while open, D31) and `WallhavenService`. The same API and filters: a search
+  query, categories (General, Anime, People), purity (SFW, Sketchy; NSFW only with an API key), the sort orders,
+  the shapes as Wallhaven names them, and pages; relevance without a query starts a page later, as Wallhaven's
+  first page is then empty. Noctalia's exact and at-least resolution fields became one chip, "At least my
+  screen" (the screen's pixels). The filters but not the query are remembered in state.json.
+- The search is the shell's own XMLHttpRequest, so the API key (`wallhaven.apiKey`) goes in a header, never on a
+  command line or in the address. Thumbnails load straight from Wallhaven at their small size and go with the
+  panel; Noctalia's on-disk thumbnail cache is left out. The full image is downloaded with curl (a new runtime
+  dependency, approved with the request) into `wallhaven.folder` (default Pictures/Wallpapers) as a part file,
+  moved into place only when complete, then set through WallpaperService (so the palette follows), with a toast.
+- Opened from the desktop's right-click menu (Find on Wallhaven), Settings > Wallpaper & style > Browse Wallhaven,
+  or `rutile-shell wallhaven toggle`.
+- Tested offscreen (the address, the answer, the panel), against a web server of the test's own with real curl,
+  and in the headless shell (open, choose, the wallpaper set). **Not verified:** against wallhaven.cc itself, an
+  API key, or a download cut off midway (its part file removed; no test breaks a download halfway).

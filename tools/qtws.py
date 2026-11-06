@@ -37,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Not a number: qmltestrunner exits with its failure count, so any int could be a real result.
 SKIPPED = "skipped"
-MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp", "clipboard", "capture")
+MODULES = ("common", "components", "gallery", "services", "quicksettings", "bar", "calendar", "greeter", "shelf", "launcher", "notifications", "osd", "toast", "lock", "wallpaper", "power", "polkit", "settingsapp", "widgethost", "desktop", "widgetsapp", "clipboard", "capture", "wallhaven")
 # Files importing these need Quickshell at run time; qmltestrunner and qmllint skip them (test-qs covers them).
 QUICKSHELL_IMPORTS = ("import Quickshell", "import qs.services")
 
@@ -510,6 +510,14 @@ def run_wayland_smoke(screenshot=None):
         port = free_port()
         web = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory",
                                 str(www)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Wallhaven (D128): its search answers from the same server, a result's image too
+        (www / "wallhaven").mkdir()
+        shutil.copy(ROOT / "tests" / "qs" / "apps" / "tray-icon.png", www / "wallhaven" / "full.png")
+        (www / "wallhaven" / "search").write_text(json.dumps({"data": [
+            {"id": "smoke1", "path": f"http://127.0.0.1:{port}/wallhaven/full.png", "file_type": "image/png",
+             "resolution": "16x16", "purity": "sfw", "thumbs": {"small": f"http://127.0.0.1:{port}/wallhaven/full.png"}}],
+            "meta": {"last_page": 1}}))
+        env["RUTILE_WALLHAVEN_API"] = f"http://127.0.0.1:{port}/wallhaven"
         settings_file = comp.runtime / "config" / "rutile" / "settings.json"
         settings_file.write_text(json.dumps(dict(json.loads(settings_file.read_text()),
                                                  calendar={"folder": str(calendars),
@@ -1153,6 +1161,33 @@ def run_wayland_smoke(screenshot=None):
                         time.sleep(0.2)
                     if toast != {"loaded": False, "open": False, "current": None, "queued": []}:
                         problems.append(f"ipc toast state 15 s after two toasts: {toast}, expected none left")
+                    # Wallhaven (D128; after the toast and wallpaper checks, as it changes both): the browser searches
+                    # as it opens; choosing a result downloads it with curl into Pictures/Wallpapers and sets it as the
+                    # wallpaper, and the browser stays open
+                    def wallhaven_state():
+                        try:
+                            return json.loads(ipc("state", target="wallhaven"))
+                        except ValueError:
+                            return {}
+                    ipc("open", target="wallhaven")
+                    deadline = time.time() + 5
+                    while time.time() < deadline and wallhaven_state().get("results") != ["smoke1"]:
+                        time.sleep(0.2)
+                    ws_ = wallhaven_state()
+                    if ws_.get("open") is not True or ws_.get("results") != ["smoke1"] or ws_.get("error") != "":
+                        problems.append(f"ipc wallhaven open: {ws_}, expected one result")
+                    if ipc("choose", "0", target="wallhaven") != "true":
+                        problems.append("ipc wallhaven choose 0: refused")
+                    wanted = str(comp.runtime / "Pictures" / "Wallpapers" / "wallhaven-smoke1.png")
+                    deadline = time.time() + 10
+                    while time.time() < deadline and ipc("get", target="wallpaper") != wanted:
+                        time.sleep(0.2)
+                    if ipc("get", target="wallpaper") != wanted:
+                        problems.append(f"wallhaven choose: wallpaper {ipc('get', target='wallpaper')!r}, expected {wanted}")
+                    ipc("close", target="wallhaven")
+                    time.sleep(0.8)
+                    if wallhaven_state().get("open") is not False:
+                        problems.append(f"ipc wallhaven close: {wallhaven_state()}")
                     # screenshots and recording (D120; after the toast checks, as these toast too), without niri here: grim and slurp, wf-recorder (fakes)
                     def capture_state():
                         try:

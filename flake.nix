@@ -104,6 +104,7 @@
             pkgs.pkg-config # finds libecal for native/calendar.c (D95)
             pkgs.greetd # test only: fakegreet, a stand-in greetd for the greeter's tests (D97)
             pkgs.libnotify # test only: notify-send, to send the shell notifications (plan 2.8)
+            pkgs.curl # Wallhaven downloads at run time (D128)
           ];
           devHook = ''
             export QML2_IMPORT_PATH=${qmlPath}''${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}

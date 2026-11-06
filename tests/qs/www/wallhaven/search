@@ -1,0 +1,9 @@
+{"data": [
+ {"id": "abc123", "path": "full.png", "file_type": "image/png", "resolution": "2560x1440", "purity": "sfw",
+  "thumbs": {"large": "thumb-large.png", "small": "full.png"}},
+ {"id": "x9y8z7", "path": "full.jpg", "file_type": "image/jpeg", "resolution": "1920x1080", "purity": "sketchy",
+  "thumbs": {"small": "full.png"}},
+ {"id": "bad id", "path": "nope.png"},
+ {"id": "nopath1"}
+],
+ "meta": {"current_page": 1, "last_page": 7, "per_page": 24, "total": 160}}

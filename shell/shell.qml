@@ -19,6 +19,7 @@ import qs.bar
 import qs.calendar
 import qs.capture
 import qs.clipboard
+import qs.wallhaven
 import qs.launcher
 import qs.notifications
 import qs.osd
@@ -63,6 +64,7 @@ ShellRoot {
         if (calendarOpen) closeCalendar();
         if (clipboardOpen) closeClipboard();
         if (captureOpen) closeCapture();
+        if (wallhavenOpen) closeWallhaven();
     }
 
     // Screenshots and recording (D120): the capture bar on a screen (null: the first), as the launcher; what was
@@ -204,6 +206,64 @@ ShellRoot {
         }
     }
 
+    // The Wallhaven browser (D128), as the clipboard picker: on a screen (null: the compositor's choice) only while
+    // asked for; from the desktop's menu, Settings > Wallpaper & style, or a key.
+    property var wallhavenScreen: null
+    readonly property bool wallhavenOpen: wallhaven.active && !(wallhaven.item?.closing ?? false)
+    function closeWallhaven() {
+        if (wallhaven.item) wallhaven.item.close();
+        else wallhaven.active = false;
+    }
+    function toggleWallhaven(screen) {
+        const here = screen === null || screen === wallhavenScreen;
+        if (wallhavenOpen && here) {
+            closeWallhaven();
+            return;
+        }
+        if (wallhaven.item?.closing && here) {
+            wallhaven.item.reopen();
+            return;
+        }
+        wallhaven.active = false;
+        wallhavenScreen = screen;
+        wallhaven.active = true;
+    }
+    LazyLoader {
+        id: wallhaven
+        WallhavenWindow {
+            screen: shell.wallhavenScreen
+            onCloseRequested: wallhaven.active = false
+        }
+    }
+    // From a key in niri: Mod+Shift+W { spawn "rutile-shell" "wallhaven" "toggle"; }
+    IpcHandler {
+        target: "wallhaven"
+        function toggle(): void { shell.toggleWallhaven(null); }
+        function open(): void { if (!shell.wallhavenOpen) shell.toggleWallhaven(null); }
+        function close(): void { shell.closeWallhaven(); }
+        function isOpen(): bool { return shell.wallhavenOpen; }
+        // a search as typed in the open browser (its filters kept), from the first page
+        function search(query: string): bool {
+            if (!wallhaven.item) return false;
+            WallhavenService.setFilters({ query: query });
+            return true;
+        }
+        // the open browser's result at `index`, as a click: downloaded and set as the wallpaper
+        function choose(index: int): bool {
+            const p = wallhaven.item?.panel;
+            const w = p?.wallpapers[index];
+            if (!w || p.applying !== "") return false;
+            p.chosen(w);
+            return true;
+        }
+        function state(): string {
+            return JSON.stringify({ open: shell.wallhavenOpen, loading: WallhavenService.loading,
+                                    error: WallhavenService.error, page: WallhavenService.page,
+                                    pages: WallhavenService.pages, applying: WallhavenService.applying,
+                                    results: WallhavenService.wallpapers.map(w => w.id) });
+        }
+    }
+
     // The calendar under the clock (D93), as the notification list: on a screen (null: the compositor's choice). A
     // press on the clock closes the other popups and opens or closes it.
     property var calendarScreen: null
@@ -314,6 +374,7 @@ ShellRoot {
             screen: modelData
             onEditWidgetsRequested: shell.widgetsEditing = true
             onWallpaperSettingsRequested: shell.openSettings("wallpaper", "")
+            onWallhavenRequested: shell.toggleWallhaven(modelData)
             onPressed: shell.closePopups()
         }
     }

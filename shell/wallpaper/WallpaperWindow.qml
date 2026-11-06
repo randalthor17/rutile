@@ -1,6 +1,6 @@
 // The wallpaper's layer-shell surface on one screen (plan 2.9): the whole screen, on the background layer, under
 // every window and the shelf, taking no keyboard and no space from windows. A right-click on it opens the desktop's
-// menu (D81): edit the widgets, change the wallpaper; it closes on a choice, a click elsewhere, or Escape.
+// menu (D81): edit the widgets, change the wallpaper, find one on Wallhaven (D128); it closes on a choice, a click elsewhere, or Escape.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -15,6 +15,7 @@ PanelWindow {
 
     signal editWidgetsRequested()
     signal wallpaperSettingsRequested()
+    signal wallhavenRequested()
     signal pressed()                        // any press: the shell closes its popups (a click outside them, D90)
 
     function openMenu(x, y) {
@@ -65,11 +66,13 @@ PanelWindow {
         y: upward ? at.y - (item?.height ?? 0) : at.y
         sourceComponent: Menu {
             items: [{ id: "widgets", text: "Edit widgets", icon: "widgets" },
-                    { id: "wallpaper", text: "Change wallpaper", icon: "wallpaper" }]
+                    { id: "wallpaper", text: "Change wallpaper", icon: "wallpaper" },
+                    { id: "wallhaven", text: "Find on Wallhaven", icon: "travel_explore" }]
             itemPrefix: "desktopMenu_"
             onChosen: id => {
                 root.menuOpen = false;
                 if (id === "widgets") root.editWidgetsRequested();
+                else if (id === "wallhaven") root.wallhavenRequested();
                 else root.wallpaperSettingsRequested();
             }
         }

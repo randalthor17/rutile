@@ -30,7 +30,7 @@ The shell runs as a whole desktop on niri; `docs/PLAN.md` has each part's state 
 | Area | State |
 |---|---|
 | Tokens, palette (matugen), QML singletons, fonts | done (Phase 0 and 1) |
-| Components (`shell/components/`): buttons, icon buttons, switch, slider, progress, tile, chip, list item, ShapeMorph, EditableGrid, menu, text field, dialog, FAB, card, title bar | done, in the gallery; NavRail collapsed only (D103); GeminiGlow left (1.5) |
+| Components (`shell/components/`): buttons, icon buttons, switch, slider, progress, tile, chip, list item, ShapeMorph, EditableGrid, menu, text field, dialog, FAB, card, title bar | done, in the gallery; NavRail collapsed only (D103); GeminiGlow dropped (D127) |
 | Top bar: clock with its calendar (D93 to D95), status pill, notification bell, app indicators | working; tested headless and in nested niri |
 | Quick Settings: saved tiles, Wi-Fi, Bluetooth, Night light, Power saver and Microphone pages, Do not disturb | working; real Wi-Fi, Bluetooth and Night light not tried |
 | Shelf, launcher, notifications, OSD, toasts, lock screen, power menu, polkit agent, wallpaper | working (Phase 2) |
@@ -56,8 +56,7 @@ surfaces), no focus ring. See `docs/components.md`.
    the NixOS services in `docs/install.md`, D95) and reports what looks or works wrong.
 2. Phase 6: the maintainer tries the greeter on the real machine (`nixosModules.greeter`, docs/install.md, D97).
    The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
-3. Finish the component kit (1.5: GeminiGlow once a reference image exists; the expanded NavRail if something needs
-   it) and the gallery review (1.7).
+3. The gallery review (1.7); the expanded NavRail if something needs it (1.5).
 4. Widget generation and the local-model trial stay deferred (D82).
 
 ## 3. Resume in five minutes
@@ -282,6 +281,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_QUICKSHELL` | `bin/rutile-shell` | the quickshell binary, default `quickshell` on PATH (tests point it at a stand-in) |
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
 | `RUTILE_AMDGPU_IDS`, `RUTILE_PCI_IDS` | `shell/widgethost/sources/GpuSource.qml` | libdrm's amdgpu.ids and hwdata's pci.ids, for graphics card names (the package sets both; without them, /usr/share's) |
+| `RUTILE_WALLHAVEN_API` | `shell/services/WallhavenService.qml` | tests only: the Wallhaven API address, a web server of the test's own instead of wallhaven.cc (D128) |
 | `RUTILE_FCITX5`, `RUTILE_FCITX5_CONFIGTOOL` | `shell/services/InputMethodService.qml` | the fcitx5 the shell starts when none runs, and its settings tool (the package sets both, D118; tests name the fake) |
 | `FAKE_FCITX`, `FAKE_DDC`, `FAKE_DDC_BUSES`, `FAKE_CLIP`, `FAKE_CAPTURE` | `tests/qs/bin/` | the fake fcitx5, busctl, ddcutil, cliphist, wl-paste, wl-copy, grim, slurp and wf-recorder's state files and monitors (tests only) |
 | `XDG_PICTURES_DIR`, `XDG_VIDEOS_DIR` | `shell/services/CaptureService.qml` | where screenshots (without niri) and recordings go, before ~/Pictures and ~/Videos (D120) |
@@ -313,7 +313,6 @@ A different AI or person can use the same instruction. Everything needed is in t
 - How does the shell look and feel in the real session, next to the Googlebook references? (Ripple, shadows and the
   focus ring are deliberately not done yet.)
 - Does GNOME Calendar open the clicked event (`--uuid <calendar>:<event>`, D95), and how soon do Google edits show?
-- Plan item 0.2: Googlebook screenshots of Quick Settings, the launcher and Settings are still missing; GeminiGlow
-  needs one too.
+- Plan item 0.2: Googlebook screenshots of Quick Settings, the launcher and Settings are still missing.
 - Plan item 1.1b: default seed color and scheme type, chosen against the references.
 - When widget generation returns (D82): is the local-model line worth keeping, and on which tier?

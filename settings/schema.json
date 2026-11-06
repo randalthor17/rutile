@@ -67,6 +67,24 @@
         }
       }
     },
+    "wallhaven": {
+      "type": "object",
+      "title": "Wallhaven",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "default": "",
+          "title": "Wallhaven API key",
+          "description": "Optional: allows NSFW results and the account's own filters. Sent only to wallhaven.cc."
+        },
+        "folder": {
+          "type": "string",
+          "default": "",
+          "title": "Download folder",
+          "description": "Where wallpapers from Wallhaven are saved. Empty: Pictures/Wallpapers."
+        }
+      }
+    },
     "style": {
       "type": "object",
       "title": "Style",

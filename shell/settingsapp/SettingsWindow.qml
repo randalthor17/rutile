@@ -56,6 +56,9 @@ FloatingWindow {
                     Quickshell.execDetached(["gnome-online-accounts-gtk"]);
                 else if (key === "action.calendarApp")
                     Quickshell.execDetached([Quickshell.env("RUTILE_CALENDAR_APP") || "gnome-calendar"]);
+                // the Wallhaven browser (D128), the shell's own
+                else if (key === "action.wallhaven")
+                    Quickshell.execDetached([Quickshell.env("RUTILE_CLI") || "rutile-shell", "wallhaven", "open"]);
             }
         }
     }

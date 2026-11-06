@@ -22,6 +22,7 @@ var pages = [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
             { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed", "style.panelOpacity"] },
             { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] },
+            { title: "Wallhaven", keys: ["action.wallhaven", "wallhaven.apiKey", "wallhaven.folder"] },
             { title: "", keys: ["notice.niriInclude"] }
         ]
     },
@@ -170,6 +171,14 @@ var hints = {
         filters: ["Images (*.png *.jpg *.jpeg *.webp *.bmp)"]
     },
     "wallpaper.palette": { aliases: ["matugen", "dynamic color"] },
+    // Wallhaven (D128): the browser is the shell's own, opened through the CLI
+    "action.wallhaven": {
+        kind: "action", title: "Browse Wallhaven", button: "Open",
+        description: "Search wallhaven.cc and set a wallpaper from it",
+        aliases: ["wallhaven", "download wallpaper", "online wallpapers", "find wallpaper"]
+    },
+    "wallhaven.apiKey": { placeholder: "From wallhaven.cc's account settings", aliases: ["api key", "nsfw"] },
+    "wallhaven.folder": { placeholder: "~/Pictures/Wallpapers", aliases: ["download folder"] },
     // GNOME Online Accounts signs in; evolution-data-server keeps the calendars; GNOME Calendar edits them (D95)
     "action.calendarAccounts": {
         kind: "action", title: "Online accounts", button: "Manage…",

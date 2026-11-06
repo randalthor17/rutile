@@ -60,12 +60,11 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
 - [x] **1.5h** FAB and Card (v0.10.0): from the vendored Compose FAB, extended FAB and card tokens; FAB sizes
   small to large, primary or secondary, extended with a label that collapses to the icon; elevated, filled and
   outlined cards, clickable when `interactive`; in the gallery. No shadows yet.
-- [ ] **1.5** Component kit, remaining: GeminiGlow gradient border (needs a reference image). NavRail done
+- [ ] **1.5** Component kit, remaining: nothing planned (GeminiGlow dropped, D127). NavRail done
   (D103, v0.11.0): the collapsed rail from the vendored rail tokens, in the gallery; not the expanded one.
   Tooltip done (D106): the plain tooltip from the vendored Compose tooltip tokens and Tooltip.kt, in the gallery and
   on the shelf; not the rich tooltip.
-  and the 1.5c leftovers when something needs them. Likely next: GeminiGlow, or what Quick Settings (2.6) needs
-  first (the slider is done, 1.5e).
+  and the 1.5c leftovers when something needs them.
 - [x] **1.6** Shared EditableGrid, ported from DMS `DEditableGrid` and `GridLayout.js` packing: drag and swap,
   sizes clamped to columns/rows, edit mode; used by both Quick Settings tiles and the desktop widget grid
   (v0.6.0). Select, drag with a placeholder, a resize handle on every side that can move, neighbors that
@@ -83,7 +82,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   every display at once or one each from Settings > Display; screenshots and recording (D120, a capture bar on
   IPC `capture open`, niri's actions or grim and slurp, wf-recorder); clipboard history through cliphist (D119, a picker
   on IPC `clipboard toggle`); and fcitx5 (D118) for input methods, with a pill
-  at the top showing the one in use; enough for Quick Settings. Next: UPower, Mpris, notifications, tray.
+  at the top showing the one in use (Khipro added once, D126: the maintainer typed with it on the session); enough for Quick Settings. Next: UPower, Mpris, notifications, tray.
   Quickshell built-in services first (Pipewire, UPower, NetworkManager, Bluetooth, notifications,
   MPRIS, tray); a small daemon only for real gaps (settings persistence, widget validation, Ollama bridge).
   Types: `Pipewire`, `UPower`/`PowerProfiles`, `Networking`, `Bluetooth`, `NotificationServer`, `Mpris`,
@@ -209,7 +208,9 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   one per app (GTK, Qt, kitty with its 16 terminal colors as a Rutile theme (D76), Ghostty, btop, Neovim, Firefox
   through our own Pywalfox host), all off by default,
   in Settings > Wallpaper & style; `AppColorsService` (AppTheme.js) themes them from the palette and takes it
-  back out exactly; tested in a sandbox HOME only, not yet on real apps. Not yet: per-screen
+  back out exactly; tested in a sandbox HOME only, not yet on real apps. Wallhaven (D128, after Noctalia's
+  plugin): a browser from the desktop's menu, Settings or `ipc call wallhaven toggle` that searches wallhaven.cc
+  and sets a result as the wallpaper (downloaded with curl into Pictures/Wallpapers). Not yet: per-screen
   wallpapers, fill modes other than crop, a slideshow, KDE's kdeglobals, community templates.
 
 - [x] **2.10** App indicators (the maintainer's request, October 2026; D61, `shell/bar/Tray*`): a pill at the top
@@ -388,8 +389,7 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
 ## Later versions
 
 - [ ] **L1** v2: KDE Connect (Quick Access, notification mirroring).
-- [ ] **L2** v4/v5: Magic Pointer (wiggle detection, portal screen capture, vision model, prompt pill with
-  GeminiGlow), Cast My Apps, optional software Glowbar.
+- [ ] **L2** v4/v5: Cast My Apps. Magic Pointer, GeminiGlow and the software Glowbar are dropped (D127).
 - [ ] **L3** Far future: COPR packages, PKGBUILDs, possibly Universal Blue distros.
 
 ## Side work with a local model

@@ -8,7 +8,7 @@ here=$(dirname -- "$(readlink -f -- "$0")")
 qml=${RUTILE_SHELL_QML:-$here/../shell/shell.qml}
 qs=${RUTILE_QUICKSHELL:-quickshell}
 
-TARGETS="wallpaper motion power settings appcolors polkit lock launcher notifications calendar osd media input clipboard capture toast quicksettings tray shelf widgets"
+TARGETS="wallpaper wallhaven motion power settings appcolors polkit lock launcher notifications calendar osd media input clipboard capture toast quicksettings tray shelf widgets"
 
 usage() {
     cat <<'EOF'
@@ -36,6 +36,11 @@ Usage:
 IPC (TARGET FUNCTION ARGS: what it does; "state" gives JSON for scripts and diagnostics):
   wallpaper      set PATH          set the wallpaper (absolute path; "" removes it); false if set in Nix
                  get               the wallpaper's path
+                 state
+  wallhaven      toggle | open | close   the Wallhaven browser: search wallhaven.cc, click one to set it
+                 isOpen
+                 search QUERY      search for QUERY in the open browser
+                 choose INDEX      download and set the open browser's result at INDEX, as a click
                  state
   motion         setSpeed N        animation speed, 0 (off) to 4, saved; false if out of range or set in Nix
                  speed             the current speed

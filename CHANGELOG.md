@@ -5,6 +5,11 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Wallpapers from Wallhaven.** Right-click the desktop and choose Find on Wallhaven (or Settings > Wallpaper &
+  style > Browse Wallhaven, or `rutile-shell wallhaven toggle`): search wallhaven.cc, filter by category, purity,
+  shape or "At least my screen", sort, page through, and click one to download it into Pictures/Wallpapers and make
+  it your wallpaper. An optional API key in Settings allows NSFW results. After Noctalia's wallhaven plugin.
+- **GeminiGlow and Magic Pointer dropped** from the plans.
 - **Khipro switched on for you.** The first time fcitx5 lists Khipro, Rutile adds it to your input methods, so the
   pill at the top shows EN and BN and switches between them. If you take it out in fcitx5's settings, it stays out.
 - **The launcher opens above its button**, at the shelf's left end, instead of the middle of the screen.
