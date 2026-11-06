@@ -82,9 +82,10 @@
             "${pkgs.material-symbols}/share/fonts"
           ];
           # Test cross-checks only, never imported by the tools: materialyoucolor (palette, when nixpkgs has
-          # it) and jsonschema (tools/widget_check.py, D29), so those tests run instead of skipping.
+          # it) and jsonschema (tools/widget_check.py, D29), so those tests run instead of skipping; python-dbusmock
+          # stands in for UPower and power-profiles-daemon on a test's private bus (plan 2.13, B0).
           python = pkgs.python3.withPackages (
-            ps: [ ps.jsonschema ] ++ lib.optional (ps ? materialyoucolor) ps.materialyoucolor
+            ps: [ ps.jsonschema ps.python-dbusmock ] ++ lib.optional (ps ? materialyoucolor) ps.materialyoucolor
           );
 
           # The everyday shell's tools and setup, shared by every shell: an agent in local-ai must be

@@ -1593,3 +1593,14 @@ polish, 2026-11-06):
   real desktop.
 - Tested offscreen (the size, the Add menu, scaled text), the library in Quickshell, and `widgets add` in the
   headless shell.
+
+**D135. A stand-in UPower for the battery's tests** (plan 2.13 B0, the maintainer's choice: python-dbusmock,
+2026-11-06):
+- python-dbusmock (a test-only dependency, in the dev shell's Python) runs its `upower` template on a test's private
+  D-Bus; the runner (tools/qtws.py) starts it for each `// mock <template>` line in a tests/qs file's header and
+  points that test's system bus at the private bus, so the user's real UPower is never reached. The test drives
+  the mock with busctl (`SetDeviceProperties` on the display device).
+- Two things learned: the template's display device lacks NativePath, Model, Capacity and PowerSupply, which
+  Quickshell's UPower reads once before it calls a device ready, so the runner adds them (`AddProperty`) before the
+  shell starts; and a header line holding JSON stops Quickshell loading the file ("module qs.services is not
+  installed"), so the header names templates only.

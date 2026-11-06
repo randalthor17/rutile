@@ -477,3 +477,7 @@ looked missing. Read a file that something else keeps appending to with a Proces
 
 **Never chain a commit after `make check` with `;`.** A push went out with the gate red (D122's commit; the
 failure was an unrelated flaky test, fixed in the next commit). Use `make check && git commit ...`.
+
+- **A tests/qs file's comment can break Quickshell's loading.** A header comment holding JSON (`// mock upower
+  {"OnBattery": true}`) made Quickshell fail with `module "qs.services" is not installed`, which points nowhere
+  near the cause. Keep header lines in tests/qs files to plain words (D135).

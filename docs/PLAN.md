@@ -258,10 +258,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   left or to full, health; power-profiles-daemon's modes), the Power saver tile and page (D108), the widgets'
   battery source, and the lock on idle and on suspend. Each step below is tested against a fake UPower on the
   test's private D-Bus (see B0), then checked on the laptop.
-  - **B0, tests first.** A stand-in UPower and power-profiles-daemon on the private bus, so every step is tested
-    without a battery: python-dbusmock's `upower` and `power_profiles_daemon` templates (a test-only dependency,
-    waiting for approval), or a small fake of our own in Python on the bus (no dependency, more code). It sets the
-    charge, the state and the time left, and plugs and unplugs. Until then the battery code is tested offscreen only.
+  - **B0, tests first.** Done (D135): a tests/qs test with a `// mock upower` (or `power_profiles_daemon`) line
+    runs against python-dbusmock's template on its private bus, which is then also its system bus; it sets the
+    charge, the state and the time left through the mock's methods (busctl). `tst_battery_mock`: PowerService
+    follows discharging, charging and a device that is no battery.
   - **B1, warnings.** A notification at 20% and 10% while discharging, and a critical one at 5% that stays until
     plugged in ("Plug in now"), each once per discharge; none while charging. Sent through the shell's own
     notification server, so they show in the list and pop up even in Do not disturb (critical). What happens at
@@ -474,5 +474,4 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
 - Default seed color and scheme (1.1b).
 - Ripple, elevation shadows, focus ring: build, or leave as the flat look? Decide from the gallery.
 - When to pick up widget generation and the local-model trial again (4.7 to 4.9, S2; deferred by D82).
-- Battery (2.13, B0): python-dbusmock as a test-only dependency for a fake UPower, or a fake of our own?
-  And which warning levels and idle times by default.
+- Battery (2.13): which warning levels and idle times by default (the plan's are a proposal).

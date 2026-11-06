@@ -322,6 +322,40 @@ class PrivateBus:
             self.proc.stdout.close()
 
 
+# What python-dbusmock's upower template leaves out of its display device and Quickshell's UPower reads before it
+# calls a device ready: set before the shell starts (Quickshell reads the device once). A test then sets the rest.
+UPOWER_DISPLAY_EXTRA = ["NativePath", "s", "", "Model", "s", "", "Capacity", "d", "100", "PowerSupply", "b", "true"]
+
+
+def start_mocks(mocks, env):
+    """Starts python-dbusmock with each template (the header's `// mock <template>` lines; a header line holding
+    JSON stops Quickshell loading the file, so there are no parameters) on env's system bus and waits until each
+    name is there; the processes, or None when dbusmock or the bus is missing."""
+    try:
+        import dbusmock  # noqa: F401  (only to know it is there)
+    except ImportError:
+        return None
+    if "nonexistent" in env["DBUS_SYSTEM_BUS_ADDRESS"] or not shutil.which("busctl"):
+        return None
+    names = {"upower": "org.freedesktop.UPower", "power_profiles_daemon": "org.freedesktop.UPower.PowerProfiles"}
+    procs = []
+    for template in mocks:
+        cmd = [sys.executable, "-m", "dbusmock", "--system", "--template", template]
+        procs.append(subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        name = names.get(template)
+        for _ in range(100):
+            if not name or subprocess.run(["busctl", "--system", "status", name], env=env,
+                                          capture_output=True).returncode == 0:
+                break
+            time.sleep(0.05)
+        if template == "upower":
+            for i in range(0, len(UPOWER_DISPLAY_EXTRA), 3):
+                subprocess.run(["busctl", "--system", "call", name, "/org/freedesktop/UPower/devices/DisplayDevice",
+                                "org.freedesktop.DBus.Mock", "AddProperty", "ssv", "org.freedesktop.UPower.Device"]
+                               + UPOWER_DISPLAY_EXTRA[i:i + 3], env=env, capture_output=True)
+    return procs
+
+
 def run_qs_tests(timeout=60, only=None):
     """(code, output, (passed, failed)); code is SKIPPED without the quickshell binary. `only`: one test by name."""
     qs = shutil.which("quickshell")
@@ -335,10 +369,21 @@ def run_qs_tests(timeout=60, only=None):
             return 1, f"no test file {only}", (0, 0)
     for test in tests:
         ws = qs_workspace(test)
+        mock_procs = []
         try:
             with PrivateBus() as bus:
                 env = dict(qs_test_env(test, ws), DBUS_SESSION_BUS_ADDRESS=bus.address)
                 cmd = [qs, "-p", str(ws / "shell.qml")]
+                mocks = re.findall(r"^// mock (\w+)$", test.read_text(), flags=re.M)
+                if mocks:
+                    # system services stood in for by python-dbusmock on the private bus, which is then also the
+                    # system bus for the shell (plan 2.13, B0); the user's real system bus is never reached
+                    env["DBUS_SYSTEM_BUS_ADDRESS"] = bus.address
+                    started = start_mocks(mocks, env)
+                    if started is None:
+                        skipped.append(f"{test.name}: SKIPPED, needs python-dbusmock and dbus-daemon")
+                        continue
+                    mock_procs.extend(started)
                 if "\n// under fakegreet\n" in test.read_text():
                     if not shutil.which("fakegreet"):
                         skipped.append(f"{test.name}: SKIPPED, needs fakegreet (greetd)")
@@ -350,6 +395,9 @@ def run_qs_tests(timeout=60, only=None):
         except subprocess.TimeoutExpired as e:
             text, r = f"timed out after {timeout} s\n{e.stdout or ''}", None
         finally:
+            for p in mock_procs:
+                p.terminate()
+                p.wait(timeout=5)
             shutil.rmtree(ws.parent, ignore_errors=True)
         done = re.search(r"QSTEST done checks=(\d+) failures=0", text)
         if r is not None and r.returncode == 0 and done and int(done.group(1)) > 0:
