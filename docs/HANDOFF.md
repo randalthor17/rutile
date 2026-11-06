@@ -58,6 +58,7 @@ surfaces), no focus ring. See `docs/components.md`.
    The installer ISO (6.3) is postponed (the maintainer, 2026-11-04).
 3. The gallery review (1.7); the expanded NavRail if something needs it (1.5).
 4. Widget generation and the local-model trial stay deferred (D82).
+5. Battery and laptop power (plan 2.13, B0 to B6), once the maintainer answers B0's question; then on the laptop.
 
 ## 3. Resume in five minutes
 

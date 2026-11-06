@@ -253,6 +253,44 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   `path` shows the same calendars (folder, addresses, accounts); the templates use that. The grid is lighter
   since v0.11.0: one pointer area and shared circles instead of 42 cells' own, 2922 to 1566 KiB (docs/memory.md).
 
+- [ ] **2.13** Battery and laptop power (planned 2026-11-06: Rutile will run on a laptop). There today: the status
+  pill's battery icon and percentage (`PowerService`, UPower's display device), Settings > Power (charge, time
+  left or to full, health; power-profiles-daemon's modes), the Power saver tile and page (D108), the widgets'
+  battery source, and the lock on idle and on suspend. Each step below is tested against a fake UPower on the
+  test's private D-Bus (see B0), then checked on the laptop.
+  - **B0, tests first.** A stand-in UPower and power-profiles-daemon on the private bus, so every step is tested
+    without a battery: python-dbusmock's `upower` and `power_profiles_daemon` templates (a test-only dependency,
+    waiting for approval), or a small fake of our own in Python on the bus (no dependency, more code). It sets the
+    charge, the state and the time left, and plugs and unplugs. Until then the battery code is tested offscreen only.
+  - **B1, warnings.** A notification at 20% and 10% while discharging, and a critical one at 5% that stays until
+    plugged in ("Plug in now"), each once per discharge; none while charging. Sent through the shell's own
+    notification server, so they show in the list and pop up even in Do not disturb (critical). What happens at
+    the very end is UPower's (its CriticalPowerAction: hibernate or power off, set in NixOS), not the shell's;
+    the critical notification says which. Settings > Power: the two levels, on by default.
+  - **B2, at a glance.** Quick Settings shows the charge and the time left (or to full) beside its header, as
+    ChromeOS does, and a click there opens a Battery page (charge, time, the power mode chips, a link to Settings >
+    Power). The status pill's tooltip gives the time left. The lock screen and the greeter show the battery at the
+    top right (the greeter through UPower on the system bus, which needs no login). The pill hides the battery on
+    desktops, as now.
+  - **B3, power saver by itself.** Settings > Power: "Power saver below N%" (off, or 10 to 50%, default 20%):
+    switched on when the charge falls past it while discharging, and back to the mode before when plugged in,
+    unless the user changed the mode meanwhile (as GNOME does). Through power-profiles-daemon, as the tile.
+  - **B4, idle on battery and on power.** The lock on idle exists; a laptop also wants the screen to dim, then
+    turn off, then the computer to sleep, sooner on battery. Settings > Power: "Dim the screen", "Turn the screen
+    off" (niri's power-off-monitors, back on any input) and "Sleep" (logind suspend), each after N minutes, with
+    a second set of times on battery. Quickshell's IdleMonitor for each, which honours idle inhibitors (Keep awake,
+    D116; a playing video). Dimming lowers the backlight (BrightnessService) and restores it on input.
+  - **B5, the lid and the charge limit.** Closing the lid is logind's (HandleLidSwitch; NixOS
+    `services.logind`): docs/install.md says what to set, and the shell already locks before sleep. A charge
+    limit (stop at 80% to spare the battery) where the hardware has one: UPower 1.90 offers it
+    (`ChargeThresholdSupported`, `EnableChargeThreshold`, behind polkit), a switch in Settings > Power that shows
+    only when supported. Its exact levels come from the firmware or UPower's settings, not the shell.
+  - **B6, on the laptop.** Every step on the real machine: the pill and the icons, the warnings at their levels
+    (UPower's percentage as it falls), power saver switching, the idle steps with a video playing, the lid, the
+    charge limit if the laptop has one, and suspend and resume (the lock, D-Bus services coming back).
+  - Not planned: per-app battery use (needs a daemon of its own), a battery graph over time (UPower's history is
+    gone from 1.90), hibernation setup (NixOS swap and resume device; docs only).
+
 ## Phase 3: windows on niri
 
 - [x] **3.1** Googlebook-like windows (D88, v0.10.0): Settings > Windows writes one niri window rule after the
@@ -436,3 +474,5 @@ Deferred (D82): the maintainer chose hand-written JSON widgets first; 4.7 to 4.9
 - Default seed color and scheme (1.1b).
 - Ripple, elevation shadows, focus ring: build, or leave as the flat look? Decide from the gallery.
 - When to pick up widget generation and the local-model trial again (4.7 to 4.9, S2; deferred by D82).
+- Battery (2.13, B0): python-dbusmock as a test-only dependency for a fake UPower, or a fake of our own?
+  And which warning levels and idle times by default.
