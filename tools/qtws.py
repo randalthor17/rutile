@@ -594,12 +594,14 @@ def run_wayland_smoke(screenshot=None):
                             return json.loads(ipc("state", target="input"))
                         except ValueError:
                             return {}
+                    # and Khipro (D126), which m17n lists, joins the group once
                     for _ in range(100):
-                        if input_state().get("available"):
+                        if len(input_state().get("methods") or []) == 3:
                             break
                         time.sleep(0.1)
                     st = input_state()
-                    want_in = {"available": True, "current": "keyboard-us", "methods": ["keyboard-us", "m17n_bn_itrans"],
+                    want_in = {"available": True, "current": "keyboard-us",
+                               "methods": ["keyboard-us", "m17n_bn_itrans", "m17n_bn_khipro-dark"],
                                "labels": ["EN"], "started": True, "inTray": False}
                     if st != want_in:
                         problems.append(f"ipc input state after start: {st}, expected {want_in}")
@@ -611,6 +613,12 @@ def run_wayland_smoke(screenshot=None):
                         problems.append(f"ipc input next: {st}, expected Bangla shown as BN")
                     if ipc("set", "nothing", target="input") != "false" or ipc("set", "keyboard-us", target="input") != "true":
                         problems.append("ipc input set: an unknown name taken, or a known one refused")
+                    try:
+                        added = json.loads((comp.runtime / "state" / "rutile" / "state.json").read_text()).get("input", {}).get("khiproAdded")
+                    except (OSError, ValueError):
+                        added = None
+                    if added is not True:
+                        problems.append(f"Khipro added: state.json has input.khiproAdded {added!r}, expected true")
                     fcitx_log = Path(env["FAKE_FCITX"] + ".log")
                     if "fcitx5 -d" not in (fcitx_log.read_text() if fcitx_log.exists() else ""):
                         problems.append("fcitx5 was not started")

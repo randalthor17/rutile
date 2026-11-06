@@ -49,6 +49,24 @@ TestCase {
         compare(Ime.call("CurrentInputMethod").slice(-2).join(" "), "org.fcitx.Fcitx.Controller1 CurrentInputMethod");
     }
 
+    // D126: Khipro joins the group once, when m17n lists it
+    function test_khipro() {
+        compare(Ime.KHIPRO, "m17n_bn_khipro-dark");
+        const listed = '{"type":"a(ssssssb)","data":[[["keyboard-us","Keyboard - English (US)","","input-keyboard","en","en",true],' +
+                       '["m17n_bn_khipro-dark","khipro-dark (M17N)","","","","bn",true]]]}';
+        verify(Ime.available(listed, Ime.KHIPRO));
+        verify(!Ime.available(listed, "m17n_bn_itrans"));
+        verify(!Ime.available("Call failed", Ime.KHIPRO));
+        const info = '{"type":"sa(ss)","data":["us",[["keyboard-us",""],["keyboard-de","de"]]]}';
+        compare(Ime.withMethod("Default", info, Ime.KHIPRO).join(" "),
+                "busctl --user --json=short call org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1 " +
+                "SetInputMethodGroupInfo ssa(ss) Default us 3 keyboard-us  keyboard-de de m17n_bn_khipro-dark ",
+                "the group's own methods and layouts kept, Khipro after them");
+        compare(Ime.withMethod("Default", '{"type":"sa(ss)","data":["us",[["m17n_bn_khipro-dark",""]]]}', Ime.KHIPRO), null,
+                "already there: nothing to do");
+        compare(Ime.withMethod("Default", "not json", Ime.KHIPRO), null);
+    }
+
     function test_pill() {
         const pill = createTemporaryObject(pillComp, root, { label: "", name: "" });
         verify(!pill.visible, "nothing to show: no pill");

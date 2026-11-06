@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # A stand-in for busctl in tests that answers only for fcitx5 (org.fcitx.Fcitx5) and runs the real busctl for
-# anything else. fcitx5 answers while $FAKE_FCITX.running exists (the fake fcitx5 makes it, or the test): a group
-# "Default" of English (US) and Bangla (m17n itrans), the current one in $FAKE_FCITX.current. Calls are logged to
-# $FAKE_FCITX.log.
+# anything else. fcitx5 answers while $FAKE_FCITX.running exists (the fake fcitx5 makes it, or the test): one group,
+# "Default", of the input methods in $FAKE_FCITX.group (one name a line; English (US) and Bangla (m17n itrans) at
+# first), the current one in $FAKE_FCITX.current; m17n lists Khipro unless $FAKE_FCITX.nokhipro exists. Calls are
+# logged to $FAKE_FCITX.log.
 state="${FAKE_FCITX:-${TMPDIR:-/tmp}/rutile-fake-fcitx}"
 case " $* " in
   *" org.fcitx.Fcitx5 "*) ;;
@@ -18,20 +19,45 @@ case " $* " in
     ;;
 esac
 method=""
+rest=()
 args=("$@")
 for ((i = 0; i < ${#args[@]}; i++)); do
-  [ "${args[i]}" = org.fcitx.Fcitx.Controller1 ] && method="${args[i + 1]}" && arg="${args[i + 3]-}"
+  if [ "${args[i]}" = org.fcitx.Fcitx.Controller1 ]; then
+    method="${args[i + 1]}"
+    rest=("${args[@]:i+3}")
+  fi
 done
-echo "$method${arg:+ $arg}" >> "$state.log"
+echo "$method${rest[*]:+ ${rest[*]}}" >> "$state.log"
 if [ ! -e "$state.running" ]; then
   echo "Call failed: The name org.fcitx.Fcitx5 was not provided by any .service files" >&2
   exit 1
 fi
+[ -f "$state.group" ] || printf 'keyboard-us\nm17n_bn_itrans\n' > "$state.group"
+entry() {   # FullInputMethodGroupInfo's entry for one name
+  case "$1" in
+    keyboard-us) printf '["keyboard-us","Keyboard - English (US)","","input-keyboard","en","en","keyboard",true,"",{}]' ;;
+    m17n_bn_itrans) printf '["m17n_bn_itrans","itrans (M17N)","","/m17n/icons/bn-itrans.png","","bn","m17n",true,"",{}]' ;;
+    m17n_bn_khipro-dark) printf '["m17n_bn_khipro-dark","khipro-dark (M17N)","","/m17n/icons/bn-khipro-dark.png","","bn","m17n",true,"",{}]' ;;
+    *) printf '["%s","%s","","","","","keyboard",true,"",{}]' "$1" "$1" ;;
+  esac
+}
+joined() { local sep="" out=""; while IFS= read -r n; do [ -n "$n" ] && out="$out$sep$("$@" "$n")" && sep=","; done < "$state.group"; printf '%s' "$out"; }
+pair() { printf '["%s",""]' "$1"; }
 case "$method" in
   CurrentInputMethodGroup) echo '{"type":"s","data":["Default"]}' ;;
   CurrentInputMethod) printf '{"type":"s","data":["%s"]}\n' "$(cat "$state.current" 2>/dev/null)" ;;
   FullInputMethodGroupInfo)
-    echo '{"type":"sssa{sv}a(sssssssbsa{sv})","data":["Default","keyboard-us","us",{},[["keyboard-us","Keyboard - English (US)","","input-keyboard","en","en","keyboard",true,"",{}],["m17n_bn_itrans","itrans (M17N)","","/m17n/icons/bn-itrans.png","","bn","m17n",true,"",{}]]]}' ;;
-  SetCurrentIM) printf '%s' "$arg" > "$state.current"; echo '{"type":"","data":[]}' ;;
+    printf '{"type":"sssa{sv}a(sssssssbsa{sv})","data":["Default","keyboard-us","us",{},[%s]]}\n' "$(joined entry)" ;;
+  InputMethodGroupInfo) printf '{"type":"sa(ss)","data":["us",[%s]]}\n' "$(joined pair)" ;;
+  AvailableInputMethods)
+    k=""
+    [ -e "$state.nokhipro" ] || k=',["m17n_bn_khipro-dark","khipro-dark (M17N)","","","","bn",true]'
+    printf '{"type":"a(ssssssb)","data":[[["keyboard-us","Keyboard - English (US)","","input-keyboard","en","en",true],["m17n_bn_itrans","itrans (M17N)","","","","bn",true]%s]]}\n' "$k" ;;
+  SetInputMethodGroupInfo)
+    # Default us COUNT name layout name layout ...
+    : > "$state.group"
+    for ((j = 3; j < ${#rest[@]}; j += 2)); do echo "${rest[j]}" >> "$state.group"; done
+    echo '{"type":"","data":[]}' ;;
+  SetCurrentIM) printf '%s' "${rest[0]}" > "$state.current"; echo '{"type":"","data":[]}' ;;
   *) echo "Unknown method $method" >&2; exit 1 ;;
 esac

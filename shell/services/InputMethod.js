@@ -51,3 +51,27 @@ function next(list, current) {
     var at = all.indexOf(shown(all, current));
     return all[(at + 1) % all.length].id;
 }
+
+// Khipro (D126): added to the current group once, when m17n lists it (home-manager links it in, D125).
+var KHIPRO = "m17n_bn_khipro-dark";
+
+// Whether AvailableInputMethods' answer (a(ssssssb)) lists `id`.
+function available(text, id) {
+    var d = data(text);
+    var list = d && Array.isArray(d[0]) ? d[0] : [];
+    return list.some(function (m) { return Array.isArray(m) && m[0] === id; });
+}
+
+// SetInputMethodGroupInfo's call for `group` with `id` added at the end, from InputMethodGroupInfo's answer
+// (sa(ss): the layout and [name, layout] pairs); null when the group has it already or the answer is not one.
+function withMethod(group, text, id) {
+    var d = data(text);
+    if (!d || typeof d[0] !== "string" || !Array.isArray(d[1])) return null;
+    var items = d[1].filter(function (i) { return Array.isArray(i) && typeof i[0] === "string"; });
+    if (items.some(function (i) { return i[0] === id; })) return null;
+    items = items.concat([[id, ""]]);
+    var args = [group, d[0], String(items.length)];
+    items.forEach(function (i) { args.push(i[0], String(i[1] || "")); });
+    return call("SetInputMethodGroupInfo", "ssa(ss)", args);
+}
+

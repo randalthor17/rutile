@@ -21,6 +21,7 @@ Singleton {
     readonly property string configTool: Quickshell.env("RUTILE_FCITX5_CONFIGTOOL") || "fcitx5-configtool"
     property bool started: false        // the shell started fcitx5 itself
     property int tries: 0
+    property bool khiproChecked: false  // asked once a start: the list of every input method is long
 
     function refresh() {
         run(Ime.call("CurrentInputMethodGroup"), (ok, text) => {
@@ -32,10 +33,34 @@ Singleton {
             run(Ime.call("FullInputMethodGroupInfo", "s", [group]), (ok2, text2) => {
                 if (ok2) root.methods = Ime.methods(text2);
             });
+            if (!root.khiproChecked && !Settings.stateValue("input.khiproAdded", false)) {
+                root.khiproChecked = true;
+                root.addKhipro(group);
+            }
             run(Ime.call("CurrentInputMethod"), (ok3, text3) => {
                 if (!ok3) return;
                 root.current = Ime.string(text3);
                 root.available = true;
+            });
+        });
+    }
+    // Khipro (D126) into the current group, once: when m17n lists it and the group lacks it. Remembered in
+    // state.json only once it is in, so a Khipro installed later still comes, and one the user takes out stays out.
+    function addKhipro(group) {
+        run(Ime.call("AvailableInputMethods"), (ok, text) => {
+            if (!ok || !Ime.available(text, Ime.KHIPRO)) return;
+            run(Ime.call("InputMethodGroupInfo", "s", [group]), (ok2, text2) => {
+                if (!ok2) return;
+                const add = Ime.withMethod(group, text2, Ime.KHIPRO);
+                if (!add) {
+                    Settings.setState("input.khiproAdded", true);
+                    return;
+                }
+                run(add, ok3 => {
+                    if (!ok3) return;
+                    Settings.setState("input.khiproAdded", true);
+                    root.refresh();
+                });
             });
         });
     }

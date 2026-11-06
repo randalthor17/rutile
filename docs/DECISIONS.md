@@ -1478,3 +1478,14 @@ the button's (`Shelf.launcherX`, passed by the shell), and it grows from its bot
 - Checked: home-manager's real module accepts it (the maintainer's nixos-config evaluated against this checkout:
   the test user gets the fcitx5-daemon service and the two files). **Not verified:** typing Khipro in a real app,
   and the maintainer's own user, which runs Noctalia and does not use this module.
+
+**D126. Rutile adds Khipro to fcitx5's group once** (plan 2.1, the maintainer's request, 2026-11-06):
+- D125 made Khipro available; switching it on took fcitx5's settings. Now InputMethodService, once a start and
+  while state.json's `input.khiproAdded` is not set, asks fcitx5 for its input methods (`AvailableInputMethods`)
+  and, when m17n lists Khipro and the current group lacks it, appends it with `SetInputMethodGroupInfo` (the
+  group's own methods and layouts kept; fcitx5 saves its profile). `input.khiproAdded` is set once Khipro is in, so
+  one the user takes out stays out, and a Khipro installed later still comes.
+- Not home-manager's `i18n.inputMethod.fcitx5.settings.inputMethod`: that makes fcitx5's profile a read-only file,
+  and fcitx5's settings could no longer change the group.
+- Checked against the real fcitx5 on a private bus (the call adds it and fcitx5 writes the profile); tested with
+  the fake busctl in the headless shell. **Not verified:** on the maintainer's session.
