@@ -1604,3 +1604,18 @@ polish, 2026-11-06):
   Quickshell's UPower reads once before it calls a device ready, so the runner adds them (`AddProperty`) before the
   shell starts; and a header line holding JSON stops Quickshell loading the file ("module qs.services is not
   installed"), so the header names templates only.
+
+**D136. Low battery warnings** (plan 2.13 B1, 2026-11-06):
+- PowerService watches UPower's display device: discharging past 20% and 10% sends a notification ("Battery low",
+  the charge and time left), and past 5% a critical one ("Plug in now: the computer will hibernate soon", from
+  UPower's GetCriticalAction) that stays. Each level once per discharge; a shell started at 8% warns once, for
+  10%; each replaces the one before (the Notify's replaces id), so the list holds one. Plugging in closes the
+  critical one; unplugging again starts a new discharge. `power.lowBatteryWarnings` turns them off.
+- Sent with busctl to the session's notification server (the shell's own normally, or another one), not drawn by
+  the shell itself: they then follow the notification rules (critical pops up in Do not disturb, the list, the
+  sound) and work the same under another notification daemon. busctl, not gdbus: gdbus reads each argument as
+  GVariant text, so punctuation in the message could change it.
+- The levels are fixed (20, 10, 5), the plan's proposal; the maintainer has not chosen others. What happens at
+  the very end stays UPower's (CriticalPowerAction, NixOS `services.upower`).
+- Tested offscreen (the rules, the words, the commands) and end to end against the stand-in UPower (D135) and the
+  shell's notification server. **Not verified:** on a laptop.

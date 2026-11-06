@@ -71,7 +71,7 @@ var pages = [
     {
         id: "power", title: "Power", icon: "battery_charging_full", tone: "primaryContainer",
         summary: "Battery, power mode", aliases: ["upower", "power-profiles-daemon"],
-        sections: [],
+        sections: [{ title: "", keys: ["power.lowBatteryWarnings"] }],
         view: "pages/PowerPage.qml", backend: "pages/PowerBackend.qml",
         entries: [
             { key: "power.battery", title: "Battery", description: "Charge, time left and health",

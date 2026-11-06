@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Low battery warnings.** On a laptop, a notification at 20% and 10%, and a critical one at 5% that stays
+  until you plug in and says what happens at the end (hibernate or turn off, UPower's setting). Settings > Power
+  > Low battery warnings turns them off.
 - **Widgets can say how big they start.** `"size": {"w": 6, "h": 2}` in a widget file gives it that many desktop
   cells when you add it (or fewer if the screen is full). Text scaling is measured against that size.
 - **The launcher finds files.** Type three letters or more and files and folders in your home folder whose names

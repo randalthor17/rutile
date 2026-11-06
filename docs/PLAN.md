@@ -262,11 +262,10 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
     runs against python-dbusmock's template on its private bus, which is then also its system bus; it sets the
     charge, the state and the time left through the mock's methods (busctl). `tst_battery_mock`: PowerService
     follows discharging, charging and a device that is no battery.
-  - **B1, warnings.** A notification at 20% and 10% while discharging, and a critical one at 5% that stays until
-    plugged in ("Plug in now"), each once per discharge; none while charging. Sent through the shell's own
-    notification server, so they show in the list and pop up even in Do not disturb (critical). What happens at
-    the very end is UPower's (its CriticalPowerAction: hibernate or power off, set in NixOS), not the shell's;
-    the critical notification says which. Settings > Power: the two levels, on by default.
+  - **B1, warnings.** Done (D136): a notification at 20% and 10% while discharging, and a critical one at 5% that
+    stays until plugged in and names UPower's action at the end, each once per discharge, each in the last one's
+    place; plugging in closes the critical one. Settings > Power > Low battery warnings (on by default); the levels
+    are fixed for now.
   - **B2, at a glance.** Quick Settings shows the charge and the time left (or to full) beside its header, as
     ChromeOS does, and a click there opens a Battery page (charge, time, the power mode chips, a link to Settings >
     Power). The status pill's tooltip gives the time left. The lock screen and the greeter show the battery at the

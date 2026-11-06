@@ -153,6 +153,18 @@
         }
       }
     },
+    "power": {
+      "type": "object",
+      "title": "Power",
+      "properties": {
+        "lowBatteryWarnings": {
+          "type": "boolean",
+          "default": true,
+          "title": "Low battery warnings",
+          "description": "A notification at 20% and 10%, and one at 5% that stays until the computer is plugged in."
+        }
+      }
+    },
     "lock": {
       "type": "object",
       "title": "Lock screen",
