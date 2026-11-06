@@ -34,6 +34,8 @@ PanelWindow {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         pinned: root.backend.pinned
+        pinsMovable: root.backend.pinsEditable
+        onPinsReordered: ids => root.backend.setPins(ids)
         groups: root.backend.groupsFor(root.screen?.name ?? "")
         onLaunched: app => root.backend.launch(app)
         onLauncherClicked: root.launcherClicked()

@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Shelf pins show open apps and can be dragged.** A dot under a pinned app means it has a window open. Drag a pin
+  sideways to put it somewhere else; the new order is saved.
 - **Wallpapers from Wallhaven.** Right-click the desktop and choose Find on Wallhaven (or Settings > Wallpaper &
   style > Browse Wallhaven, or `rutile-shell wallhaven toggle`): search wallhaven.cc, filter by category, purity,
   shape or "At least my screen", sort, page through, and click one to download it into Pictures/Wallpapers and make

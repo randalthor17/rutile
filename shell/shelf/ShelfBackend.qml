@@ -14,16 +14,26 @@ QtObject {
         void DesktopEntries.applications.values;        // look again when the installed apps change
         return ShelfApps.pins(Settings.value("shelf.pins"), id => !!DesktopEntries.byId(id));
     }
-    // [{id, name, icon}], the icon as an image URL ("" when the theme has none)
+    // [{id, name, icon, running}], the icon as an image URL ("" when the theme has none); `running`: the app has a
+    // window open on any screen
     readonly property var pinned: {
         void DesktopEntries.applications.values;
         return pinnedIds.map(id => DesktopEntries.byId(id)).filter(e => !!e)
-                        .map(e => ({ id: e.id, name: e.name, icon: iconUrl(e.icon) }));
+                        .map(e => ({ id: e.id, name: e.name, icon: iconUrl(e.icon), running: runningIds.indexOf(e.id) >= 0 }));
+    }
+    readonly property var runningIds: {
+        const groups = niri ? NiriService.groups("")
+                            : ShelfApps.ungrouped(toplevels.map(t => ({ appId: t.appId, title: t.title, activated: t.activated })));
+        return ShelfApps.runningIds(groups, appId => DesktopEntries.heuristicLookup(appId)?.id ?? "");
     }
     // Pin and Unpin save the shelf.pins setting, starting from the pins shown; not while Nix sets them (D45).
     readonly property bool pinsEditable: !Settings.isManaged("shelf.pins")
     function togglePin(id) {
         return Settings.set("shelf.pins", ShelfApps.togglePin(pinnedIds, id));
+    }
+    // the pins in a new order, dragged on the shelf
+    function setPins(ids) {
+        return Settings.set("shelf.pins", ids);
     }
 
     readonly property bool niri: NiriService.available

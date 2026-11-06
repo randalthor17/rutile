@@ -1,5 +1,6 @@
 // ShelfBackend with niri (the fake socket, tests/qs/bin/fake-niri) and the fixture apps: windows come grouped by
-// workspace, one per window, named from their desktop entries; a click focuses that window over niri.
+// workspace, one per window, named from their desktop entries; a click focuses that window over niri; the pins
+// whose apps have a window open are marked running.
 // env NIRI_SOCKET=@WS@/niri.sock
 // env PATH=@WS@/bin:@PATH@
 // env XDG_DATA_DIRS=@WS@/apps
@@ -42,6 +43,8 @@ ShellRoot {
             t.compare(g[0].windows.map(w => w.name).join(), "Firefox,kitty", "named from the entry, else the app id");
             t.compare(g[1].windows.map(w => w.name).join(), "Foot", "one per window");
             t.compare(backend.groupsFor("HDMI-A-1").length, 0, "another output has none");
+            t.compare(backend.pinned.map(p => p.id + ":" + p.running).join(),
+                      "org.gnome.Nautilus:false,firefox:true,foot:true", "pins with a window open are running");
             backend.focusWindow(g[0].windows[1]);
             check.start();
         }

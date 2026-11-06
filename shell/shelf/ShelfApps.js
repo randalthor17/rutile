@@ -77,3 +77,28 @@ function move(ids, index, delta) {
     out.splice(to, 0, it);
     return out;
 }
+
+// The desktop ids with a window open in `groups` (decorate()'s input, every output's): entryId(appId) gives a
+// window's desktop id, or "" when it has none. A pin with one is marked as running.
+function runningIds(groups, entryId) {
+    var out = [];
+    groups.forEach(g => g.windows.forEach(w => {
+        var id = w.appId ? entryId(w.appId) : "";
+        if (id && out.indexOf(id) < 0) out.push(id);
+    }));
+    return out;
+}
+
+// Where a pin dragged from `from` lands after moving `dx` pixels along buttons `slot` apart: an index in the pins.
+function dropIndex(from, dx, slot, count) {
+    if (!(slot > 0)) return from;
+    return Math.max(0, Math.min(count - 1, from + Math.round(dx / slot)));
+}
+
+// How far the pin at `index` steps aside while one is dragged from `from` to `to`: -1, 0 or +1 slots.
+function dragShift(index, from, to) {
+    if (from < 0 || index === from) return 0;
+    if (from < to && index > from && index <= to) return -1;
+    if (to < from && index >= to && index < from) return 1;
+    return 0;
+}

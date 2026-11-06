@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 // The shelf (plan 2.4): a bar along the bottom with the launcher button at its left, and in the middle the pinned
-// apps and, after a divider,
+// apps (a dot under one with a window open; dragged sideways to reorder them, `pinsReordered`) and, after a divider,
 // the open windows grouped by workspace: a capsule per workspace with its number and one icon per window, the
 // active workspace's capsule tinted, the focused window marked (as Noctalia's taskbar groups them). The wheel over
 // the shelf moves between workspaces, one per notch (touchpads add up to a notch). Plain QtQuick
@@ -11,14 +11,17 @@ import QtQuick
 import QtQuick.Shapes
 import qs.common
 import qs.components
+import "ShelfApps.js" as ShelfApps
 
 Rectangle {
     id: root
 
-    property var pinned: []         // [{id, name, icon}]
+    property var pinned: []         // [{id, name, icon, running}]
+    property bool pinsMovable: true // false while Nix sets the pins (D45)
     property var groups: []         // ShelfApps.decorate() / ungrouped()
 
     signal launched(var app)
+    signal pinsReordered(var ids)           // the pins' ids in their new order, after a drag
     signal windowClicked(var window)
     signal launcherClicked()
     signal workspaceScrolled(int delta)     // +1: the next workspace (down), -1: the previous
@@ -137,6 +140,19 @@ Rectangle {
         }
     }
 
+    // A pin dragged sideways: the others step aside, and on release the new order is asked for.
+    property int dragFrom: -1
+    property int dragTo: -1
+    function dropPin() {
+        const from = dragFrom, to = dragTo;
+        dragFrom = dragTo = -1;
+        if (from < 0 || to === from) return;
+        const ids = pinned.map(p => p.id);
+        const it = ids.splice(from, 1)[0];
+        ids.splice(to, 0, it);
+        pinsReordered(ids);
+    }
+
     Row {
         id: row
         anchors.centerIn: parent
@@ -147,9 +163,37 @@ Rectangle {
             ShelfButton {
                 id: pin
                 required property var modelData
+                required property int index
+                readonly property real slot: width + row.spacing
                 objectName: "shelfPin_" + modelData.id
                 name: modelData.name
                 iconSource: modelData.icon
+                running: modelData.running === true
+                z: drag.active ? 1 : 0
+                // the others step aside smoothly; the dragged one follows the pointer
+                property real shift: ShelfApps.dragShift(index, root.dragFrom, root.dragTo) * slot
+                Behavior on shift { EffectsNumber {} }
+                transform: Translate { x: drag.active ? drag.dx : pin.shift }
+                DragHandler {
+                    id: drag
+                    property real dx: 0
+                    target: null
+                    enabled: root.pinsMovable && root.pinned.length > 1
+                    yAxis.enabled: false
+                    onTranslationChanged: {
+                        dx = translation.x;
+                        if (active) root.dragTo = ShelfApps.dropIndex(pin.index, dx, pin.slot, root.pinned.length);
+                    }
+                    onActiveChanged: {
+                        if (active) {
+                            root.hideTooltip();
+                            root.dragFrom = root.dragTo = pin.index;
+                        } else {
+                            root.dropPin();
+                            dx = 0;
+                        }
+                    }
+                }
                 onHoveredChanged: root.hover(pin)
                 onClicked: {
                     root.hideTooltip();

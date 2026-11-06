@@ -1513,3 +1513,15 @@ Khipro check left open in D126 is done: the maintainer typed with it on the sess
 - Tested offscreen (the address, the answer, the panel), against a web server of the test's own with real curl,
   and in the headless shell (open, choose, the wallpaper set). **Not verified:** against wallhaven.cc itself, an
   API key, or a download cut off midway (its part file removed; no test breaks a download halfway).
+
+**D129. Running pins and dragging pins** (plan 2.4, the maintainer's go-ahead on the list of polish, 2026-11-06):
+- A pin whose app has a window open on any screen gets the running dot under it (the focused window's longer dash
+  stays on the window's own button). An app is matched to its pin through its desktop entry
+  (`DesktopEntries.heuristicLookup` on the window's app id, as the window buttons are named). A click on a pin
+  still starts the app, as before: the window buttons beside it focus a window.
+- A pin dragged sideways moves along the pins: the others step aside as it passes them (the shared motion), and on
+  release the new order is saved in `shelf.pins`. A small wobble stays a click; a pin dragged back to where it was
+  saves nothing; no dragging while Nix sets the pins (D45). Qt's DragHandler, so the button's click is cancelled
+  once the drag starts.
+- Tested offscreen (the dot, the drag, the helpers) and against the fake niri (which pins are running).
+  **Not verified:** dragging with a real pointer on niri.

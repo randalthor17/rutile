@@ -180,7 +180,13 @@ TestCase {
         compare(focused.signalArguments[0][0].id, 14, "that exact window");
         var pin = findChild(shelf, "shelfPin_firefox");
         verify(pin.x < ws1.x, "pins first");
-        verify(!findChild(pin, "shelfRunningMark").visible, "pins are launchers, without marks");
+        verify(!findChild(pin, "shelfRunningMark").visible, "no window open: no mark");
+        shelf.pinned = [pinned[0], Object.assign({}, pinned[1], { running: true })];
+        waitForRendering(shelf);
+        pin = findChild(shelf, "shelfPin_firefox");
+        verify(findChild(pin, "shelfRunningMark").visible, "a window open: a dot");
+        compare(findChild(pin, "shelfRunningMark").width, Spacing.xs, "a dot, not the focused window's dash");
+        verify(!findChild(findChild(shelf, "shelfPin_org.gnome.Nautilus"), "shelfRunningMark").visible);
         mouseClick(pin, pin.width / 2, pin.height / 2);
         compare(launched.count, 1);
         compare(launched.signalArguments[0][0].id, "firefox");
@@ -190,6 +196,61 @@ TestCase {
         verify(!findChild(findChild(shelf, "shelfWorkspace_0"), "shelfWorkspaceLabel").visible);
         shelf.groups = [];
         verify(!findChild(shelf, "shelfDivider").visible, "no windows: no divider");
+    }
+
+    function test_running_and_drag_helpers() {
+        compare(ShelfApps.runningIds(niriGroups, a => a === "mystery" ? "" : a + ".desktop").join(),
+                "firefox.desktop,kitty.desktop", "each app once; a window without an entry left out");
+        compare(ShelfApps.runningIds([], a => a).length, 0);
+        compare(ShelfApps.dropIndex(0, 70, 56, 3), 1, "past half a slot: the next place");
+        compare(ShelfApps.dropIndex(0, 20, 56, 3), 0);
+        compare(ShelfApps.dropIndex(2, -500, 56, 3), 0, "no further than the first");
+        compare(ShelfApps.dropIndex(0, 500, 56, 3), 2, "nor the last");
+        compare(ShelfApps.dropIndex(1, 100, 0, 3), 1);
+        compare([0, 1, 2, 3].map(i => ShelfApps.dragShift(i, 0, 2)).join(), "0,-1,-1,0", "dragged right: those passed step left");
+        compare([0, 1, 2, 3].map(i => ShelfApps.dragShift(i, 3, 1)).join(), "0,1,1,0", "dragged left: those passed step right");
+        compare([0, 1].map(i => ShelfApps.dragShift(i, -1, -1)).join(), "0,0", "no drag");
+    }
+
+    function test_drag_reorders_pins() {
+        const three = pinned.concat([{ id: "kitty", name: "kitty", icon: "" }]);
+        var shelf = createTemporaryObject(shelfComp, root, { pinned: three });
+        waitForRendering(shelf);
+        var moved = createTemporaryObject(spyComp, root, { target: shelf, signalName: "pinsReordered" });
+        var launched = createTemporaryObject(spyComp, root, { target: shelf, signalName: "launched" });
+        var files = findChild(shelf, "shelfPin_org.gnome.Nautilus");
+        const slot = files.width + Spacing.sm;
+        const y = files.height / 2;
+        mousePress(files, files.width / 2, y);
+        for (let i = 1; i <= 10; i++) mouseMove(files, files.width / 2 + i * slot * 0.2, y);
+        compare(shelf.dragTo, 2, "two slots right: the last place");
+        tryCompare(findChild(shelf, "shelfPin_kitty"), "shift", -slot, 2000, "the one passed steps aside");
+        compare(findChild(shelf, "shelfPin_firefox").shift, -slot);
+        mouseRelease(files, files.width / 2 + 2 * slot, y);
+        compare(moved.count, 1);
+        compare(moved.signalArguments[0][0].join(), "firefox,kitty,org.gnome.Nautilus");
+        compare(launched.count, 0, "a drag launches nothing");
+        compare(shelf.dragFrom, -1);
+        // a short wobble is still a click
+        var fox = findChild(shelf, "shelfPin_firefox");
+        mousePress(fox, fox.width / 2, y);
+        mouseMove(fox, fox.width / 2 + 2, y);
+        mouseRelease(fox, fox.width / 2 + 2, y);
+        compare(moved.count, 1, "not moved");
+        compare(launched.count, 1, "launched");
+        // dragged away and back: nothing saved
+        files = findChild(shelf, "shelfPin_org.gnome.Nautilus");
+        mousePress(files, files.width / 2, y);
+        for (let i = 1; i <= 10; i++) mouseMove(files, files.width / 2 + i * slot * 0.2, y);
+        for (let i = 9; i >= 0; i--) mouseMove(files, files.width / 2 + i * slot * 0.2, y);
+        mouseRelease(files, files.width / 2, y);
+        compare(moved.count, 1, "back where it was: not moved");
+        // set in Nix: they stay put
+        shelf.pinsMovable = false;
+        mousePress(files, files.width / 2, y);
+        for (let i = 1; i <= 10; i++) mouseMove(files, files.width / 2 + i * slot * 0.2, y);
+        mouseRelease(files, files.width / 2 + 2 * slot, y);
+        compare(moved.count, 1, "no drag while Nix sets the pins");
     }
 
     function test_wheel_moves_between_workspaces() {
