@@ -26,6 +26,8 @@ PanelWindow {
     implicitWidth: bar.width
     implicitHeight: bar.height
     color: "transparent"
+    // what is behind the see-through panel, blurred by the compositor (D132)
+    BackgroundEffect.blurRegion: Region { item: Panels.blurring ? bar : null; radius: bar.radius }
 
     CaptureBar {
         id: bar

@@ -5,7 +5,9 @@
 // counts toward its usage (state.json's `launcher.usage`, Usage.js); Pin and Unpin go to the shell (`pinToggled`).
 // An answer or an emoji chosen is copied with wl-copy, with a toast (D130). The emoji names are read from Unicode's
 // emoji-test.txt (RUTILE_EMOJI_DATA; the package names unicode-emoji's) only once a search asks for emoji, and go
-// with the launcher.
+// with the launcher. Files are searched with find (FileSearch.js, D133) a moment after typing stops, an older
+// search stopped; a chosen one opens with gio. RUTILE_SEARCH_HOME: tests only (a folder of the test's own instead
+// of the home folder).
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -14,6 +16,7 @@ import qs.common
 import qs.services
 import "Usage.js" as Usage
 import "Answers.js" as Answers
+import "FileSearch.js" as FileSearch
 
 PanelWindow {
     id: root
@@ -57,6 +60,36 @@ PanelWindow {
         onLoaded: panel.emojis = Answers.parseEmoji(text())
     }
 
+    readonly property string searchHome: Quickshell.env("RUTILE_SEARCH_HOME") || Quickshell.env("HOME")
+    Timer {
+        id: fileWait
+        interval: 300
+        onTriggered: {
+            if (!panel.wantsFiles) return;
+            fileSearch.running = false;
+            fileSearch.query = panel.query;
+            fileSearch.command = FileSearch.command(root.searchHome, panel.query, 200);
+            fileSearch.running = true;
+        }
+    }
+    Connections {
+        target: panel
+        function onQueryChanged() {
+            if (panel.wantsFiles) fileWait.restart();
+            else {
+                fileWait.stop();
+                fileSearch.running = false;
+            }
+        }
+    }
+    Process {
+        id: fileSearch
+        property string query: ""
+        stdout: StdioCollector {
+            onStreamFinished: panel.files = FileSearch.parse(text, root.searchHome, fileSearch.query)
+        }
+    }
+
     LauncherPanel {
         id: panel
         objectName: "launcherPanel"
@@ -84,6 +117,10 @@ PanelWindow {
             root.close();
         }
         onPinToggled: app => root.pinToggled(app)
+        onFileChosen: file => {
+            Quickshell.execDetached(FileSearch.openCommand(file.path));
+            root.close();
+        }
         onCopyRequested: text => {
             Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | wl-copy', "sh", text]);
             ToastService.show("Copied " + text, { icon: "content_copy" });

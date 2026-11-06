@@ -107,7 +107,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   left with the pins and windows in the middle, concave corners above both ends, and the bar as see-through as the
   panels (Wallpaper & style > Panel opacity, also the top pills, Quick Settings, notifications and calendar). Since
   D129: a dot under a pin whose app has a window open, and pins dragged sideways to reorder them (saved in
-  `shelf.pins`). Not done: special buttons, hover motion beyond the state layer. The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
+  `shelf.pins`). Since D132 the see-through panels blur what is behind them. Not done: special buttons, hover
+  motion beyond the state layer. No overview of our own: niri's is enough (the maintainer, D132). The whole item: bottom layer-shell bar, "G" pill launcher, pinned apps from config, running-app indicators
   via niri IPC, divider, special buttons, M3E hover and press motion. Types: `PanelWindow` (bottom,
   `ExclusionMode`), `DesktopEntries`, `IconImage`, `ToplevelManager`, `LazyLoader` for its popups.
 - [ ] **2.5** Started (D45, `docs/settings.md`): the config store. `settings/schema.json` describes every setting
@@ -158,7 +159,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   system has, by name or keyword); a toggle flips at once and closes the launcher, a slider opens Quick Settings.
   Settings from the Settings app's pages are results too (D77). Answers (D130): a sum ("2+3*4", "sqrt(2)") or a
   unit conversion ("5 km to mi") typed in All shows its answer first, and ":name" finds emoji; choosing one copies
-  it. Not done: file search. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
+  it. Files (D133): typing three letters or more in All also finds files and folders in the home folder by name,
+  after the apps; Enter opens one. The whole item: search field, category chips, grid/list toggle; DMS `Scorer.js` ported (weighted fuzzy,
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Started (D47, `shell/notifications/`): notifications. `NotificationService` (Quickshell's

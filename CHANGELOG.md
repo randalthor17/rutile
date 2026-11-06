@@ -5,6 +5,10 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **The launcher finds files.** Type three letters or more and files and folders in your home folder whose names
+  match come after the apps; Enter opens one.
+- **Blur behind the see-through panels.** The shelf, the pills at the top and their panels blur what shows
+  through them (niri 26.04). Settings > Wallpaper & style > Blur behind panels turns it off.
 - **Notifications survive a restart.** The notification list is saved (readable only by you) and comes back after
   the shell or the computer restarts, without its buttons. Settings > Notifications > Keep after a restart turns
   it off and deletes the saved list.

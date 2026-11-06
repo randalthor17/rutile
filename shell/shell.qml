@@ -545,6 +545,12 @@ ShellRoot {
         property: "opacity"
         value: Math.max(0.5, Math.min(1, Settings.value("style.panelOpacity") ?? 1))
     }
+    // and whether what is behind them is blurred (D132)
+    Binding {
+        target: Panels
+        property: "blur"
+        value: Settings.value("style.panelBlur") !== false
+    }
     IpcHandler {
         target: "motion"
         // false when the speed is out of range (0 to 4) or set in Nix

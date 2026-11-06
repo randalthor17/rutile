@@ -24,6 +24,8 @@ PanelWindow {
     implicitWidth: pill.width
     implicitHeight: pill.height
     color: "transparent"
+    // what is behind the see-through panel, blurred by the compositor (D132)
+    BackgroundEffect.blurRegion: Region { item: Panels.blurring ? pill : null; radius: pill.radius }
 
     SystemClock {
         id: clock

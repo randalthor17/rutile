@@ -1557,3 +1557,26 @@ polish, 2026-11-06):
 - Tested offscreen (what is saved and read back) and against the private D-Bus (restored cards, a new one, the
   file's mode and contents, dismissing, the setting off). **Not verified:** the reload case (no test reloads the
   shell), and the umask (no test catches the moment before chmod).
+
+**D132. The see-through panels blur what is behind them; no overview** (plan 2.4, the maintainer's go-ahead,
+2026-11-06):
+- D115 made the shelf, the pills at the top and the panels they open see-through. niri 26.04 implements
+  ext-background-effect-v1 (D38), which the power menu and the password dialog already use, so each of those
+  windows now names its see-through part as `BackgroundEffect.blurRegion` (the item, with its corner radius; the
+  status window one region per pill shown). Only while blurring is useful: `Panels.blurring` is the new setting
+  `style.panelBlur` (default on) while Panel opacity is below 1; otherwise the region is empty and nothing is
+  asked of the compositor. The shelf's concave corners are not blurred (a region is rounded rectangles).
+- The maintainer dropped a window overview of the shell's own: niri's overview does it.
+- Tested: the flag offscreen, and the shell under headless sway with blur on (no QML errors; sway draws no
+  blur). **Not verified:** how it looks on niri.
+
+**D133. The launcher searches files** (plan 2.7, the maintainer's go-ahead on the list of polish, 2026-11-06):
+- Typing three letters or more in All also finds files and folders in the home folder whose names hold the text,
+  shown after the apps (at most 8: names starting with it first, then the shallower). find runs 300 ms after
+  typing stops, five levels down, leaving out hidden folders, node_modules, __pycache__, target and result; a newer
+  search stops the older, and an older search's hits that no longer match are dropped at once. Enter or a click
+  opens one with `gio open`. findutils joins the runtime tools (find with -printf).
+- No index (locate, tracker): nothing runs while the launcher is closed (D31). Deeper files are not found.
+- Tested offscreen (the command, the order, the launcher's handling) and in the headless shell against a folder of
+  the test's own (`RUTILE_SEARCH_HOME`): a hidden folder's file is left out. **Not verified:** speed on the
+  maintainer's home folder, and `gio open` opening the right app.

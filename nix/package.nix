@@ -15,6 +15,7 @@
   brightnessctl,
   ddcutil,
   curl,
+  findutils,
   wlsunset,
   pipewire,
   dbus,
@@ -63,7 +64,7 @@ let
   # Typing in other languages (D118): fcitx5 with m17n's input methods and its settings tool. The shell starts it
   # only when no fcitx5 runs (a system's own, with the user's addons, wins), so it is named, not put on PATH.
   fcitx5 = qt6Packages.fcitx5-with-addons.override { addons = [ fcitx5-m17n ]; };
-  runtime = [ matugen curl brightnessctl ddcutil cliphist wl-clipboard grim slurp wf-recorder wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash
+  runtime = [ matugen curl findutils brightnessctl ddcutil cliphist wl-clipboard grim slurp wf-recorder wlsunset pipewire dbus systemd procps coreutils gnused dconf glib bash
               gnome-calendar gnome-online-accounts-gtk ];
 in
 stdenv.mkDerivation {

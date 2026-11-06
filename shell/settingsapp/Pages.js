@@ -20,7 +20,7 @@ var pages = [
         summary: "Wallpaper, colors", aliases: ["background", "theme", "colours", "palette", "matugen"],
         sections: [
             { title: "", keys: ["wallpaper.path", "wallpaper.palette"] },
-            { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed", "style.panelOpacity"] },
+            { title: "Style", keys: ["style.mode", "style.scheme", "style.contrast", "style.seed", "style.panelOpacity", "style.panelBlur"] },
             { title: "Colors in other apps", keys: ["appColors.enabled", "appColors.niri", "appColors.gtk", "appColors.qt", "appColors.kde", "appColors.folders", "appColors.kitty", "appColors.ghostty", "appColors.btop", "appColors.nvim", "appColors.firefox", "action.flatpak"] },
             { title: "Wallhaven", keys: ["action.wallhaven", "wallhaven.apiKey", "wallhaven.folder"] },
             { title: "", keys: ["notice.niriInclude"] }

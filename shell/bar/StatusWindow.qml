@@ -38,6 +38,14 @@ PanelWindow {
     implicitWidth: row.width
     implicitHeight: pill.height
     color: "transparent"
+    // what is behind the see-through pills, blurred by the compositor (D132)
+    BackgroundEffect.blurRegion: Region {
+        Region { item: Panels.blurring && record.visible ? record : null; radius: record.radius }
+        Region { item: Panels.blurring && bell.visible ? bell : null; radius: bell.radius }
+        Region { item: Panels.blurring && input.visible ? input : null; radius: input.radius }
+        Region { item: Panels.blurring && tray.visible ? tray : null; radius: tray.radius }
+        Region { item: Panels.blurring ? pill : null; radius: pill.radius }
+    }
 
     Row {
         id: row

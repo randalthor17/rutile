@@ -282,6 +282,7 @@ installs what is needed and prints the exports. What it provides, and why each p
 | `RUTILE_PLAIN_GTK4` | `tools/dev/theming_check.py` | `0`: check with `programs.rutile.theming.gtk.plainGtk4` off (plain GTK 4 apps not expected to match) |
 | `RUTILE_AMDGPU_IDS`, `RUTILE_PCI_IDS` | `shell/widgethost/sources/GpuSource.qml` | libdrm's amdgpu.ids and hwdata's pci.ids, for graphics card names (the package sets both; without them, /usr/share's) |
 | `RUTILE_EMOJI_DATA` | `shell/launcher/LauncherWindow.qml` | Unicode's emoji-test.txt, the launcher's emoji names (the package and dev shell set unicode-emoji's, D130; tests a fixture) |
+| `RUTILE_SEARCH_HOME` | `shell/launcher/LauncherWindow.qml` | tests only: the folder the launcher's file search looks in instead of the home folder (D133) |
 | `RUTILE_WALLHAVEN_API` | `shell/services/WallhavenService.qml` | tests only: the Wallhaven API address, a web server of the test's own instead of wallhaven.cc (D128) |
 | `RUTILE_FCITX5`, `RUTILE_FCITX5_CONFIGTOOL` | `shell/services/InputMethodService.qml` | the fcitx5 the shell starts when none runs, and its settings tool (the package sets both, D118; tests name the fake) |
 | `FAKE_FCITX`, `FAKE_DDC`, `FAKE_DDC_BUSES`, `FAKE_CLIP`, `FAKE_CAPTURE` | `tests/qs/bin/` | the fake fcitx5, busctl, ddcutil, cliphist, wl-paste, wl-copy, grim, slurp and wf-recorder's state files and monitors (tests only) |

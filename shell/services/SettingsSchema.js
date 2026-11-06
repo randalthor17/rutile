@@ -142,6 +142,12 @@ var schema = {
                     "title": "Panel opacity",
                     "description": "How solid the shelf, the pills at the top and the panels they open are: 1 is solid, less lets the wallpaper and windows show through."
                 },
+                "panelBlur": {
+                    "type": "boolean",
+                    "default": true,
+                    "title": "Blur behind panels",
+                    "description": "Blur what shows through the see-through panels (the compositor does it; niri 26.04 or later). Only while Panel opacity is below 1."
+                },
                 "seed": {
                     "type": "string",
                     "pattern": "#[0-9a-f]{6}",

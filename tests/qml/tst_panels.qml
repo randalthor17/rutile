@@ -36,6 +36,16 @@ TestCase {
         verify(Math.abs(c.r - Colors.surfaceContainer.r) < 0.01, "the same color");
     }
 
+    function test_blur_only_while_see_through() {
+        Panels.blur = true;
+        verify(!Panels.blurring, "solid: nothing to blur");
+        Panels.opacity = 0.8;
+        verify(Panels.blurring);
+        Panels.blur = false;
+        verify(!Panels.blurring, "switched off");
+        Panels.blur = false;
+    }
+
     function test_every_panel() {
         const all = { status: status, clock: clock, bell: bell, tray: tray, notifications: notifications,
                       calendar: calendar, quick: quick };

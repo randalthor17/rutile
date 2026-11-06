@@ -11,7 +11,9 @@ pragma ComponentBehavior: Bound
 // controls (`settings`) and the Settings app's pages and settings (`findSettings(query)`, Model.launcherItems),
 // which `settingChosen` hands to the shell. A sum or a unit conversion typed in All shows its answer first, and
 // a query starting with ":" finds emoji by name instead of apps (Answers.js, D130; the emoji list, `emojis`, comes
-// from the window once `wantsEmoji`); choosing either asks `copyRequested` with its text.
+// from the window once `wantsEmoji`); choosing either asks `copyRequested` with its text. Files in the home folder
+// whose names hold the query (`files`, FileSearch.js, D133: the window searches) come after the apps in All;
+// choosing one asks `fileChosen`.
 import QtQuick
 import qs.common
 import qs.components
@@ -19,6 +21,7 @@ import "Scorer.js" as Scorer
 import "Categories.js" as Categories
 import "Usage.js" as Usage
 import "Answers.js" as Answers
+import "FileSearch.js" as FileSearch
 
 Rectangle {
     id: root
@@ -37,6 +40,9 @@ Rectangle {
     property var settings: []
     property var findSettings: null         // query => the Settings app's results, in the same form
     property var emojis: []                 // Answers.parseEmoji's, given once wanted
+    property var files: []                  // FileSearch.parse's for a recent query
+    readonly property bool wantsFiles: category === "" && FileSearch.wanted(query)
+    readonly property var filesShown: wantsFiles ? files.filter(f => f.name.toLowerCase().indexOf(query.trim().toLowerCase()) >= 0) : []
     readonly property bool emojiMode: query.startsWith(":")
     readonly property bool wantsEmoji: emojiMode
     readonly property var answer: category === "" && !emojiMode ? Answers.answer(query) : null
@@ -45,7 +51,7 @@ Rectangle {
               Scorer.rank(Categories.filter(apps, category)
                               .concat(category === "" && query.trim() !== ""
                                       ? settings.concat(findSettings ? findSettings(query) : []) : []),
-                          query, item => Usage.score(usage[item.id], now)))
+                          query, item => Usage.score(usage[item.id], now)), filesShown)
     readonly property alias currentIndex: grid.currentIndex
     readonly property int columns: 5
     readonly property real cell: Spacing.xxxl * 2 + Spacing.sm
@@ -57,6 +63,7 @@ Rectangle {
     signal pinToggled(var app)
     signal settingChosen(var item)
     signal copyRequested(string text)       // an answer or an emoji chosen
+    signal fileChosen(var file)
     signal closeRequested()
     signal hidden()
 
@@ -82,7 +89,7 @@ Rectangle {
     readonly property Item menu: menuLoader.item as Item
 
     function openMenu(app, tile) {
-        if (app.type === "setting" || app.copy !== undefined) return;     // a setting, an answer or an emoji has nothing more to offer
+        if (app.type === "setting" || app.type === "file" || app.copy !== undefined) return;     // a setting, an answer or an emoji has nothing more to offer
         menuApp = app;
         menuBelow = tile.mapToItem(root, Math.min(tile.width / 2, cell / 2), tile.height - Spacing.md);
         menuAboveY = tile.mapToItem(root, 0, Spacing.md).y;
@@ -124,6 +131,7 @@ Rectangle {
     function choose(item) {
         if (item.type === "setting") settingChosen(item);
         else if (item.copy !== undefined) copyRequested(item.copy);
+        else if (item.type === "file") fileChosen(item);
         else launched(item);
     }
     function launchCurrent() {

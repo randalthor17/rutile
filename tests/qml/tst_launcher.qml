@@ -6,6 +6,7 @@ import "../qs/launcher/Scorer.js" as Scorer
 import "../qs/launcher/Categories.js" as Categories
 import "../qs/launcher/Usage.js" as Usage
 import "../qs/launcher/Answers.js" as Answers
+import "../qs/launcher/FileSearch.js" as FileSearch
 import "../qs/quicksettings/Controls.js" as Controls
 import "../qs/settingsapp/Model.js" as SettingsModel
 import "../qs/settingsapp/Pages.js" as SettingsPages
@@ -651,6 +652,61 @@ TestCase {
         compare(copied.signalArguments[2][0], "\u{1F44B}");
         p.query = ":fire";
         compare(p.results.length, 0, "no app among emoji");
+    }
+
+    // file search (D133)
+    readonly property string found: "f Documents/Report draft.odt\nd Reports\nf Reports/old/report.pdf\n"
+        + "f photos/reportage.jpg\nf notes.txt\nnot a line\n"
+
+    function test_file_search() {
+        verify(!FileSearch.wanted("ab"), "too short");
+        verify(FileSearch.wanted("rep"));
+        verify(!FileSearch.wanted(":smile"), "emoji, not files");
+        const c = FileSearch.command("/home/me", " a*b?[c] ", 50);
+        compare(c.slice(0, 2).join(" "), "sh -c");
+        compare(c.slice(3).join("|"), "sh|/home/me|*a\\*b\\?\\[c\\]*|50", "wildcards escaped, all as arguments");
+        verify(c[2].includes("-prune") && c[2].includes('-name ".*"'), "hidden folders left out");
+        const r = FileSearch.parse(found, "/home/me/", "rep");
+        compare(r.map(f => f.name).join("|"), "Reports|Report draft.odt|reportage.jpg|report.pdf",
+                "the shallower first; others dropped");
+        compare(FileSearch.parse("f a/arep\nf a/repz\n", "/h", "rep").map(f => f.name).join(), "repz,arep",
+                "names starting with it first");
+        compare(r[0].symbol, "folder");
+        compare(r[3].symbol, "picture_as_pdf");
+        compare(r[2].symbol, "image");
+        compare(r[1].symbol, "description");
+        compare(r[3].subtitle, "~/Reports/old/");
+        compare(r[0].subtitle, "~/");
+        compare(r[3].path, "/home/me/Reports/old/report.pdf");
+        compare(r[3].id, "file:Reports/old/report.pdf");
+        compare(FileSearch.parse(found, "/h", "zzz").length, 0);
+        compare(FileSearch.openCommand("/h/a b").join("|"), "gio|open|/h/a b");
+    }
+
+    function test_files_in_the_launcher() {
+        var p = createTemporaryObject(panelComp, root);
+        var chosen = createTemporaryObject(spyComp, root, { target: p, signalName: "fileChosen" });
+        p.query = "fi";
+        verify(!p.wantsFiles, "two letters: no file search");
+        p.query = "fir";
+        verify(p.wantsFiles);
+        p.files = FileSearch.parse("f Documents/first.txt\nf firmware.bin\n", "/h", "fir");
+        compare(ids(p.results), "firefox,firewall,file:firmware.bin,file:Documents/first.txt", "after the apps");
+        p.query = "firm";
+        compare(ids(p.results).split(",").filter(x => x.startsWith("file:")).join(), "file:firmware.bin",
+                "the older search's hits that no longer match are dropped at once");
+        p.query = "firmw";
+        p.category = "System";
+        verify(!p.wantsFiles && !p.results.some(x => x.type === "file"), "only in All");
+        p.category = "";
+        waitForRendering(p);
+        compare(p.results[0].id, "file:firmware.bin");
+        keyClick(Qt.Key_Return);
+        compare(chosen.count, 1);
+        compare(chosen.signalArguments[0][0].path, "/h/firmware.bin", "Enter opens it");
+        var tile = findChild(p, "launcherApp_file:firmware.bin");
+        mouseClick(tile, tile.width / 2, tile.height / 2, Qt.RightButton);
+        verify(!p.menuOpen, "no menu for a file");
     }
 
     function test_empty_states() {

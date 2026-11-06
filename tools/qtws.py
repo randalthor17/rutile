@@ -518,6 +518,13 @@ def run_wayland_smoke(screenshot=None):
              "resolution": "16x16", "purity": "sfw", "thumbs": {"small": f"http://127.0.0.1:{port}/wallhaven/full.png"}}],
             "meta": {"last_page": 1}}))
         env["RUTILE_WALLHAVEN_API"] = f"http://127.0.0.1:{port}/wallhaven"
+        # the launcher's file search (D133) looks here, never in the user's home
+        search_home = comp.runtime / "search-home"
+        (search_home / "Documents").mkdir(parents=True)
+        (search_home / ".cache").mkdir()
+        (search_home / "Documents" / "rutile-report.txt").write_text("x")
+        (search_home / ".cache" / "rutile-report-old.txt").write_text("x")
+        env["RUTILE_SEARCH_HOME"] = str(search_home)
         settings_file = comp.runtime / "config" / "rutile" / "settings.json"
         settings_file.write_text(json.dumps(dict(json.loads(settings_file.read_text()),
                                                  calendar={"folder": str(calendars),
@@ -1062,6 +1069,14 @@ def run_wayland_smoke(screenshot=None):
                         time.sleep(0.1)
                     if got != "emoji:\U0001F44B":
                         problems.append(f"ipc launcher search :waving: got {got!r}, expected the waving hand")
+                    # files (D133): found by name in the test's own folder, hidden folders left out, after the apps
+                    for _ in range(30):
+                        got = ipc("search", "rutile-rep", target="launcher")
+                        if got:
+                            break
+                        time.sleep(0.1)
+                    if got != "file:Documents/rutile-report.txt":
+                        problems.append(f"ipc launcher search rutile-rep: got {got!r}, expected the one file outside hidden folders")
                     got = ipc("search", "12*12", target="launcher").split(",")[0]
                     if got != "answer" or ipc("launch", "answer", target="launcher") != "true":
                         problems.append(f"ipc launcher search 12*12: got {got!r}, expected the answer first")

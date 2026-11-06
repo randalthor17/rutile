@@ -5,6 +5,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.common
 
 PanelWindow {
     id: root
@@ -25,6 +26,8 @@ PanelWindow {
     implicitHeight: shelf.height + shelf.cornerRadius
     exclusiveZone: shelf.height
     color: "transparent"
+    // what is behind the see-through panel, blurred by the compositor (D132)
+    BackgroundEffect.blurRegion: Region { item: Panels.blurring ? shelf : null; radius: shelf.radius }
     mask: Region { item: shelf }
 
     Shelf {
