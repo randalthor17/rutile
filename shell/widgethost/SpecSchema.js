@@ -27,6 +27,27 @@ var schema = {
         },
         "sources": {
             "$ref": "#/$defs/sources"
+        },
+        "size": {
+            "description": "How many desktop cells the widget takes when it is added (D134); the grid gives less when there is less room. Without it: 4 wide, 3 tall.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "w",
+                "h"
+            ],
+            "properties": {
+                "w": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12
+                },
+                "h": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12
+                }
+            }
         }
     },
     "$defs": {

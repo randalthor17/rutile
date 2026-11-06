@@ -903,12 +903,16 @@ def run_wayland_smoke(screenshot=None):
                             return json.loads(ipc("layout", target="widgets"))
                         except ValueError:
                             return {}
-                    stat = str(ROOT / "widgets" / "examples" / "stat.json")
+                    # placed at the size the file asks for (D134)
+                    stat = str(comp.runtime / "stat.json")
+                    stat_spec = json.loads((ROOT / "widgets" / "examples" / "stat.json").read_text())
+                    Path(stat).write_text(json.dumps(dict(stat_spec, size={"w": 3, "h": 2})))
                     if ipc("add", stat, target="widgets") != "true":
                         problems.append("ipc widgets add: refused")
                     dl = desktop_layout()
                     placed = [i for items in (dl.get("screens") or {}).values() for i in items]
-                    if [(i.get("id"), i.get("path")) for i in placed] != [("stat", stat)] or len(dl.get("shown") or []) != 1:
+                    if [(i.get("id"), i.get("path"), i.get("w"), i.get("h")) for i in placed] != [("stat", stat, 3, 2)] \
+                            or len(dl.get("shown") or []) != 1:
                         problems.append(f"ipc widgets add stat.json: layout {dl}")
                     time.sleep(0.5)
                     if desktop_layout().get("readable") != [stat]:

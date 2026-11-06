@@ -41,6 +41,8 @@ rutile-shell widgets install my-widget.json --place    # check, copy to ~/.confi
 ```
 
 `version` is 1, `name` is what the Widgets app and the desktop's Add menu show, and `root` is one block.
+Optional: `"size": {"w": 4, "h": 2}`, the desktop cells it takes when added (1 to 12 each; without it 4 by 3);
+with "Scale text with widget size" its text is drawn at its normal size at that size.
 `widgets/spec.schema.json` is the full spec; `widgets/examples/` and `widgets/templates/` have 35 working widgets.
 
 ## Blocks

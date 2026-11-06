@@ -14,7 +14,7 @@ Item {
 
     property var items: []
     property var specs: ({})
-    property var available: []             // [{path, name}], what Add offers
+    property var available: []             // [{path, name, size}], what Add offers
     property bool editMode: false
     property int columns: 12
     property bool scaleText: false         // text follows a widget's size (widgets.scaleText, D84)
@@ -45,9 +45,10 @@ Item {
         else
             items = next;
     }
-    // Places the widget file `path` in the first free cells; false when the screen has no room for it.
-    function add(path) {
-        const size = desktopGrid.fitNew(Desktop.NEW_SIZE);
+    // Places the widget file `path` in the first free cells, at `wanted` (the size it asks for, D134) or less;
+    // false when the screen has no room for it.
+    function add(path, wanted) {
+        const size = desktopGrid.fitNew(wanted ?? Desktop.NEW_SIZE);
         if (!size)
             return false;
         const next = Desktop.withAdded(items, path, size);
@@ -111,11 +112,13 @@ Item {
         items: root.items
         commitHandler: next => root.commit(next)
         delegate: DesktopWidget {
+            id: widget
             specs: root.specs
             scaleText: root.scaleText
-            // a new widget's cells (Desktop.NEW_SIZE): text is drawn at its size there
-            base: Qt.size(Desktop.NEW_SIZE.w * desktopGrid.rowHeight + (Desktop.NEW_SIZE.w - 1) * desktopGrid.gap,
-                          Desktop.NEW_SIZE.h * desktopGrid.rowHeight + (Desktop.NEW_SIZE.h - 1) * desktopGrid.gap)
+            // the cells it asks for (Desktop.preferredSize, D134): text is drawn at its size there
+            readonly property var asked: Desktop.preferredSize(widget.spec)
+            base: Qt.size(asked.w * desktopGrid.rowHeight + (asked.w - 1) * desktopGrid.gap,
+                          asked.h * desktopGrid.rowHeight + (asked.h - 1) * desktopGrid.gap)
             editMode: root.editMode
             onEditRequested: index => root.editRequested(index)
             onPressed: root.pressed()
@@ -202,7 +205,7 @@ Item {
                 }
                 const entry = root.available[Number(id)];
                 if (entry)
-                    root.add(entry.path);
+                    root.add(entry.path, entry.size);
             }
         }
     }

@@ -289,7 +289,7 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   (`widgets.columns`), gravity off, saved in state.json; edit mode from the desktop's right-click menu or
   `rutile-shell widgets edit`, with Add (the user's widgets and the examples), Remove, Done. Keyboard moves come
   with the grid's (D107). Moving a widget to another screen (D112): "Move to" in the edit bar, `widgets move`.
-  Not done: a widget's preferred size.
+  A widget's preferred size (D134): `size` in its file, the cells it gets when added.
 - [x] **4.5** Widgets app (D82): widgets are written by hand as JSON, so the app is a gallery and a way into
   editing. Categories (weather, daily update, world clock, finance, countdown, sports, your widgets) with live
   cards; Use copies a template to `~/.config/rutile/widgets`, allows the address it reads, puts it on the desktop,

@@ -15,7 +15,7 @@ ShellRoot {
     Process {
         id: setup
         running: true
-        command: ["sh", "-c", 'mkdir -p "$1" && printf %s "{\\"version\\":1,\\"name\\":\\"First\\"}" > "$1/a.json" && ' +
+        command: ["sh", "-c", 'mkdir -p "$1" && printf %s "{\\"version\\":1,\\"name\\":\\"First\\",\\"size\\":{\\"w\\":2,\\"h\\":6}}" > "$1/a.json" && ' +
                   'printf "{oops" > "$1/b.json"', "sh", root.dir]
     }
     Process {
@@ -47,9 +47,12 @@ ShellRoot {
                 t.compare(library.specs[root.dir + "/b.json"], null, "not JSON: null");
                 t.compare(library.specs[root.dir + "/none.json"], null, "not there: null");
                 const mine = library.available.filter(w => w.path.startsWith(root.dir));
-                t.compare(JSON.stringify(mine), JSON.stringify([{ path: root.dir + "/a.json", name: "First" },
-                                                                 { path: root.dir + "/b.json", name: "b" }]),
-                          "the user's widgets, by name");
+                t.compare(JSON.stringify(mine), JSON.stringify([{ path: root.dir + "/a.json", name: "First", size: { w: 2, h: 6 } },
+                                                                 { path: root.dir + "/b.json", name: "b", size: { w: 4, h: 3 } }]),
+                          "the user's widgets, by name, with the size each asks for");
+                t.compare(JSON.stringify(library.sizeOf(root.dir + "/a.json")), '{"w":2,"h":6}', "a file's size, read at once");
+                t.compare(JSON.stringify(library.sizeOf(root.dir + "/b.json")), '{"w":4,"h":3}', "not JSON: the usual");
+                t.compare(JSON.stringify(library.sizeOf(root.dir + "/none.json")), '{"w":4,"h":3}', "not there: the usual");
                 rewrite.running = true;
                 root.stage = 2;
                 ticks = 0;

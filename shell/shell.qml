@@ -396,7 +396,8 @@ ShellRoot {
         const items = Desktop.placed(desktopLayouts, name);
         const d = desktops.instances.find(l => l.modelData.name === name);
         const grid = d?.item?.content.grid;
-        const size = grid ? grid.fitNew(Desktop.NEW_SIZE) : Desktop.NEW_SIZE;
+        const wanted = widgetLibrary.sizeOf(path);       // the cells it asks for (D134)
+        const size = grid ? grid.fitNew(wanted) : wanted;
         if (!size) return false;
         saveDesktop(name, Desktop.withAdded(items, path, size));
         return true;

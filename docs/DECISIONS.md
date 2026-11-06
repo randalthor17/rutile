@@ -1580,3 +1580,16 @@ polish, 2026-11-06):
 - Tested offscreen (the command, the order, the launcher's handling) and in the headless shell against a folder of
   the test's own (`RUTILE_SEARCH_HOME`): a hidden folder's file is left out. **Not verified:** speed on the
   maintainer's home folder, and `gio open` opening the right app.
+
+**D134. A widget's preferred size** (plan 4.4; the battery page is skipped on the maintainer's desktop,
+2026-11-06):
+- A widget file may say `"size": {"w": 6, "h": 2}` (whole cells, 1 to 12; the schema and checker hold it to that).
+  Added from the desktop's Add menu, `rutile-shell widgets add` or the Widgets app's Use, it gets those cells, or
+  less where the screen has less room, as before; without it, 4 by 3. "Scale text with widget size" measures
+  against the cells the widget asks for, so a widget made for 8 by 6 draws its text as designed there.
+- The Add list reads each file's size when it scans them (it already read their names); `widgets add` reads the
+  one file then (a blocking read of a small file, once).
+- The shipped templates and examples ask for nothing yet: each keeps 4 by 3 until someone picks sizes against the
+  real desktop.
+- Tested offscreen (the size, the Add menu, scaled text), the library in Quickshell, and `widgets add` in the
+  headless shell.

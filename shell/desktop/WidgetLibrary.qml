@@ -30,6 +30,18 @@ Scope {
         s[path] = spec;
         specs = s;
     }
+    // The cells the widget file at `path` asks for (Desktop.preferredSize, D134), read now.
+    function sizeOf(path) {
+        probe.path = path;
+        const size = Desktop.preferredSize(Desktop.parse(probe.text()));
+        probe.path = "";
+        return size;
+    }
+    FileView {
+        id: probe
+        blockLoading: true
+        printErrors: false
+    }
     function scan() {
         lister.running = false;
         lister.running = true;

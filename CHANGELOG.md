@@ -5,6 +5,8 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Widgets can say how big they start.** `"size": {"w": 6, "h": 2}` in a widget file gives it that many desktop
+  cells when you add it (or fewer if the screen is full). Text scaling is measured against that size.
 - **The launcher finds files.** Type three letters or more and files and folders in your home folder whose names
   match come after the apps; Enter opens one.
 - **Blur behind the see-through panels.** The shelf, the pills at the top and their panels blur what shows

@@ -5,6 +5,13 @@
 // What a widget gets when it is added: a size most widgets fit, which the grid shrinks when there is less room.
 var NEW_SIZE = { w: 4, h: 3 };
 
+// The cells a widget asks for (its spec's `size`, D134), else NEW_SIZE; a spec that is no object gets NEW_SIZE too.
+function preferredSize(spec) {
+    var s = spec && typeof spec === "object" ? spec.size : null;
+    function ok(n) { return typeof n === "number" && n === Math.floor(n) && n >= 1 && n <= 12; }
+    return s && ok(s.w) && ok(s.h) ? { w: s.w, h: s.h } : { w: NEW_SIZE.w, h: NEW_SIZE.h };
+}
+
 function placed(all, screen) {
     var list = all && all[screen];
     return Array.isArray(list) ? list.filter(function (i) { return i && typeof i.path === "string"; }) : [];
@@ -64,18 +71,20 @@ function withMoved(all, from, index, to, size) {
     return withScreen(withScreen(all, from, withoutIndex(source, index)), to, target.concat([moved]));
 }
 
-// The widgets that can be added, from the scan's output: each file as \x1e path \x1f contents. A file that does
-// not parse is listed by its file name, so it can still be placed and fixed while it shows.
+// The widgets that can be added, from the scan's output: each file as \x1e path \x1f contents, with the size it
+// asks for. A file that does not parse is listed by its file name, so it can still be placed and fixed while it
+// shows.
 function scanned(text) {
     var out = [];
     String(text).split("\x1e").forEach(function (part) {
         var cut = part.indexOf("\x1f");
         if (cut <= 0) return;
         var path = part.substring(0, cut);
-        var name = "";
-        try { name = JSON.parse(part.substring(cut + 1)).name || ""; } catch (e) { }
+        var spec = parse(part.substring(cut + 1));
+        var name = spec ? spec.name || "" : "";
         if (out.some(function (a) { return a.path === path; })) return;
-        out.push({ path: path, name: typeof name === "string" && name !== "" ? name : baseName(path) });
+        out.push({ path: path, name: typeof name === "string" && name !== "" ? name : baseName(path),
+                   size: preferredSize(spec) });
     });
     return out;
 }

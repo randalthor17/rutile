@@ -72,17 +72,32 @@ TestCase {
         compare(Desktop.withMoved(all, "DP-1", 0, "DP-1", { w: 1, h: 1 }), all, "the same screen: unchanged");
     }
     function test_scan_output() {
-        const out = "\x1e/c/mine.json\x1f{\"version\":1,\"name\":\"Mine\"}\n" +
+        const out = "\x1e/c/mine.json\x1f{\"version\":1,\"name\":\"Mine\",\"size\":{\"w\":2,\"h\":5}}\n" +
                     "\x1e/c/bad.json\x1f{not json" +
                     "\x1e/e/unnamed.json\x1f{\"version\":1}" +
                     "\x1e/c/mine.json\x1f{\"name\":\"Again\"}";
         compare(JSON.stringify(Desktop.scanned(out)), JSON.stringify([
-            { path: "/c/mine.json", name: "Mine" }, { path: "/c/bad.json", name: "bad" },
-            { path: "/e/unnamed.json", name: "unnamed" }]));
+            { path: "/c/mine.json", name: "Mine", size: { w: 2, h: 5 } }, { path: "/c/bad.json", name: "bad", size: Desktop.NEW_SIZE },
+            { path: "/e/unnamed.json", name: "unnamed", size: Desktop.NEW_SIZE }]), "with the size each asks for");
         compare(Desktop.scanned("").length, 0);
         compare(Desktop.parse("{\"a\":1}").a, 1);
         compare(Desktop.parse("[1"), null);
         compare(Desktop.parse("3"), null, "a number is no widget");
+    }
+
+    function test_preferred_size() {
+        const p = spec => JSON.stringify(Desktop.preferredSize(spec));
+        compare(p({ size: { w: 6, h: 2 } }), '{"w":6,"h":2}');
+        compare(p({ size: { w: 12, h: 1 } }), '{"w":12,"h":1}');
+        compare(p({}), '{"w":4,"h":3}', "none: the usual");
+        compare(p(null), '{"w":4,"h":3}');
+        compare(p({ size: { w: 0, h: 2 } }), '{"w":4,"h":3}', "out of range");
+        compare(p({ size: { w: 13, h: 2 } }), '{"w":4,"h":3}');
+        compare(p({ size: { w: 2.5, h: 2 } }), '{"w":4,"h":3}', "whole cells only");
+        compare(p({ size: { w: "2", h: 2 } }), '{"w":4,"h":3}');
+        compare(p({ size: [2, 2] }), '{"w":4,"h":3}');
+        Desktop.preferredSize({}).w = 9;
+        compare(Desktop.NEW_SIZE.w, 4, "a copy, never the default itself");
     }
 
     // ---- the grid ----
@@ -150,6 +165,11 @@ TestCase {
         const e = make({ scaleText: true, specs: { "/w/n.json": nested }, items: [{ id: "n", path: "/w/n.json", w: 8, h: 6 }] });
         settle(e);
         compare(texts(widget(e, "n")).find(t => t.text === "7").font.pixelSize, Math.round(Type.displaySmall.size * 2));
+        // a widget that asks for 8 by 6 draws its text as designed there (D134)
+        const asks = Object.assign({ size: { w: 8, h: 6 } }, nested);
+        const f = make({ scaleText: true, specs: { "/w/a.json": asks }, items: [{ id: "a", path: "/w/a.json", w: 8, h: 6 }] });
+        settle(f);
+        compare(widget(f, "a").textScale, 1, "its own size: text as designed");
     }
     function texts(item, out) {
         out = out ?? [];
@@ -197,7 +217,7 @@ TestCase {
     // ---- edit mode ----
     function test_add_remove_done() {
         let saved = null;
-        const d = make({ editMode: true, available: [{ path: "/w/card.json", name: "Card" }] });
+        const d = make({ editMode: true, available: [{ path: "/w/card.json", name: "Card", size: { w: 6, h: 2 } }] });
         d.commitHandler = next => { saved = next; d.items = next; };
         verify(findChild(d, "desktopEditBar").visible);
         const remove = findChild(d, "desktopRemove");
@@ -209,11 +229,12 @@ TestCase {
         mouseClick(findChild(d, "desktopAddItem_0"));
         compare(saved.length, 1, "chosen: placed");
         compare(saved[0].id, "card");
-        compare([saved[0].w, saved[0].h], [Desktop.NEW_SIZE.w, Desktop.NEW_SIZE.h]);
+        compare([saved[0].w, saved[0].h], [6, 2], "at the size it asks for (D134)");
         tryCompare(d.grid, "selectedIndex", 0, 1000, "and selected, to be moved at once");
         verify(remove.enabled);
         verify(d.add("/w/card.json"));
         compare(saved[1].id, "card-2", "the same file twice gets two ids");
+        compare([saved[1].w, saved[1].h], [Desktop.NEW_SIZE.w, Desktop.NEW_SIZE.h], "no size given: the usual");
         tryCompare(d.grid, "selectedIndex", 1);
         d.forceActiveFocus();
         keyClick(Qt.Key_Delete);
