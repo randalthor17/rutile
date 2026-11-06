@@ -113,3 +113,38 @@ function groupRows(list, expanded) {
     }
     return rows;
 }
+
+// Kept across a restart (D131): the list as saved (newest first, at most `max`), without transient ones, actions or
+// replies (their senders are gone by then), and without images held only in memory (image://). `liveId` is the
+// notification's id in the shell that saved it: after a reload Quickshell keeps the live ones, and those are not
+// shown twice.
+function toSaved(list, max) {
+    return JSON.stringify(list.filter(function (n) { return !n.transient && n.time > 0; }).slice(0, max)
+        .map(function (n) {
+            return { liveId: n.restored ? -1 : n.id, appName: n.appName, appIcon: n.appIcon,
+                     image: String(n.image || "").indexOf("image://") === 0 ? "" : n.image,
+                     summary: n.summary, body: n.body, urgency: n.urgency, critical: !!n.critical, time: n.time };
+        }));
+}
+
+// The saved list read back as notifications of the list: ids -1, -2... (live ones are positive), no actions; []
+// for a missing or broken file.
+function fromSaved(text) {
+    var doc;
+    try {
+        doc = JSON.parse(text);
+    } catch (e) {
+        return [];
+    }
+    if (!Array.isArray(doc)) return [];
+    var out = [];
+    doc.forEach(function (s) {
+        if (!s || typeof s !== "object" || typeof s.summary !== "string" || !(s.time > 0)) return;
+        out.push({ id: -(out.length + 1), liveId: typeof s.liveId === "number" ? s.liveId : -1,
+                   appName: String(s.appName || ""), appIcon: String(s.appIcon || ""),
+                   image: String(s.image || "").indexOf("image://") === 0 ? "" : String(s.image || ""),
+                   summary: s.summary, body: String(s.body || ""), urgency: Number(s.urgency) || 0,
+                   critical: s.critical === true, actions: [], reply: "", time: s.time, restored: true });
+    });
+    return out;
+}

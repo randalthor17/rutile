@@ -77,7 +77,7 @@ var APPLY_SCRIPT = 'rc=0\n' +
     FOLDERS_FUNCTION + GTKMODE_FUNCTION +
     'while [ $# -gt 0 ]; do\n' +
     '  case "$1" in\n' +
-    '  write) mkdir -p -- "$(dirname -- "$2")" && printf "%s" "$3" > "$2.rutile-new" && chmod "$4" "$2.rutile-new" ' +
+    '  write) mkdir -p -- "$(dirname -- "$2")" && (umask 077 && printf "%s" "$3" > "$2.rutile-new") && chmod "$4" "$2.rutile-new" ' +
     '&& mv -f -- "$2.rutile-new" "$2" || fail "writing $2"; shift 4;;\n' +
     '  copy) mkdir -p -- "$(dirname -- "$3")" && cp -- "$2" "$3.rutile-new" && chmod "$4" "$3.rutile-new" ' +
     '&& mv -f -- "$3.rutile-new" "$3" || fail "writing $3"; shift 4;;\n' +

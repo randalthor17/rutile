@@ -1540,3 +1540,20 @@ polish, 2026-11-06):
 - Tested offscreen (sums, conversions, emoji, the launcher's handling) and in the headless shell (the real
   emoji-test.txt, an answer copied to the fake wl-copy). **Not verified:** pasting on the maintainer's session, and
   how the emoji look there.
+
+**D131. Notifications kept across a restart** (plan 2.8, the maintainer's go-ahead on the list of polish,
+2026-11-06):
+- Grouping by app was already there (D47). What a restart lost was the list: the senders' Notification objects
+  live in the shell's process. While the new setting `notifications.keep` is on (default), the list is saved a
+  second after it changes, to `$XDG_STATE_HOME/rutile/notifications.json`, mode 600 (bodies are private; not in
+  state.json, which other settings code reads and writes). It holds what a card shows (app, icon, summary, body,
+  urgency, time), not the actions, replies, transient notifications or images held only in Quickshell's memory.
+- At start they come back as cards of their own (ids below 0, `restored`), with no buttons, since no sender
+  listens any more; a click does nothing, dismissing forgets them, and they count toward the 50, oldest first
+  out. Quickshell keeps live notifications across a hot reload: a saved one with the same live id and summary as
+  one still tracked is not shown twice. Turning the setting off forgets the saved ones and removes the file.
+- The shared atomic writer (Files.js) now creates every temporary file private (umask 077) before giving it its
+  mode, so a private file is never readable on the way.
+- Tested offscreen (what is saved and read back) and against the private D-Bus (restored cards, a new one, the
+  file's mode and contents, dismissing, the setting off). **Not verified:** the reload case (no test reloads the
+  shell), and the umask (no test catches the moment before chmod).

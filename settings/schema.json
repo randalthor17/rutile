@@ -47,6 +47,12 @@
           "default": true,
           "title": "Notification sound",
           "description": "Play a sound when a notification pops up (with pw-play): the sender's sound, or the sound theme's message sound. Never in Do not disturb, except for critical ones."
+        },
+        "keep": {
+          "type": "boolean",
+          "default": true,
+          "title": "Keep after a restart",
+          "description": "Save the notification list (in your state folder, readable only by you) so it is still there after the shell or the computer restarts. Their buttons do not come back."
         }
       }
     },

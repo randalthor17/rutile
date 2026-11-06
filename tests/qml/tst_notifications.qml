@@ -29,6 +29,33 @@ TestCase {
     Component { id: listModelComp; ListModel {} }
     Component { id: panelComp; NotificationPanel {} }
 
+    // kept across a restart (D131)
+    function test_saved() {
+        const list = [
+            { id: 9, appName: "Mail", appIcon: "file:///i.png", image: "image://qsimage/9", summary: "a", body: "b",
+              urgency: 1, critical: false, actions: [{ id: "default", text: "" }], reply: "Reply", time: 300 },
+            { id: 8, appName: "Disk", summary: "copying", body: "", time: 250, transient: true },
+            { id: 7, appName: "New", summary: "no time yet", body: "", time: 0 },
+            { id: -1, appName: "Old", summary: "restored", body: "", time: 100, restored: true, actions: [] },
+            { id: 6, appName: "Older", summary: "past the limit", body: "", time: 50 }
+        ];
+        const saved = JSON.parse(Model.toSaved(list, 2));
+        compare(saved.map(s => s.summary).join(), "a,restored", "no transient one, none without a time, at most the limit");
+        compare(saved[0].liveId, 9);
+        compare(saved[1].liveId, -1, "a restored one has no live id");
+        compare(saved[0].image, "", "no image held only in memory");
+        verify(saved[0].actions === undefined && saved[0].reply === undefined, "no actions or replies");
+        const back = Model.fromSaved(JSON.stringify(saved));
+        compare(back.map(n => n.id).join(), "-1,-2");
+        compare(back[0].appIcon, "file:///i.png");
+        compare(back[0].actions.length, 0);
+        compare(back[0].reply, "");
+        verify(back[0].restored);
+        compare(Model.fromSaved("not json").length, 0);
+        compare(Model.fromSaved("{}").length, 0);
+        compare(Model.fromSaved('[{"summary": "no time"}, null, 3]').length, 0, "only whole ones");
+    }
+
     function test_plain() {
         compare(Model.plain(""), "");
         compare(Model.plain(null), "");

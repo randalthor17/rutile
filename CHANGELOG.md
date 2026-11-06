@@ -5,6 +5,9 @@ Unreleased and is on `main` there (or in an untagged `rutile-dev-<sha>.bundle` f
 
 ## Unreleased
 
+- **Notifications survive a restart.** The notification list is saved (readable only by you) and comes back after
+  the shell or the computer restarts, without its buttons. Settings > Notifications > Keep after a restart turns
+  it off and deletes the saved list.
 - **The launcher calculates, converts and finds emoji.** Type a sum (`2+3*4`, `15% * 80`, `sqrt(2)`) or a
   conversion (`5 km to mi`, `100 f to c`, `2 GiB to MB`) and the answer comes first; type `:` and a name
   (`:smile`) for emoji. Enter or a click copies it.

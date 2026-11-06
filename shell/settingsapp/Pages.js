@@ -111,7 +111,7 @@ var pages = [
     {
         id: "notifications", title: "Notifications", icon: "notifications", tone: "errorContainer",
         summary: "Do not disturb, sounds", aliases: ["alerts", "popups"],
-        sections: [{ title: "", keys: ["notifications.sound"] }],
+        sections: [{ title: "", keys: ["notifications.sound", "notifications.keep"] }],
         view: "pages/NotificationsPage.qml", backend: "pages/NotificationsBackend.qml",
         entries: [
             { key: "notifications.dnd", title: "Do not disturb", description: "No popups, except urgent ones",

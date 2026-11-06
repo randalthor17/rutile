@@ -162,7 +162,8 @@ are: `docs/DECISIONS.md`. Gate for every phase: the maintainer signs off after l
   frecency, type bonuses); smaller controller with apps and settings providers first. Types: `DesktopEntries`,
   `IconImage`, `LazyLoader`.
 - [ ] **2.8** Started (D47, `shell/notifications/`): notifications. `NotificationService` (Quickshell's
-  `NotificationServer`) keeps each notification for the list (newest first, at most 50) and pops it up under the
+  `NotificationServer`) keeps each notification for the list (newest first, at most 50; saved across a restart
+  since D131, as plain cards without buttons) and pops it up under the
   status pill on the screen the keyboard is on, newest on top, at most 3, with the shared popup motion: app icon
   and name, time, summary and body as plain text, the sender's image, its actions as buttons (a click on the card
   is the default action), a close button; it goes after the sender's timeout or 6 s, paused while the pointer is
